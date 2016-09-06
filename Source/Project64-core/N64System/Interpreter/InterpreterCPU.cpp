@@ -8,6 +8,7 @@
 * GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
 *                                                                           *
 ****************************************************************************/
+
 #include "stdafx.h"
 #include "InterpreterCPU.h"
 #include <Project64-core/N64System/SystemGlobals.h>
@@ -18,6 +19,8 @@
 #include <Project64-core/Plugins/PluginClass.h>
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
+
+#include <Project64-core/NetDebug.h> // NETDBG
 
 R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
 
@@ -295,12 +298,35 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
+			// NETDBG
+			// Memory breakpoints
+			uint32_t op = Opcode.op;
+			if (dbgEBPExists(PROGRAM_COUNTER)) // PC breakpoints
+			{
+				dbgPause();
+			}
+			else if (op > 25 && op < 64 && op != 47) // Load/store instructions
+			{ 
+				uint32_t targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
+				if ((op < 40 || (op > 47 && op < 56)) && dbgRBPExists(targetAddress)) // Load instructions
+				{
+					dbgPause();
+				}
+				else if(dbgWBPExists(targetAddress)) // Store instructions
+				{
+					dbgPause();
+				}
+			}
+			// end NETDBG
+
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {
             WriteTraceF((TraceType)(TraceError | TraceNoHeader),"%X: %s",*_PROGRAM_COUNTER,R4300iOpcodeName(Opcode.Hex,*_PROGRAM_COUNTER));
             // WriteTraceF((TraceType)(TraceError | TraceNoHeader),"%X: %s t9: %08X v1: %08X",*_PROGRAM_COUNTER,R4300iOpcodeName(Opcode.Hex,*_PROGRAM_COUNTER),_GPR[0x19].UW[0],_GPR[0x03].UW[0]);
             // WriteTraceF((TraceType)(TraceError | TraceNoHeader),"%X: %d %d",*_PROGRAM_COUNTER,*g_NextTimer,g_SystemTimer->CurrentType());
             } */
+
+
             m_R4300i_Opcode[Opcode.op]();
             NextTimer -= CountPerOp;
 
@@ -353,6 +379,8 @@ void CInterpreterCPU::ExecuteCPU()
     }
     WriteTrace(TraceN64System, TraceDebug, "Done");
 }
+
+
 
 void CInterpreterCPU::ExecuteOps(int32_t Cycles)
 {

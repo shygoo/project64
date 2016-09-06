@@ -339,6 +339,9 @@
     <ClCompile Include="N64System\Recompiler\Arm\ArmRegInfo.cpp">
       <Filter>Source Files\N64 System\Recompiler\Arm</Filter>
     </ClCompile>
+    <ClCompile Include="NetDebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -649,6 +652,15 @@
     </ClInclude>
     <ClInclude Include="N64System\Recompiler\Arm\ArmRegInfo.h">
       <Filter>Header Files\N64 System\Recompiler\Arm</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Recompiler\RegBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Recompiler\x64-86\x64RegInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NetDebug.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

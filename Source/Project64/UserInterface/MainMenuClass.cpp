@@ -1031,8 +1031,12 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 
         /* Debug - R4300i
         *******************/
-        Item.Reset(ID_DEBUGGER_LOGOPTIONS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Commands...");
-        Item.SetItemEnabled(false);
+		
+		//ID_DEBUGGER_LOGOPTIONS
+        Item.Reset(ID_DEBUGGER_BREAKPOINTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Commands...");
+		// CHANGE TO ENABLED shygoo
+		Item.SetItemEnabled(true);
+
         DebugR4300Menu.push_back(Item);
         Item.Reset(ID_DEBUGGER_R4300REGISTERS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Registers...");
         Item.SetItemEnabled(true);

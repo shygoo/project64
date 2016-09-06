@@ -162,6 +162,12 @@
     <ClCompile Include="Settings\UISettings.cpp">
       <Filter>Source Files\Settings Files</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\SupportEnterCode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\SupportWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -293,6 +299,12 @@
     <ClInclude Include="Settings\UISettings.h">
       <Filter>Header Files\Settings</Filter>
     </ClInclude>
+    <ClInclude Include="UserInterface\SupportEnterCode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\SupportWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\divider.cur">
@@ -301,9 +313,33 @@
     <None Include="res\hand.cur">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="UserInterface\Icons\divider.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="UserInterface\Icons\hand.cur">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ListItems.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Icons\PJ64.ICO">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Icons\right.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Icons\left.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Bitmaps\tri-state.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Bitmaps\ListItems.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Bitmaps\AboutScreenLogo.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

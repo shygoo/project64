@@ -1,8 +1,15 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by UI Resources.rc
+// Used by UIResources.rc
 //
+#define VERSION_REVISION                0
+#define VER_VER_DEBUG                   0
+#define VERSION_MAJOR                   2
 #define IDAPPLY                         3
+#define VERSION_MINOR                   3
+#define IDOK2                           3
+#define IDOK3                           4
+#define IDOK4                           5
 #define IDI_PJ64_Icon                   101
 #define IDD_Rom_Information             104
 #define IDD_Key_Prompt                  108
@@ -40,6 +47,7 @@
 #define IDD_Settings_Config             149
 #define IDD_Support_Project64           150
 #define IDD_Support_EnterCode           151
+#define IDD_Debugger_SG                 152
 #define IDR_POPUP                       155
 #define IDR_CHEAT_MENU                  160
 #define IDD_Lang_Select                 161
@@ -51,6 +59,7 @@
 #define IDC_LIST2                       1003
 #define IDC_CURRENT_KEYS                1003
 #define RSP_LIST                        1004
+#define IDC_CURRENT_KEYS2               1004
 #define RSP_ABOUT                       1006
 #define IDC_ASSIGN                      1006
 #define IDC_BTN_CHOOSE_FILE             1006
@@ -225,6 +234,7 @@
 #define IDC_ZIP                         1092
 #define IDC_SETTING_INFO                1092
 #define IDC_GOOD_NAME_TEXT              1093
+#define IDC_SETTING_INFO2               1093
 #define IDC_FUNCFIND_TEXT               1094
 #define IDC_REMEMBER                    1095
 #define IDC_GFX_NAME                    1095
@@ -251,13 +261,27 @@
 #define IDC_DIR_FRAME3                  1103
 #define IDC_DIR_FRAME4                  1104
 #define IDC_DIR_FRAME5                  1105
+#define IDC_TEXTBOX1                    1106
+#define IDC_TEXTBOX2                    1107
+#define IDC_TEXTBOX3                    1108
+#define IDC_TEXTBOX4                    1109
 #define IDC_MAXROMS_TXT                 1111
 #define IDC_ROMSEL_TEXT2                1112
+#define IDC_TEXTBOX5                    1112
 #define IDC_MAXROMDIR_TXT               1113
+#define IDC_TEXTBOX6                    1113
 #define IDC_ROMSEL_TEXT4                1114
+#define IDC_TEXTBOX7                    1114
+#define IDC_TEXTBOX8                    1115
+#define IDC_TEXTBOX9                    1116
+#define IDC_TEXTBOX10                   1117
+#define IDC_TEXTBOX11                   1118
 #define IDC_UNMARK                      1119
+#define IDC_TEXTBOX12                   1119
 #define IDC_NOTES                       1120
+#define IDC_TEXTBOX13                   1120
 #define IDC_CHEAT_LIST                  1121
+#define IDC_TEXTBOX14                   1121
 #define IDC_CHEAT_NAME                  1122
 #define IDC_DELAY_SI                    1123
 #define IDC_VALUE                       1124
@@ -286,9 +310,12 @@
 #define IDC_USA                         1147
 #define IDC_SHELL_INT_TEXT              1149
 #define IDC_RDB_HOME                    1150
+#define IDC_SHELL_INT_TEXT2             1150
 #define IDC_COUNTFACT                   1151
 #define IDC_CHT_HOME                    1151
+#define IDC_SHELL_INT_TEXT3             1151
 #define IDC_RDX_HOME                    1152
+#define IDC_SHELL_INT_TEXT4             1152
 #define IDC_MEMORY_SIZE_TEXT            1153
 #define IDC_SAVE_TYPE_TEXT              1154
 #define IDC_LAN                         1154
@@ -338,6 +365,7 @@
 #define IDC_IPL_DIR                     1220
 #define IDC_SELECT_IPL_DIR              1221
 #define IDC_IPLDIR_TXT                  1222
+#define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ROMDIRECTORY       40137
@@ -354,9 +382,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        152
+#define _APS_NEXT_RESOURCE_VALUE        156
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1104
+#define _APS_NEXT_CONTROL_VALUE         1107
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

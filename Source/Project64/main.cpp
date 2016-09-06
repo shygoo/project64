@@ -3,8 +3,13 @@
 #include "Multilanguage\LanguageSelector.h"
 #include "Settings/UISettings.h"
 
+#include <Project64-core/NetDebug.h> // NETDBG
+
 int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpszArgs*/, int /*nWinMode*/)
 {
+
+	dbgInit();
+
     try
     {
         CoInitialize(NULL);
@@ -64,7 +69,8 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         }
         else
         {
-            SupportWindow.Show(reinterpret_cast<HWND>(MainWindow.GetWindowHandle()));
+			// NETDBG
+           // SupportWindow.Show(reinterpret_cast<HWND>(MainWindow.GetWindowHandle()));
             if (UISettingsLoadBool(RomBrowser_Enabled))
             {
                 WriteTrace(TraceUserInterface, TraceDebug, "Show Rom Browser");
