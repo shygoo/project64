@@ -168,6 +168,9 @@
     <ClCompile Include="UserInterface\SupportWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -304,6 +307,9 @@
     </ClInclude>
     <ClInclude Include="UserInterface\SupportWindow.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Debugger\Debugger-Commands.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -147,3 +147,15 @@ void CDebuggerUI::TLBChanged()
 {
     Debug_RefreshTLBWindow();
 }
+
+// netdbg
+void CDebuggerUI::Debug_ShowCommandsWindow()
+{
+	if (m_CommandsView == NULL)
+	{
+		m_CommandsView = new CDebugCommandsView(this);
+	}
+	
+	m_CommandsView->ShowWindow();
+
+}

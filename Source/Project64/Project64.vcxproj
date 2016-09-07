@@ -55,6 +55,7 @@
     <ClCompile Include="Settings\GuiSettings.cpp" />
     <ClCompile Include="Settings\NotificationSettings.cpp" />
     <ClCompile Include="Settings\UISettings.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -85,6 +86,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="N64System\Debugger\Debugger-Commands.h" />
     <ClInclude Include="Multilanguage\LanguageSelector.h" />
     <ClInclude Include="N64System.h" />
     <ClInclude Include="N64System\Debugger\DebugDialog.h" />
@@ -166,4 +168,9 @@
   <ItemGroup>
     <ResourceCompile Include="UserInterface\UIResources.rc" />
   </ItemGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="UserInterface\UIResources.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

@@ -47,7 +47,7 @@
 #define IDD_Settings_Config             149
 #define IDD_Support_Project64           150
 #define IDD_Support_EnterCode           151
-#define IDD_Debugger_SG                 152
+#define IDD_Debugger_Commands           152
 #define IDR_POPUP                       155
 #define IDR_CHEAT_MENU                  160
 #define IDD_Lang_Select                 161
@@ -268,14 +268,16 @@
 #define IDC_MAXROMS_TXT                 1111
 #define IDC_ROMSEL_TEXT2                1112
 #define IDC_TEXTBOX5                    1112
+#define IDC_CMD_R0                      1112
 #define IDC_MAXROMDIR_TXT               1113
 #define IDC_TEXTBOX6                    1113
+#define IDC_CMD_LIST                    1113
 #define IDC_ROMSEL_TEXT4                1114
 #define IDC_TEXTBOX7                    1114
-#define IDC_TEXTBOX8                    1115
-#define IDC_TEXTBOX9                    1116
-#define IDC_TEXTBOX10                   1117
-#define IDC_TEXTBOX11                   1118
+#define IDC_CMD_R0_LB                   1115
+#define IDC_CMD_BTN_GO                  1116
+#define IDC_CMD_BPTEST                  1117
+#define IDC_CMD_BPTEST2                 1118
 #define IDC_UNMARK                      1119
 #define IDC_TEXTBOX12                   1119
 #define IDC_NOTES                       1120
@@ -382,9 +384,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        156
+#define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1107
+#define _APS_NEXT_CONTROL_VALUE         1117
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

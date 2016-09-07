@@ -7,3 +7,4 @@
 #include "Debugger-ViewMemory.h"
 #include "Debugger-MemoryDump.h"
 #include "Debugger-TLB.h"
+#include "Debugger-Commands.h" // netdbg

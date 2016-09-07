@@ -303,18 +303,18 @@ void CInterpreterCPU::ExecuteCPU()
 			uint32_t op = Opcode.op;
 			if (dbgEBPExists(PROGRAM_COUNTER)) // PC breakpoints
 			{
-				dbgPause();
+				dbgPause(PROGRAM_COUNTER);
 			}
 			else if (op > 25 && op < 64 && op != 47) // Load/store instructions
 			{ 
 				uint32_t targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
 				if ((op < 40 || (op > 47 && op < 56)) && dbgRBPExists(targetAddress)) // Load instructions
 				{
-					dbgPause();
+					dbgPause(PROGRAM_COUNTER);
 				}
 				else if(dbgWBPExists(targetAddress)) // Store instructions
 				{
-					dbgPause();
+					dbgPause(PROGRAM_COUNTER);
 				}
 			}
 			// end NETDBG

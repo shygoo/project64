@@ -14,6 +14,7 @@ class CDumpMemory;
 class CDebugMemoryView;
 class CDebugMemorySearch;
 class CDebugTlb;
+class CDebugCommandsView; // netdbg
 
 __interface CDebugger
 {
@@ -27,6 +28,7 @@ class CDebuggerUI :
     CDebugMemoryView   * m_MemoryView;
     CDebugMemorySearch * m_MemorySearch;
     CDebugTlb          * m_DebugTLB;
+	CDebugCommandsView * m_CommandsView; // netdbg
 
 protected:
     CDebuggerUI();
@@ -42,6 +44,7 @@ public:
     void Debug_ShowMemorySearch   ( void );
     void Debug_ShowTLBWindow      ( void );
     void Debug_RefreshTLBWindow   ( void );
+	void Debug_ShowCommandsWindow ( void ); // netdbg
 
 	static void GameReset ( CDebuggerUI * _this );
 };

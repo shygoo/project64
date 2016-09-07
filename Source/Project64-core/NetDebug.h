@@ -24,5 +24,5 @@ void dbgWBPAdd(uint32_t address);
 bool dbgWBPRemove(uint32_t address);
 void dbgWBPClear();
 
-void dbgPause();
+void dbgPause(uint32_t address);
 void dbgUnpause();

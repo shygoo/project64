@@ -33,7 +33,7 @@ static uint32_t getGPRVal(int regno) {
 static uint32_t getPC() {
 	return g_Reg->m_PROGRAM_COUNTER;
 }
-
+/*
 static void reportState(SOCKET clientSocket) {
 	char message[1024];
 	int len = 0;
@@ -114,9 +114,10 @@ static void listenerThread(void* param) {
 		_beginthread(sessionThread, 512, lpClientSocket);
 	}
 
-}
+}*/
 
 int dbgInit() {
+	/*
 	// initialise winsock
 	WSADATA wsaData;
 	if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -142,6 +143,7 @@ int dbgInit() {
 
 
 	MessageBox(NULL, "net debugger started", "dbgInit", MB_OK);
+	*/
 	return 1;
 }
 
@@ -243,9 +245,11 @@ void dbgWBPClear() {
 
 ////
 
-void dbgPause() {
+void dbgPause(uint32_t address) {
 	// Pause calling thread until dbgUnpause()
-	g_Notify->DisplayMessage(5, MSG_CPU_PAUSED);
+	char notification[48];
+	sprintf(notification, "*** CPU PAUSED @ %08X ***", address);
+	g_Notify->DisplayMessage(5, notification);
 	dbgPaused = true;
 	while (dbgPaused) {
 		Sleep(10);
