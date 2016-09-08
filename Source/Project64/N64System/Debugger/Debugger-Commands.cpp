@@ -42,28 +42,35 @@ void CDebugCommandsView::ShowAddress(DWORD address)
 		m_cmdList.AddItem(i, 1, cmdName);
 		m_cmdList.AddItem(i, 2, cmdArgs);
 	}
-
+	m_cmdList.SetHighlightedItem(4);
 	m_cmdList.SetFocus();
 	m_cmdList.SelectItem((address - curAddress) / 4);
 }
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	m_cmdList.Attach(GetDlgItem(IDC_CMD_LIST));
-	m_cmdList.AddColumn("Addr", 0);
-	m_cmdList.AddColumn("Cmd", 1);
-	m_cmdList.AddColumn("Args", 2);
-	m_cmdList.SetColumnWidth(0, 60);
-	m_cmdList.SetColumnWidth(1, 60);
-	m_cmdList.SetColumnWidth(2, 120);
-	m_cmdList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
 
-	//.AddItem(ItemsAdded, 0, LocationStr);
-	char test[20];
-	sprintf(test, "fuck");
-	DWORD ItemsAdded = 0;
-	m_cmdList.AddItem(0, 0, test);
-	m_cmdList.AddItem(0, 1, test);
+	m_regTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
+		m_regTabs.DeleteAllItems();
+		m_regTabs.AddItem("GPR");
+		m_regTabs.AddItem("COP1");
+
+	m_cmdList.Attach(GetDlgItem(IDC_CMD_LIST));
+		m_cmdList.AddColumn("Addr", 0);
+		m_cmdList.AddColumn("Cmd", 1);
+		m_cmdList.AddColumn("Args", 2);
+		m_cmdList.SetColumnWidth(0, 60);
+		m_cmdList.SetColumnWidth(1, 60);
+		m_cmdList.SetColumnWidth(2, 120);
+		m_cmdList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
+
+		for (int i = 0; i < 10; i++) {
+			m_cmdList.AddItem(i, 0, "test");
+			m_cmdList.AddItem(i, 1, "test");
+			m_cmdList.AddItem(i, 2, "test");
+		}
+		
+		m_cmdList.SetHighlightedItem(4);
 
 	WindowCreated();
 	return TRUE;
@@ -99,3 +106,37 @@ LRESULT CDebugCommandsView::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & b
 	return FALSE;
 }
 
+// list control
+
+DWORD CListViewCtrlDbg::OnPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/)
+{
+	return CDRF_NOTIFYITEMDRAW;
+}
+
+DWORD CListViewCtrlDbg::OnItemPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW lpNMCustomDraw)
+{
+	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(lpNMCustomDraw);
+
+	COLORREF clrTextBk;
+	COLORREF clrText;
+	if (pLVCD->nmcd.dwItemSpec == m_highlightedItem)
+	{
+		clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		clrText = RGB(0xFF, 0x00, 0x00);
+	}
+	else
+	{
+		clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+		clrText = RGB(0xFF, 0xFF, 0xFF);
+	}
+
+	pLVCD->clrText = clrText;
+	pLVCD->clrTextBk = clrTextBk;
+
+	return CDRF_DODEFAULT;
+
+}
+
+void CListViewCtrlDbg::SetHighlightedItem(int nItem) {
+	m_highlightedItem = nItem;
+}
