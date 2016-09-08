@@ -280,6 +280,8 @@
 #define IDC_CMD_BPTEST2                 1118
 #define IDC_UNMARK                      1119
 #define IDC_TEXTBOX12                   1119
+#define IDC_BUTTON1                     1119
+#define IDC_CMD_BTN_STEP                1119
 #define IDC_NOTES                       1120
 #define IDC_TEXTBOX13                   1120
 #define IDC_CHEAT_LIST                  1121
@@ -386,7 +388,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        157
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1117
+#define _APS_NEXT_CONTROL_VALUE         1120
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

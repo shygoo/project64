@@ -5,6 +5,11 @@
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 
+#include <Project64-core/N64System/Mips/OpcodeName.h>
+
+#include <Project64/N64System/Debugger/Debugger.h>
+
+//
 #include <process.h>
 #include <iostream>
 
@@ -18,11 +23,17 @@
 #define DBG_BP_W 2
 #define DBG_BP_E 4
 
+// will convert all this to actual c++ later
+
 static std::vector<uint32_t> dbgReadBreakpoints = {};
 static std::vector<uint32_t> dbgWriteBreakpoints = {};
 static std::vector<uint32_t> dbgExecBreakpoints = {}; //  0x802CB1C0 , 0x802CB1C0
 
+static CDebuggerUI* debuggerUI;
+
 static bool dbgPaused = 0;
+
+bool dbgKeepPaused = 0;
 
 static SOCKET serverSocket;
 
@@ -33,6 +44,18 @@ static uint32_t getGPRVal(int regno) {
 static uint32_t getPC() {
 	return g_Reg->m_PROGRAM_COUNTER;
 }
+
+bool dbgCheckPauseState()
+{
+	bool ret = dbgKeepPaused;
+	dbgKeepPaused = false;
+	return ret;
+}
+
+void dbgPauseNext() {
+	dbgKeepPaused = 1;
+}
+
 /*
 static void reportState(SOCKET clientSocket) {
 	char message[1024];
@@ -116,7 +139,9 @@ static void listenerThread(void* param) {
 
 }*/
 
-int dbgInit() {
+int dbgInit(CDebuggerUI* dui) {
+	debuggerUI = dui;
+
 	/*
 	// initialise winsock
 	WSADATA wsaData;
@@ -250,6 +275,9 @@ void dbgPause(uint32_t address) {
 	char notification[48];
 	sprintf(notification, "*** CPU PAUSED @ %08X ***", address);
 	g_Notify->DisplayMessage(5, notification);
+	//g_Debugger.Debug_ShowCommandsLocation();
+	debuggerUI->Debug_ShowCommandsLocation(address);
+	//
 	dbgPaused = true;
 	while (dbgPaused) {
 		Sleep(10);

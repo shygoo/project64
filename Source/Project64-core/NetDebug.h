@@ -2,9 +2,14 @@
 
 #include <stdint.h>
 
+#include <Project64/N64System/Debugger/DebuggerUI.h>
+
 #define NETDEBUG_PORT ((u_short)8080)
 
-int dbgInit();
+bool dbgCheckPauseState();
+void dbgPauseNext();
+
+int dbgInit(CDebuggerUI* dui);
 
 int dbgEBPIndex(uint32_t address);
 bool dbgEBPExists(uint32_t address);

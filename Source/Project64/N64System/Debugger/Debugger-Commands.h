@@ -10,7 +10,9 @@ public:
 	CDebugCommandsView(CDebuggerUI * debugger);
 	virtual ~CDebugCommandsView(void);
 
-	void ShowAddress(DWORD Address, bool VAddr);
+	void ShowAddress(DWORD address);
+
+	CListViewCtrl m_cmdList;
 
 private:
 	BEGIN_MSG_MAP_EX(CDebugCommandsView)

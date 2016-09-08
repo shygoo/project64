@@ -298,26 +298,32 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			// NETDBG
-			// Memory breakpoints
-			uint32_t op = Opcode.op;
-			if (dbgEBPExists(PROGRAM_COUNTER)) // PC breakpoints
+			if (dbgCheckPauseState())
 			{
 				dbgPause(PROGRAM_COUNTER);
-			}
-			else if (op > 25 && op < 64 && op != 47) // Load/store instructions
-			{ 
-				uint32_t targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-				if ((op < 40 || (op > 47 && op < 56)) && dbgRBPExists(targetAddress)) // Load instructions
+			} 
+			else {
+				// NETDBG
+				// Memory breakpoints
+				uint32_t op = Opcode.op;
+				if (dbgEBPExists(PROGRAM_COUNTER)) // PC breakpoints
 				{
 					dbgPause(PROGRAM_COUNTER);
 				}
-				else if(dbgWBPExists(targetAddress)) // Store instructions
+				else if (op > 25 && op < 64 && op != 47) // Load/store instructions
 				{
-					dbgPause(PROGRAM_COUNTER);
+					uint32_t targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
+					if ((op < 40 || (op > 47 && op < 56)) && dbgRBPExists(targetAddress)) // Load instructions
+					{
+						dbgPause(PROGRAM_COUNTER);
+					}
+					else if (dbgWBPExists(targetAddress)) // Store instructions
+					{
+						dbgPause(PROGRAM_COUNTER);
+					}
 				}
+				// end NETDBG
 			}
-			// end NETDBG
 
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {

@@ -8,7 +8,7 @@
 int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpszArgs*/, int /*nWinMode*/)
 {
 
-	dbgInit();
+	
 
     try
     {
