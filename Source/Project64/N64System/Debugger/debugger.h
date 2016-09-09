@@ -46,7 +46,7 @@ public:
     void Debug_RefreshTLBWindow   ( void );
 	void Debug_ShowCommandsWindow ( void ); // netdbg
 
-	void Debug_ShowCommandsLocation(uint32_t address);
+	void Debug_ShowCommandsLocation(uint32_t address, BOOL top);
 
 	static void GameReset ( CDebuggerUI * _this );
 };

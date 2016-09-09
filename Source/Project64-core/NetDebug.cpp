@@ -276,7 +276,7 @@ void dbgPause(uint32_t address) {
 	sprintf(notification, "*** CPU PAUSED @ %08X ***", address);
 	g_Notify->DisplayMessage(5, notification);
 	//g_Debugger.Debug_ShowCommandsLocation();
-	debuggerUI->Debug_ShowCommandsLocation(address);
+	debuggerUI->Debug_ShowCommandsLocation(address, FALSE);
 	//
 	dbgPaused = true;
 	while (dbgPaused) {

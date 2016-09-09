@@ -160,10 +160,10 @@ void CDebuggerUI::Debug_ShowCommandsWindow()
 
 }
 
-void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address) {
+void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, BOOL top) {
 	Debug_ShowCommandsWindow();
 	if (m_CommandsView)
 	{
-		m_CommandsView->ShowAddress(address);
+		m_CommandsView->ShowAddress(address, top);
 	}
 }
