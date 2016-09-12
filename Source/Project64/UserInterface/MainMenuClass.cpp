@@ -2,7 +2,7 @@
 #include "RomInformationClass.h"
 #include <Project64-core/N64System/N64DiskClass.h>
 
-#include <Project64-core/NetDebug.h>
+#include <Project64-core/N64System/Interpreter/InterpreterDBG.h>
 
 #include <windows.h>
 #include <commdlg.h>
@@ -54,7 +54,7 @@ CMainMenu::CMainMenu(CMainGui * hMainWindow) :
     m_ChangeSettingList.push_back(Game_CurrentSaveState);
     m_ChangeSettingList.push_back(Setting_CurrentLanguage);
 
-	dbgInit((CDebuggerUI*)m_Gui); // netdbg
+	CInterpreterDBG::DbgInit(m_Gui); // netdbg
 
     for (UISettingList::const_iterator iter = m_ChangeUISettingList.begin(); iter != m_ChangeUISettingList.end(); iter++)
     {

@@ -3,8 +3,6 @@
 #include "Multilanguage\LanguageSelector.h"
 #include "Settings/UISettings.h"
 
-#include <Project64-core/NetDebug.h> // NETDBG
-
 int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpszArgs*/, int /*nWinMode*/)
 {
 
