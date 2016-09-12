@@ -298,32 +298,32 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			// NETDBG
-			if (CInterpreterDBG::m_Debugging)
+			// Debugging
+
+			if (CInterpreterDBG::m_Debugging && R4300iOp::m_NextInstruction != DELAY_SLOT)
 			{
+				// Pause on every instruction but delay slots while manually stepping
 				CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-				//CInterpreterDBG::m_Debugging = FALSE;
-			} 
+			}
 			else {
 				DWORD op = Opcode.op;
-				if (CInterpreterDBG::EBPExists(PROGRAM_COUNTER)) // PC breakpoints
+				if (CInterpreterDBG::m_nEBP > 0 && CInterpreterDBG::EBPExists(PROGRAM_COUNTER)) // PC breakpoints
 				{
 					CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
 				}
 				else if (op > 25 && op < 64 && op != 47) // Load/store instructions
 				{
 					DWORD targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-					if ((op < 40 || (op > 47 && op < 56)) && CInterpreterDBG::RBPExists(targetAddress)) // Load instructions
+					if (CInterpreterDBG::m_nRBP > 0 && (op < 40 || (op > 47 && op < 56)) && CInterpreterDBG::RBPExists(targetAddress)) // Load instructions
 					{
 						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
 					}
-					else if (CInterpreterDBG::WBPExists(targetAddress)) // Store instructions
+					else if (CInterpreterDBG::m_nWBP > 0 && CInterpreterDBG::WBPExists(targetAddress)) // Store instructions
 					{
 						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
 					}
 				}
 			}
-			// end NETDBG
 
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {
