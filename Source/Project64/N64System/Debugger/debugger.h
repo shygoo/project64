@@ -14,7 +14,7 @@ class CDumpMemory;
 class CDebugMemoryView;
 class CDebugMemorySearch;
 class CDebugTlb;
-class CDebugCommandsView; // netdbg
+class CDebugCommandsView;
 
 __interface CDebugger
 {
@@ -28,7 +28,7 @@ class CDebuggerUI :
     CDebugMemoryView   * m_MemoryView;
     CDebugMemorySearch * m_MemorySearch;
     CDebugTlb          * m_DebugTLB;
-	CDebugCommandsView * m_CommandsView; // netdbg
+	CDebugCommandsView * m_CommandsView;
 
 protected:
     CDebuggerUI();
@@ -37,16 +37,15 @@ protected:
 	void TLBChanged ( void );
 
 public:
-    void Debug_Reset              ( void );
-    void Debug_ShowMemoryDump     ( void );
-    void Debug_ShowMemoryWindow   ( void );
-    void Debug_ShowMemoryLocation ( uint32_t Address, bool VAddr );
-    void Debug_ShowMemorySearch   ( void );
-    void Debug_ShowTLBWindow      ( void );
-    void Debug_RefreshTLBWindow   ( void );
-	void Debug_ShowCommandsWindow ( void ); // netdbg
-
-	void Debug_ShowCommandsLocation(uint32_t address, BOOL top);
-
-	static void GameReset ( CDebuggerUI * _this );
+    void Debug_Reset                ( void );
+    void Debug_ShowMemoryDump       ( void );
+    void Debug_ShowMemoryWindow     ( void );
+    void Debug_ShowMemoryLocation   ( uint32_t Address, bool VAddr );
+    void Debug_ShowMemorySearch     ( void );
+    void Debug_ShowTLBWindow        ( void );
+    void Debug_RefreshTLBWindow     ( void );
+    void Debug_ShowCommandsWindow   ( void );
+    void Debug_ShowCommandsLocation (uint32_t address, bool top);
+    
+    static void GameReset ( CDebuggerUI * _this );
 };

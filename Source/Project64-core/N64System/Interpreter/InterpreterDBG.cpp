@@ -1,11 +1,17 @@
-#include <stdafx.h>
-//#include <winsock2.h>
-//#include <Windows.h>
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                      *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
 
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
-//#include <Project64/N64System/Debugger/Debugger.h>
 
 #include "InterpreterDBG.h"
 
@@ -14,9 +20,9 @@ CDebuggerUI* CInterpreterDBG::m_DebuggerUI = NULL;
 BOOL CInterpreterDBG::m_Paused = FALSE;
 BOOL CInterpreterDBG::m_Debugging = FALSE;
 
-vector<DWORD> CInterpreterDBG::m_RBP;
-vector<DWORD> CInterpreterDBG::m_WBP;
-vector<DWORD> CInterpreterDBG::m_EBP;
+vector<uint32_t> CInterpreterDBG::m_RBP;
+vector<uint32_t> CInterpreterDBG::m_WBP;
+vector<uint32_t> CInterpreterDBG::m_EBP;
 
 int CInterpreterDBG::m_nRBP = 0;
 int CInterpreterDBG::m_nWBP = 0;

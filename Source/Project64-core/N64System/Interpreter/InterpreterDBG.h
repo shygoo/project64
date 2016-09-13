@@ -1,3 +1,14 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                      *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
+
 #pragma once
 
 #include <stdint.h>
@@ -11,9 +22,9 @@ private:
 public:
 	static BOOL m_Paused;
 	static BOOL m_Debugging;
-	static vector<DWORD> m_RBP;
-	static vector<DWORD> m_WBP;
-	static vector<DWORD> m_EBP;
+	static vector<uint32_t> m_RBP;
+	static vector<uint32_t> m_WBP;
+	static vector<uint32_t> m_EBP;
 
 	static int m_nRBP;
 	static int m_nWBP;

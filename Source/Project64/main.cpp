@@ -67,8 +67,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         }
         else
         {
-			// NETDBG
-           // SupportWindow.Show(reinterpret_cast<HWND>(MainWindow.GetWindowHandle()));
+			// SupportWindow.Show(reinterpret_cast<HWND>(MainWindow.GetWindowHandle()));
             if (UISettingsLoadBool(RomBrowser_Enabled))
             {
                 WriteTrace(TraceUserInterface, TraceDebug, "Show Rom Browser");

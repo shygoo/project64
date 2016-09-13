@@ -148,7 +148,6 @@ void CDebuggerUI::TLBChanged()
     Debug_RefreshTLBWindow();
 }
 
-// netdbg
 void CDebuggerUI::Debug_ShowCommandsWindow()
 {
 	if (m_CommandsView == NULL)
@@ -160,7 +159,7 @@ void CDebuggerUI::Debug_ShowCommandsWindow()
 
 }
 
-void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, BOOL top) {
+void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top) {
 	Debug_ShowCommandsWindow();
 	if (m_CommandsView)
 	{
