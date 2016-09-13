@@ -320,12 +320,15 @@ void CInterpreterCPU::ExecuteCPU()
 				{
 					CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
 				}
-				else if (op > 25 && op < 64 && op != 47) // Load/store instructions
+				else if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Load/store instructions
 				{
 					DWORD targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-					if (CInterpreterDBG::m_nRBP > 0 && (op < 40 || (op > 47 && op < 56)) && CInterpreterDBG::RBPExists(targetAddress)) // Load instructions
+					if (CInterpreterDBG::m_nRBP > 0 && (op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Load instructions
 					{
-						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
+						if (CInterpreterDBG::RBPExists(targetAddress))
+						{
+							CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
+						}
 					}
 					else if (CInterpreterDBG::m_nWBP > 0 && CInterpreterDBG::WBPExists(targetAddress)) // Store instructions
 					{

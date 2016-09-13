@@ -73,6 +73,13 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	
 	ShowAddress(0x80000000, TRUE);
 
+	uint32_t cpuType = (CPU_TYPE)g_Settings->LoadDword(Game_CpuType);
+
+	if (cpuType != CPU_TYPE::CPU_Interpreter)
+	{
+		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);
+	}
+
 	WindowCreated();
 
 	return TRUE;
