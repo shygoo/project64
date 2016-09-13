@@ -67,7 +67,6 @@ public:
 	CCommandsList m_cmdList;
 	CRegisterTabs m_regTabs;
 	CAddBreakpointDlg m_AddBreakpointDlg;
-	//void SetHighlightedItem(int nItem);
 	
 private:
 	static const int listLength;

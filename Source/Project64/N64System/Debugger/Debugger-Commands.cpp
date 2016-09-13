@@ -30,7 +30,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 	m_Address = address;
 	
-	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + listLength * 4)
+	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (listLength-1) * 4)
 	{
 		m_StartAddress = address;
 	}

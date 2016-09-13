@@ -300,10 +300,19 @@ void CInterpreterCPU::ExecuteCPU()
 
 			// Debugging
 
-			if (CInterpreterDBG::m_Debugging && R4300iOp::m_NextInstruction != DELAY_SLOT)
+			if (CInterpreterDBG::m_Debugging)
 			{
-				// Pause on every instruction but delay slots while manually stepping
-				CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
+				if (R4300iOp::m_NextInstruction == JUMP) // on delay slot
+				{
+					if (JumpToLocation == PROGRAM_COUNTER + 4) // jump/branch not taken
+					{
+						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
+					}
+				}
+				else
+				{
+					CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
+				}
 			}
 			else {
 				DWORD op = Opcode.op;
