@@ -73,43 +73,47 @@ public:
 	virtual ~CDebugCommandsView(void);
 
 	void ShowAddress(DWORD address, BOOL top);
+	void RefreshBreakpointList();
 
-	CCommandsList m_cmdList;
-	CRegisterTabs m_regTabs;
-	CAddBreakpointDlg m_AddBreakpointDlg;
-	
 private:
 	static const int listLength;
 
-	DWORD m_Address; // pc
 	DWORD m_StartAddress;
 
+	CEdit m_EditAddress;
+	CCommandsList m_CommandList;
+	CRegisterTabs m_RegisterTabs;
+	CAddBreakpointDlg m_AddBreakpointDlg;
+	CListBox m_BreakpointList;
+
+	void GotoEnteredAddress();
+	
 	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+	//LRESULT	OnKeyDown(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+
 	LRESULT OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	//LRESULT OnAddrKeyDown(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnMouseWheel(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnDestroy(void);
 	LRESULT	OnListClicked(NMHDR* pNMHDR);
 	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
 
-	BEGIN_MSG_MAP_EX(CDebugCommandsView)
-		COMMAND_HANDLER(IDC_CMD_ADDR, EN_CHANGE, OnAddrChanged) // address input change
+	// mousewheel todo fix
+	// win10 messages are blocked while hovering over list controls
+	// win7 mousewheel only works while a control is focused
 
-		//NOTIFY_HANDLER_EX(IDC_CMD_LIST, WM_MOUSEWHEEL, test)
-		//NOTIFY_HANDLER_EX(IDC_CMD_LIST, LVN_BEGINSCROLL, test)
-		//NOTIFY_HANDLER_EX(IDC_CMD_LIST, LVN_ENDSCROLL, test)
-		
+	BEGIN_MSG_MAP_EX(CDebugCommandsView)
+		COMMAND_HANDLER(IDC_CMD_ADDR, EN_CHANGE, OnAddrChanged)
+		//COMMAND_HANDLER(IDC_CMD_ADDR, NM_KEYDOWN, OnAddrChanged)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
-
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+		CHAIN_MSG_MAP_MEMBER(m_CommandList)
 		MSG_WM_DESTROY(OnDestroy)
-		
-		CHAIN_MSG_MAP_MEMBER(m_cmdList)
-
 	END_MSG_MAP()
 };
 

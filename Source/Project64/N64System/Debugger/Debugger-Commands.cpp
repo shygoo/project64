@@ -9,22 +9,22 @@
 *                                                                           *
 ****************************************************************************/
 
+#include "stdafx.h"
+#include "DebuggerUI.h"
+
 #include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
 #include <Project64-core/N64System/Interpreter/InterpreterDBG.h>
-
-#include "DebuggerUI.h"
 
 const int CDebugCommandsView::listLength = 36;
 
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
 {
-	//m_regTabs = new CRegisterTabs();
-	//m_cmdList = new CCommandsList();
+	//m_RegisterTabs = new CRegisterTabs();
+	//m_CommandList = new CCommandsList();
 	//m_AddBreakpointDlg = new CAddBreakpointDlg();
 
-	m_Address = 0x80000000;
 	m_StartAddress = 0x80000000;
 }
 
@@ -35,28 +35,26 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
-
-	m_Address = address;
-	
 	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (listLength-1) * 4)
 	{
 		m_StartAddress = address;
 	}
 	
-	m_cmdList.SetRedraw(FALSE);
-	m_cmdList.DeleteAllItems();
+	m_CommandList.SetRedraw(FALSE);
+	m_CommandList.DeleteAllItems();
+
+	char addrStr[9];
 
 	for (int i = 0; i < listLength; i++)
-	{
-		char addrStr[9];
+	{	
 		sprintf(addrStr, "%08X", m_StartAddress + i * 4);
 		
-		m_cmdList.AddItem(i, 0, addrStr);
+		m_CommandList.AddItem(i, 0, addrStr);
 
 		if (g_MMU == NULL)
 		{
-			m_cmdList.AddItem(i, 1, "???");
-			m_cmdList.AddItem(i, 1, "???");
+			m_CommandList.AddItem(i, 1, "???");
+			m_CommandList.AddItem(i, 1, "???");
 			continue;
 		}
 		
@@ -67,18 +65,38 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		char* cmdName = strtok((char*)command, "\t");
 		char* cmdArgs = strtok(NULL, "\t");
 
-		m_cmdList.AddItem(i, 1, cmdName);
-		m_cmdList.AddItem(i, 2, cmdArgs);
+		m_CommandList.AddItem(i, 1, cmdName);
+		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
 
-	m_cmdList.SetRedraw(TRUE);
+	m_CommandList.SetRedraw(TRUE);
+}
+
+void CDebugCommandsView::RefreshBreakpointList() {
+	m_BreakpointList.ResetContent();
+	char rowStr[16];
+	for (int i = 0; i < CInterpreterDBG::m_nEBP; i++) {
+		sprintf(rowStr, "E %08X", CInterpreterDBG::m_EBP[i]);
+		m_BreakpointList.AddString(rowStr);
+	}
+	for (int i = 0; i < CInterpreterDBG::m_nWBP; i++) {
+		sprintf(rowStr, "R %08X", CInterpreterDBG::m_WBP[i]);
+		m_BreakpointList.AddString(rowStr);
+	}
+	for (int i = 0; i < CInterpreterDBG::m_nRBP; i++) {
+		sprintf(rowStr, "W %08X", CInterpreterDBG::m_RBP[i]);
+		m_BreakpointList.AddString(rowStr);
+	}
 }
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	m_regTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
-	m_cmdList.Attach(GetDlgItem(IDC_CMD_LIST));
+	m_RegisterTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
+	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
 	
+	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
+	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
+
 	ShowAddress(0x80000000, TRUE);
 
 	uint32_t cpuType = (CPU_TYPE)g_Settings->LoadDword(Game_CpuType);
@@ -200,7 +218,7 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR) {
 
 	}
 
-	//m_cmdList.RedrawWindow();
+	//m_CommandList.RedrawWindow();
 	return CDRF_DODEFAULT;
 }
 
@@ -210,6 +228,8 @@ LRESULT CDebugCommandsView::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & b
 	{
 	case IDC_CMD_BTN_BPCLEAR:
 		CInterpreterDBG::BPClear();
+		RefreshBreakpointList();
+		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_CMD_BTN_GO:
 		CInterpreterDBG::m_Debugging = FALSE;
@@ -224,6 +244,8 @@ LRESULT CDebugCommandsView::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & b
 		break;
 	case IDC_CMD_ADDBP:
 		m_AddBreakpointDlg.DoModal();
+		RefreshBreakpointList();
+		ShowAddress(m_StartAddress, TRUE);
 		break;
 	}
 	return FALSE;
@@ -234,21 +256,31 @@ LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*
 	m_StartAddress -= (short)HIWORD(wParam) / 30;
 	ShowAddress(m_StartAddress, TRUE);
 
+	char addrStr[9];
+	snprintf(addrStr, 9, "%08X", m_StartAddress);
+	GetDlgItem(IDC_CMD_ADDR).SetWindowText(addrStr);
+
 	return TRUE;
 }
 
-LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+void CDebugCommandsView::GotoEnteredAddress()
 {
 	char text[9];
 	text[8] = '\0';
-	GetDlgItemText(wID, text, 9);
+	GetDlgItemText(IDC_CMD_ADDR, text, 9);
 	DWORD address = strtoul(text, NULL, 16);
 	address &= 0x003FFFFF;
 	address |= 0x80000000;
 	address = address - address % 4;
 	ShowAddress(address, TRUE);
+}
+
+LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	GotoEnteredAddress();
 	return 0;
 }
+
 
 LRESULT	CDebugCommandsView::OnListClicked(NMHDR* pNMHDR)
 {
@@ -267,8 +299,10 @@ LRESULT	CDebugCommandsView::OnListClicked(NMHDR* pNMHDR)
 	}
 
 	// cancel blue highlight
-	m_cmdList.SelectItem(-1);
-	
+	m_EditAddress.SetFocus();
+
+	RefreshBreakpointList();
+
 	return CDRF_DODEFAULT;
 }
 
@@ -283,7 +317,7 @@ LRESULT CAddBreakpointDlg::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & bH
 
 		uint32_t address = strtoul(addrStr, NULL, 16);
 		CInterpreterDBG::EBPAdd(address);
-
+		
 		EndDialog(0);
 		break;
 	}
@@ -321,7 +355,8 @@ void CCommandsList::Attach(HWND hWnd)
 	SetColumnWidth(0, 60);
 	SetColumnWidth(1, 60);
 	SetColumnWidth(2, 120);
-	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
+	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+	//SetExtendedListViewStyle();
 }
 
 /*

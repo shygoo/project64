@@ -11,6 +11,8 @@
 
 #include "stdafx.h"
 #include "InterpreterCPU.h"
+#include "InterpreterDBG.h"
+
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/N64Class.h>
 #include <Project64-core/N64System/Mips/MemoryVirtualMem.h>
@@ -19,8 +21,6 @@
 #include <Project64-core/Plugins/PluginClass.h>
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
-
-#include "InterpreterDBG.h"
 
 R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
 

@@ -52,7 +52,6 @@
 #define IDD_Debugger_GPR                158
 #define IDR_CHEAT_MENU                  160
 #define IDD_Debugger_AddBreakpoint      160
-#define IDD_Debugger_AddBreakpoint1     160
 #define IDD_Lang_Select                 161
 #define IDD_Settings_GameRecompiler     162
 #define IDD_Settings_GamePlugin         163
@@ -415,6 +414,7 @@
 #define IDC_CMD_RHI                     1183
 #define IDC_CMD_RHI2                    1184
 #define IDC_LIST1                       1185
+#define IDC_CMD_BPLIST                  1185
 #define IDC_BUTTON2                     1186
 #define IDC_CMD_ADDBP                   1186
 #define IDC_BUTTON4                     1187
@@ -446,6 +446,7 @@
 #define IDC_NOTESFRAME                  1201
 #define IDC_ABP_CHK_READ                1201
 #define IDC_ABP_CHK_WRITE               1203
+#define IDC_CMD_SCROLL                  1203
 #define IDC_ABP_CHK_WRITE2              1204
 #define IDC_NOTE                        1205
 #define IDC_DIGITAL_TEXT                1206
@@ -474,7 +475,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        162
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1202
+#define _APS_NEXT_CONTROL_VALUE         1204
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

@@ -9,11 +9,12 @@
 *                                                                           *
 ****************************************************************************/
 
+#include "stdafx.h"
+#include "InterpreterDBG.h"
+
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
-
-#include "InterpreterDBG.h"
 
 CDebuggerUI* CInterpreterDBG::m_DebuggerUI = NULL;
 
