@@ -298,44 +298,7 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			// Debugging
-
-			if (CInterpreterDBG::m_Debugging)
-			{
-				if (R4300iOp::m_NextInstruction == JUMP) // on delay slot
-				{
-					if (JumpToLocation == PROGRAM_COUNTER + 4) // jump/branch not taken
-					{
-						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-					}
-				}
-				else
-				{
-					CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-				}
-			}
-			else {
-				DWORD op = Opcode.op;
-				if (CInterpreterDBG::m_nEBP > 0 && CInterpreterDBG::EBPExists(PROGRAM_COUNTER)) // PC breakpoints
-				{
-					CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-				}
-				else if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Load/store instructions
-				{
-					DWORD targetAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-					if (CInterpreterDBG::m_nRBP > 0 && (op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Load instructions
-					{
-						if (CInterpreterDBG::RBPExists(targetAddress))
-						{
-							CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-						}
-					}
-					else if (CInterpreterDBG::m_nWBP > 0 && CInterpreterDBG::WBPExists(targetAddress)) // Store instructions
-					{
-						CInterpreterDBG::PauseHere(PROGRAM_COUNTER);
-					}
-				}
-			}
+			PauseOnBreakpoint();
 
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {
@@ -506,4 +469,64 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
     {
         g_Notify->FatalError(GS(MSG_UNKNOWN_MEM_ACTION));
     }
+}
+
+void CInterpreterCPU::PauseOnBreakpoint()
+{	
+	uint32_t& PROGRAM_COUNTER = *_PROGRAM_COUNTER;
+	uint32_t& JumpToLocation = R4300iOp::m_JumpToLocation;
+		
+	// PC breakpoints
+
+	if (CInterpreterDBG::m_nEBP > 0)
+	{
+		if (CInterpreterDBG::EBPExists(PROGRAM_COUNTER))
+		{
+			CInterpreterDBG::Pause(PROGRAM_COUNTER);
+			return;
+		}
+	}
+	
+	// Memory breakpoints
+
+	uint32_t op = R4300iOp::m_Opcode.op;
+
+	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE)
+	{
+		uint32_t memoryAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
+		if (CInterpreterDBG::m_nRBP > 0 && (op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD)))
+		{
+			if (CInterpreterDBG::RBPExists(memoryAddress))
+			{
+				CInterpreterDBG::Pause(PROGRAM_COUNTER);
+				return;
+			}
+		}
+		if (CInterpreterDBG::m_nWBP > 0)
+		{
+			if (CInterpreterDBG::WBPExists(memoryAddress))
+			{
+				CInterpreterDBG::Pause(PROGRAM_COUNTER);
+				return;
+			}
+		}
+	}
+
+	if (!CInterpreterDBG::isDebugging())
+	{
+		return;
+	}
+
+	if (R4300iOp::m_NextInstruction != JUMP)
+	{
+		CInterpreterDBG::Pause(PROGRAM_COUNTER);
+		return;
+	}
+
+	if (JumpToLocation == PROGRAM_COUNTER + 4)
+	{
+		// Only pause on delay slots when branch isn't taken
+		CInterpreterDBG::Pause(PROGRAM_COUNTER);
+		return;
+	}
 }

@@ -30,10 +30,13 @@ public:
 	static int m_nWBP;
 	static int m_nEBP;
 
-	static void DbgInit(CDebuggerUI* debuggerUI);
-	static void PauseHere(uint32_t address);
-	static void KeepDebugging();
+	static void Pause(uint32_t address);
 	static void Resume();
+
+	static void DbgInit(CDebuggerUI* debuggerUI);
+	static BOOL isDebugging();
+	static void KeepDebugging();
+	static void StopDebugging();
 
 	static BOOL RBPExists(uint32_t address);
 	static void RBPAdd(uint32_t address);

@@ -34,21 +34,20 @@ void CInterpreterDBG::DbgInit(CDebuggerUI* debuggerUI)
 	m_DebuggerUI = debuggerUI;
 }
 
-void CInterpreterDBG::PauseHere(uint32_t address)
+void CInterpreterDBG::Pause(uint32_t address)
 {
-	char notification[64];
-	sprintf(notification, "%s (%08X)", g_Lang->GetString(MSG_CPU_PAUSED).c_str(), address);
-	g_Notify->DisplayMessage(5, notification);
-	
 	m_DebuggerUI->Debug_ShowCommandsLocation(address, FALSE);
-	
-	m_Paused = TRUE;
-	
-	// block the calling thread
-	while (m_Paused)
-	{
-		Sleep(20);
-	}
+	g_System->Pause();
+}
+
+void CInterpreterDBG::Resume()
+{
+	g_System->ExternalEvent(SysEvent_ResumeCPU_FromMenu);
+}
+
+BOOL CInterpreterDBG::isDebugging()
+{
+	return m_Debugging;
 }
 
 void CInterpreterDBG::KeepDebugging()
@@ -56,11 +55,16 @@ void CInterpreterDBG::KeepDebugging()
 	m_Debugging = TRUE;
 }
 
+void CInterpreterDBG::StopDebugging() {
+	m_Debugging = FALSE;
+}
+
+/*
 void CInterpreterDBG::Resume()
 {
 	g_Notify->DisplayMessage(5, MSG_CPU_RESUMED);
 	m_Paused = FALSE;
-}
+}*/
 
 BOOL CInterpreterDBG::RBPExists(uint32_t address)
 {

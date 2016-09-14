@@ -19,12 +19,18 @@ public:
 	enum { IDD = IDD_Debugger_AddBreakpoint};
 	
 	BEGIN_MSG_MAP_EX(CAddBreakpointDlg)
+		//MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 	
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
+
+	//LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+	//{
+	//	SetFocus();
+	//}
 };
 
 class CRegisterTabs : public CWindowImpl<CRegisterTabs, CTabCtrl>
@@ -74,6 +80,8 @@ public:
 
 	void ShowAddress(DWORD address, BOOL top);
 	void RefreshBreakpointList();
+
+	void RemoveSelectedBreakpoints();
 
 private:
 	static const int listLength;

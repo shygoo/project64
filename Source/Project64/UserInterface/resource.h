@@ -448,6 +448,7 @@
 #define IDC_ABP_CHK_WRITE               1203
 #define IDC_CMD_SCROLL                  1203
 #define IDC_ABP_CHK_WRITE2              1204
+#define IDC_ABP_CHK_EXEC                1204
 #define IDC_NOTE                        1205
 #define IDC_DIGITAL_TEXT                1206
 #define IDC_VALUE_TEXT                  1207

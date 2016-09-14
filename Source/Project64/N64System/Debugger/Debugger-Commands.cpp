@@ -21,10 +21,6 @@ const int CDebugCommandsView::listLength = 36;
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
 {
-	//m_RegisterTabs = new CRegisterTabs();
-	//m_CommandList = new CCommandsList();
-	//m_AddBreakpointDlg = new CAddBreakpointDlg();
-
 	m_StartAddress = 0x80000000;
 }
 
@@ -35,6 +31,7 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
+	// if top == false, change start address only if address is out of view
 	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (listLength-1) * 4)
 	{
 		m_StartAddress = address;
@@ -58,7 +55,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			continue;
 		}
 		
-		OPCODE& OpCode = OPCODE();
+		OPCODE OpCode;
 		g_MMU->LW_VAddr(m_StartAddress + i * 4, OpCode.Hex);
 
 		char* command = (char*)R4300iOpcodeName(OpCode.Hex, m_StartAddress + i * 4);
@@ -70,36 +67,70 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	}
 
 	m_CommandList.SetRedraw(TRUE);
+	m_CommandList.RedrawWindow();
 }
 
-void CDebugCommandsView::RefreshBreakpointList() {
+void CDebugCommandsView::RefreshBreakpointList()
+{
 	m_BreakpointList.ResetContent();
 	char rowStr[16];
-	for (int i = 0; i < CInterpreterDBG::m_nEBP; i++) {
+	for (int i = 0; i < CInterpreterDBG::m_nRBP; i++)
+	{
+		sprintf(rowStr, "R %08X", CInterpreterDBG::m_RBP[i]);
+		int index = m_BreakpointList.AddString(rowStr);
+		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_RBP[i]);
+	}
+	for (int i = 0; i < CInterpreterDBG::m_nWBP; i++)
+	{
+		sprintf(rowStr, "W %08X", CInterpreterDBG::m_WBP[i]);
+		int index = m_BreakpointList.AddString(rowStr);
+		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_WBP[i]);
+	}
+	for (int i = 0; i < CInterpreterDBG::m_nEBP; i++)
+	{
 		sprintf(rowStr, "E %08X", CInterpreterDBG::m_EBP[i]);
-		m_BreakpointList.AddString(rowStr);
+		int index = m_BreakpointList.AddString(rowStr);
+		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_EBP[i]);
 	}
-	for (int i = 0; i < CInterpreterDBG::m_nWBP; i++) {
-		sprintf(rowStr, "R %08X", CInterpreterDBG::m_WBP[i]);
-		m_BreakpointList.AddString(rowStr);
+}
+
+void CDebugCommandsView::RemoveSelectedBreakpoints()
+{
+	int selItemIndeces[256];
+	int nSelItems = m_BreakpointList.GetSelItems(256, selItemIndeces);
+	for (int i = 0; i < nSelItems; i++)
+	{
+		int index = selItemIndeces[i];
+		char itemText[32];
+		m_BreakpointList.GetText(index, itemText);
+		uint32_t address = m_BreakpointList.GetItemData(index);
+		switch (itemText[0])
+		{
+		case 'E':
+			CInterpreterDBG::EBPRemove(address);
+			break;
+		case 'W':
+			CInterpreterDBG::WBPRemove(address);
+			break;
+		case 'R':
+			CInterpreterDBG::RBPRemove(address);
+			break;
+		}
 	}
-	for (int i = 0; i < CInterpreterDBG::m_nRBP; i++) {
-		sprintf(rowStr, "W %08X", CInterpreterDBG::m_RBP[i]);
-		m_BreakpointList.AddString(rowStr);
-	}
+	RefreshBreakpointList();
 }
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	m_RegisterTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
-	
 	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
 	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
 
 	ShowAddress(0x80000000, TRUE);
+	m_EditAddress.SetWindowText("80000000");
 
-	uint32_t cpuType = (CPU_TYPE)g_Settings->LoadDword(Game_CpuType);
+	uint32_t cpuType = g_Settings->LoadDword(Game_CpuType);
 
 	if (cpuType != CPU_TYPE::CPU_Interpreter)
 	{
@@ -116,30 +147,28 @@ LRESULT CDebugCommandsView::OnDestroy(void)
 	return 0;
 }
 
-LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR) {
+LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
+{
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
 	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
-	
 	if (drawStage == CDDS_PREPAINT)
 	{
 		return CDRF_NOTIFYITEMDRAW;
 	}
-
 	if (drawStage == CDDS_ITEMPREPAINT)
 	{
 		return CDRF_NOTIFYSUBITEMDRAW;
 	}
-
 	if(drawStage == (CDDS_ITEMPREPAINT | CDDS_SUBITEM))
 	{
 		DWORD nItem = pLVCD->nmcd.dwItemSpec;
 		DWORD nSubItem = pLVCD->iSubItem;
 		
-		COLORREF clrText;
 		uint32_t address = m_StartAddress + (nItem * 4);
 		uint32_t pc = (g_Reg != NULL) ? g_Reg->m_PROGRAM_COUNTER : 0;
 
-		if (nSubItem == 0) { // addr
+		if (nSubItem == 0) // addr
+		{
 			if (CInterpreterDBG::EBPExists(address))
 			{
 				// pc breakpoint
@@ -162,10 +191,12 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR) {
 		else if (nSubItem == 1 || nSubItem == 2) // cmd & args
 		{
 			OPCODE Opcode = OPCODE();
-			if (g_MMU != NULL) {
+			if (g_MMU != NULL)
+			{
 				g_MMU->LW_VAddr(address, Opcode.Hex);
 			}
-			else {
+			else
+			{
 				Opcode.Hex = 0x00000000;
 			}
 			
@@ -193,7 +224,6 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR) {
 			else if (Opcode.Hex == 0x00000000) // nop
 			{
 				// gray fg
-				//pLVCD->clrTextBk = RGB(0xEE, 0xEE, 0xEE);
 				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
 				pLVCD->clrText = RGB(0x88, 0x88, 0x88);
 			}
@@ -203,49 +233,44 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR) {
 				pLVCD->clrText = RGB(0x00, 0x88, 0x00);
 				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
 			}
-			else {
+			else
+			{
 				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
 				pLVCD->clrText = RGB(0x00, 0x00, 0x00);
 			}
 		}
-		/*
-		else if (nSubItem == 2) // args
-		{
-
-			pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-			pLVCD->clrText = RGB(0x00, 0x00, 0x00);
-		}*/
-
 	}
-
-	//m_CommandList.RedrawWindow();
 	return CDRF_DODEFAULT;
 }
 
-LRESULT CDebugCommandsView::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & bHandled)
+LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	switch (wID)
 	{
-	case IDC_CMD_BTN_BPCLEAR:
-		CInterpreterDBG::BPClear();
-		RefreshBreakpointList();
-		ShowAddress(m_StartAddress, TRUE);
-		break;
 	case IDC_CMD_BTN_GO:
-		CInterpreterDBG::m_Debugging = FALSE;
+		CInterpreterDBG::StopDebugging();
 		CInterpreterDBG::Resume();
 		break;
 	case IDC_CMD_BTN_STEP:
 		CInterpreterDBG::KeepDebugging();
 		CInterpreterDBG::Resume();
 		break;
-	case IDCANCEL:
-		EndDialog(0);
+	case IDC_CMD_BTN_BPCLEAR:
+		CInterpreterDBG::BPClear();
+		RefreshBreakpointList();
+		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_CMD_ADDBP:
 		m_AddBreakpointDlg.DoModal();
 		RefreshBreakpointList();
 		ShowAddress(m_StartAddress, TRUE);
+		break;
+	case IDC_CMD_RMBP:
+		RemoveSelectedBreakpoints();
+		ShowAddress(m_StartAddress, TRUE);
+		break;
+	case IDCANCEL:
+		EndDialog(0);
 		break;
 	}
 	return FALSE;
@@ -275,12 +300,11 @@ void CDebugCommandsView::GotoEnteredAddress()
 	ShowAddress(address, TRUE);
 }
 
-LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	GotoEnteredAddress();
 	return 0;
 }
-
 
 LRESULT	CDebugCommandsView::OnListClicked(NMHDR* pNMHDR)
 {
@@ -308,28 +332,41 @@ LRESULT	CDebugCommandsView::OnListClicked(NMHDR* pNMHDR)
 
 // Add breakpoint dialog
 
-LRESULT CAddBreakpointDlg::OnClicked(WORD wNotifyCode, WORD wID, HWND, BOOL & bHandled) {
+LRESULT CAddBreakpointDlg::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& /*bHandled*/)
+{
 	switch (wID)
 	{
-	case IDOK: {
-		char addrStr[9];
-		GetDlgItemText(IDC_ABP_ADDR, addrStr, 9);
+	case IDOK:
+		{
+			char addrStr[9];
+			GetDlgItemText(IDC_ABP_ADDR, addrStr, 9);
+			uint32_t address = strtoul(addrStr, NULL, 16);
 
-		uint32_t address = strtoul(addrStr, NULL, 16);
-		CInterpreterDBG::EBPAdd(address);
-		
-		EndDialog(0);
-		break;
-	}
+			int read = ((CButton)GetDlgItem(IDC_ABP_CHK_READ)).GetCheck();
+			int write = ((CButton)GetDlgItem(IDC_ABP_CHK_WRITE)).GetCheck();
+			int exec = ((CButton)GetDlgItem(IDC_ABP_CHK_EXEC)).GetCheck();
+
+			if (read)
+			{
+				CInterpreterDBG::RBPAdd(address);
+			}
+			if (write)
+			{
+				CInterpreterDBG::WBPAdd(address);
+			}
+			if (exec)
+			{
+				CInterpreterDBG::EBPAdd(address);
+			}
+			EndDialog(0);
+			break;
+		}
 	case IDCANCEL:
 		EndDialog(0);
 		break;
 	}
-
 	return FALSE;
 }
-
-
 
 LRESULT CAddBreakpointDlg::OnDestroy(void)
 {
@@ -356,16 +393,4 @@ void CCommandsList::Attach(HWND hWnd)
 	SetColumnWidth(1, 60);
 	SetColumnWidth(2, 120);
 	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-	//SetExtendedListViewStyle();
 }
-
-/*
-LRESULT CCommandsList::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-	MessageBox("wheel used", "aaaa", MB_OK);
-	// forward scroll event to parent window
-	SendMessage(m_ParentWindow, uMsg, wParam, lParam);
-	return TRUE;
-}
-*/
-
