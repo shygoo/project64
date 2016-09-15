@@ -31,6 +31,11 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
+	if (address > 0x803FFFFC || address < 0x80000000)
+	{
+		return;
+	}
+
 	// if top == false, change start address only if address is out of view
 	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (listLength-1) * 4)
 	{
@@ -278,7 +283,15 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 
 LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	m_StartAddress -= (short)HIWORD(wParam) / 30;
+	uint32_t newAddress = m_StartAddress - ((short)HIWORD(wParam) / WHEEL_DELTA) * 4;
+
+	if (newAddress < 0x80000000 || newAddress > 0x803FFFFC) // todo mem size check
+	{
+		return TRUE;
+	}
+
+	m_StartAddress = newAddress;
+
 	ShowAddress(m_StartAddress, TRUE);
 
 	char addrStr[9];
