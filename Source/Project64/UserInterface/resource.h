@@ -56,6 +56,8 @@
 #define IDD_Settings_GameRecompiler     162
 #define IDD_Settings_GamePlugin         163
 #define IDD_Settings_GameStatus         164
+#define IDD_Debugger_GPR1               166
+#define IDD_Debugger_COP0               166
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -449,14 +451,47 @@
 #define IDC_CMD_SCROLL                  1203
 #define IDC_ABP_CHK_WRITE2              1204
 #define IDC_ABP_CHK_EXEC                1204
+#define IDC_CMD_F0                      1204
 #define IDC_NOTE                        1205
+#define IDC_CMD_F1                      1205
 #define IDC_DIGITAL_TEXT                1206
+#define IDC_CMD_F2                      1206
 #define IDC_VALUE_TEXT                  1207
+#define IDC_CMD_F3                      1207
 #define IDC_NOTES_TEXT                  1208
+#define IDC_CMD_F4                      1208
+#define IDC_CMD_F5                      1209
+#define IDC_CMD_F6                      1210
+#define IDC_CMD_F7                      1211
+#define IDC_CMD_F8                      1212
+#define IDC_CMD_F9                      1213
+#define IDC_CMD_F10                     1214
+#define IDC_CMD_F11                     1215
+#define IDC_CMD_F12                     1216
+#define IDC_CMD_F13                     1217
+#define IDC_CMD_F14                     1218
 #define IDC_LANG_SEL                    1219
+#define IDC_CMD_F15                     1219
 #define IDC_IPL_DIR                     1220
+#define IDC_CMD_F16                     1220
 #define IDC_SELECT_IPL_DIR              1221
+#define IDC_CMD_F17                     1221
 #define IDC_IPLDIR_TXT                  1222
+#define IDC_CMD_F18                     1222
+#define IDC_CMD_F19                     1223
+#define IDC_CMD_F20                     1224
+#define IDC_CMD_F21                     1225
+#define IDC_CMD_F22                     1226
+#define IDC_CMD_F23                     1227
+#define IDC_CMD_F24                     1228
+#define IDC_CMD_F25                     1229
+#define IDC_CMD_F26                     1230
+#define IDC_CMD_F27                     1231
+#define IDC_CMD_F28                     1232
+#define IDC_CMD_F29                     1233
+#define IDC_CMD_F30                     1234
+#define IDC_CMD_F31                     1235
+#define IDC_CMD_LB_F0                   1236
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -474,9 +509,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        162
+#define _APS_NEXT_RESOURCE_VALUE        167
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1204
+#define _APS_NEXT_CONTROL_VALUE         1237
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

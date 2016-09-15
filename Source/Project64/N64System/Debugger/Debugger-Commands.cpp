@@ -141,9 +141,47 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	{
 		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);
 	}
+	
+	// Setup register tabs
+	CWindow gprTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR);
+	CWindow cop0Tab = m_RegisterTabs.AddTab("COP0", IDD_Debugger_COP0);
+	
+	//m_RegisterTabs.ShowTab(1);
+
+	int gprIds[32] = {
+		IDC_CMD_R0,  IDC_CMD_R1,  IDC_CMD_R2,  IDC_CMD_R3,
+		IDC_CMD_R4,  IDC_CMD_R5,  IDC_CMD_R6,  IDC_CMD_R7,
+		IDC_CMD_R8,  IDC_CMD_R9,  IDC_CMD_R10, IDC_CMD_R11,
+		IDC_CMD_R12, IDC_CMD_R13, IDC_CMD_R14, IDC_CMD_R15,
+		IDC_CMD_R16, IDC_CMD_R17, IDC_CMD_R18, IDC_CMD_R19,
+		IDC_CMD_R20, IDC_CMD_R21, IDC_CMD_R22, IDC_CMD_R23,
+		IDC_CMD_R24, IDC_CMD_R25, IDC_CMD_R26, IDC_CMD_R27,
+		IDC_CMD_R28, IDC_CMD_R29, IDC_CMD_R30, IDC_CMD_R31
+	};
+
+	int cop0Ids[32] = {
+		IDC_CMD_F0,  IDC_CMD_F1,  IDC_CMD_F2,  IDC_CMD_F3,
+		IDC_CMD_F4,  IDC_CMD_F5,  IDC_CMD_F6,  IDC_CMD_F7,
+		IDC_CMD_F8,  IDC_CMD_F9,  IDC_CMD_F10, IDC_CMD_F11,
+		IDC_CMD_F12, IDC_CMD_F13, IDC_CMD_F14, IDC_CMD_F15,
+		IDC_CMD_F16, IDC_CMD_F17, IDC_CMD_F18, IDC_CMD_F19,
+		IDC_CMD_F20, IDC_CMD_F21, IDC_CMD_F22, IDC_CMD_F23,
+		IDC_CMD_F24, IDC_CMD_F25, IDC_CMD_F26, IDC_CMD_F27,
+		IDC_CMD_F28, IDC_CMD_F29, IDC_CMD_F30, IDC_CMD_F31
+	};
+
+	for (int i = 0; i < 32; i++)
+	{
+		CEdit editGPR = m_EditGPRegisters[i];
+		editGPR.Attach(gprTab.GetDlgItem(gprIds[i]));
+		editGPR.SetWindowTextA("00000000");
+
+		CEdit editCOP0 = m_EditCOP0Registers[i];
+		editCOP0.Attach(cop0Tab.GetDlgItem(cop0Ids[i]));
+		editCOP0.SetWindowTextA("00000000");
+	}
 
 	WindowCreated();
-
 	return TRUE;
 }
 
@@ -285,7 +323,7 @@ LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*
 {
 	uint32_t newAddress = m_StartAddress - ((short)HIWORD(wParam) / WHEEL_DELTA) * 4;
 
-	if (newAddress < 0x80000000 || newAddress > 0x803FFFFC) // todo mem size check
+	if (newAddress < 0x80000000 || newAddress > 0x807FFFFC) // todo mem size check
 	{
 		return TRUE;
 	}
@@ -386,15 +424,6 @@ LRESULT CAddBreakpointDlg::OnDestroy(void)
 	return 0;
 }
 
-// Register tabs
-void CRegisterTabs::Attach(HWND hWnd)
-{
-	CTabCtrl::Attach(hWnd);
-	DeleteAllItems();
-	AddItem("GPR");
-	AddItem("COP1");
-}
-
 // commands list
 void CCommandsList::Attach(HWND hWnd)
 {
@@ -406,4 +435,63 @@ void CCommandsList::Attach(HWND hWnd)
 	SetColumnWidth(1, 60);
 	SetColumnWidth(2, 120);
 	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+}
+
+CWindow CRegisterTabs::AddTab(char* caption, int dialogId) {
+	
+	AddItem(caption);
+
+	CWindow parentWin = GetParent();
+
+	HWND tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, NULL);
+	m_TabWindows.push_back(tabWin);
+
+	CRect pageRect;
+	GetWindowRect(&pageRect);
+	parentWin.ScreenToClient(&pageRect);
+	AdjustRect(FALSE, &pageRect);
+
+	::SetParent(tabWin, parentWin);
+
+	::SetWindowPos(
+		tabWin,
+		m_hWnd,
+		pageRect.left,
+		pageRect.top,
+		pageRect.Width(),
+		pageRect.Height(),
+		SWP_HIDEWINDOW
+	);
+
+	if (m_TabWindows.size() == 1)
+	{
+		ShowTab(0);
+	}
+
+	return (CWindow)tabWin;
+
+}
+
+void CRegisterTabs::ShowTab(int nPage)
+{
+	for (int i = 0; i < m_TabWindows.size(); i++)
+	{
+		::ShowWindow(m_TabWindows[i], SW_HIDE);
+	}
+	
+	::SetWindowPos(
+		m_TabWindows[nPage],
+		m_hWnd,
+		0, 0, 0, 0,
+		SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE
+	);
+
+}
+
+LRESULT CDebugCommandsView::OnRegisterTabChange(NMHDR* pNMHDR)
+{
+	//MessageBox("Selectoin change", "selchange", MB_OK);
+	int nPage = m_RegisterTabs.GetCurSel();
+	m_RegisterTabs.ShowTab(nPage);
+	return FALSE;
 }

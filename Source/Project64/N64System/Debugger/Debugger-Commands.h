@@ -13,6 +13,12 @@
 
 #include <Project64/UserInterface/resource.h>
 
+class CGPRPane : public CWindow
+{
+public:
+	enum {IDD = IDD_Debugger_GPR};
+};
+
 class CAddBreakpointDlg : public CDialogImpl<CAddBreakpointDlg>
 {
 public:
@@ -33,18 +39,16 @@ public:
 	//}
 };
 
-class CRegisterTabs : public CWindowImpl<CRegisterTabs, CTabCtrl>
+class CRegisterTabs : public CTabCtrl //public CWindowImpl<CRegisterTabs, CTabCtrl>
 {
+private:
+	
 public:
-
-	BEGIN_MSG_MAP_EX(CRegisterTabs)
-		//MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-	END_MSG_MAP()
-	//enum {IDC = IDC_CMD_REGTABS};
-	//CRegisterTabs();
-
-	//LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-	void Attach(HWND hWnd);
+	//BEGIN_MSG_MAP(CRegisterTabs)
+	//END_MSG_MAP()
+	vector<HWND> m_TabWindows;
+	CWindow AddTab(char* caption, int dialogId);
+	void ShowTab(int nPage);
 };
 
 class CCommandsList : public CWindowImpl<CCommandsList, CListViewCtrl>
@@ -94,6 +98,12 @@ private:
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
 
+	CEdit m_EditGPRegisters[32];
+	CEdit m_EditGPRLO;
+	CEdit m_EditGPRHI;
+
+	CEdit m_EditCOP0Registers[32];
+	
 	void GotoEnteredAddress();
 	
 	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
@@ -106,6 +116,7 @@ private:
 	LRESULT OnDestroy(void);
 	LRESULT	OnListClicked(NMHDR* pNMHDR);
 	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
+	LRESULT OnRegisterTabChange(NMHDR* pNMHDR);
 
 	// mousewheel todo fix
 	// win10 messages are blocked while hovering over list controls
@@ -117,10 +128,16 @@ private:
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
+
+		//NOTIFY_HANDLER_EX(IDC_CMD_REGTABS, TCN_SELCHANGE, OnRegisterTabChange)
+
+		NOTIFY_HANDLER_EX(IDC_CMD_REGTABS, TCN_SELCHANGE, OnRegisterTabChange)
+
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		CHAIN_MSG_MAP_MEMBER(m_CommandList)
+		//CHAIN_MSG_MAP_MEMBER(m_RegisterTabs)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 };
