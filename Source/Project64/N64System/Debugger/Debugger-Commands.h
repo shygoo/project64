@@ -25,7 +25,7 @@ public:
 	enum { IDD = IDD_Debugger_AddBreakpoint};
 	
 	BEGIN_MSG_MAP_EX(CAddBreakpointDlg)
-		//MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
@@ -33,45 +33,31 @@ public:
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
 
-	//LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-	//{
-	//	SetFocus();
-	//}
+	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+	{
+		CenterWindow();
+		return FALSE;
+	}
 };
 
-class CRegisterTabs : public CTabCtrl //public CWindowImpl<CRegisterTabs, CTabCtrl>
+class CRegisterTabs : public CTabCtrl
 {
-private:
-	
 public:
-	//BEGIN_MSG_MAP(CRegisterTabs)
-	//END_MSG_MAP()
+	BEGIN_MSG_MAP(CRegisterTabs)
+	END_MSG_MAP()
+	vector<int> m_TabIds;
 	vector<CWindow> m_TabWindows;
-	CWindow AddTab(char* caption, int dialogId);
+	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
 	void ShowTab(int nPage);
+	void ResetTabs();
 };
 
 class CCommandsList : public CWindowImpl<CCommandsList, CListViewCtrl>
 {
 
 public:
-	/*
-	BOOL ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& lResult, DWORD dwMsgMapID = 0)
-	{
-		MessageBox("got window message", "goteem", MB_OK);
-		return TRUE;
-	}*/
-
 	BEGIN_MSG_MAP_EX(CCommandsList)
-
-		//MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-		//MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
-		//MESSAGE_HANDLER(WM_VSCROLL, OnMouseWheel)
-		//NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnClicked)
 	END_MSG_MAP()
-	
-	void Attach(HWND hWnd);
-	
 };
 
 class CDebugCommandsView : public CDebugDialog < CDebugCommandsView >
@@ -86,6 +72,7 @@ public:
 	void RefreshBreakpointList();
 
 	void RemoveSelectedBreakpoints();
+	void RefreshRegisterEdits();
 
 private:
 	static const int listLength;
@@ -98,21 +85,25 @@ private:
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
 
-	CEdit m_EditGPRegisters[32];
-	CEdit m_EditGPRLO;
-	CEdit m_EditGPRHI;
+	CWindow m_TabGPR;
+	CWindow m_TabFPR;
 
-	CEdit m_EditCOP0Registers[32];
+	CEdit m_EditGPRegisters[32];
+	CEdit m_EditGPRHI;
+	CEdit m_EditGPRLO;
+	
+	CEdit m_EditFPRegisters[32];
 	
 	void GotoEnteredAddress();
+	void CheckCPUType();
 	
-	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT	OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
-	//LRESULT	OnKeyDown(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
 
-	LRESULT OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	//LRESULT	OnKeyDown(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+	LRESULT OnAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	//LRESULT OnAddrKeyDown(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-	LRESULT OnMouseWheel(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void);
 	LRESULT	OnListClicked(NMHDR* pNMHDR);
 	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
@@ -128,16 +119,11 @@ private:
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
-
-		//NOTIFY_HANDLER_EX(IDC_CMD_REGTABS, TCN_SELCHANGE, OnRegisterTabChange)
-
 		NOTIFY_HANDLER_EX(IDC_CMD_REGTABS, TCN_SELCHANGE, OnRegisterTabChange)
-
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		CHAIN_MSG_MAP_MEMBER(m_CommandList)
-		//CHAIN_MSG_MAP_MEMBER(m_RegisterTabs)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 };

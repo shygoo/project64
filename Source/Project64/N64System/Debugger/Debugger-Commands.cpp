@@ -16,6 +16,11 @@
 #include <Project64-core/N64System/Mips/OpCodeName.h>
 #include <Project64-core/N64System/Interpreter/InterpreterDBG.h>
 
+static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+
+static bool registersUpdating = FALSE;
+
 const int CDebugCommandsView::listLength = 36;
 
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
@@ -29,9 +34,103 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 }
 
+LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+{
+	CheckCPUType();
+
+	// Setup address input
+
+	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
+	m_EditAddress.SetLimitText(8);
+
+	char addrStr[9];
+	sprintf(addrStr, "%08X", m_StartAddress);
+	m_EditAddress.SetWindowText(addrStr);
+
+	// Setup register tabs & inputs
+
+	m_RegisterTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
+
+	m_RegisterTabs.ResetTabs();
+
+	m_TabGPR = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
+	m_TabFPR = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
+
+	static int gprEditIds[32] = {
+		IDC_CMD_R0,  IDC_CMD_R1,  IDC_CMD_R2,  IDC_CMD_R3,
+		IDC_CMD_R4,  IDC_CMD_R5,  IDC_CMD_R6,  IDC_CMD_R7,
+		IDC_CMD_R8,  IDC_CMD_R9,  IDC_CMD_R10, IDC_CMD_R11,
+		IDC_CMD_R12, IDC_CMD_R13, IDC_CMD_R14, IDC_CMD_R15,
+		IDC_CMD_R16, IDC_CMD_R17, IDC_CMD_R18, IDC_CMD_R19,
+		IDC_CMD_R20, IDC_CMD_R21, IDC_CMD_R22, IDC_CMD_R23,
+		IDC_CMD_R24, IDC_CMD_R25, IDC_CMD_R26, IDC_CMD_R27,
+		IDC_CMD_R28, IDC_CMD_R29, IDC_CMD_R30, IDC_CMD_R31
+	};
+
+	static int fprEditIds[32] = {
+		IDC_CMD_F0,  IDC_CMD_F1,  IDC_CMD_F2,  IDC_CMD_F3,
+		IDC_CMD_F4,  IDC_CMD_F5,  IDC_CMD_F6,  IDC_CMD_F7,
+		IDC_CMD_F8,  IDC_CMD_F9,  IDC_CMD_F10, IDC_CMD_F11,
+		IDC_CMD_F12, IDC_CMD_F13, IDC_CMD_F14, IDC_CMD_F15,
+		IDC_CMD_F16, IDC_CMD_F17, IDC_CMD_F18, IDC_CMD_F19,
+		IDC_CMD_F20, IDC_CMD_F21, IDC_CMD_F22, IDC_CMD_F23,
+		IDC_CMD_F24, IDC_CMD_F25, IDC_CMD_F26, IDC_CMD_F27,
+		IDC_CMD_F28, IDC_CMD_F29, IDC_CMD_F30, IDC_CMD_F31
+	};
+
+	for (int i = 0; i < 32; i++)
+	{
+		m_EditGPRegisters[i].Attach(m_TabGPR.GetDlgItem(gprEditIds[i]));
+		m_EditGPRegisters[i].SetLimitText(8);
+
+		m_EditFPRegisters[i].Attach(m_TabFPR.GetDlgItem(fprEditIds[i]));
+		m_EditFPRegisters[i].SetLimitText(8);
+	}
+
+	m_EditGPRHI.Attach(m_TabGPR.GetDlgItem(IDC_CMD_RHI));
+	m_EditGPRLO.Attach(m_TabGPR.GetDlgItem(IDC_CMD_RLO));
+
+	RefreshRegisterEdits();
+
+	// Setup breakpoint list
+
+	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
+	RefreshBreakpointList();
+
+	// Setup command list
+
+	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
+	m_CommandList.AddColumn("Address", 0);
+	m_CommandList.AddColumn("Command", 1);
+	m_CommandList.AddColumn("Parameters", 2);
+	m_CommandList.SetColumnWidth(0, 60);
+	m_CommandList.SetColumnWidth(1, 60);
+	m_CommandList.SetColumnWidth(2, 120);
+	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+	ShowAddress(m_StartAddress, TRUE);
+
+	WindowCreated();
+	return TRUE;
+}
+
+LRESULT CDebugCommandsView::OnDestroy(void)
+{
+	return 0;
+}
+
+void CDebugCommandsView::CheckCPUType()
+{
+	uint32_t cpuType = g_Settings->LoadDword(Game_CpuType);
+	if (cpuType != CPU_TYPE::CPU_Interpreter)
+	{
+		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);
+	}
+}
+
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
-	if (address > 0x803FFFFC || address < 0x80000000)
+	if (address > 0x807FFFFC || address < 0x80000000)
 	{
 		return;
 	}
@@ -71,9 +170,19 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
 
-
 	if (!top) // update registers when called via breakpoint
 	{
+		RefreshRegisterEdits();
+	}
+	
+	m_CommandList.SetRedraw(TRUE);
+	m_CommandList.RedrawWindow();
+}
+
+void CDebugCommandsView::RefreshRegisterEdits()
+{
+	registersUpdating = TRUE;
+	if (g_Reg != NULL) {
 		char regText[9];
 		for (int i = 0; i < 32; i++)
 		{
@@ -82,14 +191,16 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			m_EditGPRegisters[i].SetWindowTextA(regText);
 
 			sprintf(regText, "%08X", g_Reg->m_FPR[i].UW[0]);
-			m_EditCOP0Registers[i].SetWindowTextA(regText);
+			m_EditFPRegisters[i].SetWindowTextA(regText);
 		}
+
+		sprintf(regText, "%08X", g_Reg->m_HI.UW[0]);
+		m_EditGPRHI.SetWindowTextA(regText);
+		
+		sprintf(regText, "%08X", g_Reg->m_LO.UW[0]);
+		m_EditGPRLO.SetWindowTextA(regText);
 	}
-
-
-
-	m_CommandList.SetRedraw(TRUE);
-	m_CommandList.RedrawWindow();
+	registersUpdating = FALSE;
 }
 
 void CDebugCommandsView::RefreshBreakpointList()
@@ -142,71 +253,6 @@ void CDebugCommandsView::RemoveSelectedBreakpoints()
 	RefreshBreakpointList();
 }
 
-LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-{
-	m_RegisterTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
-	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
-	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
-	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
-	
-	m_EditAddress.SetWindowText("80000000");
-
-	uint32_t cpuType = g_Settings->LoadDword(Game_CpuType);
-
-	if (cpuType != CPU_TYPE::CPU_Interpreter)
-	{
-		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);
-	}
-	
-	// Setup register tabs
-	CWindow gprTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR);
-	CWindow cop0Tab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_COP0); // todo rename COP0 to FPR
-
-	int gprIds[32] = {
-		IDC_CMD_R0,  IDC_CMD_R1,  IDC_CMD_R2,  IDC_CMD_R3,
-		IDC_CMD_R4,  IDC_CMD_R5,  IDC_CMD_R6,  IDC_CMD_R7,
-		IDC_CMD_R8,  IDC_CMD_R9,  IDC_CMD_R10, IDC_CMD_R11,
-		IDC_CMD_R12, IDC_CMD_R13, IDC_CMD_R14, IDC_CMD_R15,
-		IDC_CMD_R16, IDC_CMD_R17, IDC_CMD_R18, IDC_CMD_R19,
-		IDC_CMD_R20, IDC_CMD_R21, IDC_CMD_R22, IDC_CMD_R23,
-		IDC_CMD_R24, IDC_CMD_R25, IDC_CMD_R26, IDC_CMD_R27,
-		IDC_CMD_R28, IDC_CMD_R29, IDC_CMD_R30, IDC_CMD_R31
-	};
-
-	int cop0Ids[32] = {
-		IDC_CMD_F0,  IDC_CMD_F1,  IDC_CMD_F2,  IDC_CMD_F3,
-		IDC_CMD_F4,  IDC_CMD_F5,  IDC_CMD_F6,  IDC_CMD_F7,
-		IDC_CMD_F8,  IDC_CMD_F9,  IDC_CMD_F10, IDC_CMD_F11,
-		IDC_CMD_F12, IDC_CMD_F13, IDC_CMD_F14, IDC_CMD_F15,
-		IDC_CMD_F16, IDC_CMD_F17, IDC_CMD_F18, IDC_CMD_F19,
-		IDC_CMD_F20, IDC_CMD_F21, IDC_CMD_F22, IDC_CMD_F23,
-		IDC_CMD_F24, IDC_CMD_F25, IDC_CMD_F26, IDC_CMD_F27,
-		IDC_CMD_F28, IDC_CMD_F29, IDC_CMD_F30, IDC_CMD_F31
-	};
-
-	for (int i = 0; i < 32; i++)
-	{
-		m_EditGPRegisters[i].Attach(::GetDlgItem(gprTab, gprIds[i]));
-		m_EditGPRegisters[i].SetWindowTextA("00000000");
-		m_EditGPRegisters[i].SetLimitText(8);
-
-
-		m_EditCOP0Registers[i].Attach(::GetDlgItem(cop0Tab, cop0Ids[i]));
-		m_EditCOP0Registers[i].SetWindowTextA("00000000");
-		m_EditCOP0Registers[i].SetLimitText(8);
-	}
-
-	ShowAddress(0x80000000, TRUE);
-
-	WindowCreated();
-	return TRUE;
-}
-
-LRESULT CDebugCommandsView::OnDestroy(void)
-{
-	return 0;
-}
-
 LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 {
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
@@ -231,9 +277,11 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 		{
 			if (CInterpreterDBG::EBPExists(address))
 			{
-				// pc breakpoint
+				// breakpoint
 				pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
-				pLVCD->clrText = (pc == address) ? RGB(0xFF, 0xFF, 0x00) : RGB(0xFF, 0xCC, 0xCC);
+				pLVCD->clrText = (pc == address) ?
+					RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
+					RGB(0xFF, 0xCC, 0xCC);
 			}
 			else if (pc == address)
 			{
@@ -350,8 +398,9 @@ LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*
 	ShowAddress(m_StartAddress, TRUE);
 
 	char addrStr[9];
-	snprintf(addrStr, 9, "%08X", m_StartAddress);
-	GetDlgItem(IDC_CMD_ADDR).SetWindowText(addrStr);
+	sprintf(addrStr, "%08X", m_StartAddress);
+	
+	m_EditAddress.SetWindowTextA(addrStr);
 
 	return TRUE;
 }
@@ -359,8 +408,9 @@ LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*
 void CDebugCommandsView::GotoEnteredAddress()
 {
 	char text[9];
-	text[8] = '\0';
-	GetDlgItemText(IDC_CMD_ADDR, text, 9);
+
+	m_EditAddress.GetWindowTextA(text, 9);
+
 	DWORD address = strtoul(text, NULL, 16);
 	address &= 0x007FFFFF;
 	address |= 0x80000000;
@@ -441,39 +491,174 @@ LRESULT CAddBreakpointDlg::OnDestroy(void)
 	return 0;
 }
 
-// commands list
-void CCommandsList::Attach(HWND hWnd)
+void CRegisterTabs::ResetTabs()
 {
-	CListViewCtrl::Attach(hWnd);
-	AddColumn("Address", 0);
-	AddColumn("Command", 1);
-	AddColumn("Parameters", 2);
-	SetColumnWidth(0, 60);
-	SetColumnWidth(1, 60);
-	SetColumnWidth(2, 120);
-	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+	m_TabWindows.clear();
+	m_TabIds.clear();
 }
 
-CWindow CRegisterTabs::AddTab(char* caption, int dialogId) {
+static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_INITDIALOG)
+	{
+		return TRUE;
+	}
+	if (registersUpdating || !CInterpreterDBG::m_Debugging)
+	{
+		return FALSE;
+	}
+	if (msg != WM_COMMAND || HIWORD(wParam) != EN_CHANGE)
+	{
+		return FALSE;
+	}
+
+	int controlId = LOWORD(wParam);
+
+	int nReg = -1;
+
+	switch (controlId)
+	{
+	//case IDC_CMD_R0:  nReg = 0; break;
+	case IDC_CMD_R1:  nReg = 1; break;
+	case IDC_CMD_R2:  nReg = 2; break;
+	case IDC_CMD_R3:  nReg = 3; break;
+	case IDC_CMD_R4:  nReg = 4; break;
+	case IDC_CMD_R5:  nReg = 5; break;
+	case IDC_CMD_R6:  nReg = 6; break;
+	case IDC_CMD_R7:  nReg = 7; break;
+	case IDC_CMD_R8:  nReg = 8; break;
+	case IDC_CMD_R9:  nReg = 9; break;
+	case IDC_CMD_R10: nReg = 10; break;
+	case IDC_CMD_R11: nReg = 11; break;
+	case IDC_CMD_R12: nReg = 12; break;
+	case IDC_CMD_R13: nReg = 13; break;
+	case IDC_CMD_R14: nReg = 14; break;
+	case IDC_CMD_R15: nReg = 15; break;
+	case IDC_CMD_R16: nReg = 16; break;
+	case IDC_CMD_R17: nReg = 17; break;
+	case IDC_CMD_R18: nReg = 18; break;
+	case IDC_CMD_R19: nReg = 19; break;
+	case IDC_CMD_R20: nReg = 20; break;
+	case IDC_CMD_R21: nReg = 21; break;
+	case IDC_CMD_R22: nReg = 22; break;
+	case IDC_CMD_R23: nReg = 23; break;
+	case IDC_CMD_R24: nReg = 24; break;
+	case IDC_CMD_R25: nReg = 25; break;
+	case IDC_CMD_R26: nReg = 26; break;
+	case IDC_CMD_R27: nReg = 27; break;
+	case IDC_CMD_R28: nReg = 28; break;
+	case IDC_CMD_R29: nReg = 29; break;
+	case IDC_CMD_R30: nReg = 30; break;
+	case IDC_CMD_R31: nReg = 31; break;
+	}
 	
+	if (g_Reg != NULL)
+	{
+		char regText[9];
+		CWindow edit = GetDlgItem(hDlg, controlId);
+		edit.GetWindowTextA(regText, 9);
+		uint32_t value = strtoul(regText, NULL, 16);
+
+		if (nReg > 0)
+		{
+			g_Reg->m_GPR[nReg].UW[0] = value;
+		}
+		else if (controlId == IDC_CMD_RHI)
+		{
+			g_Reg->m_HI.UW[0] = value;
+		}
+		else if (controlId == IDC_CMD_RLO)
+		{
+			g_Reg->m_LO.UW[0] = value;
+		}
+	}
+
+	return FALSE;
+}
+
+static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_INITDIALOG)
+	{
+		return TRUE;
+	}
+	if (registersUpdating || !CInterpreterDBG::m_Debugging)
+	{
+		return FALSE;
+	}
+	if (msg != WM_COMMAND || HIWORD(wParam) != EN_CHANGE)
+	{
+		return FALSE;
+	}
+	
+	int controlId = LOWORD(wParam);
+
+	int nReg = -1;
+
+	switch (controlId)
+	{
+	case IDC_CMD_F0:  nReg = 0; break;
+	case IDC_CMD_F1:  nReg = 1; break;
+	case IDC_CMD_F2:  nReg = 2; break;
+	case IDC_CMD_F3:  nReg = 3; break;
+	case IDC_CMD_F4:  nReg = 4; break;
+	case IDC_CMD_F5:  nReg = 5; break;
+	case IDC_CMD_F6:  nReg = 6; break;
+	case IDC_CMD_F7:  nReg = 7; break;
+	case IDC_CMD_F8:  nReg = 8; break;
+	case IDC_CMD_F9:  nReg = 9; break;
+	case IDC_CMD_F10: nReg = 10; break;
+	case IDC_CMD_F11: nReg = 11; break;
+	case IDC_CMD_F12: nReg = 12; break;
+	case IDC_CMD_F13: nReg = 13; break;
+	case IDC_CMD_F14: nReg = 14; break;
+	case IDC_CMD_F15: nReg = 15; break;
+	case IDC_CMD_F16: nReg = 16; break;
+	case IDC_CMD_F17: nReg = 17; break;
+	case IDC_CMD_F18: nReg = 18; break;
+	case IDC_CMD_F19: nReg = 19; break;
+	case IDC_CMD_F20: nReg = 20; break;
+	case IDC_CMD_F21: nReg = 21; break;
+	case IDC_CMD_F22: nReg = 22; break;
+	case IDC_CMD_F23: nReg = 23; break;
+	case IDC_CMD_F24: nReg = 24; break;
+	case IDC_CMD_F25: nReg = 25; break;
+	case IDC_CMD_F26: nReg = 26; break;
+	case IDC_CMD_F27: nReg = 27; break;
+	case IDC_CMD_F28: nReg = 28; break;
+	case IDC_CMD_F29: nReg = 29; break;
+	case IDC_CMD_F30: nReg = 30; break;
+	case IDC_CMD_F31: nReg = 31; break;
+	}
+
+	if (nReg > 0 && g_Reg != NULL)
+	{
+		char regText[9];
+		CWindow edit = GetDlgItem(hDlg, controlId);
+		edit.GetWindowTextA(regText, 9);
+		uint32_t value = strtoul(regText, NULL, 16);
+		g_Reg->m_FPR[nReg].UW[0] = value;
+	}
+
+	return FALSE;
+}
+
+CWindow CRegisterTabs::AddTab(char* caption, int dialogId, DLGPROC dlgProc)
+{
 	AddItem(caption);
-
+	
 	CWindow parentWin = GetParent();
-
-	CWindow tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, NULL);
-	m_TabWindows.push_back(tabWin);
-
-	int index = m_TabWindows.size() - 1;
+	CWindow tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, dlgProc);
 
 	CRect pageRect;
 	GetWindowRect(&pageRect);
 	parentWin.ScreenToClient(&pageRect);
 	AdjustRect(FALSE, &pageRect);
 
-	::SetParent(m_TabWindows[index], parentWin);
+	::SetParent(tabWin, parentWin);
 
 	::SetWindowPos(
-		m_TabWindows[index],
+		tabWin,
 		m_hWnd,
 		pageRect.left,
 		pageRect.top,
@@ -482,12 +667,17 @@ CWindow CRegisterTabs::AddTab(char* caption, int dialogId) {
 		SWP_HIDEWINDOW
 	);
 
+	m_TabWindows.push_back(tabWin);
+	m_TabIds.push_back(dialogId);
+	
+	int index = m_TabWindows.size() - 1;
+
 	if (m_TabWindows.size() == 1)
 	{
 		ShowTab(0);
 	}
 
-	return (CWindow)m_TabWindows[index];
+	return tabWin;
 
 }
 
@@ -498,26 +688,16 @@ void CRegisterTabs::ShowTab(int nPage)
 		::ShowWindow(m_TabWindows[i], SW_HIDE);
 	}
 	
-	bool res = ::SetWindowPos(
+	::SetWindowPos(
 		m_TabWindows[nPage],
 		m_hWnd,
 		0, 0, 0, 0,
 		SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE
 	);
-
-	// todo fix tab window handles becoming invalid
-	if (!res) {
-		DWORD err = GetLastError();
-		char ercode[32];
-		sprintf(ercode, "err %d", err);
-		MessageBox("Failed to set tab pos", ercode, MB_OK);
-	}
-
 }
 
 LRESULT CDebugCommandsView::OnRegisterTabChange(NMHDR* pNMHDR)
 {
-	//MessageBox("Selectoin change", "selchange", MB_OK);
 	int nPage = m_RegisterTabs.GetCurSel();
 	m_RegisterTabs.ShowTab(nPage);
 	return FALSE;

@@ -58,6 +58,7 @@
 #define IDD_Settings_GameStatus         164
 #define IDD_Debugger_GPR1               166
 #define IDD_Debugger_COP0               166
+#define IDD_Debugger_FPR                166
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -415,6 +416,7 @@
 #define IDC_CMD_LB_RLO                  1182
 #define IDC_CMD_RHI                     1183
 #define IDC_CMD_RHI2                    1184
+#define IDC_CMD_RLO                     1184
 #define IDC_LIST1                       1185
 #define IDC_CMD_BPLIST                  1185
 #define IDC_BUTTON2                     1186
