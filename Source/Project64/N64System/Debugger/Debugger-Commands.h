@@ -46,7 +46,7 @@ private:
 public:
 	//BEGIN_MSG_MAP(CRegisterTabs)
 	//END_MSG_MAP()
-	vector<HWND> m_TabWindows;
+	vector<CWindow> m_TabWindows;
 	CWindow AddTab(char* caption, int dialogId);
 	void ShowTab(int nPage);
 };

@@ -71,6 +71,23 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
 
+
+	if (!top) // update registers when called via breakpoint
+	{
+		char regText[9];
+		for (int i = 0; i < 32; i++)
+		{
+			// todo red labels when sign extension set
+			sprintf(regText, "%08X", g_Reg->m_GPR[i].UW[0]);
+			m_EditGPRegisters[i].SetWindowTextA(regText);
+
+			sprintf(regText, "%08X", g_Reg->m_FPR[i].UW[0]);
+			m_EditCOP0Registers[i].SetWindowTextA(regText);
+		}
+	}
+
+
+
 	m_CommandList.SetRedraw(TRUE);
 	m_CommandList.RedrawWindow();
 }
@@ -131,8 +148,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
 	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
 	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
-
-	ShowAddress(0x80000000, TRUE);
+	
 	m_EditAddress.SetWindowText("80000000");
 
 	uint32_t cpuType = g_Settings->LoadDword(Game_CpuType);
@@ -144,9 +160,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	
 	// Setup register tabs
 	CWindow gprTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR);
-	CWindow cop0Tab = m_RegisterTabs.AddTab("COP0", IDD_Debugger_COP0);
-	
-	//m_RegisterTabs.ShowTab(1);
+	CWindow cop0Tab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_COP0); // todo rename COP0 to FPR
 
 	int gprIds[32] = {
 		IDC_CMD_R0,  IDC_CMD_R1,  IDC_CMD_R2,  IDC_CMD_R3,
@@ -172,14 +186,17 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 	for (int i = 0; i < 32; i++)
 	{
-		CEdit editGPR = m_EditGPRegisters[i];
-		editGPR.Attach(gprTab.GetDlgItem(gprIds[i]));
-		editGPR.SetWindowTextA("00000000");
+		m_EditGPRegisters[i].Attach(::GetDlgItem(gprTab, gprIds[i]));
+		m_EditGPRegisters[i].SetWindowTextA("00000000");
+		m_EditGPRegisters[i].SetLimitText(8);
 
-		CEdit editCOP0 = m_EditCOP0Registers[i];
-		editCOP0.Attach(cop0Tab.GetDlgItem(cop0Ids[i]));
-		editCOP0.SetWindowTextA("00000000");
+
+		m_EditCOP0Registers[i].Attach(::GetDlgItem(cop0Tab, cop0Ids[i]));
+		m_EditCOP0Registers[i].SetWindowTextA("00000000");
+		m_EditCOP0Registers[i].SetLimitText(8);
 	}
+
+	ShowAddress(0x80000000, TRUE);
 
 	WindowCreated();
 	return TRUE;
@@ -345,7 +362,7 @@ void CDebugCommandsView::GotoEnteredAddress()
 	text[8] = '\0';
 	GetDlgItemText(IDC_CMD_ADDR, text, 9);
 	DWORD address = strtoul(text, NULL, 16);
-	address &= 0x003FFFFF;
+	address &= 0x007FFFFF;
 	address |= 0x80000000;
 	address = address - address % 4;
 	ShowAddress(address, TRUE);
@@ -443,18 +460,20 @@ CWindow CRegisterTabs::AddTab(char* caption, int dialogId) {
 
 	CWindow parentWin = GetParent();
 
-	HWND tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, NULL);
+	CWindow tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, NULL);
 	m_TabWindows.push_back(tabWin);
+
+	int index = m_TabWindows.size() - 1;
 
 	CRect pageRect;
 	GetWindowRect(&pageRect);
 	parentWin.ScreenToClient(&pageRect);
 	AdjustRect(FALSE, &pageRect);
 
-	::SetParent(tabWin, parentWin);
+	::SetParent(m_TabWindows[index], parentWin);
 
 	::SetWindowPos(
-		tabWin,
+		m_TabWindows[index],
 		m_hWnd,
 		pageRect.left,
 		pageRect.top,
@@ -468,7 +487,7 @@ CWindow CRegisterTabs::AddTab(char* caption, int dialogId) {
 		ShowTab(0);
 	}
 
-	return (CWindow)tabWin;
+	return (CWindow)m_TabWindows[index];
 
 }
 
@@ -479,12 +498,20 @@ void CRegisterTabs::ShowTab(int nPage)
 		::ShowWindow(m_TabWindows[i], SW_HIDE);
 	}
 	
-	::SetWindowPos(
+	bool res = ::SetWindowPos(
 		m_TabWindows[nPage],
 		m_hWnd,
 		0, 0, 0, 0,
 		SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE
 	);
+
+	// todo fix tab window handles becoming invalid
+	if (!res) {
+		DWORD err = GetLastError();
+		char ercode[32];
+		sprintf(ercode, "err %d", err);
+		MessageBox("Failed to set tab pos", ercode, MB_OK);
+	}
 
 }
 
