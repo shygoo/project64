@@ -339,7 +339,7 @@
     <ClCompile Include="N64System\Recompiler\Arm\ArmRegInfo.cpp">
       <Filter>Source Files\N64 System\Recompiler\Arm</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Interpreter\InterpreterDBG.cpp">
+    <ClCompile Include="N64System\Interpreter\InterpreterDebug.cpp">
       <Filter>Source Files\N64 System\Interpreter</Filter>
     </ClCompile>
   </ItemGroup>
@@ -659,7 +659,7 @@
     <ClInclude Include="N64System\Recompiler\x64-86\x64RegInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="N64System\Interpreter\InterpreterDBG.h">
+    <ClInclude Include="N64System\Interpreter\InterpreterDebug.h">
       <Filter>Header Files\N64 System\Interpreter</Filter>
     </ClInclude>
   </ItemGroup>

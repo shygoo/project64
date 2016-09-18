@@ -13,17 +13,12 @@
 
 #include <Project64/UserInterface/resource.h>
 
-class CGPRPane : public CWindow
-{
-public:
-	enum {IDD = IDD_Debugger_GPR};
-};
-
 class CAddBreakpointDlg : public CDialogImpl<CAddBreakpointDlg>
 {
 public:
 	enum { IDD = IDD_Debugger_AddBreakpoint};
-	
+
+private:
 	BEGIN_MSG_MAP_EX(CAddBreakpointDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
@@ -32,7 +27,6 @@ public:
 	
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
-
 	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 	{
 		CenterWindow();
@@ -43,8 +37,6 @@ public:
 class CRegisterTabs : public CTabCtrl
 {
 public:
-	BEGIN_MSG_MAP(CRegisterTabs)
-	END_MSG_MAP()
 	vector<int> m_TabIds;
 	vector<CWindow> m_TabWindows;
 	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
@@ -52,15 +44,14 @@ public:
 	void ResetTabs();
 };
 
-class CCommandsList : public CWindowImpl<CCommandsList, CListViewCtrl>
+class CCommandsList : public CListViewCtrl
 {
-
 public:
 	BEGIN_MSG_MAP_EX(CCommandsList)
 	END_MSG_MAP()
 };
 
-class CDebugCommandsView : public CDebugDialog < CDebugCommandsView >
+class CDebugCommandsView : public CDebugDialog<CDebugCommandsView>
 {
 public:
 	enum { IDD = IDD_Debugger_Commands };
@@ -69,60 +60,74 @@ public:
 	virtual ~CDebugCommandsView(void);
 
 	void ShowAddress(DWORD address, BOOL top);
-	void RefreshBreakpointList();
 
-	void RemoveSelectedBreakpoints();
-	void RefreshRegisterEdits();
+	static DWORD GPREditIds[32];
+	static DWORD FPREditIds[32];
+
+	static int MapGPREdit(DWORD controlId);
+	static int MapFPREdit(DWORD controlId);
 
 private:
-	static const int listLength;
 
 	DWORD m_StartAddress;
+	CRect m_DefaultWindowRect;
 
-	CEdit m_EditAddress;
+	CEditNumber m_AddressEdit;
 	CCommandsList m_CommandList;
+	int m_CommandListRows;
 	CRegisterTabs m_RegisterTabs;
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
+	CScrollBar m_Scrollbar;
 
-	CWindow m_TabGPR;
-	CWindow m_TabFPR;
-
-	CEdit m_EditGPRegisters[32];
-	CEdit m_EditGPRHI;
-	CEdit m_EditGPRLO;
+	CWindow m_GPRTab;
+	CEditNumber m_GPREdits[32];
+	CEditNumber m_HIEdit;
+	CEditNumber m_LOEdit;
 	
-	CEdit m_EditFPRegisters[32];
+	CWindow m_FPRTab;
+	CEditNumber m_FPREdits[32];
 	
 	void GotoEnteredAddress();
 	void CheckCPUType();
+	void RefreshBreakpointList();
+	void RemoveSelectedBreakpoints();
+	void RefreshRegisterEdits();
 	
-	LRESULT	OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnSizing             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnGetMinMaxInfo      (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnMouseWheel         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnScroll             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnMeasureItem        (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnAddrChanged        (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT OnListBoxClicked     (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT	OnClicked            (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT	OnCommandListClicked (NMHDR* pNMHDR);
+	LRESULT OnRegisterTabChange  (NMHDR* pNMHDR);
+	LRESULT OnCustomDrawList     (NMHDR* pNMHDR);
+	LRESULT OnDestroy            (void);
 
-	//LRESULT	OnKeyDown(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
-	LRESULT OnAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-	//LRESULT OnAddrKeyDown(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnDestroy(void);
-	LRESULT	OnListClicked(NMHDR* pNMHDR);
-	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
-	LRESULT OnRegisterTabChange(NMHDR* pNMHDR);
-
-	// mousewheel todo fix
-	// win10 messages are blocked while hovering over list controls
-	// win7 mousewheel only works while a control is focused
+	// todo fix mousewheel
+	// win10 - doesn't work while hovering over list controls
+	// win7 - only works while a control has keyboard focus
 
 	BEGIN_MSG_MAP_EX(CDebugCommandsView)
-		COMMAND_HANDLER(IDC_CMD_ADDR, EN_CHANGE, OnAddrChanged)
-		//COMMAND_HANDLER(IDC_CMD_ADDR, NM_KEYDOWN, OnAddrChanged)
-		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnListClicked)
-		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnListClicked)
-		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
-		NOTIFY_HANDLER_EX(IDC_CMD_REGTABS, TCN_SELCHANGE, OnRegisterTabChange)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
+		MESSAGE_HANDLER(WM_SIZING, OnSizing)
+		MESSAGE_HANDLER(WM_GETMINMAXINFO, OnGetMinMaxInfo)
 		MESSAGE_HANDLER(WM_MOUSEWHEEL, OnMouseWheel)
+		MESSAGE_HANDLER(WM_VSCROLL, OnScroll)
+		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
+		COMMAND_HANDLER(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
+		COMMAND_CODE_HANDLER(LBN_DBLCLK, OnListBoxClicked)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnCommandListClicked)
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListClicked)
+		NOTIFY_HANDLER_EX(IDC_REG_TABS, TCN_SELCHANGE, OnRegisterTabChange)
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
 		CHAIN_MSG_MAP_MEMBER(m_CommandList)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()

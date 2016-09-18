@@ -11,7 +11,7 @@
 
 #include "stdafx.h"
 #include "InterpreterCPU.h"
-#include "InterpreterDBG.h"
+#include "InterpreterDebug.h"
 
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/N64Class.h>
@@ -478,11 +478,11 @@ void CInterpreterCPU::PauseOnBreakpoint()
 		
 	// PC breakpoints
 
-	if (CInterpreterDBG::m_nEBP > 0)
+	if (CInterpreterDebug::m_nEBP > 0)
 	{
-		if (CInterpreterDBG::EBPExists(PROGRAM_COUNTER))
+		if (CInterpreterDebug::EBPExists(PROGRAM_COUNTER))
 		{
-			CInterpreterDBG::Pause(PROGRAM_COUNTER);
+			CInterpreterDebug::Pause(PROGRAM_COUNTER);
 			return;
 		}
 	}
@@ -491,42 +491,40 @@ void CInterpreterCPU::PauseOnBreakpoint()
 
 	uint32_t op = R4300iOp::m_Opcode.op;
 
-	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE)
+	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Read and write instructions
 	{
 		uint32_t memoryAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-		if (CInterpreterDBG::m_nRBP > 0 && (op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD)))
+
+		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // read instructions
 		{
-			if (CInterpreterDBG::RBPExists(memoryAddress))
+			if (CInterpreterDebug::RBPExists(memoryAddress))
 			{
-				CInterpreterDBG::Pause(PROGRAM_COUNTER);
+				CInterpreterDebug::Pause(PROGRAM_COUNTER);
 				return;
 			}
 		}
-		if (CInterpreterDBG::m_nWBP > 0)
+		else if (CInterpreterDebug::WBPExists(memoryAddress)) // write instructions
 		{
-			if (CInterpreterDBG::WBPExists(memoryAddress))
-			{
-				CInterpreterDBG::Pause(PROGRAM_COUNTER);
-				return;
-			}
+			CInterpreterDebug::Pause(PROGRAM_COUNTER);
+			return;
 		}
 	}
 
-	if (!CInterpreterDBG::isDebugging())
+	if (!CInterpreterDebug::isDebugging())
 	{
 		return;
 	}
 
 	if (R4300iOp::m_NextInstruction != JUMP)
 	{
-		CInterpreterDBG::Pause(PROGRAM_COUNTER);
+		CInterpreterDebug::Pause(PROGRAM_COUNTER);
 		return;
 	}
 
 	if (JumpToLocation == PROGRAM_COUNTER + 4)
 	{
 		// Only pause on delay slots when branch isn't taken
-		CInterpreterDBG::Pause(PROGRAM_COUNTER);
+		CInterpreterDebug::Pause(PROGRAM_COUNTER);
 		return;
 	}
 }

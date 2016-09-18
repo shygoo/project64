@@ -14,14 +14,58 @@
 
 #include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
-#include <Project64-core/N64System/Interpreter/InterpreterDBG.h>
+#include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
 
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static bool registersUpdating = FALSE;
 
-const int CDebugCommandsView::listLength = 36;
+//const int CDebugCommandsView::listLength = 48;
+
+DWORD CDebugCommandsView::GPREditIds[32] = {
+	IDC_R0_EDIT,  IDC_R1_EDIT,  IDC_R2_EDIT,  IDC_R3_EDIT,
+	IDC_R4_EDIT,  IDC_R5_EDIT,  IDC_R6_EDIT,  IDC_R7_EDIT,
+	IDC_R8_EDIT,  IDC_R9_EDIT,  IDC_R10_EDIT, IDC_R11_EDIT,
+	IDC_R12_EDIT, IDC_R13_EDIT, IDC_R14_EDIT, IDC_R15_EDIT,
+	IDC_R16_EDIT, IDC_R17_EDIT, IDC_R18_EDIT, IDC_R19_EDIT,
+	IDC_R20_EDIT, IDC_R21_EDIT, IDC_R22_EDIT, IDC_R23_EDIT,
+	IDC_R24_EDIT, IDC_R25_EDIT, IDC_R26_EDIT, IDC_R27_EDIT,
+	IDC_R28_EDIT, IDC_R29_EDIT, IDC_R30_EDIT, IDC_R31_EDIT
+};
+
+DWORD CDebugCommandsView::FPREditIds[32] = {
+	IDC_F0_EDIT,  IDC_F1_EDIT,  IDC_F2_EDIT,  IDC_F3_EDIT,
+	IDC_F4_EDIT,  IDC_F5_EDIT,  IDC_F6_EDIT,  IDC_F7_EDIT,
+	IDC_F8_EDIT,  IDC_F9_EDIT,  IDC_F10_EDIT, IDC_F11_EDIT,
+	IDC_F12_EDIT, IDC_F13_EDIT, IDC_F14_EDIT, IDC_F15_EDIT,
+	IDC_F16_EDIT, IDC_F17_EDIT, IDC_F18_EDIT, IDC_F19_EDIT,
+	IDC_F20_EDIT, IDC_F21_EDIT, IDC_F22_EDIT, IDC_F23_EDIT,
+	IDC_F24_EDIT, IDC_F25_EDIT, IDC_F26_EDIT, IDC_F27_EDIT,
+	IDC_F28_EDIT, IDC_F29_EDIT, IDC_F30_EDIT, IDC_F31_EDIT
+};
+
+int CDebugCommandsView::MapGPREdit(DWORD controlId) {
+	for (int i = 0; i < 32; i++)
+	{
+		if (GPREditIds[i] == controlId)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+int CDebugCommandsView::MapFPREdit(DWORD controlId) {
+	for (int i = 0; i < 32; i++)
+	{
+		if (FPREditIds[i] == controlId)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
 
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
@@ -36,78 +80,77 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+	m_CommandListRows = 48;
+
 	CheckCPUType();
+	
+	GetWindowRect(&m_DefaultWindowRect);
 
 	// Setup address input
 
-	m_EditAddress.Attach(GetDlgItem(IDC_CMD_ADDR));
-	m_EditAddress.SetLimitText(8);
+	m_AddressEdit.Attach(GetDlgItem(IDC_ADDR_EDIT));
+	m_AddressEdit.SetDisplayType(CEditNumber::DisplayHex);
+	m_AddressEdit.SetLimitText(8);
 
-	char addrStr[9];
-	sprintf(addrStr, "%08X", m_StartAddress);
-	m_EditAddress.SetWindowText(addrStr);
+	m_AddressEdit.SetValue(m_StartAddress, false, true);
 
 	// Setup register tabs & inputs
 
-	m_RegisterTabs.Attach(GetDlgItem(IDC_CMD_REGTABS));
+	m_RegisterTabs.Attach(GetDlgItem(IDC_REG_TABS));
 
 	m_RegisterTabs.ResetTabs();
 
-	m_TabGPR = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
-	m_TabFPR = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
-
-	static int gprEditIds[32] = {
-		IDC_CMD_R0,  IDC_CMD_R1,  IDC_CMD_R2,  IDC_CMD_R3,
-		IDC_CMD_R4,  IDC_CMD_R5,  IDC_CMD_R6,  IDC_CMD_R7,
-		IDC_CMD_R8,  IDC_CMD_R9,  IDC_CMD_R10, IDC_CMD_R11,
-		IDC_CMD_R12, IDC_CMD_R13, IDC_CMD_R14, IDC_CMD_R15,
-		IDC_CMD_R16, IDC_CMD_R17, IDC_CMD_R18, IDC_CMD_R19,
-		IDC_CMD_R20, IDC_CMD_R21, IDC_CMD_R22, IDC_CMD_R23,
-		IDC_CMD_R24, IDC_CMD_R25, IDC_CMD_R26, IDC_CMD_R27,
-		IDC_CMD_R28, IDC_CMD_R29, IDC_CMD_R30, IDC_CMD_R31
-	};
-
-	static int fprEditIds[32] = {
-		IDC_CMD_F0,  IDC_CMD_F1,  IDC_CMD_F2,  IDC_CMD_F3,
-		IDC_CMD_F4,  IDC_CMD_F5,  IDC_CMD_F6,  IDC_CMD_F7,
-		IDC_CMD_F8,  IDC_CMD_F9,  IDC_CMD_F10, IDC_CMD_F11,
-		IDC_CMD_F12, IDC_CMD_F13, IDC_CMD_F14, IDC_CMD_F15,
-		IDC_CMD_F16, IDC_CMD_F17, IDC_CMD_F18, IDC_CMD_F19,
-		IDC_CMD_F20, IDC_CMD_F21, IDC_CMD_F22, IDC_CMD_F23,
-		IDC_CMD_F24, IDC_CMD_F25, IDC_CMD_F26, IDC_CMD_F27,
-		IDC_CMD_F28, IDC_CMD_F29, IDC_CMD_F30, IDC_CMD_F31
-	};
+	m_GPRTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
+	m_FPRTab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
 
 	for (int i = 0; i < 32; i++)
 	{
-		m_EditGPRegisters[i].Attach(m_TabGPR.GetDlgItem(gprEditIds[i]));
-		m_EditGPRegisters[i].SetLimitText(8);
+		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
+		m_GPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
+		m_GPREdits[i].SetLimitText(8);
 
-		m_EditFPRegisters[i].Attach(m_TabFPR.GetDlgItem(fprEditIds[i]));
-		m_EditFPRegisters[i].SetLimitText(8);
+		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
+		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
+		m_FPREdits[i].SetLimitText(8);
 	}
 
-	m_EditGPRHI.Attach(m_TabGPR.GetDlgItem(IDC_CMD_RHI));
-	m_EditGPRLO.Attach(m_TabGPR.GetDlgItem(IDC_CMD_RLO));
+	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
+	m_HIEdit.SetDisplayType(CEditNumber::DisplayHex);
+	m_HIEdit.SetLimitText(8);
+
+	m_LOEdit.Attach(m_GPRTab.GetDlgItem(IDC_LO_EDIT));
+	m_LOEdit.SetDisplayType(CEditNumber::DisplayHex);
+	m_LOEdit.SetLimitText(8);
 
 	RefreshRegisterEdits();
 
 	// Setup breakpoint list
 
-	m_BreakpointList.Attach(GetDlgItem(IDC_CMD_BPLIST));
+	m_BreakpointList.Attach(GetDlgItem(IDC_BP_LIST));
+	m_BreakpointList.ModifyStyle(NULL, LBS_NOTIFY);
 	RefreshBreakpointList();
 
-	// Setup command list
+	// Setup list scrollbar
 
+	m_Scrollbar.Attach(GetDlgItem(IDC_SCRL_BAR));
+	m_Scrollbar.SetScrollRange(0, 100, FALSE);
+	m_Scrollbar.SetScrollPos(50, TRUE);
+	//m_Scrollbar.GetScrollInfo(); // todo bigger thumb size
+	//m_Scrollbar.SetScrollInfo();
+
+	// Setup command list
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
+
+
+	m_CommandList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
+	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 	m_CommandList.AddColumn("Address", 0);
 	m_CommandList.AddColumn("Command", 1);
 	m_CommandList.AddColumn("Parameters", 2);
 	m_CommandList.SetColumnWidth(0, 60);
 	m_CommandList.SetColumnWidth(1, 60);
-	m_CommandList.SetColumnWidth(2, 120);
-	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-
+	m_CommandList.SetColumnWidth(2, 140);
+	
 	ShowAddress(m_StartAddress, TRUE);
 
 	WindowCreated();
@@ -117,6 +160,16 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 LRESULT CDebugCommandsView::OnDestroy(void)
 {
 	return 0;
+}
+
+LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
+{
+	// Allow only vertical resizing
+	MINMAXINFO* minMax = (MINMAXINFO*)lParam;
+	minMax->ptMinTrackSize.x = m_DefaultWindowRect.Width();
+	minMax->ptMaxTrackSize.x = m_DefaultWindowRect.Width();
+	minMax->ptMinTrackSize.y = m_DefaultWindowRect.Height();
+	return FALSE;
 }
 
 void CDebugCommandsView::CheckCPUType()
@@ -134,9 +187,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	{
 		return;
 	}
-
+	
 	// if top == false, change start address only if address is out of view
-	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (listLength-1) * 4)
+	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (m_CommandListRows-1) * 4)
 	{
 		m_StartAddress = address;
 	}
@@ -146,7 +199,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 	char addrStr[9];
 
-	for (int i = 0; i < listLength; i++)
+	for (int i = 0; i < m_CommandListRows; i++)
 	{	
 		sprintf(addrStr, "%08X", m_StartAddress + i * 4);
 		
@@ -186,19 +239,21 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		char regText[9];
 		for (int i = 0; i < 32; i++)
 		{
-			// todo red labels when sign extension set
-			sprintf(regText, "%08X", g_Reg->m_GPR[i].UW[0]);
-			m_EditGPRegisters[i].SetWindowTextA(regText);
-
-			sprintf(regText, "%08X", g_Reg->m_FPR[i].UW[0]);
-			m_EditFPRegisters[i].SetWindowTextA(regText);
+			m_GPREdits[i].SetValue(g_Reg->m_GPR[i].UW[0], false, true);
+			m_FPREdits[i].SetValue(g_Reg->m_FPR[i].UW[0], false, true);
 		}
-
-		sprintf(regText, "%08X", g_Reg->m_HI.UW[0]);
-		m_EditGPRHI.SetWindowTextA(regText);
-		
-		sprintf(regText, "%08X", g_Reg->m_LO.UW[0]);
-		m_EditGPRLO.SetWindowTextA(regText);
+		m_HIEdit.SetValue(g_Reg->m_HI.UW[0], false, true);
+		m_LOEdit.SetValue(g_Reg->m_LO.UW[0], false, true);
+	}
+	else
+	{
+		for (int i = 0; i < 32; i++)
+		{
+			m_GPREdits[i].SetWindowTextA("00000000");
+			m_FPREdits[i].SetWindowTextA("00000000");
+		}
+		m_HIEdit.SetWindowTextA("00000000");
+		m_LOEdit.SetWindowTextA("00000000");
 	}
 	registersUpdating = FALSE;
 }
@@ -207,23 +262,23 @@ void CDebugCommandsView::RefreshBreakpointList()
 {
 	m_BreakpointList.ResetContent();
 	char rowStr[16];
-	for (int i = 0; i < CInterpreterDBG::m_nRBP; i++)
+	for (int i = 0; i < CInterpreterDebug::m_nRBP; i++)
 	{
-		sprintf(rowStr, "R %08X", CInterpreterDBG::m_RBP[i]);
+		sprintf(rowStr, "R %08X", CInterpreterDebug::m_RBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_RBP[i]);
+		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_RBP[i]);
 	}
-	for (int i = 0; i < CInterpreterDBG::m_nWBP; i++)
+	for (int i = 0; i < CInterpreterDebug::m_nWBP; i++)
 	{
-		sprintf(rowStr, "W %08X", CInterpreterDBG::m_WBP[i]);
+		sprintf(rowStr, "W %08X", CInterpreterDebug::m_WBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_WBP[i]);
+		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_WBP[i]);
 	}
-	for (int i = 0; i < CInterpreterDBG::m_nEBP; i++)
+	for (int i = 0; i < CInterpreterDebug::m_nEBP; i++)
 	{
-		sprintf(rowStr, "E %08X", CInterpreterDBG::m_EBP[i]);
+		sprintf(rowStr, "E %08X", CInterpreterDebug::m_EBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDBG::m_EBP[i]);
+		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_EBP[i]);
 	}
 }
 
@@ -240,23 +295,36 @@ void CDebugCommandsView::RemoveSelectedBreakpoints()
 		switch (itemText[0])
 		{
 		case 'E':
-			CInterpreterDBG::EBPRemove(address);
+			CInterpreterDebug::EBPRemove(address);
 			break;
 		case 'W':
-			CInterpreterDBG::WBPRemove(address);
+			CInterpreterDebug::WBPRemove(address);
 			break;
 		case 'R':
-			CInterpreterDBG::RBPRemove(address);
+			CInterpreterDebug::RBPRemove(address);
 			break;
 		}
 	}
 	RefreshBreakpointList();
 }
 
+LRESULT	CDebugCommandsView::OnMeasureItem(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	// Set command list row height to 13px
+	if(wParam == IDC_CMD_LIST)
+	{
+		MEASUREITEMSTRUCT* lpMeasureItem = (MEASUREITEMSTRUCT*)lParam;
+		lpMeasureItem->itemHeight = 13;
+	}
+	return FALSE;
+}
+
+
 LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 {
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
 	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
+
 	if (drawStage == CDDS_PREPAINT)
 	{
 		return CDRF_NOTIFYITEMDRAW;
@@ -275,15 +343,15 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 
 		if (nSubItem == 0) // addr
 		{
-			if (CInterpreterDBG::EBPExists(address))
+			if (CInterpreterDebug::EBPExists(address))
 			{
 				// breakpoint
 				pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
-				pLVCD->clrText = (pc == address) ?
+				pLVCD->clrText = (address == pc) ?
 					RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
 					RGB(0xFF, 0xCC, 0xCC);
 			}
-			else if (pc == address)
+			else if (address == pc)
 			{
 				// pc
 				pLVCD->clrTextBk = RGB(0x88, 0x88, 0x88);
@@ -319,8 +387,8 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 				if ((short)Opcode.immediate < 0) // alloc
 				{
 					// sky blue bg, dark blue fg
-					pLVCD->clrTextBk = RGB(0xDD, 0xDD, 0xFF);
-					pLVCD->clrText = RGB(0x00, 0x00, 0x44);
+					pLVCD->clrTextBk = RGB(0xCC, 0xDD, 0xFF);
+					pLVCD->clrText = RGB(0x00, 0x11, 0x44);
 				}
 				else // free
 				{
@@ -335,11 +403,11 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
 				pLVCD->clrText = RGB(0x88, 0x88, 0x88);
 			}
-			else if (nSubItem == 1 && (Opcode.op == R4300i_J || Opcode.op == R4300i_JAL || (Opcode.op == 0 && Opcode.funct == R4300i_SPECIAL_JR)))
+			else if (Opcode.op == R4300i_J || Opcode.op == R4300i_JAL || (Opcode.op == 0 && Opcode.funct == R4300i_SPECIAL_JR))
 			{
 				// jumps
-				pLVCD->clrText = RGB(0x00, 0x88, 0x00);
-				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+				pLVCD->clrText = RGB(0x00, 0x66, 0x00);
+				pLVCD->clrTextBk = RGB(0xF5, 0xFF, 0xF5);
 			}
 			else
 			{
@@ -355,25 +423,25 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 {
 	switch (wID)
 	{
-	case IDC_CMD_BTN_GO:
-		CInterpreterDBG::StopDebugging();
-		CInterpreterDBG::Resume();
+	case IDC_GO_BTN:
+		CInterpreterDebug::StopDebugging();
+		CInterpreterDebug::Resume();
 		break;
-	case IDC_CMD_BTN_STEP:
-		CInterpreterDBG::KeepDebugging();
-		CInterpreterDBG::Resume();
+	case IDC_STEP_BTN:
+		CInterpreterDebug::KeepDebugging();
+		CInterpreterDebug::Resume();
 		break;
-	case IDC_CMD_BTN_BPCLEAR:
-		CInterpreterDBG::BPClear();
+	case IDC_CLEARBP_BTN:
+		CInterpreterDebug::BPClear();
 		RefreshBreakpointList();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
-	case IDC_CMD_ADDBP:
+	case IDC_ADDBP_BTN:
 		m_AddBreakpointDlg.DoModal();
 		RefreshBreakpointList();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
-	case IDC_CMD_RMBP:
+	case IDC_RMBP_BTN:
 		RemoveSelectedBreakpoints();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
@@ -395,12 +463,7 @@ LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*
 
 	m_StartAddress = newAddress;
 
-	ShowAddress(m_StartAddress, TRUE);
-
-	char addrStr[9];
-	sprintf(addrStr, "%08X", m_StartAddress);
-	
-	m_EditAddress.SetWindowTextA(addrStr);
+	m_AddressEdit.SetValue(m_StartAddress, false, true);
 
 	return TRUE;
 }
@@ -409,7 +472,7 @@ void CDebugCommandsView::GotoEnteredAddress()
 {
 	char text[9];
 
-	m_EditAddress.GetWindowTextA(text, 9);
+	m_AddressEdit.GetWindowTextA(text, 9);
 
 	DWORD address = strtoul(text, NULL, 16);
 	address &= 0x007FFFFF;
@@ -424,28 +487,110 @@ LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 	return 0;
 }
 
-LRESULT	CDebugCommandsView::OnListClicked(NMHDR* pNMHDR)
+LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
 {
+	// Set PC breakpoint (right click, double click)
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
-
+	
 	uint32_t address = m_StartAddress + nItem * 4;
-
-	if (CInterpreterDBG::EBPExists(address))
+	if (CInterpreterDebug::EBPExists(address))
 	{
-		CInterpreterDBG::EBPRemove(address);
+		CInterpreterDebug::EBPRemove(address);
 	}
 	else
 	{
-		CInterpreterDBG::EBPAdd(address);
+		CInterpreterDebug::EBPAdd(address);
 	}
-
-	// cancel blue highlight
-	m_EditAddress.SetFocus();
-
+	// Cancel blue highlight
+	m_AddressEdit.SetFocus();
 	RefreshBreakpointList();
 
 	return CDRF_DODEFAULT;
+}
+
+LRESULT CDebugCommandsView::OnListBoxClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+{
+	if (wID == IDC_BP_LIST)
+	{
+		int index = m_BreakpointList.GetCaretIndex();
+		uint32_t address = m_BreakpointList.GetItemData(index);
+		ShowAddress(address, TRUE);
+	}
+	return FALSE;
+}
+
+LRESULT CDebugCommandsView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	WORD type = LOWORD(wParam);
+
+	if (type == WA_INACTIVE)
+	{
+		return FALSE;
+	}
+
+	if (type == WA_CLICKACTIVE)
+	{
+		CheckCPUType();
+	}
+
+	ShowAddress(m_StartAddress, TRUE);
+
+	return FALSE;
+}
+
+LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (wParam == WMSZ_BOTTOM)
+	{
+		//CRect rect = *(CRect*)lParam;
+		//AdjustWindowRect(&rect, GetWindowLong(GWL_STYLE), FALSE);
+		//ScreenToClient(&rect);
+		CRect rect;
+		GetClientRect(&rect);
+		int height = rect.Height();
+
+		CRect scrollbarRect;
+		CRect listRect;
+
+		m_CommandList.GetClientRect(&listRect);
+		m_CommandList.ResizeClient(listRect.Width(), height);
+	
+		m_Scrollbar.GetClientRect(&scrollbarRect);
+		m_Scrollbar.ResizeClient(scrollbarRect.Width(), height);
+
+		int rows = height / 13 - 2; // 13 row height
+
+		if (m_CommandListRows != rows)
+		{
+			m_CommandListRows = rows;
+			ShowAddress(m_StartAddress, TRUE);
+		}
+	}
+	return FALSE;
+}
+
+LRESULT CDebugCommandsView::OnScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	WORD type = LOWORD(wParam);
+
+	switch(type)
+	{
+	case SB_LINEUP:
+		ShowAddress(m_StartAddress - 8, TRUE);
+		break;
+	case SB_LINEDOWN:
+		ShowAddress(m_StartAddress + 8, TRUE);
+		break;
+	case SB_THUMBTRACK:
+		{
+			//int scrollPos = HIWORD(wParam);
+			//ShowAddress(m_StartAddress + (scrollPos - 50) * 4, TRUE);
+		}
+		break;
+	}
+
+	return FALSE;
 }
 
 // Add breakpoint dialog
@@ -457,24 +602,24 @@ LRESULT CAddBreakpointDlg::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL&
 	case IDOK:
 		{
 			char addrStr[9];
-			GetDlgItemText(IDC_ABP_ADDR, addrStr, 9);
+			GetDlgItemText(IDC_ADDR_EDIT, addrStr, 9);
 			uint32_t address = strtoul(addrStr, NULL, 16);
 
-			int read = ((CButton)GetDlgItem(IDC_ABP_CHK_READ)).GetCheck();
-			int write = ((CButton)GetDlgItem(IDC_ABP_CHK_WRITE)).GetCheck();
-			int exec = ((CButton)GetDlgItem(IDC_ABP_CHK_EXEC)).GetCheck();
+			int read = ((CButton)GetDlgItem(IDC_CHK_READ)).GetCheck();
+			int write = ((CButton)GetDlgItem(IDC_CHK_WRITE)).GetCheck();
+			int exec = ((CButton)GetDlgItem(IDC_CHK_EXEC)).GetCheck();
 
 			if (read)
 			{
-				CInterpreterDBG::RBPAdd(address);
+				CInterpreterDebug::RBPAdd(address);
 			}
 			if (write)
 			{
-				CInterpreterDBG::WBPAdd(address);
+				CInterpreterDebug::WBPAdd(address);
 			}
 			if (exec)
 			{
-				CInterpreterDBG::EBPAdd(address);
+				CInterpreterDebug::EBPAdd(address);
 			}
 			EndDialog(0);
 			break;
@@ -499,80 +644,97 @@ void CRegisterTabs::ResetTabs()
 
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+
 	if (msg == WM_INITDIALOG)
 	{
 		return TRUE;
 	}
-	if (registersUpdating || !CInterpreterDBG::m_Debugging)
-	{
-		return FALSE;
-	}
-	if (msg != WM_COMMAND || HIWORD(wParam) != EN_CHANGE)
-	{
-		return FALSE;
-	}
-
-	int controlId = LOWORD(wParam);
-
-	int nReg = -1;
-
-	switch (controlId)
-	{
-	//case IDC_CMD_R0:  nReg = 0; break;
-	case IDC_CMD_R1:  nReg = 1; break;
-	case IDC_CMD_R2:  nReg = 2; break;
-	case IDC_CMD_R3:  nReg = 3; break;
-	case IDC_CMD_R4:  nReg = 4; break;
-	case IDC_CMD_R5:  nReg = 5; break;
-	case IDC_CMD_R6:  nReg = 6; break;
-	case IDC_CMD_R7:  nReg = 7; break;
-	case IDC_CMD_R8:  nReg = 8; break;
-	case IDC_CMD_R9:  nReg = 9; break;
-	case IDC_CMD_R10: nReg = 10; break;
-	case IDC_CMD_R11: nReg = 11; break;
-	case IDC_CMD_R12: nReg = 12; break;
-	case IDC_CMD_R13: nReg = 13; break;
-	case IDC_CMD_R14: nReg = 14; break;
-	case IDC_CMD_R15: nReg = 15; break;
-	case IDC_CMD_R16: nReg = 16; break;
-	case IDC_CMD_R17: nReg = 17; break;
-	case IDC_CMD_R18: nReg = 18; break;
-	case IDC_CMD_R19: nReg = 19; break;
-	case IDC_CMD_R20: nReg = 20; break;
-	case IDC_CMD_R21: nReg = 21; break;
-	case IDC_CMD_R22: nReg = 22; break;
-	case IDC_CMD_R23: nReg = 23; break;
-	case IDC_CMD_R24: nReg = 24; break;
-	case IDC_CMD_R25: nReg = 25; break;
-	case IDC_CMD_R26: nReg = 26; break;
-	case IDC_CMD_R27: nReg = 27; break;
-	case IDC_CMD_R28: nReg = 28; break;
-	case IDC_CMD_R29: nReg = 29; break;
-	case IDC_CMD_R30: nReg = 30; break;
-	case IDC_CMD_R31: nReg = 31; break;
-	}
 	
-	if (g_Reg != NULL)
+	/*
+	if (msg == WM_CTLCOLOREDIT)
 	{
+		if (g_Reg == NULL)
+		{
+			return FALSE;
+		}
+
+		HDC hdc = (HDC)wParam;
+		
+		int controlId = GetDlgCtrlID((HWND)lParam);
+		int regNum = CDebugCommandsView::MapGPREdit(controlId);
+		
+		BOOL signExt = g_Reg->m_GPR[regNum].DW < 0;
+
+		SetTextColor(hdc, signExt ? RGB(255, 0, 0) : RGB(0, 0, 0));
+		
+		SetBkColor(hdc, RGB(255,255,255));
+
+		//MessageBox(NULL, "test", "test", MB_OK);
+
+		return (INT_PTR)CreateSolidBrush(RGB(255,255,255));
+	}*/
+
+	if (registersUpdating)
+	{
+		return FALSE;
+	}
+
+	if (msg != WM_COMMAND)
+	{
+		return FALSE;
+	}
+
+	WORD notification = HIWORD(wParam);
+
+	if (notification == EN_KILLFOCUS)
+	{
+		// reformat register textbox after it looses focus
+		registersUpdating = TRUE;
+		WORD controlID = LOWORD(wParam);
 		char regText[9];
-		CWindow edit = GetDlgItem(hDlg, controlId);
+		CWindow edit = GetDlgItem(hDlg, controlID);
 		edit.GetWindowTextA(regText, 9);
 		uint32_t value = strtoul(regText, NULL, 16);
-
-		if (nReg > 0)
-		{
-			g_Reg->m_GPR[nReg].UW[0] = value;
-		}
-		else if (controlId == IDC_CMD_RHI)
-		{
-			g_Reg->m_HI.UW[0] = value;
-		}
-		else if (controlId == IDC_CMD_RLO)
-		{
-			g_Reg->m_LO.UW[0] = value;
-		}
+		sprintf(regText, "%08X", value);
+		edit.SetWindowTextA(regText);
+		registersUpdating = FALSE;
+		return FALSE;
 	}
 
+	if (!CInterpreterDebug::m_Debugging)
+	{
+		return FALSE;
+	}
+
+	if (notification == EN_CHANGE)
+	{
+		int controlId = LOWORD(wParam);
+
+		int nReg = CDebugCommandsView::MapGPREdit(controlId);
+
+		
+		if (g_Reg != NULL)
+		{
+			char regText[9];
+			CWindow edit = GetDlgItem(hDlg, controlId);
+			edit.GetWindowTextA(regText, 9);
+			uint32_t value = strtoul(regText, NULL, 16);
+
+			if (nReg > 0)
+			{
+				g_Reg->m_GPR[nReg].UW[0] = value;
+			}
+			else if (controlId == IDC_HI_EDIT)
+			{
+				g_Reg->m_HI.UW[0] = value;
+			}
+			else if (controlId == IDC_LO_EDIT)
+			{
+				g_Reg->m_LO.UW[0] = value;
+			}
+		}
+	}
+	
 	return FALSE;
 }
 
@@ -582,62 +744,49 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	{
 		return TRUE;
 	}
-	if (registersUpdating || !CInterpreterDBG::m_Debugging)
+	if (registersUpdating)
 	{
 		return FALSE;
 	}
-	if (msg != WM_COMMAND || HIWORD(wParam) != EN_CHANGE)
+	if (msg != WM_COMMAND)
+	{
+		return FALSE;
+	}
+
+	WORD notification = HIWORD(wParam);
+
+	if (notification == EN_KILLFOCUS)
+	{
+		// reformat register textbox after it looses focus
+		registersUpdating = TRUE;
+		WORD controlID = LOWORD(wParam);
+		char regText[9];
+		CWindow edit = GetDlgItem(hDlg, controlID);
+		edit.GetWindowTextA(regText, 9);
+		uint32_t value = strtoul(regText, NULL, 16);
+		sprintf(regText, "%08X", value);
+		edit.SetWindowTextA(regText);
+		registersUpdating = FALSE;
+		return FALSE;
+	}
+
+	if (!CInterpreterDebug::m_Debugging)
 	{
 		return FALSE;
 	}
 	
-	int controlId = LOWORD(wParam);
-
-	int nReg = -1;
-
-	switch (controlId)
+	if (notification == EN_CHANGE)
 	{
-	case IDC_CMD_F0:  nReg = 0; break;
-	case IDC_CMD_F1:  nReg = 1; break;
-	case IDC_CMD_F2:  nReg = 2; break;
-	case IDC_CMD_F3:  nReg = 3; break;
-	case IDC_CMD_F4:  nReg = 4; break;
-	case IDC_CMD_F5:  nReg = 5; break;
-	case IDC_CMD_F6:  nReg = 6; break;
-	case IDC_CMD_F7:  nReg = 7; break;
-	case IDC_CMD_F8:  nReg = 8; break;
-	case IDC_CMD_F9:  nReg = 9; break;
-	case IDC_CMD_F10: nReg = 10; break;
-	case IDC_CMD_F11: nReg = 11; break;
-	case IDC_CMD_F12: nReg = 12; break;
-	case IDC_CMD_F13: nReg = 13; break;
-	case IDC_CMD_F14: nReg = 14; break;
-	case IDC_CMD_F15: nReg = 15; break;
-	case IDC_CMD_F16: nReg = 16; break;
-	case IDC_CMD_F17: nReg = 17; break;
-	case IDC_CMD_F18: nReg = 18; break;
-	case IDC_CMD_F19: nReg = 19; break;
-	case IDC_CMD_F20: nReg = 20; break;
-	case IDC_CMD_F21: nReg = 21; break;
-	case IDC_CMD_F22: nReg = 22; break;
-	case IDC_CMD_F23: nReg = 23; break;
-	case IDC_CMD_F24: nReg = 24; break;
-	case IDC_CMD_F25: nReg = 25; break;
-	case IDC_CMD_F26: nReg = 26; break;
-	case IDC_CMD_F27: nReg = 27; break;
-	case IDC_CMD_F28: nReg = 28; break;
-	case IDC_CMD_F29: nReg = 29; break;
-	case IDC_CMD_F30: nReg = 30; break;
-	case IDC_CMD_F31: nReg = 31; break;
-	}
-
-	if (nReg > 0 && g_Reg != NULL)
-	{
-		char regText[9];
-		CWindow edit = GetDlgItem(hDlg, controlId);
-		edit.GetWindowTextA(regText, 9);
-		uint32_t value = strtoul(regText, NULL, 16);
-		g_Reg->m_FPR[nReg].UW[0] = value;
+		int controlId = LOWORD(wParam);
+		int nReg = CDebugCommandsView::MapFPREdit(controlId);
+		if (nReg > 0 && g_Reg != NULL)
+		{
+			char regText[9];
+			CWindow edit = GetDlgItem(hDlg, controlId);
+			edit.GetWindowTextA(regText, 9);
+			uint32_t value = strtoul(regText, NULL, 16);
+			g_Reg->m_FPR[nReg].UW[0] = value;
+		}
 	}
 
 	return FALSE;
