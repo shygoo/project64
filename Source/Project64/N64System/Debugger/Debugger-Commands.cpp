@@ -80,6 +80,9 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+	m_TestEdit.Attach(GetDlgItem(IDC_EDIT1));
+	//regEdit.Attach(GetDlgItem(IDC_EDIT1));
+
 	m_CommandListRows = 48;
 
 	CheckCPUType();
@@ -106,8 +109,8 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	for (int i = 0; i < 32; i++)
 	{
 		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
-		m_GPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
-		m_GPREdits[i].SetLimitText(8);
+		m_GPREdits[i].SetDisplayType(CEditNumber::DisplayHex64);
+		m_GPREdits[i].SetLimitText(16);
 
 		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
 		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
@@ -239,17 +242,17 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		char regText[9];
 		for (int i = 0; i < 32; i++)
 		{
-			m_GPREdits[i].SetValue(g_Reg->m_GPR[i].UW[0], false, true);
+			m_GPREdits[i].SetValue64(g_Reg->m_GPR[i].UDW, false, true);
 			m_FPREdits[i].SetValue(g_Reg->m_FPR[i].UW[0], false, true);
 		}
-		m_HIEdit.SetValue(g_Reg->m_HI.UW[0], false, true);
-		m_LOEdit.SetValue(g_Reg->m_LO.UW[0], false, true);
+		m_HIEdit.SetValue64(g_Reg->m_HI.UDW, false, true);
+		m_LOEdit.SetValue64(g_Reg->m_LO.UDW, false, true);
 	}
 	else
 	{
 		for (int i = 0; i < 32; i++)
 		{
-			m_GPREdits[i].SetWindowTextA("00000000");
+			m_GPREdits[i].SetWindowTextA("0000000000000000");
 			m_FPREdits[i].SetWindowTextA("00000000");
 		}
 		m_HIEdit.SetWindowTextA("00000000");
@@ -691,11 +694,11 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		// reformat register textbox after it looses focus
 		registersUpdating = TRUE;
 		WORD controlID = LOWORD(wParam);
-		char regText[9];
+		char regText[17];
 		CWindow edit = GetDlgItem(hDlg, controlID);
-		edit.GetWindowTextA(regText, 9);
-		uint32_t value = strtoul(regText, NULL, 16);
-		sprintf(regText, "%08X", value);
+		edit.GetWindowTextA(regText, 17);
+		uint64_t value = strtoull(regText, NULL, 16);
+		sprintf(regText, "%016llX", value);
 		edit.SetWindowTextA(regText);
 		registersUpdating = FALSE;
 		return FALSE;
@@ -722,7 +725,7 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 
 			if (nReg > 0)
 			{
-				g_Reg->m_GPR[nReg].UW[0] = value;
+				g_Reg->m_GPR[nReg].UDW = value;
 			}
 			else if (controlId == IDC_HI_EDIT)
 			{

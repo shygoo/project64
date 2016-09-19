@@ -275,6 +275,7 @@
 #define IDC_MAXROMDIR_TXT               1113
 #define IDC_TEXTBOX6                    1113
 #define IDC_CMD_LIST                    1113
+#define IDC_R0_EDIT2                    1113
 #define IDC_ROMSEL_TEXT4                1114
 #define IDC_TEXTBOX7                    1114
 #define IDC_R1_EDIT                     1114

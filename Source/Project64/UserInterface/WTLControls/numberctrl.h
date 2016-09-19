@@ -19,6 +19,7 @@ class CEditNumber :
 public:
 	enum DisplayType {
 		DisplayHex,
+		DisplayHex64,
 		DisplayDec,
 	};
 
@@ -197,6 +198,14 @@ protected:
 					MaxLen += 2;
 				}
 			}
+			else if (m_DisplayType == DisplayHex64)
+			{
+				MaxLen = 16;
+				if (second == 'x' || second == 'X')
+				{
+					MaxLen += 2;
+				}
+			}
 			int c=(int)wParam;
 			if (wParam < 32)
 			{
@@ -347,4 +356,18 @@ public:
 		}
 		SetWindowText(text);
 	}
+
+	void SetValue64(uint64_t Value, bool ShowHexIdent = true, bool ZeroExtend = false)
+	{
+		char text[200];
+		if (m_DisplayType == DisplayDec)
+		{
+			sprintf(text, "%ll", Value);
+		}
+		else {
+			sprintf(text, "%s%0*llX", ShowHexIdent ? "0x" : "", ZeroExtend ? 16 : 0, Value);
+		}
+		SetWindowText(text);
+	}
+
 };

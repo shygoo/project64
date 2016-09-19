@@ -13,6 +13,75 @@
 
 #include <Project64/UserInterface/resource.h>
 
+class CEditReg64 : public CWindowImpl<CEditReg64, CEdit>
+{
+
+public:
+	uint64_t GetValue();
+	void SetValue(uint64_t value);
+
+	BOOL Attach(HWND hWndNew)
+	{
+		return SubclassWindow(hWndNew);
+	}
+
+	LRESULT OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+		char charCode = wParam;
+
+		if (!isxdigit(charCode) && charCode != ':')
+		{
+			if (!isalnum(charCode))
+			{
+				goto unhandled;
+			}
+			goto canceled;
+		}
+
+		if (!isupper(charCode))
+		{
+			SendMessage(uMsg, toupper(wParam), lParam);
+			goto canceled;
+		}
+
+		char text[18];
+		GetWindowText(text, 18);
+		int textLen = strlen(text);
+
+		if (textLen >= 17)
+		{
+			goto canceled;
+		}
+
+		if (charCode == ':' && strchr(text, ':') != NULL)
+		{
+			goto canceled;
+		}
+
+	unhandled:
+		bHandled = FALSE;
+		return 0;
+
+	canceled:
+		bHandled = TRUE;
+		return 0;
+	}
+
+	LRESULT OnLostFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+		char text[18];
+		GetWindowText(text, 18);
+		MessageBox(text, text);
+		return 0;
+	}
+
+	BEGIN_MSG_MAP_EX(CRegEdit64)
+		//MESSAGE_HANDLER(WM_KEYDOWN, OnChar)
+		MESSAGE_HANDLER(WM_CHAR, OnChar)
+		MESSAGE_HANDLER(WM_KILLFOCUS, OnLostFocus)
+	END_MSG_MAP()
+};
+
 class CAddBreakpointDlg : public CDialogImpl<CAddBreakpointDlg>
 {
 public:
@@ -25,6 +94,8 @@ private:
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 	
+	
+
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
 	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -68,6 +139,8 @@ public:
 	static int MapFPREdit(DWORD controlId);
 
 private:
+
+	CEditReg64 m_TestEdit;
 
 	DWORD m_StartAddress;
 	CRect m_DefaultWindowRect;
