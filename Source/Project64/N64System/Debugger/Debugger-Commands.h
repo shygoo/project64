@@ -12,71 +12,24 @@
 #pragma once
 
 #include <Project64/UserInterface/resource.h>
+#include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
 
 class CEditReg64 : public CWindowImpl<CEditReg64, CEdit>
 {
 
 public:
+	//uint64_t GetValue();
+	//void SetValue(uint64_t value);
+
+	static uint64_t ParseValue(char* wordPair);
+	BOOL Attach(HWND hWndNew);
+	LRESULT OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnLostFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	uint64_t GetValue();
+	void SetValue(uint32_t h, uint32_t l);
 	void SetValue(uint64_t value);
 
-	BOOL Attach(HWND hWndNew)
-	{
-		return SubclassWindow(hWndNew);
-	}
-
-	LRESULT OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-		char charCode = wParam;
-
-		if (!isxdigit(charCode) && charCode != ':')
-		{
-			if (!isalnum(charCode))
-			{
-				goto unhandled;
-			}
-			goto canceled;
-		}
-
-		if (!isupper(charCode))
-		{
-			SendMessage(uMsg, toupper(wParam), lParam);
-			goto canceled;
-		}
-
-		char text[18];
-		GetWindowText(text, 18);
-		int textLen = strlen(text);
-
-		if (textLen >= 17)
-		{
-			goto canceled;
-		}
-
-		if (charCode == ':' && strchr(text, ':') != NULL)
-		{
-			goto canceled;
-		}
-
-	unhandled:
-		bHandled = FALSE;
-		return 0;
-
-	canceled:
-		bHandled = TRUE;
-		return 0;
-	}
-
-	LRESULT OnLostFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-		char text[18];
-		GetWindowText(text, 18);
-		MessageBox(text, text);
-		return 0;
-	}
-
 	BEGIN_MSG_MAP_EX(CRegEdit64)
-		//MESSAGE_HANDLER(WM_KEYDOWN, OnChar)
 		MESSAGE_HANDLER(WM_CHAR, OnChar)
 		MESSAGE_HANDLER(WM_KILLFOCUS, OnLostFocus)
 	END_MSG_MAP()
@@ -154,9 +107,9 @@ private:
 	CScrollBar m_Scrollbar;
 
 	CWindow m_GPRTab;
-	CEditNumber m_GPREdits[32];
-	CEditNumber m_HIEdit;
-	CEditNumber m_LOEdit;
+	CEditReg64 m_GPREdits[32];
+	CEditReg64 m_HIEdit;
+	CEditReg64 m_LOEdit;
 	
 	CWindow m_FPRTab;
 	CEditNumber m_FPREdits[32];

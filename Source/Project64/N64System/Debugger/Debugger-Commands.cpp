@@ -19,7 +19,7 @@
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static bool registersUpdating = FALSE;
+//static bool registersUpdating = FALSE;
 
 //const int CDebugCommandsView::listLength = 48;
 
@@ -109,21 +109,11 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	for (int i = 0; i < 32; i++)
 	{
 		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
-		m_GPREdits[i].SetDisplayType(CEditNumber::DisplayHex64);
-		m_GPREdits[i].SetLimitText(16);
-
 		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
-		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
-		m_FPREdits[i].SetLimitText(8);
 	}
 
 	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
-	m_HIEdit.SetDisplayType(CEditNumber::DisplayHex);
-	m_HIEdit.SetLimitText(8);
-
 	m_LOEdit.Attach(m_GPRTab.GetDlgItem(IDC_LO_EDIT));
-	m_LOEdit.SetDisplayType(CEditNumber::DisplayHex);
-	m_LOEdit.SetLimitText(8);
 
 	RefreshRegisterEdits();
 
@@ -237,28 +227,28 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 void CDebugCommandsView::RefreshRegisterEdits()
 {
-	registersUpdating = TRUE;
+	//registersUpdating = TRUE;
 	if (g_Reg != NULL) {
 		char regText[9];
 		for (int i = 0; i < 32; i++)
 		{
-			m_GPREdits[i].SetValue64(g_Reg->m_GPR[i].UDW, false, true);
+			m_GPREdits[i].SetValue(g_Reg->m_GPR[i].UDW);
 			m_FPREdits[i].SetValue(g_Reg->m_FPR[i].UW[0], false, true);
 		}
-		m_HIEdit.SetValue64(g_Reg->m_HI.UDW, false, true);
-		m_LOEdit.SetValue64(g_Reg->m_LO.UDW, false, true);
+		m_HIEdit.SetValue(g_Reg->m_HI.UDW);
+		m_LOEdit.SetValue(g_Reg->m_LO.UDW);
 	}
 	else
 	{
 		for (int i = 0; i < 32; i++)
 		{
-			m_GPREdits[i].SetWindowTextA("0000000000000000");
+			m_GPREdits[i].SetValue(0);
 			m_FPREdits[i].SetWindowTextA("00000000");
 		}
-		m_HIEdit.SetWindowTextA("00000000");
-		m_LOEdit.SetWindowTextA("00000000");
+		m_HIEdit.SetValue(0);
+		m_LOEdit.SetValue(0);
 	}
-	registersUpdating = FALSE;
+	//registersUpdating = FALSE;
 }
 
 void CDebugCommandsView::RefreshBreakpointList()
@@ -518,7 +508,19 @@ LRESULT CDebugCommandsView::OnListBoxClicked(WORD wNotifyCode, WORD wID, HWND hW
 	{
 		int index = m_BreakpointList.GetCaretIndex();
 		uint32_t address = m_BreakpointList.GetItemData(index);
-		ShowAddress(address, TRUE);
+		int len = m_BreakpointList.GetTextLen(index);
+		char* rowText = (char*)malloc(len + 1);
+		rowText[len] = '\0';
+		m_BreakpointList.GetText(index, rowText);
+		if (*rowText == 'E')
+		{
+			ShowAddress(address, true);
+		}
+		else
+		{
+			m_Debugger->Debug_ShowMemoryLocation(address, true);
+		}
+		free(rowText);
 	}
 	return FALSE;
 }
@@ -662,25 +664,17 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		}
 
 		HDC hdc = (HDC)wParam;
-		
-		int controlId = GetDlgCtrlID((HWND)lParam);
-		int regNum = CDebugCommandsView::MapGPREdit(controlId);
-		
-		BOOL signExt = g_Reg->m_GPR[regNum].DW < 0;
 
 		SetTextColor(hdc, signExt ? RGB(255, 0, 0) : RGB(0, 0, 0));
-		
 		SetBkColor(hdc, RGB(255,255,255));
-
-		//MessageBox(NULL, "test", "test", MB_OK);
 
 		return (INT_PTR)CreateSolidBrush(RGB(255,255,255));
 	}*/
 
-	if (registersUpdating)
+	/*if (registersUpdating)
 	{
 		return FALSE;
-	}
+	}*/
 
 	if (msg != WM_COMMAND)
 	{
@@ -688,56 +682,39 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	}
 
 	WORD notification = HIWORD(wParam);
-
+	
 	if (notification == EN_KILLFOCUS)
 	{
-		// reformat register textbox after it looses focus
-		registersUpdating = TRUE;
-		WORD controlID = LOWORD(wParam);
-		char regText[17];
-		CWindow edit = GetDlgItem(hDlg, controlID);
-		edit.GetWindowTextA(regText, 17);
-		uint64_t value = strtoull(regText, NULL, 16);
-		sprintf(regText, "%016llX", value);
-		edit.SetWindowTextA(regText);
-		registersUpdating = FALSE;
-		return FALSE;
-	}
-
-	if (!CInterpreterDebug::m_Debugging)
-	{
-		return FALSE;
-	}
-
-	if (notification == EN_CHANGE)
-	{
-		int controlId = LOWORD(wParam);
-
-		int nReg = CDebugCommandsView::MapGPREdit(controlId);
-
-		
-		if (g_Reg != NULL)
+		if (g_Reg == NULL || !CInterpreterDebug::isDebugging())
 		{
-			char regText[9];
-			CWindow edit = GetDlgItem(hDlg, controlId);
-			edit.GetWindowTextA(regText, 9);
-			uint32_t value = strtoul(regText, NULL, 16);
+			return FALSE;
+		}
+		
+		int ctrlId = LOWORD(wParam);
+		
+		// (if IDC_PC_EDIT here with early ret)
+		
+		HWND test = GetDlgItem(hDlg, ctrlId);
+		char text[20];
+		GetWindowText(test, text, 20);
 
-			if (nReg > 0)
-			{
-				g_Reg->m_GPR[nReg].UDW = value;
-			}
-			else if (controlId == IDC_HI_EDIT)
-			{
-				g_Reg->m_HI.UW[0] = value;
-			}
-			else if (controlId == IDC_LO_EDIT)
-			{
-				g_Reg->m_LO.UW[0] = value;
-			}
+		uint64_t value = CEditReg64::ParseValue(text);
+
+		if (ctrlId == IDC_HI_EDIT)
+		{
+			g_Reg->m_HI.UDW = value;
+		}
+		else if (ctrlId == IDC_LO_EDIT)
+		{
+			g_Reg->m_HI.UDW = value;
+		}
+		else
+		{
+			int nReg = CDebugCommandsView::MapGPREdit(ctrlId);
+			g_Reg->m_GPR[nReg].UDW = value;
 		}
 	}
-	
+
 	return FALSE;
 }
 
@@ -747,10 +724,10 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	{
 		return TRUE;
 	}
-	if (registersUpdating)
+	/*if (registersUpdating)
 	{
 		return FALSE;
-	}
+	}*/
 	if (msg != WM_COMMAND)
 	{
 		return FALSE;
@@ -761,7 +738,7 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	if (notification == EN_KILLFOCUS)
 	{
 		// reformat register textbox after it looses focus
-		registersUpdating = TRUE;
+		//registersUpdating = TRUE;
 		WORD controlID = LOWORD(wParam);
 		char regText[9];
 		CWindow edit = GetDlgItem(hDlg, controlID);
@@ -769,15 +746,15 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		uint32_t value = strtoul(regText, NULL, 16);
 		sprintf(regText, "%08X", value);
 		edit.SetWindowTextA(regText);
-		registersUpdating = FALSE;
+		//registersUpdating = FALSE;
 		return FALSE;
 	}
 
-	if (!CInterpreterDebug::m_Debugging)
+	if (!CInterpreterDebug::isDebugging())
 	{
 		return FALSE;
 	}
-	
+	/*
 	if (notification == EN_CHANGE)
 	{
 		int controlId = LOWORD(wParam);
@@ -790,7 +767,7 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 			uint32_t value = strtoul(regText, NULL, 16);
 			g_Reg->m_FPR[nReg].UW[0] = value;
 		}
-	}
+	}*/
 
 	return FALSE;
 }
@@ -853,4 +830,107 @@ LRESULT CDebugCommandsView::OnRegisterTabChange(NMHDR* pNMHDR)
 	int nPage = m_RegisterTabs.GetCurSel();
 	m_RegisterTabs.ShowTab(nPage);
 	return FALSE;
+}
+
+// CEditReg64
+
+uint64_t CEditReg64::ParseValue(char* wordPair)
+{
+	uint32_t a, b;
+	uint64_t ret;
+	a = strtoul(wordPair, &wordPair, 16);
+	if (*wordPair == ' ')
+	{
+		wordPair++;
+		b = strtoul(wordPair, NULL, 16);
+		ret = (uint64_t)a << 32;
+		ret |= b;
+		return ret;
+	}
+	return (uint64_t)a;
+}
+
+BOOL CEditReg64::Attach(HWND hWndNew)
+{
+	return SubclassWindow(hWndNew);
+}
+
+LRESULT CEditReg64::OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (!CInterpreterDebug::isDebugging())
+	{
+		goto canceled;
+	}
+
+	char charCode = wParam;
+
+	if (!isxdigit(charCode) && charCode != ' ')
+	{
+		if (!isalnum(charCode))
+		{
+			goto unhandled;
+		}
+		goto canceled;
+	}
+
+	if (isalpha(charCode) && !isupper(charCode))
+	{
+		SendMessage(uMsg, toupper(wParam), lParam);
+		goto canceled;
+	}
+
+	char text[20];
+	GetWindowText(text, 20);
+	int textLen = strlen(text);
+
+	if (textLen >= 17)
+	{
+		int selStart, selEnd;
+		GetSel(selStart, selEnd);
+		if (selEnd - selStart == 0)
+		{
+			goto canceled;
+		}
+	}
+
+	if (charCode == ' ' && strchr(text, ' ') != NULL)
+	{
+		goto canceled;
+	}
+
+unhandled:
+	bHandled = FALSE;
+	return 0;
+
+canceled:
+	bHandled = TRUE;
+	return 0;
+}
+
+uint64_t CEditReg64::GetValue()
+{
+	char text[20];
+	GetWindowText(text, 20);
+	return ParseValue(text);
+}
+
+LRESULT CEditReg64::OnLostFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	SetValue(GetValue()); // clean up
+	bHandled = FALSE;
+	return 0;
+}
+
+void CEditReg64::SetValue(uint32_t h, uint32_t l)
+{
+	char text[20];
+	sprintf(text, "%08X %08X", h, l);
+	SetWindowText(text);
+}
+
+void CEditReg64::SetValue(uint64_t value)
+{
+	uint32_t h = (value & 0xFFFFFFFF00000000LL) >> 32;
+	uint32_t l = (value & 0x00000000FFFFFFFFLL);
+	SetValue(h, l);
 }
