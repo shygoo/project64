@@ -424,6 +424,11 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		CInterpreterDebug::KeepDebugging();
 		CInterpreterDebug::Resume();
 		break;
+	case IDC_SKIP_BTN:
+		CInterpreterDebug::KeepDebugging();
+		CInterpreterDebug::Skip();
+		CInterpreterDebug::Resume();
+		break;
 	case IDC_CLEARBP_BTN:
 		CInterpreterDebug::BPClear();
 		RefreshBreakpointList();
@@ -546,31 +551,25 @@ LRESULT CDebugCommandsView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (wParam == WMSZ_BOTTOM)
-	{
-		//CRect rect = *(CRect*)lParam;
-		//AdjustWindowRect(&rect, GetWindowLong(GWL_STYLE), FALSE);
-		//ScreenToClient(&rect);
-		CRect rect;
-		GetClientRect(&rect);
-		int height = rect.Height();
+	CRect rect;
+	GetClientRect(&rect);
+	int height = rect.Height();
 
-		CRect scrollbarRect;
-		CRect listRect;
+	CRect scrollbarRect;
+	CRect listRect;
 
-		m_CommandList.GetClientRect(&listRect);
-		m_CommandList.ResizeClient(listRect.Width(), height);
+	m_CommandList.GetClientRect(&listRect);
+	m_CommandList.ResizeClient(listRect.Width(), height);
 	
-		m_Scrollbar.GetClientRect(&scrollbarRect);
-		m_Scrollbar.ResizeClient(scrollbarRect.Width(), height);
+	m_Scrollbar.GetClientRect(&scrollbarRect);
+	m_Scrollbar.ResizeClient(scrollbarRect.Width(), height);
 
-		int rows = height / 13 - 2; // 13 row height
+	int rows = height / 13 - 2; // 13 row height
 
-		if (m_CommandListRows != rows)
-		{
-			m_CommandListRows = rows;
-			ShowAddress(m_StartAddress, TRUE);
-		}
+	if (m_CommandListRows != rows)
+	{
+		m_CommandListRows = rows;
+		ShowAddress(m_StartAddress, TRUE);
 	}
 	return FALSE;
 }

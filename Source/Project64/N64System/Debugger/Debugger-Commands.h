@@ -47,8 +47,6 @@ private:
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 	
-	
-
 	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
 	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -66,7 +64,15 @@ public:
 	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
 	void ShowTab(int nPage);
 	void ResetTabs();
+	
+	//LRESULT OnSelChange(NMHDR* lpNMHDR)
+	//
+	//BEGIN_MSG_MAP_EX(CRegisterTabs)
+	//	REFLECTED_NOTIFY_CODE_HANDLER_EX(TCN_SELCHANGE, OnSelChange)
+	//	DEFAULT_REFLECTION_HANDLER()
+	//END_MSG_MAP()
 };
+
 
 class CCommandsList : public CListViewCtrl
 {
@@ -74,6 +80,7 @@ public:
 	BEGIN_MSG_MAP_EX(CCommandsList)
 	END_MSG_MAP()
 };
+
 
 class CDebugCommandsView : public CDebugDialog<CDebugCommandsView>
 {
@@ -92,7 +99,6 @@ public:
 	static int MapFPREdit(DWORD controlId);
 
 private:
-
 	CEditReg64 m_TestEdit;
 
 	DWORD m_StartAddress;
@@ -101,10 +107,11 @@ private:
 	CEditNumber m_AddressEdit;
 	CCommandsList m_CommandList;
 	int m_CommandListRows;
-	CRegisterTabs m_RegisterTabs;
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
+
+	CRegisterTabs m_RegisterTabs;
 
 	CWindow m_GPRTab;
 	CEditReg64 m_GPREdits[32];

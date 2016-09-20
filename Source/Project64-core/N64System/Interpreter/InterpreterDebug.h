@@ -20,8 +20,8 @@ private:
 	static CDebuggerUI* m_DebuggerUI;
 	
 public:
-	static BOOL m_Paused;
 	static BOOL m_Debugging;
+	static BOOL m_Skipping;
 	static vector<uint32_t> m_RBP;
 	static vector<uint32_t> m_WBP;
 	static vector<uint32_t> m_EBP;
@@ -32,6 +32,7 @@ public:
 
 	static void Pause(uint32_t address);
 	static void Resume();
+	static void Skip();
 
 	static void DbgInit(CDebuggerUI* debuggerUI);
 	static BOOL isDebugging();

@@ -21,7 +21,7 @@ public:
     static void ExecuteOps(int32_t Cycles);
     static void InPermLoop();
 
-	static void PauseOnBreakpoint();
+	static void DebugEvents();
 
 private:
     CInterpreterCPU();                                  // Disable default constructor

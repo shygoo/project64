@@ -18,8 +18,8 @@
 
 CDebuggerUI* CInterpreterDebug::m_DebuggerUI = NULL;
 
-BOOL CInterpreterDebug::m_Paused = FALSE;
 BOOL CInterpreterDebug::m_Debugging = FALSE;
+BOOL CInterpreterDebug::m_Skipping = FALSE;
 
 vector<uint32_t> CInterpreterDebug::m_RBP;
 vector<uint32_t> CInterpreterDebug::m_WBP;
@@ -56,8 +56,14 @@ void CInterpreterDebug::KeepDebugging()
 	m_Debugging = TRUE;
 }
 
-void CInterpreterDebug::StopDebugging() {
+void CInterpreterDebug::StopDebugging()
+{
 	m_Debugging = FALSE;
+}
+
+void CInterpreterDebug::Skip()
+{
+	m_Skipping = TRUE;
 }
 
 BOOL CInterpreterDebug::RBPExists(uint32_t address)

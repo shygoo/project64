@@ -298,7 +298,14 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			PauseOnBreakpoint();
+			DebugEvents();
+
+			if(CInterpreterDebug::m_Skipping)
+			{
+				CInterpreterDebug::m_Skipping = FALSE;
+				PROGRAM_COUNTER += 4;
+				continue;
+			}
 
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {
@@ -471,8 +478,8 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
     }
 }
 
-void CInterpreterCPU::PauseOnBreakpoint()
-{	
+void CInterpreterCPU::DebugEvents()
+{
 	uint32_t& PROGRAM_COUNTER = *_PROGRAM_COUNTER;
 	uint32_t& JumpToLocation = R4300iOp::m_JumpToLocation;
 		
