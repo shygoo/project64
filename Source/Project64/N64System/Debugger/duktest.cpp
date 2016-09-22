@@ -20,6 +20,8 @@ std::vector<SCRIPTEVENT> CScriptSystem::m_ExecEvents;
 std::vector<SCRIPTEVENT> CScriptSystem::m_ReadEvents;
 std::vector<SCRIPTEVENT> CScriptSystem::m_WriteEvents;
 
+std::vector<SCRIPTHOOK> CScriptSystem::m_ScriptHooks;
+
 void CScriptSystem::Eval(const char* jsCode)
 {
 	duk_eval_string_noresult(m_Ctx, jsCode);
@@ -41,27 +43,47 @@ void CScriptSystem::InvokeExecEvents(uint32_t address)
 	}
 }
 
+void CScriptSystem::InvokeReadEvents(uint32_t address)
+{
+	for (uint32_t i = 0; i < m_ReadEvents.size(); i++)
+	{
+		if (m_ReadEvents[i].tag == address)
+		{
+			InvokeEvent(m_ReadEvents[i].eventId);
+		}
+	}
+}
+
+void CScriptSystem::InvokeWriteEvents(uint32_t address)
+{
+	for (uint32_t i = 0; i < m_WriteEvents.size(); i++)
+	{
+		if (m_WriteEvents[i].tag == address)
+		{
+			InvokeEvent(m_WriteEvents[i].eventId);
+		}
+	}
+}
+
 void CScriptSystem::Init()
 {
+	RegisterHook("exec", &m_ExecEvents);
+	RegisterHook("read", &m_ReadEvents);
+	RegisterHook("write", &m_WriteEvents);
+
 	m_Ctx = duk_create_heap_default();
 
-	duk_push_c_function(m_Ctx, AddEvent, DUK_VARARGS);
-	duk_put_global_string(m_Ctx, "_AddEvent");
+	RegisterGlobalFunction("_AddEvent", AddEvent);
+	RegisterGlobalFunction("_SetGPRVal", SetGPRVal);
+	RegisterGlobalFunction("_GetGPRVal", GetGPRVal);
+	RegisterGlobalFunction("alert", _alert);
 
-	duk_push_c_function(m_Ctx, _alert, DUK_VARARGS);
-	duk_put_global_string(m_Ctx, "alert");
+	EvalFile("_api.js");
+}
 
-	duk_eval_string_noresult(m_Ctx,
-		"var R0 =  0, AT =  1, V0 =  2, V1 =  3, A0 =  4, A1 =  5, A2 =  6, A3 =  7,"
-		"    T0 =  8, T1 =  9, T2 = 10, T3 = 11, T4 = 12, T5 = 13, T6 = 14, T7 = 15,"
-		"    S0 = 16, S1 = 17, S2 = 18, S3 = 19, S4 = 20, S5 = 21, S6 = 22, S7 = 23,"
-		"    T8 = 24, T9 = 25, K0 = 26, K1 = 27, GP = 28, SP = 29, FP = 30, RA = 31;"
-		"function onexec(addr, fn){"
-			"var eventId = _AddEvent('exec', fn, addr);"
-		"}"
-		"function rmevent(eventId){"
-		"}"
-	);
+void CScriptSystem::RegisterGlobalFunction(const char* name, duk_c_function func) {
+	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
+	duk_put_global_string(m_Ctx, name);
 }
 
 void CScriptSystem::InvokeEvent(int eventId)
@@ -72,13 +94,32 @@ void CScriptSystem::InvokeEvent(int eventId)
 	duk_pop_n(m_Ctx, 2);
 }
 
+void CScriptSystem::RegisterHook(const char* hook, std::vector<SCRIPTEVENT>* events)
+{
+	SCRIPTHOOK scriptHook = { hook, events };
+	m_ScriptHooks.push_back(scriptHook);
+}
+
+bool CScriptSystem::GetEvents(const char* hook, std::vector<SCRIPTEVENT>** events)
+{
+	for (uint32_t i = 0; i < m_ScriptHooks.size(); i++)
+	{
+		if (strcmp(m_ScriptHooks[i].hook, hook) == 0)
+		{
+			*events = m_ScriptHooks[i].events;
+			return true;
+		}
+	}
+	return false;
+}
+
 duk_ret_t CScriptSystem::AddEvent(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
 
 	if (argc != 3)
 	{
-		duk_push_number(ctx, -1);
+		duk_push_boolean(ctx, false);
 		return 1;
 	}
 
@@ -93,24 +134,58 @@ duk_ret_t CScriptSystem::AddEvent(duk_context* ctx)
 	duk_put_prop_index(ctx, -2, m_NextEventId);
 	duk_pop_n(ctx, 1);
 
-	SCRIPTEVENT event = { m_NextEventId, callback, tag };
+	SCRIPTEVENT scriptEvent = { m_NextEventId, callback, tag };
 
-	// Push event struct to native hook
-	if (strcmp("exec", hook) == 0)
-	{
-		m_ExecEvents.push_back(event);
-	}
-	else if (strcmp("write", hook) == 0)
-	{
-		m_WriteEvents.push_back(event);
-	}
-	else if (strcmp("read", hook) == 0)
-	{
-		m_ReadEvents.push_back(event);
-	}
+	// Get events list associated with hook and push event to it
 
-	// return event id (js)
-	duk_push_number(ctx, m_NextEventId);
-	m_NextEventId++;
+	std::vector<SCRIPTEVENT>* events;
+	if (GetEvents(hook, &events))
+	{
+		// Register event and return id
+		events->push_back(scriptEvent);
+		duk_push_number(ctx, m_NextEventId);
+		m_NextEventId++;
+		return 1;
+	}
+	
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::GetGPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	duk_pop_n(ctx, 1);
+	duk_push_uint(ctx, g_Reg->m_GPR[regnum].UW[0]);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::SetGPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	uint32_t val = duk_to_uint32(ctx, 1);
+	duk_pop_n(ctx, 1);
+	g_Reg->m_GPR[regnum].UW[0] = val;
+	duk_push_uint(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	duk_pop(ctx);
+	uint8_t val = 0;
+	g_MMU->LB_VAddr(address, val);
+	duk_push_int(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	uint8_t val = duk_to_int(ctx, 1);
+	duk_pop_n(ctx, 2);
+	g_MMU->SB_VAddr(address, val);
+	duk_push_int(ctx, val);
 	return 1;
 }

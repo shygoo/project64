@@ -482,10 +482,9 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
 
 void CInterpreterCPU::DebugEvents()
 {
-	uint32_t& PROGRAM_COUNTER = *_PROGRAM_COUNTER;
-	uint32_t& JumpToLocation = R4300iOp::m_JumpToLocation;
-		
-	// Fire script events
+	uint32_t PROGRAM_COUNTER = *_PROGRAM_COUNTER;
+	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
+	
 	CScriptSystem::InvokeExecEvents(PROGRAM_COUNTER);
 
 	// PC breakpoints
@@ -507,18 +506,23 @@ void CInterpreterCPU::DebugEvents()
 	{
 		uint32_t memoryAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
 
-		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // read instructions
+		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
+			CScriptSystem::InvokeReadEvents(memoryAddress);
 			if (CInterpreterDebug::RBPExists(memoryAddress))
 			{
 				CInterpreterDebug::Pause(PROGRAM_COUNTER);
 				return;
 			}
 		}
-		else if (CInterpreterDebug::WBPExists(memoryAddress)) // write instructions
+		else // Write instructions
 		{
-			CInterpreterDebug::Pause(PROGRAM_COUNTER);
-			return;
+			CScriptSystem::InvokeWriteEvents(memoryAddress);
+			if (CInterpreterDebug::WBPExists(memoryAddress))
+			{
+				CInterpreterDebug::Pause(PROGRAM_COUNTER);
+				return;
+			}
 		}
 	}
 
