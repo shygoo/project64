@@ -1,10 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
-
-#include <3rdParty/duktape/duk_config.h>
 #include <3rdParty/duktape/duktape.h>
-
 
 typedef struct {
 	int eventId;
@@ -28,6 +25,7 @@ public:
 	static void Init();
 
 	static void Eval(const char* jsCode);
+	static void EvalFile(const char* jsPath);
 
 	static void InvokeEvent(int eventId);
 	static void InvokeExecEvents(uint32_t address);

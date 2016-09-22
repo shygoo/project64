@@ -486,8 +486,7 @@ void CInterpreterCPU::DebugEvents()
 	uint32_t& JumpToLocation = R4300iOp::m_JumpToLocation;
 		
 	// Fire script events
-	//CScriptSystem::InvokeExecEvents(PROGRAM_COUNTER);
-
+	CScriptSystem::InvokeExecEvents(PROGRAM_COUNTER);
 
 	// PC breakpoints
 

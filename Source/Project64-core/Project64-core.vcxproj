@@ -230,6 +230,9 @@
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\3rdParty\duktape\duktape.vcxproj">
+      <Project>{e8d9a652-a354-4374-b6c5-a51ee62749fd}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\3rdParty\zlib\zlib.vcxproj">
       <Project>{731bd205-2826-4631-b7af-117658e88dbc}</Project>
     </ProjectReference>

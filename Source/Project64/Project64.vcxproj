@@ -74,7 +74,7 @@
     <ClCompile Include="Settings\NotificationSettings.cpp" />
     <ClCompile Include="Settings\UISettings.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp" />
-    <ClCompile Include="duktest.cpp" />
+    <ClCompile Include="N64System\Debugger\duktest.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -105,7 +105,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="duktest.h" />
+    <ClInclude Include="N64System\Debugger\duktest.h" />
     <ClInclude Include="N64System\Debugger\Debugger-Commands.h" />
     <ClInclude Include="Multilanguage\LanguageSelector.h" />
     <ClInclude Include="N64System.h" />
@@ -154,12 +154,12 @@
     <ClInclude Include="WTLApp.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Project1\Project1.vcxproj">
-      <Project>{48f334ae-5b54-4b59-81eb-c9b8fbe861d8}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\3rdParty\7zip\7zip.vcxproj">
       <Project>{3326e128-33af-422c-bb7c-67cc6b915610}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\3rdParty\duktape\duktape.vcxproj">
+      <Project>{e8d9a652-a354-4374-b6c5-a51ee62749fd}</Project>
     </ProjectReference>
     <ProjectReference Include="..\3rdParty\zlib\zlib.vcxproj">
       <Project>{731bd205-2826-4631-b7af-117658e88dbc}</Project>
