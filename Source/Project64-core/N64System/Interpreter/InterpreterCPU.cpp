@@ -22,6 +22,8 @@
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
 
+#include <Project64/N64System/Debugger/duktest.h>
+
 R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
 
 void ExecuteInterpreterOps(uint32_t /*Cycles*/)
@@ -483,6 +485,10 @@ void CInterpreterCPU::DebugEvents()
 	uint32_t& PROGRAM_COUNTER = *_PROGRAM_COUNTER;
 	uint32_t& JumpToLocation = R4300iOp::m_JumpToLocation;
 		
+	// Fire script events
+	//CScriptSystem::InvokeExecEvents(PROGRAM_COUNTER);
+
+
 	// PC breakpoints
 
 	if (CInterpreterDebug::m_nEBP > 0)

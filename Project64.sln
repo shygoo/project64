@@ -1,6 +1,6 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2010 or later
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3rd Party", "3rd Party", "{AA8F7F8E-5377-4911-859D-8A8817B0DB26}"
 EndProject
@@ -61,6 +61,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PluginRSP", "Source\Android\PluginRSP\PluginRSP.vcxproj", "{B685BB34-D700-4FCC-8503-9B6AA1A0C95D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "JniBridge", "Source\Android\Bridge\Bridge.vcxproj", "{593B00E6-1987-415D-A62C-26533FC3E95C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "duktape", "Project1\Project1.vcxproj", "{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -203,6 +205,14 @@ Global
 		{593B00E6-1987-415D-A62C-26533FC3E95C}.Release|Win32.ActiveCfg = Release|Win32
 		{593B00E6-1987-415D-A62C-26533FC3E95C}.Release|Win32.Build.0 = Release|Win32
 		{593B00E6-1987-415D-A62C-26533FC3E95C}.Release|x64.ActiveCfg = Release|Win32
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Debug|Win32.Build.0 = Debug|Win32
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Debug|x64.ActiveCfg = Debug|x64
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Debug|x64.Build.0 = Debug|x64
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Release|Win32.ActiveCfg = Release|Win32
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Release|Win32.Build.0 = Release|Win32
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Release|x64.ActiveCfg = Release|x64
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -219,5 +229,6 @@ Global
 		{1133A1CC-A9E5-4026-B20D-6A2987130D4E} = {0E0FCAC2-E128-4886-8EE6-1BCA84551F58}
 		{B685BB34-D700-4FCC-8503-9B6AA1A0C95D} = {0E0FCAC2-E128-4886-8EE6-1BCA84551F58}
 		{593B00E6-1987-415D-A62C-26533FC3E95C} = {0E0FCAC2-E128-4886-8EE6-1BCA84551F58}
+		{48F334AE-5B54-4B59-81EB-C9B8FBE861D8} = {AA8F7F8E-5377-4911-859D-8A8817B0DB26}
 	EndGlobalSection
 EndGlobal
