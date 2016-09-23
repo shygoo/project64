@@ -50,6 +50,14 @@ private:
 	static duk_ret_t AddEvent(duk_context* ctx);
 	static duk_ret_t GetGPRVal(duk_context* ctx);
 	static duk_ret_t SetGPRVal(duk_context* ctx);
+
 	static duk_ret_t GetRDRAMU8(duk_context* ctx);
+	static duk_ret_t GetRDRAMU16(duk_context* ctx);
+	static duk_ret_t GetRDRAMU32(duk_context* ctx);
+
 	static duk_ret_t SetRDRAMU8(duk_context* ctx);
+	static duk_ret_t SetRDRAMU16(duk_context* ctx);
+	static duk_ret_t SetRDRAMU32(duk_context* ctx);
+
+	static duk_ret_t Thread(duk_context* ctx);
 };

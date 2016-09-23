@@ -24,12 +24,24 @@ std::vector<SCRIPTHOOK> CScriptSystem::m_ScriptHooks;
 
 void CScriptSystem::Eval(const char* jsCode)
 {
-	duk_eval_string_noresult(m_Ctx, jsCode);
+	int result = duk_peval_string(m_Ctx, jsCode);
+	const char* msg = duk_safe_to_string(m_Ctx, -1);
+	if (result != 0)
+	{
+		MessageBox(NULL, msg, "Script error", MB_OK);
+	}
+	duk_pop(m_Ctx);
 }
 
 void CScriptSystem::EvalFile(const char* jsPath)
 {
-	duk_eval_file_noresult(m_Ctx, jsPath);
+	int result = duk_peval_file(m_Ctx, jsPath);
+	const char* msg = duk_safe_to_string(m_Ctx, -1);
+	if (result != 0)
+	{
+		MessageBox(NULL, msg, jsPath, MB_OK);
+	}
+	duk_pop(m_Ctx);
 }
 
 void CScriptSystem::InvokeExecEvents(uint32_t address)
@@ -77,7 +89,11 @@ void CScriptSystem::Init()
 	BindGlobalFunction("_SetGPRVal", SetGPRVal);
 	BindGlobalFunction("_GetGPRVal", GetGPRVal);
 	BindGlobalFunction("_GetRDRAMU8", GetRDRAMU8);
+	BindGlobalFunction("_GetRDRAMU16", GetRDRAMU16);
+	BindGlobalFunction("_GetRDRAMU32", GetRDRAMU32);
 	BindGlobalFunction("_SetRDRAMU8", SetRDRAMU8);
+	BindGlobalFunction("_SetRDRAMU16", SetRDRAMU16);
+	BindGlobalFunction("_SetRDRAMU32", SetRDRAMU32);
 	BindGlobalFunction("alert", _alert);
 
 	EvalFile("_api.js");
@@ -182,12 +198,52 @@ duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
 	return 1;
 }
 
+duk_ret_t CScriptSystem::GetRDRAMU16(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	duk_pop(ctx);
+	uint16_t val = 0;
+	g_MMU->LH_VAddr(address, val);
+	duk_push_int(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::GetRDRAMU32(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	duk_pop(ctx);
+	uint32_t val = 0;
+	g_MMU->LW_VAddr(address, val);
+	duk_push_int(ctx, val);
+	return 1;
+}
+
 duk_ret_t CScriptSystem::SetRDRAMU8(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);
 	uint8_t val = duk_to_int(ctx, 1);
 	duk_pop_n(ctx, 2);
 	g_MMU->SB_VAddr(address, val);
+	duk_push_int(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::SetRDRAMU16(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	uint16_t val = duk_to_int(ctx, 1);
+	duk_pop_n(ctx, 2);
+	g_MMU->SH_VAddr(address, val);
+	duk_push_int(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::SetRDRAMU32(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	uint32_t val = duk_to_int(ctx, 1);
+	duk_pop_n(ctx, 2);
+	g_MMU->SW_VAddr(address, val);
 	duk_push_int(ctx, val);
 	return 1;
 }
