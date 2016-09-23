@@ -1,13 +1,57 @@
+// (A0 ptr parent_obj, A1 u8 gfx_id, A2 segptr behavior)
+var proc_spawn_child_obj = 0x8029EDCC
 
-alert('Script system okay');
+var behavior_explosion = 0x13003510
 
-proc_beh_mario_a = 0x802CB1C0; // mario behavior function
+var behavior_chuckya = 0x13000528
+var gfx_chuckya = 0xDF
 
-events.onexec(proc_beh_mario_a, function(){
-	alert('proc_beh_mario_a was called\n' +
-		'a0: ' + gpr.a0.toString(16) + '\n' +
-		'a1: ' + gpr.a1.toString(16) + '\n' +
-		'a2: ' + gpr.a2.toString(16) + '\n' +
-		'a3: ' + gpr.a3.toString(16) + '\n'
-	);
+events.onexec(proc_spawn_child_obj, function(){
+	if (gpr.a2 == behavior_explosion) {
+		gpr.a1 = gfx_chuckya
+		gpr.a2 = behavior_chuckya
+	}
 });
+
+////////////
+
+var mario_power = 0x8033B21E
+var proc_goomba$collide = 0x802FFAF4
+
+var goomba_collisions = 0
+
+function killMario() {
+	mem.u8[mario_power] = 0
+}
+
+events.onexec(proc_goomba$collide, function(){
+	goomba_collisions++
+	if(goomba_collisions >= 3){
+		alert("DONT TOUCH MY GOOMBAS\n\t\t-Bowser")
+		killMario()
+	}
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

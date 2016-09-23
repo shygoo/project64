@@ -13,6 +13,9 @@ var events = {
 	onexec: function(addr, callback){
 		events.on('exec', callback, addr);
 	},
+	onread: function(addr, callback){
+		events.on('read', callback, addr);
+	},
 	off: function(){},
 	clear: function(){}
 };
@@ -46,7 +49,7 @@ var gpr = new Proxy({},
 
 var mem = {
 	u8: new Proxy({}, {
-		get: function(obj, prop
+		get: function(obj, prop)
 		{
 			return _GetRDRAMU8(prop);
 		},
@@ -58,5 +61,3 @@ var mem = {
 	u16: function(){},
 	u32: function(){},
 };
-
-alert("setup ok");

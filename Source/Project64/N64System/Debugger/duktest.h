@@ -43,7 +43,7 @@ public:
 	static void InvokeReadEvents(uint32_t address);
 	static void InvokeWriteEvents(uint32_t address);
 
-	static void RegisterGlobalFunction(const char* name, duk_c_function func);
+	static void BindGlobalFunction(const char* name, duk_c_function func);
 
 private:
 	// called from scripts

@@ -73,15 +73,17 @@ void CScriptSystem::Init()
 
 	m_Ctx = duk_create_heap_default();
 
-	RegisterGlobalFunction("_AddEvent", AddEvent);
-	RegisterGlobalFunction("_SetGPRVal", SetGPRVal);
-	RegisterGlobalFunction("_GetGPRVal", GetGPRVal);
-	RegisterGlobalFunction("alert", _alert);
+	BindGlobalFunction("_AddEvent", AddEvent);
+	BindGlobalFunction("_SetGPRVal", SetGPRVal);
+	BindGlobalFunction("_GetGPRVal", GetGPRVal);
+	BindGlobalFunction("_GetRDRAMU8", GetRDRAMU8);
+	BindGlobalFunction("_SetRDRAMU8", SetRDRAMU8);
+	BindGlobalFunction("alert", _alert);
 
 	EvalFile("_api.js");
 }
 
-void CScriptSystem::RegisterGlobalFunction(const char* name, duk_c_function func) {
+void CScriptSystem::BindGlobalFunction(const char* name, duk_c_function func) {
 	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
 	duk_put_global_string(m_Ctx, name);
 }
@@ -180,7 +182,7 @@ duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
+duk_ret_t CScriptSystem::SetRDRAMU8(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);
 	uint8_t val = duk_to_int(ctx, 1);
