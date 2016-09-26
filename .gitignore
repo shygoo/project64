@@ -82,5 +82,8 @@ Thumbs.db
 /Source/3rdParty/wx/lib/vc_lib/mswud/wx/setup.h
 /Save
 
+Plugin/Input/
+Config/NRage.ini
+
 Project64.exe
 Logs/*

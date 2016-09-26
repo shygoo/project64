@@ -154,9 +154,7 @@ void CDebuggerUI::Debug_ShowCommandsWindow()
 	{
 		m_CommandsView = new CDebugCommandsView(this);
 	}
-	
 	m_CommandsView->ShowWindow();
-
 }
 
 void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top) {
@@ -165,4 +163,13 @@ void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top) {
 	{
 		m_CommandsView->ShowAddress(address, top);
 	}
+}
+
+void CDebuggerUI::Debug_ShowScriptsWindow()
+{
+	if (m_Scripts == NULL)
+	{
+		m_Scripts = new CDebugScripts(this);
+	}
+	m_Scripts->ShowWindow();
 }

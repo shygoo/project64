@@ -3,7 +3,7 @@
 #include <Project64-core/N64System/N64DiskClass.h>
 
 #include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
-#include <Project64/N64System/Debugger/duktest.h>
+#include <Project64/N64System/Debugger/ScriptSystem.h>
 
 #include <windows.h>
 #include <commdlg.h>
@@ -550,6 +550,7 @@ bool CMainMenu::ProcessMessage(HWND hWnd, DWORD /*FromAccelerator*/, DWORD MenuI
     case ID_DEBUGGER_INTERRUPT_PI: g_BaseSystem->ExternalEvent(SysEvent_Interrupt_PI); break;
     case ID_DEBUGGER_INTERRUPT_DP: g_BaseSystem->ExternalEvent(SysEvent_Interrupt_DP); break;
 	case ID_DEBUGGER_BREAKPOINTS: m_Gui->Debug_ShowCommandsWindow(); break;
+	case ID_DEBUGGER_SCRIPTS: m_Gui->Debug_ShowScriptsWindow(); break;
 	case ID_CURRENT_SAVE_DEFAULT:
         g_Notify->DisplayMessage(3, stdstr_f(GS(MENU_SLOT_SAVE), GetSaveSlotString(MenuID - ID_CURRENT_SAVE_DEFAULT).c_str()).c_str());
         g_Settings->SaveDword(Game_CurrentSaveState, (DWORD)(MenuID - ID_CURRENT_SAVE_DEFAULT));
@@ -1044,8 +1045,7 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 		
 		//ID_DEBUGGER_LOGOPTIONS
         Item.Reset(ID_DEBUGGER_BREAKPOINTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Commands...");
-		// CHANGE TO ENABLED shygoo
-		Item.SetItemEnabled(true);
+		Item.SetItemEnabled(CPURunning);
 
         DebugR4300Menu.push_back(Item);
         Item.Reset(ID_DEBUGGER_R4300REGISTERS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Registers...");
@@ -1165,7 +1165,14 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
         Item.Reset(ID_DEBUGGER_BREAKPOINTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Breakpoint...");
         Item.SetItemEnabled(CPURunning);
         DebugMenu.push_back(Item);
-        DebugMenu.push_back(MENU_ITEM(SPLITER));
+        
+		/* Debug - Scripts
+		*******************/
+		Item.Reset(ID_DEBUGGER_SCRIPTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Scripts...");
+		//Item.SetItemEnabled(CPURunning);
+		DebugMenu.push_back(Item);
+
+		DebugMenu.push_back(MENU_ITEM(SPLITER));
 
         /* Debug - RSP
         *******************/

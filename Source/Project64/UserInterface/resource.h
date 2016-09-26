@@ -57,6 +57,7 @@
 #define IDD_Settings_GamePlugin         163
 #define IDD_Settings_GameStatus         164
 #define IDD_Debugger_FPR                166
+#define IDD_Debugger_Scripts            169
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -382,6 +383,7 @@
 #define IDC_BP_LIST                     1185
 #define IDC_BUTTON2                     1186
 #define IDC_ADDBP_BTN                   1186
+#define IDC_RUN_BTN                     1186
 #define IDC_BUTTON4                     1187
 #define IDC_RMBP_BTN                    1187
 #define IDC_CHEATSFRAME                 1188
@@ -398,7 +400,6 @@
 #define IDC_REG_TABS                    1194
 #define IDC_CART_ID                     1195
 #define IDC_MANUFACTURER                1196
-#define IDC_EDIT1                       1196
 #define IDC_COUNTRY                     1197
 #define IDC_RADIO1                      1197
 #define IDC_CRC1                        1198
@@ -451,6 +452,10 @@
 #define IDC_F30_EDIT                    1234
 #define IDC_F31_EDIT                    1235
 #define IDC_SKIP_BTN                    1268
+#define IDC_EDIT1                       1271
+#define IDC_EVAL_EDIT                   1272
+#define IDC_TREE1                       1273
+#define IDC_SCRIPTS_TREE                1273
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -468,9 +473,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        167
+#define _APS_NEXT_RESOURCE_VALUE        171
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1269
+#define _APS_NEXT_CONTROL_VALUE         1274
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

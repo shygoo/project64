@@ -74,7 +74,8 @@
     <ClCompile Include="Settings\NotificationSettings.cpp" />
     <ClCompile Include="Settings\UISettings.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp" />
-    <ClCompile Include="N64System\Debugger\duktest.cpp" />
+    <ClCompile Include="N64System\Debugger\ScriptSystem.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-Scripts.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -105,7 +106,8 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="N64System\Debugger\duktest.h" />
+    <ClInclude Include="N64System\Debugger\Debugger-Scripts.h" />
+    <ClInclude Include="N64System\Debugger\ScriptSystem.h" />
     <ClInclude Include="N64System\Debugger\Debugger-Commands.h" />
     <ClInclude Include="Multilanguage\LanguageSelector.h" />
     <ClInclude Include="N64System.h" />

@@ -5,7 +5,8 @@ mem
  mem.u8[]
  mem.u16[]
  mem.u32[]
- mem.bind()
+ mem.bindvar(obj, baseAddr, name, type)
+ mem.bindvar(obj, vars)
  mem.bindstruct()
  mem.typedef()
 
@@ -44,7 +45,8 @@ Number.prototype.hex = function(len)
 }
 
 const u8 = 'u8', u16 = 'u16', u32 = 'u32',
-      s8 = 's8', s16 = 's16', s32 = 's32'
+      s8 = 's8', s16 = 's16', s32 = 's32',
+	  float = 'float',  double = 'double'
 
 const _typeSizes = {
 	u8     : 1, u16     : 2, u32   : 4,
@@ -71,7 +73,7 @@ const system = {
 const events = {
 	on: function(hook, callback, tag)
 	{
-		return _AddEvent(hook, callback, tag)
+		return _AddCallback(hook, callback, tag)
 	},
 	onexec: function(addr, callback)
 	{
@@ -138,10 +140,10 @@ const mem = {
 		},
 		set: function(obj, prop, val)
 		{
-			_SetRDRAMU32(prop val)
+			_SetRDRAMU32(prop, val)
 		}
 	}),
-	bind: function(obj, baseAddr, name, type)
+	bindvar: function(obj, baseAddr, name, type)
 	{
 		Object.defineProperty(obj, name,
 		{
@@ -155,18 +157,25 @@ const mem = {
 			}
 		})
 	},
+	bindvars: function(obj, list)
+	{
+		for(var i = 0; i < list.length; i++)
+		{
+			mem.bindvar(obj, list[i][0], list[i][1], list[i][2]);
+		}
+	},
 	bindstruct: function(obj, baseAddr, props)
 	{
 		for (var name in props)
 		{
 			var type = props[name]
 			var size = _typeSizes[type]
-			mem.bind(obj, baseAddr, name, type)
+			mem.bindvar(obj, baseAddr, name, type)
 			baseAddr += size
 		}
 		return obj
 	},
-	typedef: function(props)
+	typedef: function(props, proto)
 	{
 		var size = 0
 		for (var name in props)
@@ -181,6 +190,10 @@ const mem = {
 		{
 			return size
 		}
+		/*if(proto)
+		{
+			StructClass.prototype = proto
+		}*/
 		return StructClass
 	}
 }

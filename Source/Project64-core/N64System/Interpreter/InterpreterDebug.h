@@ -39,20 +39,57 @@ public:
 	static void KeepDebugging();
 	static void StopDebugging();
 
-	static BOOL RBPExists(uint32_t address);
+	
 	static void RBPAdd(uint32_t address);
 	static void RBPRemove(uint32_t address);
 	static void RBPClear();
 
-	static BOOL WBPExists(uint32_t address);
 	static void WBPAdd(uint32_t address);
 	static void WBPRemove(uint32_t address);
 	static void WBPClear();
 
-	static BOOL EBPExists(uint32_t address);
 	static void EBPAdd(uint32_t address);
 	static void EBPRemove(uint32_t address);
 	static void EBPClear();
 
 	static void BPClear();
+
+	// inlines
+
+	static inline BOOL RBPExists(uint32_t address)
+	{
+		for (int i = 0; i < m_nRBP; i++)
+		{
+			if (m_RBP[i] == address)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	static inline BOOL WBPExists(uint32_t address)
+	{
+		for (int i = 0; i < m_nWBP; i++)
+		{
+			if (m_WBP[i] == address)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
+	static inline BOOL EBPExists(uint32_t address)
+	{
+		for (int i = 0; i < m_nEBP; i++)
+		{
+			if (m_EBP[i] == address)
+			{
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+
 };

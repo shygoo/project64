@@ -66,42 +66,6 @@ void CInterpreterDebug::Skip()
 	m_Skipping = TRUE;
 }
 
-BOOL CInterpreterDebug::RBPExists(uint32_t address)
-{
-	for (int i = 0; i < m_nRBP; i++)
-	{
-		if (m_RBP[i] == address)
-		{
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-BOOL CInterpreterDebug::WBPExists(uint32_t address)
-{
-	for (int i = 0; i < m_nWBP; i++)
-	{
-		if (m_WBP[i] == address)
-		{
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
-BOOL CInterpreterDebug::EBPExists(uint32_t address)
-{
-	for (int i = 0; i < m_nEBP; i++)
-	{
-		if (m_EBP[i] == address)
-		{
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-
 void CInterpreterDebug::RBPAdd(uint32_t address)
 {
 	m_RBP.push_back(address);

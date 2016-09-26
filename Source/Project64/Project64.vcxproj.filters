@@ -171,7 +171,10 @@
     <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Debugger\duktest.cpp">
+    <ClCompile Include="N64System\Debugger\Debugger-Scripts.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="N64System\Debugger\ScriptSystem.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -314,7 +317,10 @@
     <ClInclude Include="N64System\Debugger\Debugger-Commands.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
-    <ClInclude Include="N64System\Debugger\duktest.h">
+    <ClInclude Include="N64System\Debugger\Debugger-Scripts.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Debugger\ScriptSystem.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>

@@ -8,3 +8,4 @@
 #include "Debugger-MemoryDump.h"
 #include "Debugger-TLB.h"
 #include "Debugger-Commands.h"
+#include "Debugger-Scripts.h"

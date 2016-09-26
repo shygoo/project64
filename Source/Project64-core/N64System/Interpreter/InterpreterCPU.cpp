@@ -22,7 +22,7 @@
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
 
-#include <Project64/N64System/Debugger/duktest.h>
+#include <Project64/N64System/Debugger/ScriptSystem.h>
 
 R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
 
@@ -480,12 +480,12 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
     }
 }
 
-void CInterpreterCPU::DebugEvents()
+inline void CInterpreterCPU::DebugEvents()
 {
 	uint32_t PROGRAM_COUNTER = *_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 	
-	CScriptSystem::InvokeExecEvents(PROGRAM_COUNTER);
+	CScriptSystem::m_ExecEvents.InvokeByTag(PROGRAM_COUNTER);
 
 	// PC breakpoints
 
@@ -508,7 +508,7 @@ void CInterpreterCPU::DebugEvents()
 
 		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
-			CScriptSystem::InvokeReadEvents(memoryAddress);
+			CScriptSystem::m_ReadEvents.InvokeByTag(memoryAddress);
 			if (CInterpreterDebug::RBPExists(memoryAddress))
 			{
 				CInterpreterDebug::Pause(PROGRAM_COUNTER);
@@ -517,7 +517,7 @@ void CInterpreterCPU::DebugEvents()
 		}
 		else // Write instructions
 		{
-			CScriptSystem::InvokeWriteEvents(memoryAddress);
+			CScriptSystem::m_WriteEvents.InvokeByTag(memoryAddress);
 			if (CInterpreterDebug::WBPExists(memoryAddress))
 			{
 				CInterpreterDebug::Pause(PROGRAM_COUNTER);

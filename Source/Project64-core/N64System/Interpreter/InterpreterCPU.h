@@ -21,7 +21,7 @@ public:
     static void ExecuteOps(int32_t Cycles);
     static void InPermLoop();
 
-	static void DebugEvents();
+	static inline void DebugEvents();
 
 private:
     CInterpreterCPU();                                  // Disable default constructor
