@@ -1,0 +1,22 @@
+2016/09/26 16:42:56.172 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?
+2016/09/26 16:43:01.280 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?
+2016/09/26 16:43:02.017 08376,Error,User Interface,CNotificationImp::DisplayError,Signal InvalidOperationException
+in r4300i_COP1_S_CMP
+0  0.000000f
+C0BBD900  -nan(ind)f
+2016/09/26 16:43:03.049 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?
+2016/09/26 16:43:04.104 08376,Error,User Interface,CNotificationImp::DisplayError,Signal InvalidOperationException
+in r4300i_COP1_S_CMP
+0  0.000000f
+40900000  -nan(ind)f
+2016/09/26 16:43:08.393 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?
+2016/09/26 16:43:09.692 08376,Error,User Interface,CNotificationImp::DisplayError,Signal InvalidOperationException
+in r4300i_COP1_S_CMP
+0  0.000000f
+FFF80000  0.000000f
+2016/09/26 16:43:15.585 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?
+2016/09/26 16:43:17.439 08376,Error,User Interface,CNotificationImp::DisplayError,Signal InvalidOperationException
+in r4300i_COP1_S_CMP
+0  0.000000f
+0  -nan(ind)f
+2016/09/26 16:43:18.279 08376,Error,User Interface,CNotificationImp::DisplayError,R4300iOp::COP1_S_CMP: Nan ?

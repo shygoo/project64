@@ -1,5 +1,4 @@
-/*
-
+/***************************
 mem
 
  mem.u8[]
@@ -10,20 +9,40 @@ mem
  mem.bindstruct()
  mem.typedef()
 
+****************************
 events
 
  events.on(hook, callback, tag)
  events.onexec(address, callback)
  events.onread(address, callback)
  events.onwrite(address, callback)
-
+ 
+****************************
 gpr
 
  gpr.<register name>
 
+****************************
+Thread
+
+ new Thread(fn)
+  thread.start()
+  thread.suspend()
+  thread.resume()
+  thread.stop()
+  thread.getState()
+ 
+ Thread.sleep(ms)
+ 
+ Thread.READY      0
+ Thread.RUNNING    1
+ Thread.SUSPENDED  2
+ Thread.STOPPED    3
+  
+****************************
 alert(message)
 
-_AddEvent(hook, callback, tag)
+_AddCallback(hook, callback, tag)
 _SetGPRVal(regnum, val)
 _GetGPRVal(regnum)
 _GetRDRAMU8(address)
@@ -33,7 +52,26 @@ _SetRDRAMU8(address, value)
 _SetRDRAMU16(address, value)
 _SetRDRAMU32(address, value)
 
-*/
+_CreateServer(port);
+_SockAccept(serverSocket)
+_ReceiveBytes(socket)
+
+****************************
+Todo:
+
+Server
+ new Server()
+ server.listen(port)
+ server.on(evt, callback)
+	'connection' -> callback(socket)
+	
+Socket
+ new Socket()
+ socket.recv(nBytes) // blocks calling thread, receives number of bytes and returns a Buffer object
+ server.on(evt, callback)
+	'data' -> callback(buffer)
+
+***************************/
 
 Number.prototype.hex = function(len)
 {
@@ -49,9 +87,9 @@ const u8 = 'u8', u16 = 'u16', u32 = 'u32',
 	  float = 'float',  double = 'double'
 
 const _typeSizes = {
-	u8     : 1, u16     : 2, u32   : 4,
-	s8     : 1, s16     : 2, s32   : 4,
-	'float': 4, 'double': 8
+	u8: 1, u16: 2, u32: 4,
+	s8: 1, s16: 2, s32: 4,
+	float: 4, double: 8
 }
 
 const _regNums = {
@@ -70,26 +108,41 @@ const system = {
 	resume: function(){}
 }
 
-const events = {
-	on: function(hook, callback, tag)
-	{
-		return _AddCallback(hook, callback, tag)
-	},
-	onexec: function(addr, callback)
-	{
-		events.on('exec', callback, addr)
-	},
-	onread: function(addr, callback)
-	{
-		events.on('read', callback, addr)
-	},
-	onwrite: function(addr, callback)
-	{
-		events.on('write', callback, addr)
-	},
-	off: function(){},
-	clear: function(){}
-}
+const events = (function()
+{
+	var callbacks = {};
+	var nextCallbackId = 0;
+	return {
+		on: function(hook, callback, tag)
+		{
+			stashCallback(callback);
+			return _AddCallback(hook, callback, tag);
+		},
+		onexec: function(addr, callback)
+		{
+			events.on('exec', callback, addr)
+		},
+		onread: function(addr, callback)
+		{
+			events.on('read', callback, addr)
+		},
+		onwrite: function(addr, callback)
+		{
+			events.on('write', callback, addr)
+		},
+		off: function(){},
+		clear: function(){},
+		stashCallback: function(hook, callback, tag)
+		{
+			callbacks[nextCallbackId] = callback;
+			return nextCallbackId++;
+		},
+		_unstashCallback: function()
+		{
+			
+		},
+	}
+})();
 
 const gpr = new Proxy({}, // todo dgpr for 64 bit
 {
@@ -156,6 +209,7 @@ const mem = {
 				mem[type][baseAddr] = val
 			}
 		})
+		return obj
 	},
 	bindvars: function(obj, list)
 	{
@@ -163,6 +217,7 @@ const mem = {
 		{
 			mem.bindvar(obj, list[i][0], list[i][1], list[i][2]);
 		}
+		return obj
 	},
 	bindstruct: function(obj, baseAddr, props)
 	{
@@ -197,3 +252,61 @@ const mem = {
 		return StructClass
 	}
 }
+
+function Thread(proc){
+	var _proc = proc;
+	var _hThread;
+	var _state = Thread.READY;
+	this.start = function()
+	{
+		if(_state != Thread.READY)
+		{
+			throw new Error('Invalid state');
+		}
+		_state = Thread.RUNNING;
+		_hThread = _CreateThread(proc);
+		return;
+	}
+	this.suspend = function()
+	{
+		if(_state != Thread.RUNNING)
+		{
+			throw new Error('Invalid state');
+		}
+		_state = Thread.SUSPENDED;
+		_SuspendThread(_hThread);
+	}
+	this.resume = function()
+	{
+		if(_state != Thread.SUSPENDED)
+		{
+			throw new Error('Invalid state');
+		}
+		_state = Thread.RUNNING;
+		_ResumeThread(_hThread);
+	}
+	this.stop = function()
+	{
+		if(_state != Thread.RUNNING && _state != Thread.READY)
+		{
+			throw new Error('Invalid state');
+		}
+		_state = Thread.STOPPED;
+		_TerminateThread(_hThread);
+	}
+	this.getState = function()
+	{
+		return _state;
+	}
+}
+
+Thread.sleep = function(ms){
+	_Sleep(ms);
+}
+
+Thread.READY = 0;
+Thread.RUNNING = 1;
+Thread.SUSPENDED = 2;
+Thread.STOPPED = 3;
+
+

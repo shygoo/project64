@@ -2,6 +2,8 @@
 #include <Project64/N64System/Debugger/ScriptSystem.h>
 #include <3rdParty/duktape/duktape.h>
 
+#pragma comment(lib, "Ws2_32.lib")
+
 int CCallbackList::Add(void* heapptr, uint32_t tag = 0)
 {
 	int callbackId = m_nextCallbackId++;
@@ -78,8 +80,21 @@ void CScriptSystem::Init()
 	//BindGlobalFunction("_NewWindow", _NewWindow);
 	//BindGlobalFunction("_AddCtrl", _AddCtrl);
 	//BindGlobalFunction("_AddMessageHandler", _AddMessageHandler);
+	BindGlobalFunction("_CreateThread", CreateThread);
+	BindGlobalFunction("_TerminateThread", TerminateThread);
+	BindGlobalFunction("_SuspendThread", SuspendThread);
+	BindGlobalFunction("_ResumeThread", ResumeThread);
+	BindGlobalFunction("_Sleep", Sleep);
+
+	BindGlobalFunction("_CreateServer", CreateServer);
+	BindGlobalFunction("_ReceiveBytes", ReceiveBytes);
+	BindGlobalFunction("_SockAccept", SockAccept);
 
 	EvalFile("_api.js");
+
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+
 }
 
 void CScriptSystem::Eval(const char* jsCode)
@@ -129,6 +144,7 @@ CCallbackList* CScriptSystem::GetCallbackList(const char* hookId)
 	return NULL;
 }
 
+/*
 // Protect js object/function from garbage collector
 void CScriptSystem::Stash(void* heapptr)
 {
@@ -136,7 +152,7 @@ void CScriptSystem::Stash(void* heapptr)
 	duk_push_heapptr(m_Ctx, heapptr);
 	duk_put_prop_index(m_Ctx, -2, m_NextStashIndex);
 	duk_pop_n(m_Ctx, 1);
-}
+}*/
 
 void CScriptSystem::Invoke(void* heapptr)
 {
@@ -164,7 +180,7 @@ duk_ret_t CScriptSystem::AddCallback(duk_context* ctx)
 	heapptr = duk_get_heapptr(ctx, 1);
 	duk_pop_n(ctx, 2);
 
-	Stash(heapptr);
+	//Stash(heapptr);
 
 	int callbackId = -1;
 
@@ -200,7 +216,10 @@ duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	duk_pop(ctx);
 	uint8_t val = 0;
-	g_MMU->LB_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->LB_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -210,7 +229,10 @@ duk_ret_t CScriptSystem::GetRDRAMU16(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	duk_pop(ctx);
 	uint16_t val = 0;
-	g_MMU->LH_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->LH_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -220,7 +242,10 @@ duk_ret_t CScriptSystem::GetRDRAMU32(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	duk_pop(ctx);
 	uint32_t val = 0;
-	g_MMU->LW_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->LW_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -230,7 +255,10 @@ duk_ret_t CScriptSystem::SetRDRAMU8(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	uint8_t val = duk_to_int(ctx, 1);
 	duk_pop_n(ctx, 2);
-	g_MMU->SB_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->SB_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -240,7 +268,10 @@ duk_ret_t CScriptSystem::SetRDRAMU16(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	uint16_t val = duk_to_int(ctx, 1);
 	duk_pop_n(ctx, 2);
-	g_MMU->SH_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->SH_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -250,7 +281,10 @@ duk_ret_t CScriptSystem::SetRDRAMU32(duk_context* ctx)
 	uint32_t address = duk_to_uint32(ctx, 0);
 	uint32_t val = duk_to_int(ctx, 1);
 	duk_pop_n(ctx, 2);
-	g_MMU->SW_VAddr(address, val);
+	if (g_MMU != NULL)
+	{
+		g_MMU->SW_VAddr(address, val);
+	}
 	duk_push_int(ctx, val);
 	return 1;
 }
@@ -262,6 +296,120 @@ duk_ret_t CScriptSystem::alert(duk_context* ctx)
 	MessageBox(NULL, msg, "", MB_OK);
 	duk_pop_n(ctx, 1);
 	duk_push_boolean(ctx, 1);
+	return 1;
+}
+
+DWORD WINAPI CScriptSystem::ThreadProc(LPVOID lpDukProcHeapPtr)
+{
+	Invoke(lpDukProcHeapPtr);
+	return 0;
+}
+
+duk_ret_t CScriptSystem::CreateThread(duk_context* ctx)
+{
+	void* lpDukProcHeapPtr = duk_get_heapptr(ctx, 0);
+	duk_pop(ctx);
+	HANDLE hWorkerThread = ::CreateThread(NULL, 0, ThreadProc, lpDukProcHeapPtr, 0, NULL);
+	duk_push_uint(ctx, (UINT)hWorkerThread);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::TerminateThread(duk_context* ctx)
+{
+	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	::TerminateThread(hThread, 0);
+	CloseHandle(hThread);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::SuspendThread(duk_context* ctx)
+{
+	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	::SuspendThread(hThread);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::ResumeThread(duk_context* ctx)
+{
+	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	::ResumeThread(hThread);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::Sleep(duk_context* ctx)
+{
+	DWORD milliseconds = duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	::Sleep(milliseconds);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::CreateServer(duk_context* ctx)
+{
+	USHORT port = (USHORT)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+
+	SOCKET sock;
+	struct sockaddr_in server;
+
+	sock = socket(AF_INET, SOCK_STREAM, 0);
+
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons(port);
+
+	if (::bind(sock, (struct sockaddr*) &server, sizeof(server))) {
+		duk_push_int(ctx, INVALID_SOCKET);
+		return 1;
+	}
+
+	listen(sock, 3);
+	duk_push_int(ctx, sock);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::ReceiveBytes(duk_context* ctx) {
+	// (socketd, nBytes)
+
+	SOCKET socket = (SOCKET)duk_get_int(ctx, 0);
+	int nBytes = duk_get_int(ctx, 1);
+
+	duk_pop_n(ctx, 2);
+
+	char* bytes = (char*)malloc(nBytes);
+	uint64_t bytesRead = 0;
+
+	while (bytesRead < nBytes) {
+		int n = recv(socket, bytes + bytesRead, nBytes - bytesRead, 0);
+		if (n < 0) {
+			return n;
+		}
+		bytesRead += n;
+	}
+	
+	void* jsBuf = duk_push_buffer(ctx, nBytes, 0);
+	memcpy(jsBuf, bytes, nBytes);
+	free(bytes);
+
+	return 1;
+}
+
+duk_ret_t CScriptSystem::SockAccept(duk_context* ctx) {
+	// (serversocketd)
+
+	SOCKET serverSocket = (SOCKET)duk_get_int(ctx, 0);
+	duk_pop(ctx);
+
+	struct sockaddr_in client;
+	int addrSize = sizeof(struct sockaddr_in);
+
+	SOCKET clientSocket = accept(serverSocket, (struct sockaddr*)&client, &addrSize);
+	
+	duk_push_int(ctx, (int)clientSocket);
+
 	return 1;
 }
 

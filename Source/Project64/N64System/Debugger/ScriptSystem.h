@@ -45,23 +45,33 @@ public:
 	static void Eval(const char* jsCode);
 	static void EvalFile(const char* jsPath);
 	static void BindGlobalFunction(const char* name, duk_c_function func);
-	static void Stash(void* heapptr);
-	static void Unstash(void* heapptr);
+	//static void Stash(void* heapptr);
+	//static void Unstash(void* heapptr);
 
 	static void Invoke(void* heapptr);
 
 private:
-	// Bound functions
+	static vector<HANDLE> m_WorkerThreads;
+	static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
 
-	static duk_ret_t AddCallback(duk_context* ctx); // ()
-	static duk_ret_t GetGPRVal(duk_context* ctx);
-	static duk_ret_t SetGPRVal(duk_context* ctx);
-	static duk_ret_t GetRDRAMU8(duk_context* ctx);
-	static duk_ret_t GetRDRAMU16(duk_context* ctx);
-	static duk_ret_t GetRDRAMU32(duk_context* ctx);
-	static duk_ret_t SetRDRAMU8(duk_context* ctx);
-	static duk_ret_t SetRDRAMU16(duk_context* ctx);
-	static duk_ret_t SetRDRAMU32(duk_context* ctx);
-	static duk_ret_t Thread(duk_context* ctx);
-	static duk_ret_t alert(duk_context* ctx);
+	// Bound functions
+	static duk_ret_t alert           (duk_context* ctx); // (message)
+	static duk_ret_t AddCallback     (duk_context* ctx); // (hookId, callback, tag)
+	static duk_ret_t GetGPRVal       (duk_context* ctx); // (regNum)
+	static duk_ret_t SetGPRVal       (duk_context* ctx); // (regNum, value)
+	static duk_ret_t GetRDRAMU8      (duk_context* ctx); // (address)
+	static duk_ret_t GetRDRAMU16     (duk_context* ctx); // (address)
+	static duk_ret_t GetRDRAMU32     (duk_context* ctx); // (address)
+	static duk_ret_t SetRDRAMU8      (duk_context* ctx); // (address, value)
+	static duk_ret_t SetRDRAMU16     (duk_context* ctx); // (address, value)
+	static duk_ret_t SetRDRAMU32     (duk_context* ctx); // (address, value)
+	static duk_ret_t CreateThread    (duk_context* ctx); // (proc)
+	static duk_ret_t TerminateThread (duk_context* ctx); // (hThread)
+	static duk_ret_t SuspendThread   (duk_context* ctx); // (hThread)
+	static duk_ret_t ResumeThread    (duk_context* ctx); // (hThread)
+	static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
+	static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
+	static duk_ret_t ReceiveBytes    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
+	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
+	
 };
