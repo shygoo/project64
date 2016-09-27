@@ -15,29 +15,24 @@
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
-
-CDebuggerUI* CInterpreterDebug::m_DebuggerUI = NULL;
+#include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/Debugger.h>
 
 BOOL CInterpreterDebug::m_Debugging = FALSE;
 BOOL CInterpreterDebug::m_Skipping = FALSE;
 
-vector<uint32_t> CInterpreterDebug::m_RBP;
-vector<uint32_t> CInterpreterDebug::m_WBP;
-vector<uint32_t> CInterpreterDebug::m_EBP;
+std::vector<uint32_t> CInterpreterDebug::m_RBP;
+std::vector<uint32_t> CInterpreterDebug::m_WBP;
+std::vector<uint32_t> CInterpreterDebug::m_EBP;
 
 int CInterpreterDebug::m_nRBP = 0;
 int CInterpreterDebug::m_nWBP = 0;
 int CInterpreterDebug::m_nEBP = 0;
 
-void CInterpreterDebug::DbgInit(CDebuggerUI* debuggerUI)
-{
-	m_DebuggerUI = debuggerUI;
-}
-
 void CInterpreterDebug::Pause(uint32_t address)
 {
 	KeepDebugging();
-	m_DebuggerUI->Debug_ShowCommandsLocation(address, FALSE);
+	g_Debugger->BreakpointHit();
 	g_System->Pause();
 }
 

@@ -115,7 +115,7 @@ const events = (function()
 	return {
 		on: function(hook, callback, tag)
 		{
-			stashCallback(callback);
+			this._stashCallback(callback);
 			return _AddCallback(hook, callback, tag);
 		},
 		onexec: function(addr, callback)
@@ -132,7 +132,7 @@ const events = (function()
 		},
 		off: function(){},
 		clear: function(){},
-		stashCallback: function(hook, callback, tag)
+		_stashCallback: function(callback)
 		{
 			callbacks[nextCallbackId] = callback;
 			return nextCallbackId++;

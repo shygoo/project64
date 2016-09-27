@@ -17,7 +17,9 @@ CDebuggerUI::CDebuggerUI () :
     m_MemoryDump(NULL),
     m_MemoryView(NULL),
     m_MemorySearch(NULL),
-    m_DebugTLB(NULL)
+    m_DebugTLB(NULL),
+    m_CommandsView(NULL),
+    m_Scripts(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
@@ -64,6 +66,18 @@ void CDebuggerUI::Debug_Reset ( void )
         delete m_DebugTLB;
         m_DebugTLB = NULL;
     }
+	if (m_CommandsView)
+	{
+		m_CommandsView->HideWindow();
+		delete m_CommandsView;
+		m_CommandsView = NULL;
+	}
+	if (m_Scripts)
+	{
+		m_Scripts->HideWindow();
+		delete m_Scripts;
+		m_Scripts = NULL;
+	}
 }
 
 void CDebuggerUI::Debug_ShowMemoryDump()
@@ -131,6 +145,11 @@ void CDebuggerUI::Debug_RefreshTLBWindow(void)
     }
 }
 
+void CDebuggerUI::TLBChanged()
+{
+	Debug_RefreshTLBWindow();
+}
+
 void CDebuggerUI::Debug_ShowMemorySearch()
 {
     if (m_MemorySearch == NULL)
@@ -143,11 +162,6 @@ void CDebuggerUI::Debug_ShowMemorySearch()
     }
 }
 
-void CDebuggerUI::TLBChanged()
-{
-    Debug_RefreshTLBWindow();
-}
-
 void CDebuggerUI::Debug_ShowCommandsWindow()
 {
 	if (m_CommandsView == NULL)
@@ -157,11 +171,20 @@ void CDebuggerUI::Debug_ShowCommandsWindow()
 	m_CommandsView->ShowWindow();
 }
 
-void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top) {
+void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top)
+{
 	Debug_ShowCommandsWindow();
 	if (m_CommandsView)
 	{
 		m_CommandsView->ShowAddress(address, top);
+	}
+}
+
+void CDebuggerUI::BreakpointHit()
+{
+	if (m_CommandsView)
+	{
+		Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
 	}
 }
 
@@ -172,4 +195,19 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 		m_Scripts = new CDebugScripts(this);
 	}
 	m_Scripts->ShowWindow();
+}
+
+void CDebuggerUI::ExecEvents(uint32_t address) // override
+{
+	CScriptSystem::m_ExecEvents.InvokeByTag(address);
+}
+
+void CDebuggerUI::WriteEvents(uint32_t address) // override
+{
+	CScriptSystem::m_WriteEvents.InvokeByTag(address);
+}
+
+void CDebuggerUI::ReadEvents(uint32_t address) // override
+{
+	CScriptSystem::m_ReadEvents.InvokeByTag(address);
 }

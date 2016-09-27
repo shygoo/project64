@@ -19,10 +19,6 @@
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
-//static bool registersUpdating = FALSE;
-
-//const int CDebugCommandsView::listLength = 48;
-
 DWORD CDebugCommandsView::GPREditIds[32] = {
 	IDC_R0_EDIT,  IDC_R1_EDIT,  IDC_R2_EDIT,  IDC_R3_EDIT,
 	IDC_R4_EDIT,  IDC_R5_EDIT,  IDC_R6_EDIT,  IDC_R7_EDIT,
@@ -80,7 +76,7 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	m_TestEdit.Attach(GetDlgItem(IDC_EDIT1));
+	//m_TestEdit.Attach(GetDlgItem(IDC_EDIT1));
 	//regEdit.Attach(GetDlgItem(IDC_EDIT1));
 
 	m_CommandListRows = 48;
@@ -134,7 +130,6 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	// Setup command list
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
 
-
 	m_CommandList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 	m_CommandList.AddColumn("Address", 0);
@@ -167,7 +162,7 @@ LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LP
 
 void CDebugCommandsView::CheckCPUType()
 {
-	uint32_t cpuType = g_Settings->LoadDword(Game_CpuType);
+	uint32_t cpuType = g_System->CpuType();
 	if (cpuType != CPU_TYPE::CPU_Interpreter)
 	{
 		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);

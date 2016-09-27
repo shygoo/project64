@@ -12,6 +12,7 @@
 #include "stdafx.h"
 #include "InterpreterCPU.h"
 #include "InterpreterDebug.h"
+#include "Debugger.h"
 
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/N64Class.h>
@@ -21,8 +22,6 @@
 #include <Project64-core/Plugins/PluginClass.h>
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
-
-#include <Project64/N64System/Debugger/ScriptSystem.h>
 
 R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
 
@@ -480,12 +479,13 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
     }
 }
 
+// todo move this thing to CDebugger/g_Debugger, implement in CDebuggerUI
 inline void CInterpreterCPU::DebugEvents()
 {
 	uint32_t PROGRAM_COUNTER = *_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 	
-	CScriptSystem::m_ExecEvents.InvokeByTag(PROGRAM_COUNTER);
+	g_Debugger->ExecEvents(PROGRAM_COUNTER);
 
 	// PC breakpoints
 
@@ -508,7 +508,7 @@ inline void CInterpreterCPU::DebugEvents()
 
 		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
-			CScriptSystem::m_ReadEvents.InvokeByTag(memoryAddress);
+			g_Debugger->ReadEvents(memoryAddress);
 			if (CInterpreterDebug::RBPExists(memoryAddress))
 			{
 				CInterpreterDebug::Pause(PROGRAM_COUNTER);
@@ -517,7 +517,7 @@ inline void CInterpreterCPU::DebugEvents()
 		}
 		else // Write instructions
 		{
-			CScriptSystem::m_WriteEvents.InvokeByTag(memoryAddress);
+			g_Debugger->WriteEvents(memoryAddress);
 			if (CInterpreterDebug::WBPExists(memoryAddress))
 			{
 				CInterpreterDebug::Pause(PROGRAM_COUNTER);

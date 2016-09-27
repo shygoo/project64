@@ -41,6 +41,7 @@ Edited files
   
  main.cpp
   70   // SupportWindow.Show(reinterpret_cast<HWND>(MainWindow.GetWindowHandle()));
+  23   g_Debugger = &MainWindow; // make g_Debugger match the CDebuggerUI used by menu items
   
  InterpreterCPU.cpp
   23      #include "InterpreterDBG.h"

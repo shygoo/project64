@@ -69,12 +69,12 @@
     <ClCompile Include="N64System\Debugger\Debugger-TLB.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger.cpp" />
+    <ClCompile Include="N64System\Debugger\ScriptSystem.cpp" />
     <ClCompile Include="Plugins\PluginList.cpp" />
     <ClCompile Include="Settings\GuiSettings.cpp" />
     <ClCompile Include="Settings\NotificationSettings.cpp" />
     <ClCompile Include="Settings\UISettings.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp" />
-    <ClCompile Include="N64System\Debugger\ScriptSystem.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Scripts.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -107,7 +107,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="N64System\Debugger\Debugger-Scripts.h" />
-    <ClInclude Include="N64System\Debugger\ScriptSystem.h" />
     <ClInclude Include="N64System\Debugger\Debugger-Commands.h" />
     <ClInclude Include="Multilanguage\LanguageSelector.h" />
     <ClInclude Include="N64System.h" />
@@ -118,6 +117,7 @@
     <ClInclude Include="N64System\Debugger\Debugger-ViewMemory.h" />
     <ClInclude Include="N64System\Debugger\debugger.h" />
     <ClInclude Include="N64System\Debugger\DebuggerUI.h" />
+    <ClInclude Include="N64System\Debugger\ScriptSystem.h" />
     <ClInclude Include="Settings\GuiSettings.h" />
     <ClInclude Include="Settings\NotificationSettings.h" />
     <ClInclude Include="Settings\UISettings.h" />

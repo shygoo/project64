@@ -54,8 +54,7 @@ CMainMenu::CMainMenu(CMainGui * hMainWindow) :
     m_ChangeSettingList.push_back(Debugger_AppLogFlush);
     m_ChangeSettingList.push_back(Game_CurrentSaveState);
     m_ChangeSettingList.push_back(Setting_CurrentLanguage);
-
-	CInterpreterDebug::DbgInit(m_Gui);
+	
 	CScriptSystem::Init();
 
 	CScriptSystem::EvalFile("_script.js");
@@ -1163,7 +1162,7 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
         /* Debugger Main Menu
         ****************/
         Item.Reset(ID_DEBUGGER_BREAKPOINTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Breakpoint...");
-        Item.SetItemEnabled(CPURunning);
+        //Item.SetItemEnabled(CPURunning);
         DebugMenu.push_back(Item);
         
 		/* Debug - Scripts

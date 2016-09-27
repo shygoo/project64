@@ -12,19 +12,17 @@
 #pragma once
 
 #include <stdint.h>
-#include <Project64/N64System/Debugger/DebuggerUI.h>
 
 class CInterpreterDebug {
 private:
 	CInterpreterDebug();
-	static CDebuggerUI* m_DebuggerUI;
-	
+
 public:
 	static BOOL m_Debugging;
 	static BOOL m_Skipping;
-	static vector<uint32_t> m_RBP;
-	static vector<uint32_t> m_WBP;
-	static vector<uint32_t> m_EBP;
+	static std::vector<uint32_t> m_RBP;
+	static std::vector<uint32_t> m_WBP;
+	static std::vector<uint32_t> m_EBP;
 
 	static int m_nRBP;
 	static int m_nWBP;
@@ -34,12 +32,10 @@ public:
 	static void Resume();
 	static void Skip();
 
-	static void DbgInit(CDebuggerUI* debuggerUI);
 	static BOOL isDebugging();
 	static void KeepDebugging();
 	static void StopDebugging();
 
-	
 	static void RBPAdd(uint32_t address);
 	static void RBPRemove(uint32_t address);
 	static void RBPClear();

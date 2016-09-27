@@ -13,4 +13,8 @@
 __interface CDebugger
 {
 	virtual void TLBChanged(void) = 0;
+	virtual void BreakpointHit(void) = 0;
+	virtual void ExecEvents(uint32_t address) = 0;
+	virtual void ReadEvents(uint32_t address) = 0;
+	virtual void WriteEvents(uint32_t address) = 0;
 };
