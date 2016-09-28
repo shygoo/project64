@@ -60,8 +60,15 @@ public:
 	//static void Unstash(void* heapptr);
 
 	static void Invoke(void* heapptr);
+	static void DrawTest();
 
 private:
+	// Screen printing
+	//static HWND   m_RenderWindow;
+	static HFONT  m_FontFamily;
+	static HBRUSH m_FontColor;
+	static HPEN   m_FontOutline;
+	
 	static vector<HANDLE> m_WorkerThreads;
 	static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
 
@@ -83,6 +90,7 @@ private:
 	static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
 	static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
 	static duk_ret_t ReceiveBytes    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
+	static duk_ret_t Receive         (duk_context* ctx); // (socket) ; receive max 4kb
 	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
 	static duk_ret_t ConsoleLog      (duk_context* ctx);
 };

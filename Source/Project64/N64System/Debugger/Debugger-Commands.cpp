@@ -313,96 +313,154 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 {
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
 	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
-
-	if (drawStage == CDDS_PREPAINT)
+	
+	switch (drawStage)
 	{
-		return CDRF_NOTIFYITEMDRAW;
+	case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW;
+	case CDDS_ITEMPREPAINT: return CDRF_NOTIFYSUBITEMDRAW;
+	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM): break;
+	default: return CDRF_DODEFAULT;
 	}
-	if (drawStage == CDDS_ITEMPREPAINT)
-	{
-		return CDRF_NOTIFYSUBITEMDRAW;
-	}
-	if(drawStage == (CDDS_ITEMPREPAINT | CDDS_SUBITEM))
-	{
-		DWORD nItem = pLVCD->nmcd.dwItemSpec;
-		DWORD nSubItem = pLVCD->iSubItem;
-		
-		uint32_t address = m_StartAddress + (nItem * 4);
-		uint32_t pc = (g_Reg != NULL) ? g_Reg->m_PROGRAM_COUNTER : 0;
 
-		if (nSubItem == 0) // addr
+	DWORD nItem = pLVCD->nmcd.dwItemSpec;
+	DWORD nSubItem = pLVCD->iSubItem;
+	
+	uint32_t address = m_StartAddress + (nItem * 4);
+	uint32_t pc = (g_Reg != NULL) ? g_Reg->m_PROGRAM_COUNTER : 0;
+
+	OPCODE pcOpcode;
+	if (g_MMU != NULL)
+	{
+		g_MMU->LW_VAddr(pc, pcOpcode.Hex);
+	}
+
+	if (nSubItem == 0) // addr
+	{
+		if (CInterpreterDebug::EBPExists(address))
 		{
-			if (CInterpreterDebug::EBPExists(address))
-			{
-				// breakpoint
-				pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
-				pLVCD->clrText = (address == pc) ?
-					RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
-					RGB(0xFF, 0xCC, 0xCC);
-			}
-			else if (address == pc)
-			{
-				// pc
-				pLVCD->clrTextBk = RGB(0x88, 0x88, 0x88);
-				pLVCD->clrText = RGB(0xFF, 0xFF, 0);
-			}
-			else
-			{
-				//default
-				pLVCD->clrTextBk = RGB(0xEE, 0xEE, 0xEE);
-				pLVCD->clrText = RGB(0x44, 0x44, 0x44);
-			}
+			// breakpoint
+			pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
+			pLVCD->clrText = (address == pc) ?
+				RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
+				RGB(0xFF, 0xCC, 0xCC);
 		}
-		else if (nSubItem == 1 || nSubItem == 2) // cmd & args
+		else if (address == pc)
 		{
-			OPCODE Opcode = OPCODE();
-			if (g_MMU != NULL)
-			{
-				g_MMU->LW_VAddr(address, Opcode.Hex);
-			}
-			else
-			{
-				Opcode.Hex = 0x00000000;
-			}
-			
-			if (pc == address)
-			{
-				//pc
-				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
-				pLVCD->clrText = RGB(0x22, 0x22, 0);
-			}
-			else if (Opcode.op == R4300i_ADDIU && Opcode.rt == 29) // stack shift
-			{
-				if ((short)Opcode.immediate < 0) // alloc
-				{
-					// sky blue bg, dark blue fg
-					pLVCD->clrTextBk = RGB(0xCC, 0xDD, 0xFF);
-					pLVCD->clrText = RGB(0x00, 0x11, 0x44);
-				}
-				else // free
-				{
-					// salmon bg, dark red fg
-					pLVCD->clrTextBk = RGB(0xFF, 0xDD, 0xDD);
-					pLVCD->clrText = RGB(0x44, 0x00, 0x00);
-				}
-			}
-			else if (Opcode.Hex == 0x00000000) // nop
-			{
-				// gray fg
-				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-				pLVCD->clrText = RGB(0x88, 0x88, 0x88);
-			}
-			else if (Opcode.op == R4300i_J || Opcode.op == R4300i_JAL || (Opcode.op == 0 && Opcode.funct == R4300i_SPECIAL_JR))
-			{
-				// jumps
-				pLVCD->clrText = RGB(0x00, 0x66, 0x00);
-				pLVCD->clrTextBk = RGB(0xF5, 0xFF, 0xF5);
-			}
-			else
-			{
-				pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-				pLVCD->clrText = RGB(0x00, 0x00, 0x00);
-			}
+			// pc
+			pLVCD->clrTextBk = RGB(0x88, 0x88, 0x88);
+			pLVCD->clrText = RGB(0xFF, 0xFF, 0);
+		}
+		else
+		{
+			//default
+			pLVCD->clrTextBk = RGB(0xEE, 0xEE, 0xEE);
+			pLVCD->clrText = RGB(0x44, 0x44, 0x44);
+		}
+
+		return CDRF_DODEFAULT;
+	}
+	
+	// (nSubItem == 1 || nSubItem == 2) 
+
+	// cmd & args
+	OPCODE Opcode;
+	if (g_MMU != NULL)
+	{
+		g_MMU->LW_VAddr(address, Opcode.Hex);
+	}
+	else
+	{
+		Opcode.Hex = 0x00000000;
+	}
+	
+	if (pc == address)
+	{
+		//pc
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+		pLVCD->clrText = RGB(0x22, 0x22, 0);
+	}
+	else if (Opcode.op == R4300i_ADDIU && Opcode.rt == 29) // stack shift
+	{
+		if ((short)Opcode.immediate < 0) // alloc
+		{
+			// sky blue bg, dark blue fg
+			pLVCD->clrTextBk = RGB(0xCC, 0xDD, 0xFF);
+			pLVCD->clrText = RGB(0x00, 0x11, 0x44);
+		}
+		else // free
+		{
+			// salmon bg, dark red fg
+			pLVCD->clrTextBk = RGB(0xFF, 0xDD, 0xDD);
+			pLVCD->clrText = RGB(0x44, 0x00, 0x00);
+		}
+	}
+	else if (Opcode.Hex == 0x00000000) // nop
+	{
+		// gray fg
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0x88, 0x88, 0x88);
+	}
+	else if (Opcode.op == R4300i_J || Opcode.op == R4300i_JAL || (Opcode.op == 0 && Opcode.funct == R4300i_SPECIAL_JR))
+	{
+		// jumps
+		pLVCD->clrText = RGB(0x00, 0x66, 0x00);
+		pLVCD->clrTextBk = RGB(0xF5, 0xFF, 0xF5);
+	}
+	else
+	{
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0x00, 0x00, 0x00);
+	}
+
+	if (!CInterpreterDebug::isDebugging())
+	{
+		return CDRF_DODEFAULT;
+	}
+
+	// color register usage
+	// todo localise to temp register context (dont look before/after jumps and frame shifts)
+	COLORREF clrUsedRegister = RGB(0xE5, 0xE0, 0xFF); // light purple
+	COLORREF clrAffectedRegister = RGB(0xFF, 0xE0, 0xFF); // light pink
+
+	int pcUsedRegA = 0, pcUsedRegB = 0, pcChangedReg = 0;
+	int curUsedRegA = 0, curUsedRegB = 0, curChangedReg = 0;
+	
+	if (pcOpcode.op == R4300i_SPECIAL)
+	{
+		pcUsedRegA = pcOpcode.rs;
+		pcUsedRegB = pcOpcode.rt;
+		pcChangedReg = pcOpcode.rd;
+	}
+	else
+	{
+		pcUsedRegA = pcOpcode.rs;
+		pcChangedReg = pcOpcode.rt;
+	}
+
+	if (Opcode.op == R4300i_SPECIAL)
+	{
+		curUsedRegA = Opcode.rs;
+		curUsedRegB = Opcode.rt;
+		curChangedReg = Opcode.rd;
+	}
+	else
+	{
+		curUsedRegA = Opcode.rs;
+		curChangedReg = Opcode.rt;
+	}
+
+	if (address < pc)
+	{
+		if (curChangedReg != 0 && (pcUsedRegA == curChangedReg || pcUsedRegB == curChangedReg))
+		{
+			pLVCD->clrTextBk = clrUsedRegister;
+		}
+	}
+	else if (address > pc)
+	{
+		if (pcChangedReg != 0 && (curUsedRegA == pcChangedReg || curUsedRegB == pcChangedReg))
+		{
+			pLVCD->clrTextBk = clrAffectedRegister;
 		}
 	}
 	return CDRF_DODEFAULT;
@@ -689,9 +747,9 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		
 		// (if IDC_PC_EDIT here with early ret)
 		
-		HWND test = GetDlgItem(hDlg, ctrlId);
+		HWND ctrl = GetDlgItem(hDlg, ctrlId);
 		char text[20];
-		GetWindowText(test, text, 20);
+		GetWindowText(ctrl, text, 20);
 
 		uint64_t value = CEditReg64::ParseValue(text);
 
@@ -719,10 +777,6 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	{
 		return TRUE;
 	}
-	/*if (registersUpdating)
-	{
-		return FALSE;
-	}*/
 	if (msg != WM_COMMAND)
 	{
 		return FALSE;
@@ -732,8 +786,7 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 
 	if (notification == EN_KILLFOCUS)
 	{
-		// reformat register textbox after it looses focus
-		//registersUpdating = TRUE;
+
 		WORD controlID = LOWORD(wParam);
 		char regText[9];
 		CWindow edit = GetDlgItem(hDlg, controlID);
@@ -741,28 +794,15 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		uint32_t value = strtoul(regText, NULL, 16);
 		sprintf(regText, "%08X", value);
 		edit.SetWindowTextA(regText);
-		//registersUpdating = FALSE;
-		return FALSE;
-	}
 
-	if (!CInterpreterDebug::isDebugging())
-	{
-		return FALSE;
-	}
-	/*
-	if (notification == EN_CHANGE)
-	{
-		int controlId = LOWORD(wParam);
-		int nReg = CDebugCommandsView::MapFPREdit(controlId);
-		if (nReg > 0 && g_Reg != NULL)
+		if (g_Reg == NULL || !CInterpreterDebug::isDebugging())
 		{
-			char regText[9];
-			CWindow edit = GetDlgItem(hDlg, controlId);
-			edit.GetWindowTextA(regText, 9);
-			uint32_t value = strtoul(regText, NULL, 16);
-			g_Reg->m_FPR[nReg].UW[0] = value;
+			return FALSE;
 		}
-	}*/
+
+		int nReg = CDebugCommandsView::MapFPREdit(controlID);
+		g_Reg->m_FPR[nReg].UDW = value;
+	}
 
 	return FALSE;
 }

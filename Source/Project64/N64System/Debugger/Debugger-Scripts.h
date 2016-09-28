@@ -10,7 +10,7 @@
 ****************************************************************************/
 
 #pragma once
-
+#include "DebuggerUI.h"
 #include "ScriptSystem.h"
 
 class CEditEval : public CWindowImpl<CEditEval, CEdit>

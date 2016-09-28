@@ -13,6 +13,7 @@
 
 #include <commctrl.h>
 #include <Project64-core/Settings/SettingType/SettingsType-Application.h>
+#include <Project64/N64System/Debugger/Debugger-Scripts.h>
 
 void EnterLogOptions(HWND hwndOwner);
 
@@ -826,6 +827,8 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             //					Plugins->Gfx()->DrawScreen();
             //				}
             //			}
+			CScriptSystem::DrawTest();
+
             ValidateRect(hWnd, NULL);
         }
         break;

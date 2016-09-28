@@ -309,4 +309,56 @@ Thread.RUNNING = 1;
 Thread.SUSPENDED = 2;
 Thread.STOPPED = 3;
 
+function Server()
+{
+	var listenerThread;
+	var serverDescriptor;
+	var _this = this;
+	this.onconnection = function(clientSocket){}; // (clientsock)
+	this.listen = function(port)
+	{
+		serverDescriptor = _CreateServer(port);
+		var listening = true;
+		listenerThread = new Thread(function()
+		{
+			while(listening)
+			{
+				var clientDescriptor = _SockAccept(serverDescriptor);
+				alert(clientDescriptor);
+				_this.onconnection(new Socket(clientDescriptor));
+			}
+		});
+		listenerThread.start();
+	}
+	this.on = function(hook, callback)
+	{
+		switch(hook)
+		{
+			case 'connection': this.onconnection = callback; break;
+		}
+	}
+}
 
+function Socket(descriptor)
+{
+	this.descriptor = descriptor;
+	this.ondata = function(data){};
+	var _this = this;
+	var bOpen = true;
+	var sessionThread = new Thread(function()
+	{
+		while(true)
+		{
+			var data = _Receive(descriptor);
+			_this.ondata(data);
+		}
+	});
+	sessionThread.start();
+	this.on = function(hook, callback)
+	{
+		switch(hook)
+		{
+			case 'data': this.ondata = callback; break;
+		}
+	}
+}

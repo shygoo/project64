@@ -2,6 +2,7 @@
 #include <Project64-core/AppInit.h>
 #include "Multilanguage\LanguageSelector.h"
 #include "Settings/UISettings.h"
+#include <Project64/N64System/Debugger/ScriptSystem.h>
 
 int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /*lpszArgs*/, int /*nWinMode*/)
 {
@@ -25,6 +26,10 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 		g_Plugins->SetRenderWindows(&MainWindow, &HiddenWindow);
         Notify().SetMainWindow(&MainWindow);
         CSupportWindow SupportWindow;
+
+		CScriptSystem::Init();
+		CScriptSystem::EvalFile("_api.js");
+		CScriptSystem::EvalFile("_script.js");
 
         if (g_Settings->LoadStringVal(Cmd_RomFile).length() > 0)
         {

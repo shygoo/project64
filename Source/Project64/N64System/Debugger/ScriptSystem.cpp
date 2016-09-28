@@ -13,6 +13,11 @@
 
 #pragma comment(lib, "Ws2_32.lib")
 
+//HWND CScriptSystem::m_RenderWindow = NULL;
+HFONT CScriptSystem::m_FontFamily = NULL;
+HBRUSH CScriptSystem::m_FontColor = NULL;
+HPEN CScriptSystem::m_FontOutline = NULL;
+
 int CCallbackList::Add(void* heapptr, uint32_t tag = 0)
 {
 	int callbackId = m_nextCallbackId++;
@@ -97,6 +102,7 @@ void CScriptSystem::Init()
 
 	BindGlobalFunction("_CreateServer", CreateServer);
 	BindGlobalFunction("_ReceiveBytes", ReceiveBytes);
+	BindGlobalFunction("_Receive", Receive);
 	BindGlobalFunction("_SockAccept", SockAccept);
 
 	EvalFile("_api.js");
@@ -104,6 +110,14 @@ void CScriptSystem::Init()
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
+	// screen print test
+	m_FontFamily = CreateFont(-13, 0, 0, 0,
+		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		DEFAULT_QUALITY, FF_DONTCARE, "Courier New"
+	);
+	m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
+	m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 }
 
 void CScriptSystem::Eval(const char* jsCode)
@@ -406,6 +420,20 @@ duk_ret_t CScriptSystem::ReceiveBytes(duk_context* ctx) {
 	return 1;
 }
 
+duk_ret_t CScriptSystem::Receive(duk_context* ctx) {
+	// (socketd)
+
+	SOCKET socket = (SOCKET)duk_get_int(ctx, 0);
+	duk_pop(ctx);
+
+	char bytes[4096];
+	int bytesRead = recv(socket, bytes, 4096, 0);
+	
+	void* jsBuf = duk_push_buffer(ctx, bytesRead, 0);
+	memcpy(jsBuf, bytes, bytesRead);
+	return 1;
+}
+
 duk_ret_t CScriptSystem::SockAccept(duk_context* ctx) {
 	// (serversocketd)
 
@@ -422,25 +450,16 @@ duk_ret_t CScriptSystem::SockAccept(duk_context* ctx) {
 	return 1;
 }
 
-/******************** windows **********************/
-
-/*
-static void DrawTest() {
+void CScriptSystem::DrawTest()
+{
 	HWND renderWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
+
 	HDC hdc = GetDC(renderWindow);
 
-	HFONT monoFont = CreateFont(-13, 0, 0, 0,
-		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY, FF_DONTCARE, "Courier New"
-	);
-	HBRUSH whiteBrush = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
-	HPEN pen = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
-
-	SelectObject(hdc, monoFont);
-	SelectObject(hdc, pen);
-	SelectObject(hdc, whiteBrush);
-
+	SelectObject(hdc, m_FontFamily);
+	SelectObject(hdc, m_FontColor);
+	SelectObject(hdc, m_FontOutline);
+	
 	SetBkMode(hdc, TRANSPARENT);
 
 	SetTextColor(hdc, RGB(0xFF, 0xFF, 0xFF));
@@ -462,6 +481,9 @@ static void DrawTest() {
 
 	ReleaseDC(renderWindow, hdc);
 }
+
+/******************** windows **********************/
+/*
 
 // win32 bindings
 
