@@ -106,6 +106,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	{
 		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
 		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
+		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
 	}
 
 	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));

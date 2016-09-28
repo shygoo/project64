@@ -1,3 +1,14 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                      *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
+
 #pragma once
 
 #include "stdafx.h"
@@ -28,7 +39,7 @@ typedef struct {
 
 class CScriptSystem {
 private:
-	CScriptSystem();
+	CScriptSystem(CDebuggerUI* debugger);
 
 public:
 	static int m_NextStashIndex;
@@ -73,5 +84,5 @@ private:
 	static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
 	static duk_ret_t ReceiveBytes    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
 	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
-	
+	static duk_ret_t ConsoleLog      (duk_context* ctx);
 };

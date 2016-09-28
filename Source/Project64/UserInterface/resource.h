@@ -453,8 +453,8 @@
 #define IDC_F31_EDIT                    1235
 #define IDC_SKIP_BTN                    1268
 #define IDC_EDIT1                       1271
+#define IDC_CONSOLE_EDIT                1271
 #define IDC_EVAL_EDIT                   1272
-#define IDC_TREE1                       1273
 #define IDC_SCRIPTS_TREE                1273
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005

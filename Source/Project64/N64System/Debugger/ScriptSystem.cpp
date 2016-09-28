@@ -1,6 +1,15 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                      *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
 #include "stdafx.h"
-#include <Project64/N64System/Debugger/ScriptSystem.h>
-#include <3rdParty/duktape/duktape.h>
+#include "ScriptSystem.h"
 
 #pragma comment(lib, "Ws2_32.lib")
 

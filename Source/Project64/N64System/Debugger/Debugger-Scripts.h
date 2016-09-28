@@ -46,15 +46,18 @@ class CDebugScripts :
 {
 private:
 	CEditEval m_EvalEdit;
+	CEdit m_ConsoleEdit;
 
 public:
 	enum { IDD = IDD_Debugger_Scripts };
 
 	CDebugScripts(CDebuggerUI * debugger);
 	//virtual ~CDebugScripts(void);
-	
-	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
+	void ConsolePrint(char* text);
+	void ConsoleClear();
+
+	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void)
 	{
 		return 0;
