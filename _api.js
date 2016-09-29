@@ -23,6 +23,9 @@ gpr
  gpr.<register name>
 
 ****************************
+
+(entirely unsafe at the moment)
+
 Thread
 
  new Thread(fn)
@@ -42,22 +45,26 @@ Thread
 ****************************
 alert(message)
 
-_AddCallback(hook, callback, tag)
-_SetGPRVal(regnum, val)
-_GetGPRVal(regnum)
-_GetRDRAMU8(address)
-_GetRDRAMU16(address)
-_GetRDRAMU32(address)
-_SetRDRAMU8(address, value)
-_SetRDRAMU16(address, value)
-_SetRDRAMU32(address, value)
+****************************
+_native
 
-_CreateServer(port);
-_SockAccept(serverSocket)
-_ReceiveBytes(socket)
+ _native.addCallback(hook, callback, tag)
+ _native.setGPRVal(regnum, val)
+ _native.getGPRVal(regnum)
+ _native.getRDRAMU8(address)
+ _native.getRDRAMU16(address)
+ _native.getRDRAMU32(address)
+ _native.setRDRAMU8(address, value)
+ _native.setRDRAMU16(address, value)
+ _native.setRDRAMU32(address, value)
+ 
+ _native.sockCreate(port);
+ _native.sockAccept(serverSocket)
+ _native.sockReceive(socket)
+ 
+ _native.msgBox(message[, caption])
 
 ****************************
-Todo:
 
 Server
  new Server()
@@ -116,7 +123,7 @@ const events = (function()
 		on: function(hook, callback, tag)
 		{
 			this._stashCallback(callback);
-			return _AddCallback(hook, callback, tag);
+			return _native.addCallback(hook, callback, tag);
 		},
 		onexec: function(addr, callback)
 		{
@@ -150,14 +157,14 @@ const gpr = new Proxy({}, // todo dgpr for 64 bit
 	{
 		if (prop in _regNums)
 		{
-			return _GetGPRVal(_regNums[prop])
+			return _native.getGPRVal(_regNums[prop])
 		}
 	},
 	set: function(obj, prop, val)
 	{
 		if (prop in _regNums)
 		{
-			_SetGPRVal(_regNums[prop], val)
+			_native.setGPRVal(_regNums[prop], val)
 		}
 	}
 })
@@ -167,33 +174,33 @@ const mem = {
 	{
 		get: function(obj, prop)
 		{
-			return _GetRDRAMU8(prop)
+			return _native.getRDRAMU8(prop)
 		},
 		set: function(obj, prop, val)
 		{
-			_SetRDRAMU8(prop, val)
+			_native.setRDRAMU8(prop, val)
 		}
 	}),
 	u16: new Proxy({},
 	{
 		get: function(obj, prop)
 		{
-			return _GetRDRAMU16(prop)
+			return _native.getRDRAMU16(prop)
 		},
 		set: function(obj, prop, val)
 		{
-			_SetRDRAMU16(prop, val)
+			_native.setRDRAMU16(prop, val)
 		}
 	}),
 	u32: new Proxy({},
 	{
 		get: function(obj, prop)
 		{
-			return _GetRDRAMU32(prop)
+			return _native.getRDRAMU32(prop)
 		},
 		set: function(obj, prop, val)
 		{
-			_SetRDRAMU32(prop, val)
+			_native.setRDRAMU32(prop, val)
 		}
 	}),
 	bindvar: function(obj, baseAddr, name, type)
@@ -264,7 +271,7 @@ function Thread(proc){
 			throw new Error('Invalid state');
 		}
 		_state = Thread.RUNNING;
-		_hThread = _CreateThread(proc);
+		_hThread = _native.createThread(proc);
 		return;
 	}
 	this.suspend = function()
@@ -274,7 +281,7 @@ function Thread(proc){
 			throw new Error('Invalid state');
 		}
 		_state = Thread.SUSPENDED;
-		_SuspendThread(_hThread);
+		_native.suspendThread(_hThread);
 	}
 	this.resume = function()
 	{
@@ -283,7 +290,7 @@ function Thread(proc){
 			throw new Error('Invalid state');
 		}
 		_state = Thread.RUNNING;
-		_ResumeThread(_hThread);
+		_native.resumeThread(_hThread);
 	}
 	this.stop = function()
 	{
@@ -292,7 +299,7 @@ function Thread(proc){
 			throw new Error('Invalid state');
 		}
 		_state = Thread.STOPPED;
-		_TerminateThread(_hThread);
+		_native.terminateThread(_hThread);
 	}
 	this.getState = function()
 	{
@@ -300,8 +307,9 @@ function Thread(proc){
 	}
 }
 
-Thread.sleep = function(ms){
-	_Sleep(ms);
+Thread.sleep = function(ms)
+{
+	_native.sleep(ms);
 }
 
 Thread.READY = 0;
@@ -309,56 +317,123 @@ Thread.RUNNING = 1;
 Thread.SUSPENDED = 2;
 Thread.STOPPED = 3;
 
+
+const alert = (function(){
+	var _alerts = {}
+	var _idx = 0
+	
+	var a = new Thread(function()
+	{
+		while(true)
+		{
+			for(var i in _alerts)
+			{
+				_native.msgBox(_alerts[i][0], _alerts[i][1])
+				delete _alerts[i]
+			}
+			Thread.sleep(100);
+		}
+	});
+	a.start();
+	
+	return function(message, caption)
+	{
+		caption = caption || '';
+		_alerts[_idx++] = [message, caption];
+	}
+	
+})();
+
+
+var _EventEmitterPrototype = {
+	on: function(evt, callback)
+	{
+		if(evt in this._events)
+		{
+			this._events[evt].push(callback)
+		}
+	},
+	_registerEvents: function(evts)
+	{
+		this._events = {};
+		for(var i = 0; i < evts.length; i++)
+		{
+			this._events[evts[i]] = [];
+		}
+	},
+	_invoke: function(evt, param)
+	{
+		if(evt in this._events)
+		{
+		
+			//alert('looking for event');
+		
+			var events = this._events[evt];
+			for(var i = 0; i < events.length; i++)
+			{
+				//alert(events[i])
+				events[i](param);
+			}
+		}
+	}
+};
+
+
 function Server()
 {
-	var listenerThread;
-	var serverDescriptor;
 	var _this = this;
+	
+	this._registerEvents(['connection']);
+	
+	var serverDescriptor = _native.sockCreate();
+
 	this.onconnection = function(clientSocket){}; // (clientsock)
 	this.listen = function(port)
 	{
-		serverDescriptor = _CreateServer(port);
+		_native.sockListen(serverDescriptor, port);
 		var listening = true;
-		listenerThread = new Thread(function()
+		var listenerThread = new Thread(function()
 		{
 			while(listening)
 			{
-				var clientDescriptor = _SockAccept(serverDescriptor);
-				alert(clientDescriptor);
-				_this.onconnection(new Socket(clientDescriptor));
+				var clientDescriptor = _native.sockAccept(serverDescriptor);
+				_this._invoke('connection', new Socket(clientDescriptor));
 			}
 		});
 		listenerThread.start();
 	}
-	this.on = function(hook, callback)
-	{
-		switch(hook)
-		{
-			case 'connection': this.onconnection = callback; break;
-		}
-	}
 }
+
+Server.prototype = _EventEmitterPrototype;
+
 
 function Socket(descriptor)
 {
 	this.descriptor = descriptor;
-	this.ondata = function(data){};
+	
+	this._registerEvents(['data', 'close']);
+	
 	var _this = this;
 	var bOpen = true;
+	
 	var sessionThread = new Thread(function()
 	{
-		while(true)
+		while(bOpen)
 		{
-			var data = _Receive(descriptor);
-			_this.ondata(data);
+			var data = _native.sockReceive(descriptor);
+			if(data == false || data.byteLength == 0)
+			{
+				// invoke closed here
+				_this._invoke('close');
+				bOpen = false;
+				break;
+			}
+			_this._invoke('data', new ArrayBuffer(data));
 		}
 	});
 	sessionThread.start();
-	this.on = function(hook, callback)
-	{
-		switch(hook)
-		{
-			case 'data': this.ondata = callback; break;
-		}
-	}
 }
+
+Socket.prototype = _EventEmitterPrototype;
+
+

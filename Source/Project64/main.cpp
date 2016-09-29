@@ -28,7 +28,6 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
         CSupportWindow SupportWindow;
 
 		CScriptSystem::Init();
-		CScriptSystem::EvalFile("_api.js");
 		CScriptSystem::EvalFile("_script.js");
 
         if (g_Settings->LoadStringVal(Cmd_RomFile).length() > 0)

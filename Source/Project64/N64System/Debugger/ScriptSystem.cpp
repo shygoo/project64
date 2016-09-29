@@ -76,35 +76,38 @@ void CScriptSystem::Init()
 {
 	m_Ctx = duk_create_heap_default();
 
+	duk_push_object(m_Ctx);
+	duk_put_global_string(m_Ctx, "_native");
+
 	RegisterCallbackList("exec", &m_ExecEvents);
 	RegisterCallbackList("read", &m_ReadEvents);
 	RegisterCallbackList("write", &m_WriteEvents);
 	RegisterCallbackList("wm", &m_WMEvents);
 
-	BindGlobalFunction("_AddCallback", AddCallback);
-	BindGlobalFunction("_SetGPRVal", SetGPRVal);
-	BindGlobalFunction("_GetGPRVal", GetGPRVal);
-	BindGlobalFunction("_GetRDRAMU8", GetRDRAMU8);
-	BindGlobalFunction("_GetRDRAMU16", GetRDRAMU16);
-	BindGlobalFunction("_GetRDRAMU32", GetRDRAMU32);
-	BindGlobalFunction("_SetRDRAMU8", SetRDRAMU8);
-	BindGlobalFunction("_SetRDRAMU16", SetRDRAMU16);
-	BindGlobalFunction("_SetRDRAMU32", SetRDRAMU32);
-	BindGlobalFunction("alert", alert);
-	//BindGlobalFunction("_NewWindow", _NewWindow);
-	//BindGlobalFunction("_AddCtrl", _AddCtrl);
-	//BindGlobalFunction("_AddMessageHandler", _AddMessageHandler);
-	BindGlobalFunction("_CreateThread", CreateThread);
-	BindGlobalFunction("_TerminateThread", TerminateThread);
-	BindGlobalFunction("_SuspendThread", SuspendThread);
-	BindGlobalFunction("_ResumeThread", ResumeThread);
-	BindGlobalFunction("_Sleep", Sleep);
+	BindNativeFunction("addCallback", AddCallback);
+	BindNativeFunction("setGPRVal", SetGPRVal);
+	BindNativeFunction("getGPRVal", GetGPRVal);
 
-	BindGlobalFunction("_CreateServer", CreateServer);
-	BindGlobalFunction("_ReceiveBytes", ReceiveBytes);
-	BindGlobalFunction("_Receive", Receive);
-	BindGlobalFunction("_SockAccept", SockAccept);
+	BindNativeFunction("getRDRAMU8", GetRDRAMU8);
+	BindNativeFunction("getRDRAMU16", GetRDRAMU16);
+	BindNativeFunction("getRDRAMU32", GetRDRAMU32);
+	BindNativeFunction("setRDRAMU8", SetRDRAMU8);
+	BindNativeFunction("setRDRAMU16", SetRDRAMU16);
+	BindNativeFunction("setRDRAMU32", SetRDRAMU32);
+	
+	BindNativeFunction("createThread", CreateThread);
+	BindNativeFunction("terminateThread", TerminateThread);
+	BindNativeFunction("suspendThread", SuspendThread);
+	BindNativeFunction("resumeThread", ResumeThread);
+	BindNativeFunction("sleep", Sleep);
 
+	BindNativeFunction("sockCreate", SockCreate);
+	BindNativeFunction("sockListen", SockListen);
+	BindNativeFunction("sockAccept", SockAccept);
+	BindNativeFunction("sockReceive", SockReceive);
+	
+	BindNativeFunction("msgBox", MsgBox);
+	
 	EvalFile("_api.js");
 
 	WSADATA wsaData;
@@ -119,6 +122,7 @@ void CScriptSystem::Init()
 	m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
 	m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 }
+
 
 void CScriptSystem::Eval(const char* jsCode)
 {
@@ -146,6 +150,13 @@ void CScriptSystem::BindGlobalFunction(const char* name, duk_c_function func)
 {
 	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
 	duk_put_global_string(m_Ctx, name);
+}
+
+void CScriptSystem::BindNativeFunction(const char* name, duk_c_function func)
+{
+	duk_get_global_string(m_Ctx, "_native");
+	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
+	duk_put_prop_string(m_Ctx, 0, name);
 }
 
 void CScriptSystem::RegisterCallbackList(const char* hookId, CCallbackList* cbList)
@@ -213,7 +224,8 @@ duk_ret_t CScriptSystem::AddCallback(duk_context* ctx)
 		callbackId = cbList->Add(heapptr, tag);
 	}
 
-	return callbackId;
+	duk_push_int(ctx, callbackId);
+	return 1;
 }
 
 duk_ret_t CScriptSystem::GetGPRVal(duk_context* ctx)
@@ -312,12 +324,21 @@ duk_ret_t CScriptSystem::SetRDRAMU32(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptSystem::alert(duk_context* ctx)
+duk_ret_t CScriptSystem::MsgBox(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
+
 	const char* msg = duk_to_string(ctx, 0);
-	MessageBox(NULL, msg, "", MB_OK);
-	duk_pop_n(ctx, 1);
+	const char* caption = "";
+
+	if (argc > 1)
+	{
+		caption = duk_to_string(ctx, 1);
+	}
+
+	MessageBox(NULL, msg, caption, MB_OK);
+
+	duk_pop_n(ctx, argc);
 	duk_push_boolean(ctx, 1);
 	return 1;
 }
@@ -328,6 +349,7 @@ DWORD WINAPI CScriptSystem::ThreadProc(LPVOID lpDukProcHeapPtr)
 	return 0;
 }
 
+// Create thread for javascript function
 duk_ret_t CScriptSystem::CreateThread(duk_context* ctx)
 {
 	void* lpDukProcHeapPtr = duk_get_heapptr(ctx, 0);
@@ -370,33 +392,52 @@ duk_ret_t CScriptSystem::Sleep(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptSystem::CreateServer(duk_context* ctx)
+duk_ret_t CScriptSystem::Release(duk_context* ctx)
 {
-	USHORT port = (USHORT)duk_get_uint(ctx, 0);
-	duk_pop(ctx);
+	// let other threads have the context for an ms
+	::Sleep(1);
+	return 1;
+}
 
-	SOCKET sock;
-	struct sockaddr_in server;
-
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(port);
-
-	if (::bind(sock, (struct sockaddr*) &server, sizeof(server))) {
-		duk_push_int(ctx, INVALID_SOCKET);
-		return 1;
-	}
-
-	listen(sock, 3);
+// Create ipv4 tcp socket and return its descriptor
+// _SockCreate()
+duk_ret_t CScriptSystem::SockCreate(duk_context* ctx)
+{
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
 	duk_push_int(ctx, sock);
 	return 1;
 }
 
-duk_ret_t CScriptSystem::ReceiveBytes(duk_context* ctx) {
-	// (socketd, nBytes)
+// _Listen(sockd, port)
+// Bind existing socket to port and listen for clients
+// Return true on success, false on fail
+duk_ret_t CScriptSystem::SockListen(duk_context* ctx)
+{
+	SOCKET sock = duk_get_int(ctx, 0);
+	USHORT port = duk_get_uint(ctx, 1);
+	duk_pop_n(ctx, 2);
 
+	SOCKADDR_IN sockAddr;
+	sockAddr.sin_family = AF_INET;
+	sockAddr.sin_addr.s_addr = INADDR_ANY;
+	sockAddr.sin_port = htons(port);
+
+	if (::bind(sock, (SOCKADDR*)&sockAddr, sizeof(SOCKADDR_IN)) != 0)
+	{
+		duk_push_boolean(ctx, false);
+		return 1;
+	}
+
+	listen(sock, 3);
+	
+	duk_push_boolean(ctx, true);
+	return 1;
+}
+
+// _ReceiveBytes(sockd, nBytes)
+// block until exact number of bytes are received from socket
+duk_ret_t CScriptSystem::SockReceiveN(duk_context* ctx)
+{
 	SOCKET socket = (SOCKET)duk_get_int(ctx, 0);
 	int nBytes = duk_get_int(ctx, 1);
 
@@ -416,37 +457,57 @@ duk_ret_t CScriptSystem::ReceiveBytes(duk_context* ctx) {
 	void* jsBuf = duk_push_buffer(ctx, nBytes, 0);
 	memcpy(jsBuf, bytes, nBytes);
 	free(bytes);
-
 	return 1;
 }
 
-duk_ret_t CScriptSystem::Receive(duk_context* ctx) {
-	// (socketd)
+// _SockReceive(sockd) // BLOCKING
+// Block until receiving variable length data from socket (max 4KB)
+// Return Buffer of data received on success, false if socket is dead
+duk_ret_t CScriptSystem::SockReceive(duk_context* ctx)
+{
+	int argc = duk_get_top(ctx);
+	SOCKET sock = (SOCKET)duk_get_int(ctx, 0);
 
-	SOCKET socket = (SOCKET)duk_get_int(ctx, 0);
-	duk_pop(ctx);
+	char* bytes;
+	int bufSize = 4096;
 
-	char bytes[4096];
-	int bytesRead = recv(socket, bytes, 4096, 0);
+	if (argc > 1)
+	{
+		bufSize = duk_get_uint(ctx, 1);
+	}
+	bytes = (char*) malloc(bufSize);
+
+	duk_pop_n(ctx, argc);
+
+	int nBytes = recv(sock, bytes, bufSize, 0);
 	
-	void* jsBuf = duk_push_buffer(ctx, bytesRead, 0);
-	memcpy(jsBuf, bytes, bytesRead);
+	if (nBytes == 0)
+	{
+		duk_push_boolean(ctx, false);
+		return 1;
+	}
+
+	void* jsBuf = duk_push_buffer(ctx, nBytes, 0);
+	memcpy(jsBuf, bytes, nBytes);
+	free(bytes);
 	return 1;
 }
 
-duk_ret_t CScriptSystem::SockAccept(duk_context* ctx) {
-	// (serversocketd)
+// _SockAccept(sockd) // BLOCKING
+// Wait until client connects and return sock descriptor
+duk_ret_t CScriptSystem::SockAccept(duk_context* ctx)
+{
+	SOCKET serverSock, clientSock;
+	SOCKADDR_IN clientAddr;
 
-	SOCKET serverSocket = (SOCKET)duk_get_int(ctx, 0);
+	serverSock = (SOCKET)duk_get_int(ctx, 0);
 	duk_pop(ctx);
 
-	struct sockaddr_in client;
-	int addrSize = sizeof(struct sockaddr_in);
+	int addrSize = sizeof(SOCKADDR_IN);
 
-	SOCKET clientSocket = accept(serverSocket, (struct sockaddr*)&client, &addrSize);
+	clientSock = accept(serverSock, (SOCKADDR*)&clientAddr, &addrSize);
 	
-	duk_push_int(ctx, (int)clientSocket);
-
+	duk_push_int(ctx, (int)clientSock);
 	return 1;
 }
 

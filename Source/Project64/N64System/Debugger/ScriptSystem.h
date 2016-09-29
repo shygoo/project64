@@ -55,7 +55,9 @@ public:
 	static CCallbackList* GetCallbackList(const char* hookId);
 	static void Eval(const char* jsCode);
 	static void EvalFile(const char* jsPath);
+	static void BindNativeFunction(const char* name, duk_c_function func);
 	static void BindGlobalFunction(const char* name, duk_c_function func);
+
 	//static void Stash(void* heapptr);
 	//static void Unstash(void* heapptr);
 
@@ -71,9 +73,9 @@ private:
 	
 	static vector<HANDLE> m_WorkerThreads;
 	static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
-
+	
 	// Bound functions
-	static duk_ret_t alert           (duk_context* ctx); // (message)
+	static duk_ret_t MsgBox          (duk_context* ctx); // (message, caption)
 	static duk_ret_t AddCallback     (duk_context* ctx); // (hookId, callback, tag)
 	static duk_ret_t GetGPRVal       (duk_context* ctx); // (regNum)
 	static duk_ret_t SetGPRVal       (duk_context* ctx); // (regNum, value)
@@ -88,9 +90,13 @@ private:
 	static duk_ret_t SuspendThread   (duk_context* ctx); // (hThread)
 	static duk_ret_t ResumeThread    (duk_context* ctx); // (hThread)
 	static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
-	static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
-	static duk_ret_t ReceiveBytes    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
-	static duk_ret_t Receive         (duk_context* ctx); // (socket) ; receive max 4kb
+	static duk_ret_t SockCreate      (duk_context* ctx);
+	static duk_ret_t SockListen      (duk_context* ctx);
 	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
+	//static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
+	static duk_ret_t SockReceiveN    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
+	static duk_ret_t SockReceive     (duk_context* ctx); // (socket) ; receive max 4kb
 	static duk_ret_t ConsoleLog      (duk_context* ctx);
+
+	static duk_ret_t Release         (duk_context* ctx); // set the mtsafe flag to false
 };
