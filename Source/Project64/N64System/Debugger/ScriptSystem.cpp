@@ -11,7 +11,12 @@
 #include "stdafx.h"
 #include "ScriptSystem.h"
 
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <mswsock.h>
+
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Mswsock.lib")
 
 //HWND CScriptSystem::m_RenderWindow = NULL;
 HFONT CScriptSystem::m_FontFamily = NULL;
@@ -94,12 +99,6 @@ void CScriptSystem::Init()
 	BindNativeFunction("setRDRAMU8", SetRDRAMU8);
 	BindNativeFunction("setRDRAMU16", SetRDRAMU16);
 	BindNativeFunction("setRDRAMU32", SetRDRAMU32);
-	
-	BindNativeFunction("createThread", CreateThread);
-	BindNativeFunction("terminateThread", TerminateThread);
-	BindNativeFunction("suspendThread", SuspendThread);
-	BindNativeFunction("resumeThread", ResumeThread);
-	BindNativeFunction("sleep", Sleep);
 
 	BindNativeFunction("sockCreate", SockCreate);
 	BindNativeFunction("sockListen", SockListen);
@@ -121,6 +120,8 @@ void CScriptSystem::Init()
 	);
 	m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
 	m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+
+	m_ioEventProcThread = CreateThread(NULL, 0, ioEventProc, NULL, 0, NULL);
 }
 
 
@@ -343,62 +344,6 @@ duk_ret_t CScriptSystem::MsgBox(duk_context* ctx)
 	return 1;
 }
 
-DWORD WINAPI CScriptSystem::ThreadProc(LPVOID lpDukProcHeapPtr)
-{
-	Invoke(lpDukProcHeapPtr);
-	return 0;
-}
-
-// Create thread for javascript function
-duk_ret_t CScriptSystem::CreateThread(duk_context* ctx)
-{
-	void* lpDukProcHeapPtr = duk_get_heapptr(ctx, 0);
-	duk_pop(ctx);
-	HANDLE hWorkerThread = ::CreateThread(NULL, 0, ThreadProc, lpDukProcHeapPtr, 0, NULL);
-	duk_push_uint(ctx, (UINT)hWorkerThread);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::TerminateThread(duk_context* ctx)
-{
-	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
-	duk_pop(ctx);
-	::TerminateThread(hThread, 0);
-	CloseHandle(hThread);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::SuspendThread(duk_context* ctx)
-{
-	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
-	duk_pop(ctx);
-	::SuspendThread(hThread);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::ResumeThread(duk_context* ctx)
-{
-	HANDLE hThread = (HANDLE)duk_get_uint(ctx, 0);
-	duk_pop(ctx);
-	::ResumeThread(hThread);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::Sleep(duk_context* ctx)
-{
-	DWORD milliseconds = duk_get_uint(ctx, 0);
-	duk_pop(ctx);
-	::Sleep(milliseconds);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::Release(duk_context* ctx)
-{
-	// let other threads have the context for an ms
-	::Sleep(1);
-	return 1;
-}
-
 // Create ipv4 tcp socket and return its descriptor
 // _SockCreate()
 duk_ret_t CScriptSystem::SockCreate(duk_context* ctx)
@@ -542,6 +487,129 @@ void CScriptSystem::DrawTest()
 
 	ReleaseDC(renderWindow, hdc);
 }
+
+HANDLE CScriptSystem::m_ioEventProcThread;
+HANDLE CScriptSystem::m_ioBasePort;
+char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
+vector<IOListener> CScriptSystem::m_ioListeners;
+
+void CScriptSystem::ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback)
+{
+	m_ioListeners.push_back({ 0 });
+	IOListener* lpListener = &m_ioListeners[m_ioListeners.size() - 1];
+	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
+
+	lpListener->evt = evt;
+	lpListener->fd = fd;
+	lpListener->callback = callback;
+
+	switch (evt)
+	{
+	case EVT_READ:
+		ReadFile(fd, m_ioBaseBuf, sizeof(m_ioBaseBuf), NULL, lpOvl);
+		printf("added read listener\n");
+		break;
+	case EVT_WRITE:
+		printf("added write listener");
+		break;
+	case EVT_ACCEPT:
+		// client socket
+		lpListener->childFd = ioSockCreate();
+		CreateIoCompletionPort(lpListener->childFd, m_ioBasePort, (ULONG_PTR)lpListener->childFd, 0);
+		AcceptEx(
+			(SOCKET)fd,
+			(SOCKET)lpListener->childFd,
+			m_ioBaseBuf,
+			0,
+			sizeof(SOCKADDR_IN) + 16,
+			sizeof(SOCKADDR_IN) + 16,
+			NULL,
+			lpOvl
+		);
+		printf("added accept listener\n");
+		break;
+	}
+}
+
+HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
+{
+	HANDLE fd = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
+		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	return fd;
+}
+
+HANDLE CScriptSystem::ioSockCreate()
+{
+	SOCKET sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	return (HANDLE)sock;
+}
+
+bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port)
+{
+	SOCKET sock = (SOCKET)fd;
+	SOCKADDR_IN server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = INADDR_ANY;
+	server.sin_port = htons(port);
+	if (::bind(sock, (SOCKADDR*) &server, sizeof(server)))
+	{
+		return false;
+	}
+	listen(sock, 3);
+	ioAddListener(fd, EVT_ACCEPT, NULL);
+	return true;
+}
+
+DWORD WINAPI CScriptSystem::ioEventProc(void* param)
+{
+	while (1)
+	{
+		OVERLAPPED* lpUsedOvl;
+		DWORD nBytes;
+		ULONG_PTR completionKey;
+		BOOL status;
+
+		status = GetQueuedCompletionStatus(m_ioBasePort, &nBytes, &completionKey, &lpUsedOvl, INFINITE);
+
+		if (!status)
+		{
+			printf("GetQueuedCompletionStatus error (%d)\n", GetLastError());
+			break;
+		}
+
+		IOListener* lpListener = (IOListener*)lpUsedOvl;
+
+		HANDLE fd = lpListener->fd;
+		EVENTTYPE evt = lpListener->evt;
+
+		printf("An event fired...");
+
+		switch (evt)
+		{
+		case EVT_READ:
+			//ReadFile(fd, m_ioBaseBuf, sizeof(m_ioBaseBuf), NULL, lpUsedOvl);
+			printf(" Read operation (%d) (%d bytes)\n", fd, nBytes);
+			printf(m_ioBaseBuf);
+			break;
+
+		case EVT_WRITE:
+			printf(" Write operation\n");
+			break;
+
+		case EVT_ACCEPT:
+			printf(" Accept operation (%d)\n", fd);
+			// add read listener to client socket
+			ioAddListener(lpListener->childFd, EVT_READ, NULL);
+			// accept next client
+			ioAddListener(fd, EVT_ACCEPT, NULL);
+			break;
+		}
+	}
+
+	return 0;
+}
+
 
 /******************** windows **********************/
 /*

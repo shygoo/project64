@@ -37,6 +37,23 @@ typedef struct {
 	CCallbackList* cbList;
 } EVENTHOOK;
 
+
+// js event loop
+typedef enum {
+	EVT_READ,
+	EVT_WRITE,
+	EVT_ACCEPT
+} EVENTTYPE;
+
+typedef struct {
+	OVERLAPPED ovl;
+	EVENTTYPE  evt;
+	HANDLE     fd;
+	HANDLE     childFd; // accepted socket
+	UINT       id;
+	void*      callback;
+} IOListener;
+
 class CScriptSystem {
 private:
 	CScriptSystem(CDebuggerUI* debugger);
@@ -65,14 +82,27 @@ public:
 	static void DrawTest();
 
 private:
+	// Event loop
+	static HANDLE m_ioBasePort;
+	static char   m_ioBaseBuf[8192]; // io buffered here
+	static vector<IOListener> m_ioListeners;
+	static HANDLE m_ioEventProcThread;
+
+	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback);
+	static HANDLE ioCreateExistingFile(const char* path);
+	static HANDLE ioCreateServer();
+	static HANDLE ioSockCreate();
+	static bool   ioSockListen(HANDLE fd, USHORT port);
+	static DWORD WINAPI ioEventProc(void* param);
+
 	// Screen printing
 	//static HWND   m_RenderWindow;
 	static HFONT  m_FontFamily;
 	static HBRUSH m_FontColor;
 	static HPEN   m_FontOutline;
 	
-	static vector<HANDLE> m_WorkerThreads;
-	static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
+	//static vector<HANDLE> m_WorkerThreads;
+	//static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
 	
 	// Bound functions
 	static duk_ret_t MsgBox          (duk_context* ctx); // (message, caption)
@@ -85,11 +115,11 @@ private:
 	static duk_ret_t SetRDRAMU8      (duk_context* ctx); // (address, value)
 	static duk_ret_t SetRDRAMU16     (duk_context* ctx); // (address, value)
 	static duk_ret_t SetRDRAMU32     (duk_context* ctx); // (address, value)
-	static duk_ret_t CreateThread    (duk_context* ctx); // (proc)
-	static duk_ret_t TerminateThread (duk_context* ctx); // (hThread)
-	static duk_ret_t SuspendThread   (duk_context* ctx); // (hThread)
-	static duk_ret_t ResumeThread    (duk_context* ctx); // (hThread)
-	static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
+	//static duk_ret_t CreateThread    (duk_context* ctx); // (proc)
+	//static duk_ret_t TerminateThread (duk_context* ctx); // (hThread)
+	//static duk_ret_t SuspendThread   (duk_context* ctx); // (hThread)
+	//static duk_ret_t ResumeThread    (duk_context* ctx); // (hThread)
+	//static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
 	static duk_ret_t SockCreate      (duk_context* ctx);
 	static duk_ret_t SockListen      (duk_context* ctx);
 	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
@@ -98,5 +128,5 @@ private:
 	static duk_ret_t SockReceive     (duk_context* ctx); // (socket) ; receive max 4kb
 	static duk_ret_t ConsoleLog      (duk_context* ctx);
 
-	static duk_ret_t Release         (duk_context* ctx); // set the mtsafe flag to false
+	//static duk_ret_t Release         (duk_context* ctx); // set the mtsafe flag to false
 };
