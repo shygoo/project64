@@ -13,6 +13,7 @@
 
 #include "stdafx.h"
 #include <3rdParty/duktape/duktape.h>
+#include <mutex>
 
 typedef struct {
 	int      callbackId;
@@ -61,6 +62,8 @@ private:
 public:
 	static int m_NextStashIndex;
 	static duk_context* m_Ctx;
+	static mutex m_CtxMutex;
+
 	static vector<EVENTHOOK> m_Hooks;
 	static CCallbackList m_ExecEvents;
 	static CCallbackList m_ReadEvents;
@@ -81,19 +84,31 @@ public:
 	static void Invoke(void* heapptr);
 	static void DrawTest();
 
+	// Queue a routine to be called from the event loop thread
+	static void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
+
 private:
 	// Event loop
 	static HANDLE m_ioBasePort;
 	static char   m_ioBaseBuf[8192]; // io buffered here
 	static vector<IOListener> m_ioListeners;
-	static HANDLE m_ioEventProcThread;
+	static HANDLE m_ioEventsThread;
 
-	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback);
+	static DWORD WINAPI ioEventsProc(void* param);
+
+	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* jsCallback);
 	static HANDLE ioCreateExistingFile(const char* path);
 	static HANDLE ioCreateServer();
 	static HANDLE ioSockCreate();
-	static bool   ioSockListen(HANDLE fd, USHORT port);
-	static DWORD WINAPI ioEventProc(void* param);
+	static bool   ioSockListen(HANDLE fd, USHORT port, void* jsCallback = NULL);
+	static bool   ioSockAccept(HANDLE fd, void* jsCallback);
+	
+	static duk_ret_t _ioAddListener(duk_context*);
+	static duk_ret_t _ioCreateExistingFile(duk_context*);
+	static duk_ret_t _ioCreateServer(duk_context*);
+	static duk_ret_t _ioSockCreate(duk_context*);
+	static duk_ret_t _ioSockListen(duk_context*);
+	static duk_ret_t _ioSockAccept(duk_context*);
 
 	// Screen printing
 	//static HWND   m_RenderWindow;
@@ -115,11 +130,7 @@ private:
 	static duk_ret_t SetRDRAMU8      (duk_context* ctx); // (address, value)
 	static duk_ret_t SetRDRAMU16     (duk_context* ctx); // (address, value)
 	static duk_ret_t SetRDRAMU32     (duk_context* ctx); // (address, value)
-	//static duk_ret_t CreateThread    (duk_context* ctx); // (proc)
-	//static duk_ret_t TerminateThread (duk_context* ctx); // (hThread)
-	//static duk_ret_t SuspendThread   (duk_context* ctx); // (hThread)
-	//static duk_ret_t ResumeThread    (duk_context* ctx); // (hThread)
-	//static duk_ret_t Sleep           (duk_context* ctx); // (milliseconds)
+
 	static duk_ret_t SockCreate      (duk_context* ctx);
 	static duk_ret_t SockListen      (duk_context* ctx);
 	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor

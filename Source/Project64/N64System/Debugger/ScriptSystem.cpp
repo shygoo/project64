@@ -18,6 +18,8 @@
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
 
+mutex CScriptSystem::m_CtxMutex;
+
 //HWND CScriptSystem::m_RenderWindow = NULL;
 HFONT CScriptSystem::m_FontFamily = NULL;
 HBRUSH CScriptSystem::m_FontColor = NULL;
@@ -108,6 +110,7 @@ void CScriptSystem::Init()
 	BindNativeFunction("msgBox", MsgBox);
 	
 	EvalFile("_api.js");
+	EvalFile("_script.js");
 
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -121,9 +124,18 @@ void CScriptSystem::Init()
 	m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
 	m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 
-	m_ioEventProcThread = CreateThread(NULL, 0, ioEventProc, NULL, 0, NULL);
+	// Control of the duk ctx is handed over to m_ioEventsThread here
+	m_ioBasePort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
 }
 
+void CScriptSystem::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
+{
+	if(m_ioEventsThread != NULL)
+	{
+		QueueUserAPC(userProc, m_ioEventsThread, param);
+	}
+}
 
 void CScriptSystem::Eval(const char* jsCode)
 {
@@ -488,7 +500,7 @@ void CScriptSystem::DrawTest()
 	ReleaseDC(renderWindow, hdc);
 }
 
-HANDLE CScriptSystem::m_ioEventProcThread;
+HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
 char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
 vector<IOListener> CScriptSystem::m_ioListeners;
@@ -545,7 +557,7 @@ HANDLE CScriptSystem::ioSockCreate()
 	return (HANDLE)sock;
 }
 
-bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port)
+bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port, void* jsCallback)
 {
 	SOCKET sock = (SOCKET)fd;
 	SOCKADDR_IN server;
@@ -557,39 +569,62 @@ bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port)
 		return false;
 	}
 	listen(sock, 3);
-	ioAddListener(fd, EVT_ACCEPT, NULL);
 	return true;
 }
 
-DWORD WINAPI CScriptSystem::ioEventProc(void* param)
+bool CScriptSystem::ioSockAccept(HANDLE fd, void* jsCallback)
+{
+	ioAddListener(fd, EVT_ACCEPT, jsCallback);
+	return true;
+}
+
+DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 {
 	while (1)
 	{
-		OVERLAPPED* lpUsedOvl;
-		DWORD nBytes;
-		ULONG_PTR completionKey;
-		BOOL status;
+		OVERLAPPED_ENTRY usedOvlEntry;
+		ULONG nUsedOverlaps;
 
-		status = GetQueuedCompletionStatus(m_ioBasePort, &nBytes, &completionKey, &lpUsedOvl, INFINITE);
+		LPOVERLAPPED& lpUsedOvl = usedOvlEntry.lpOverlapped;
+		DWORD& nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
 
+		// Wait for an IO completion or async proc call
+		BOOL status = GetQueuedCompletionStatusEx(
+			m_ioBasePort,
+			&usedOvlEntry,
+			1,
+			&nUsedOverlaps,
+			INFINITE,
+			TRUE
+		);
+		
 		if (!status)
 		{
-			printf("GetQueuedCompletionStatus error (%d)\n", GetLastError());
+			if (GetLastError() == STATUS_USER_APC)
+			{
+				// Interrupted by an async proc call
+				continue;
+			}
+
+			char errmsg[128];
+			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", GetLastError());
+			MessageBox(NULL, errmsg, "Error", MB_OK);
 			break;
 		}
-
+		
 		IOListener* lpListener = (IOListener*)lpUsedOvl;
 
 		HANDLE fd = lpListener->fd;
 		EVENTTYPE evt = lpListener->evt;
-
-		printf("An event fired...");
+		
+		// Protect from emulation thread (onexec, onread, etc)
+		m_CtxMutex.lock();
 
 		switch (evt)
 		{
 		case EVT_READ:
 			//ReadFile(fd, m_ioBaseBuf, sizeof(m_ioBaseBuf), NULL, lpUsedOvl);
-			printf(" Read operation (%d) (%d bytes)\n", fd, nBytes);
+			printf(" Read operation (%d) (%d bytes)\n", fd, nBytesTransferred);
 			printf(m_ioBaseBuf);
 			break;
 
@@ -599,17 +634,37 @@ DWORD WINAPI CScriptSystem::ioEventProc(void* param)
 
 		case EVT_ACCEPT:
 			printf(" Accept operation (%d)\n", fd);
-			// add read listener to client socket
-			ioAddListener(lpListener->childFd, EVT_READ, NULL);
+			duk_push_heapptr(m_Ctx, lpListener->callback);
+			// todo push socket fd arg0
+			duk_call(m_Ctx, 0);
 			// accept next client
 			ioAddListener(fd, EVT_ACCEPT, NULL);
 			break;
 		}
+
+		m_CtxMutex.unlock();
 	}
 
 	return 0;
 }
 
+
+duk_ret_t CScriptSystem::_ioSockCreate(duk_context* ctx)
+{
+	duk_pop_n(ctx, duk_get_top(ctx));
+	duk_push_uint(ctx, (UINT)ioSockCreate());
+	return 1;
+}
+
+duk_ret_t CScriptSystem::_ioSockListen(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	USHORT port = duk_get_uint(ctx, 1);
+	void* jsCallback = duk_get_heapptr(ctx, 2);
+	duk_pop_n(ctx, 3);
+	ioSockListen(fd, port, jsCallback);
+	return 1;
+}
 
 /******************** windows **********************/
 /*

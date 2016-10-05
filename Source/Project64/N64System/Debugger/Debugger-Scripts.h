@@ -15,7 +15,19 @@
 
 class CEditEval : public CWindowImpl<CEditEval, CEdit>
 {
+private:
+	//static char* m_EvalString;
+
+
 public:
+	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
+	{
+		CScriptSystem::m_CtxMutex.lock();
+		CScriptSystem::Eval((const char*)lpJsCode);
+		CScriptSystem::m_CtxMutex.unlock();
+		free((char*)lpJsCode);
+	}
+
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
 		if (wParam == VK_RETURN)
@@ -23,8 +35,7 @@ public:
 			size_t codeLength = GetWindowTextLength() + 1;
 			char* code = (char*)malloc(codeLength);
 			GetWindowTextA(code, codeLength);
-			CScriptSystem::Eval(code);
-			free(code);
+			CScriptSystem::QueueAPC(EvalAsync, (ULONG_PTR)code); // code mem freed here
 			SetWindowTextA("");
 		}
 		bHandled = FALSE;

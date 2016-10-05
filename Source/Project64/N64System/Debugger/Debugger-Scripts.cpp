@@ -13,6 +13,8 @@
 
 #include "DebuggerUI.h"
 
+//char* CEditEval::m_EvalString;
+
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
 CDebugDialog<CDebugScripts>(debugger)
 {

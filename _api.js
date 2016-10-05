@@ -23,26 +23,6 @@ gpr
  gpr.<register name>
 
 ****************************
-
-(entirely unsafe at the moment)
-
-Thread
-
- new Thread(fn)
-  thread.start()
-  thread.suspend()
-  thread.resume()
-  thread.stop()
-  thread.getState()
- 
- Thread.sleep(ms)
- 
- Thread.READY      0
- Thread.RUNNING    1
- Thread.SUSPENDED  2
- Thread.STOPPED    3
-  
-****************************
 alert(message)
 
 ****************************
@@ -120,6 +100,7 @@ const events = (function()
 	var callbacks = {};
 	var nextCallbackId = 0;
 	return {
+		// TODO need mutex because these are called outside the event loop
 		on: function(hook, callback, tag)
 		{
 			this._stashCallback(callback);
@@ -260,6 +241,13 @@ const mem = {
 	}
 }
 
+function alert(text, caption){
+	caption = caption || "";
+	_native.msgBox(text, caption);
+}
+
+
+/*
 function Thread(proc){
 	var _proc = proc;
 	var _hThread;
@@ -437,3 +425,4 @@ function Socket(descriptor)
 Socket.prototype = _EventEmitterPrototype;
 
 
+*/
