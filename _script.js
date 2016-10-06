@@ -1,27 +1,23 @@
-//function processData(data)
-//{
-//	var floats = new Float32Array(data);
-//	alert(floats[0] + " " +
-//	      floats[1] + " " +
-//	      floats[2]
-//	);
-//}
+var server = new Server({port: 81});
 
-/*
-var server = new Server();
-server.listen(8081);
+server.on('connection', function(client)
+{	
+	//alert('got client');
 
-server.on('connection', function(client) {
-
-	//alert('got connection');
-
-	client.on('data', function(data) {
-		alert(data);
-	})
+	client.on('data', function(data)
+	{
+		client.write(
+			'HTTP/1.1 200 OK\r\n'+
+			'Content-type: text/html\r\n'+
+			'Content-length: 37\r\n' +
+			'\r\n' +
+			'http server in project64 what is life',
+			function(){
+				//alert('finished write');
+			}
+		);
+	});
 	
-	client.on('close', function(){
-		alert('connection closed');
-	})
 	
-})
-*/
+	
+});

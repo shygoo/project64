@@ -39,15 +39,15 @@ _native
  _native.setRDRAMU32(address, value)
  
  _native.sockCreate(port);
- _native.sockAccept(serverSocket)
- _native.sockReceive(socket)
+ _native.sockListen(fd)
+ _native.sockAccept(fd)
  
  _native.msgBox(message[, caption])
 
 ****************************
 
 Server
- new Server()
+ new Server(settings)
  server.listen(port)
  server.on(evt, callback)
 	'connection' -> callback(socket)
@@ -247,182 +247,67 @@ function alert(text, caption){
 }
 
 
-/*
-function Thread(proc){
-	var _proc = proc;
-	var _hThread;
-	var _state = Thread.READY;
-	this.start = function()
-	{
-		if(_state != Thread.READY)
-		{
-			throw new Error('Invalid state');
-		}
-		_state = Thread.RUNNING;
-		_hThread = _native.createThread(proc);
-		return;
-	}
-	this.suspend = function()
-	{
-		if(_state != Thread.RUNNING)
-		{
-			throw new Error('Invalid state');
-		}
-		_state = Thread.SUSPENDED;
-		_native.suspendThread(_hThread);
-	}
-	this.resume = function()
-	{
-		if(_state != Thread.SUSPENDED)
-		{
-			throw new Error('Invalid state');
-		}
-		_state = Thread.RUNNING;
-		_native.resumeThread(_hThread);
-	}
-	this.stop = function()
-	{
-		if(_state != Thread.RUNNING && _state != Thread.READY)
-		{
-			throw new Error('Invalid state');
-		}
-		_state = Thread.STOPPED;
-		_native.terminateThread(_hThread);
-	}
-	this.getState = function()
-	{
-		return _state;
-	}
-}
-
-Thread.sleep = function(ms)
+function Socket(fd)
 {
-	_native.sleep(ms);
+	var _fd = fd || _native.sockCreate();
+	
+	this.bufferSize = 2048;
+	
+	this.write = function(data, callback)
+	{
+		_native.write(_fd, data, callback)
+	}
+
+	var _ondata = function(data){};
+	
+	function _read(data)
+	{
+		_ondata(data);
+		_native.read(_fd, this.bufferSize, _read)
+	}
+	
+	this.on = function(eventType, callback)
+	{
+		switch(eventType)
+		{
+		case 'data':
+			_ondata = callback;
+			_native.read(_fd, this.bufferSize, _read)
+			break;
+		}
+	}
 }
 
-Thread.READY = 0;
-Thread.RUNNING = 1;
-Thread.SUSPENDED = 2;
-Thread.STOPPED = 3;
-
-
-const alert = (function(){
-	var _alerts = {}
-	var _idx = 0
-	
-	var a = new Thread(function()
-	{
-		while(true)
-		{
-			for(var i in _alerts)
-			{
-				_native.msgBox(_alerts[i][0], _alerts[i][1])
-				delete _alerts[i]
-			}
-			Thread.sleep(100);
-		}
-	});
-	a.start();
-	
-	return function(message, caption)
-	{
-		caption = caption || '';
-		_alerts[_idx++] = [message, caption];
-	}
-	
-})();
-
-
-var _EventEmitterPrototype = {
-	on: function(evt, callback)
-	{
-		if(evt in this._events)
-		{
-			this._events[evt].push(callback)
-		}
-	},
-	_registerEvents: function(evts)
-	{
-		this._events = {};
-		for(var i = 0; i < evts.length; i++)
-		{
-			this._events[evts[i]] = [];
-		}
-	},
-	_invoke: function(evt, param)
-	{
-		if(evt in this._events)
-		{
-		
-			//alert('looking for event');
-		
-			var events = this._events[evt];
-			for(var i = 0; i < events.length; i++)
-			{
-				//alert(events[i])
-				events[i](param);
-			}
-		}
-	}
-};
-
-
-function Server()
+function Server(settings)
 {
 	var _this = this;
+	var _fd = _native.sockCreate()
 	
-	this._registerEvents(['connection']);
+	var _onconnection = function(socket){};
 	
-	var serverDescriptor = _native.sockCreate();
-
-	this.onconnection = function(clientSocket){}; // (clientsock)
+	_native.sockListen(_fd, settings.port || 80)
+	
+	// Intermediate callback
+	//  convert clientFd to Socket and accept next client
+	function _acceptClient(clientFd)
+	{
+		_onconnection(new Socket(clientFd))
+		_native.sockAccept(_fd, _acceptClient)
+	}
+	
 	this.listen = function(port)
 	{
-		_native.sockListen(serverDescriptor, port);
-		var listening = true;
-		var listenerThread = new Thread(function()
+		_native.sockListen(_fd, port)
+	}
+	
+	this.on = function(eventType, callback)
+	{
+		switch(eventType)
 		{
-			while(listening)
-			{
-				var clientDescriptor = _native.sockAccept(serverDescriptor);
-				_this._invoke('connection', new Socket(clientDescriptor));
-			}
-		});
-		listenerThread.start();
+		case 'connection':
+			_onconnection = callback
+			_native.sockAccept(_fd, _acceptClient)
+			break;
+		}
 	}
 }
-
-Server.prototype = _EventEmitterPrototype;
-
-
-function Socket(descriptor)
-{
-	this.descriptor = descriptor;
-	
-	this._registerEvents(['data', 'close']);
-	
-	var _this = this;
-	var bOpen = true;
-	
-	var sessionThread = new Thread(function()
-	{
-		while(bOpen)
-		{
-			var data = _native.sockReceive(descriptor);
-			if(data == false || data.byteLength == 0)
-			{
-				// invoke closed here
-				_this._invoke('close');
-				bOpen = false;
-				break;
-			}
-			_this._invoke('data', new ArrayBuffer(data));
-		}
-	});
-	sessionThread.start();
-}
-
-Socket.prototype = _EventEmitterPrototype;
-
-
-*/

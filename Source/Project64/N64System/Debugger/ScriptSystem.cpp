@@ -102,30 +102,40 @@ void CScriptSystem::Init()
 	BindNativeFunction("setRDRAMU16", SetRDRAMU16);
 	BindNativeFunction("setRDRAMU32", SetRDRAMU32);
 
-	BindNativeFunction("sockCreate", SockCreate);
-	BindNativeFunction("sockListen", SockListen);
-	BindNativeFunction("sockAccept", SockAccept);
-	BindNativeFunction("sockReceive", SockReceive);
+	BindNativeFunction("sockCreate", _ioSockCreate);
+	BindNativeFunction("sockListen", _ioSockListen);
+	BindNativeFunction("sockAccept", _ioSockAccept);
+	BindNativeFunction("addListener", _ioAddListener);
+	BindNativeFunction("write", _ioWrite);
+	BindNativeFunction("read", _ioRead);
+	//BindNativeFunction("sockReceive", SockReceive);
 	
 	BindNativeFunction("msgBox", MsgBox);
 	
-	EvalFile("_api.js");
-	EvalFile("_script.js");
-
+	// Init winsock
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-	// screen print test
-	m_FontFamily = CreateFont(-13, 0, 0, 0,
-		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		DEFAULT_QUALITY, FF_DONTCARE, "Courier New"
-	);
-	m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
-	m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
-
-	// Control of the duk ctx is handed over to m_ioEventsThread here
 	m_ioBasePort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+
+	EvalFile("_api.js");
+	EvalFile("_script.js");
+
+	// screen print test
+	//m_FontFamily = CreateFont(-13, 0, 0, 0,
+	//	FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+	//	OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+	//	DEFAULT_QUALITY, FF_DONTCARE, "Courier New"
+	//);
+	//m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
+	//m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
+
+
+	//HANDLE fd = ioSockCreate();
+	//ioSockListen(fd, 80);
+	//ioSockAccept(fd, NULL);
+
+	// Control of the duk ctx is transferred to m_ioEventsThread here
 	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
 }
 
@@ -356,118 +366,6 @@ duk_ret_t CScriptSystem::MsgBox(duk_context* ctx)
 	return 1;
 }
 
-// Create ipv4 tcp socket and return its descriptor
-// _SockCreate()
-duk_ret_t CScriptSystem::SockCreate(duk_context* ctx)
-{
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, 0);
-	duk_push_int(ctx, sock);
-	return 1;
-}
-
-// _Listen(sockd, port)
-// Bind existing socket to port and listen for clients
-// Return true on success, false on fail
-duk_ret_t CScriptSystem::SockListen(duk_context* ctx)
-{
-	SOCKET sock = duk_get_int(ctx, 0);
-	USHORT port = duk_get_uint(ctx, 1);
-	duk_pop_n(ctx, 2);
-
-	SOCKADDR_IN sockAddr;
-	sockAddr.sin_family = AF_INET;
-	sockAddr.sin_addr.s_addr = INADDR_ANY;
-	sockAddr.sin_port = htons(port);
-
-	if (::bind(sock, (SOCKADDR*)&sockAddr, sizeof(SOCKADDR_IN)) != 0)
-	{
-		duk_push_boolean(ctx, false);
-		return 1;
-	}
-
-	listen(sock, 3);
-	
-	duk_push_boolean(ctx, true);
-	return 1;
-}
-
-// _ReceiveBytes(sockd, nBytes)
-// block until exact number of bytes are received from socket
-duk_ret_t CScriptSystem::SockReceiveN(duk_context* ctx)
-{
-	SOCKET socket = (SOCKET)duk_get_int(ctx, 0);
-	int nBytes = duk_get_int(ctx, 1);
-
-	duk_pop_n(ctx, 2);
-
-	char* bytes = (char*)malloc(nBytes);
-	uint64_t bytesRead = 0;
-
-	while (bytesRead < nBytes) {
-		int n = recv(socket, bytes + bytesRead, nBytes - bytesRead, 0);
-		if (n < 0) {
-			return n;
-		}
-		bytesRead += n;
-	}
-	
-	void* jsBuf = duk_push_buffer(ctx, nBytes, 0);
-	memcpy(jsBuf, bytes, nBytes);
-	free(bytes);
-	return 1;
-}
-
-// _SockReceive(sockd) // BLOCKING
-// Block until receiving variable length data from socket (max 4KB)
-// Return Buffer of data received on success, false if socket is dead
-duk_ret_t CScriptSystem::SockReceive(duk_context* ctx)
-{
-	int argc = duk_get_top(ctx);
-	SOCKET sock = (SOCKET)duk_get_int(ctx, 0);
-
-	char* bytes;
-	int bufSize = 4096;
-
-	if (argc > 1)
-	{
-		bufSize = duk_get_uint(ctx, 1);
-	}
-	bytes = (char*) malloc(bufSize);
-
-	duk_pop_n(ctx, argc);
-
-	int nBytes = recv(sock, bytes, bufSize, 0);
-	
-	if (nBytes == 0)
-	{
-		duk_push_boolean(ctx, false);
-		return 1;
-	}
-
-	void* jsBuf = duk_push_buffer(ctx, nBytes, 0);
-	memcpy(jsBuf, bytes, nBytes);
-	free(bytes);
-	return 1;
-}
-
-// _SockAccept(sockd) // BLOCKING
-// Wait until client connects and return sock descriptor
-duk_ret_t CScriptSystem::SockAccept(duk_context* ctx)
-{
-	SOCKET serverSock, clientSock;
-	SOCKADDR_IN clientAddr;
-
-	serverSock = (SOCKET)duk_get_int(ctx, 0);
-	duk_pop(ctx);
-
-	int addrSize = sizeof(SOCKADDR_IN);
-
-	clientSock = accept(serverSock, (SOCKADDR*)&clientAddr, &addrSize);
-	
-	duk_push_int(ctx, (int)clientSock);
-	return 1;
-}
-
 void CScriptSystem::DrawTest()
 {
 	HWND renderWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
@@ -503,31 +401,55 @@ void CScriptSystem::DrawTest()
 HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
 char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
+int    CScriptSystem::m_ioBaseBufLen;
 vector<IOListener> CScriptSystem::m_ioListeners;
 
-void CScriptSystem::ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback)
+void CScriptSystem::ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback, void* data, int dataLen)
 {
-	m_ioListeners.push_back({ 0 });
-	IOListener* lpListener = &m_ioListeners[m_ioListeners.size() - 1];
+	int len = m_ioListeners.size();
+	bool foundReplacement = false;
+
+	IOListener* lpListener;
+
+	for (int i = 0; i < len; i++)
+	{
+		// replace dead listener
+		if (m_ioListeners[i].finished == true)
+		{
+			lpListener = &m_ioListeners[i];
+			*lpListener = { 0 };
+			foundReplacement = true;
+			break;
+		}
+	}
+
+	if (!foundReplacement)
+	{
+		m_ioListeners.push_back({ 0 });
+		lpListener = &m_ioListeners[m_ioListeners.size() - 1];
+	}
+	
 	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
 
 	lpListener->evt = evt;
 	lpListener->fd = fd;
 	lpListener->callback = callback;
+	lpListener->data = data;
+	lpListener->dataLen = dataLen;
 
 	switch (evt)
 	{
 	case EVT_READ:
-		ReadFile(fd, m_ioBaseBuf, sizeof(m_ioBaseBuf), NULL, lpOvl);
-		printf("added read listener\n");
+		ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
 		break;
+
 	case EVT_WRITE:
-		printf("added write listener");
+		WriteFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
 		break;
+
 	case EVT_ACCEPT:
 		// client socket
 		lpListener->childFd = ioSockCreate();
-		CreateIoCompletionPort(lpListener->childFd, m_ioBasePort, (ULONG_PTR)lpListener->childFd, 0);
 		AcceptEx(
 			(SOCKET)fd,
 			(SOCKET)lpListener->childFd,
@@ -538,7 +460,36 @@ void CScriptSystem::ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback)
 			NULL,
 			lpOvl
 		);
-		printf("added accept listener\n");
+		break;
+	}
+}
+
+void CScriptSystem::ioDoEvent(IOListener* lpListener)
+{
+	switch (lpListener->evt)
+	{
+	case EVT_READ:
+		MessageBox(NULL, "read fired", "read", MB_OK);
+		duk_push_heapptr(m_Ctx, lpListener->callback);
+		duk_push_external_buffer(m_Ctx);
+		duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
+		duk_call(m_Ctx, 1);
+		duk_pop(m_Ctx);
+		break;
+
+	case EVT_WRITE:
+		// todo pass num bytes transferred to callback
+		duk_push_heapptr(m_Ctx, lpListener->callback);
+		duk_call(m_Ctx, 0);
+		duk_pop(m_Ctx);
+		break;
+
+	case EVT_ACCEPT:
+		// pass client socket fd to callback
+		duk_push_heapptr(m_Ctx, lpListener->callback);
+		duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
+		duk_call(m_Ctx, 1);
+		duk_pop(m_Ctx);
 		break;
 	}
 }
@@ -553,19 +504,21 @@ HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
 
 HANDLE CScriptSystem::ioSockCreate()
 {
-	SOCKET sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	return (HANDLE)sock;
+	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	HANDLE iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	return fd;
 }
 
-bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port, void* jsCallback)
+bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port)
 {
 	SOCKET sock = (SOCKET)fd;
-	SOCKADDR_IN server;
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = INADDR_ANY;
-	server.sin_port = htons(port);
-	if (::bind(sock, (SOCKADDR*) &server, sizeof(server)))
+	SOCKADDR_IN serverAddr;
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_addr.s_addr = INADDR_ANY;
+	serverAddr.sin_port = htons(port);
+	if (::bind(sock, (SOCKADDR*) &serverAddr, sizeof(serverAddr)))
 	{
+		MessageBox(NULL, "couldnt bind socket", "tes", MB_OK);
 		return false;
 	}
 	listen(sock, 3);
@@ -582,6 +535,8 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 {
 	while (1)
 	{
+		//MessageBox(NULL, "Events proc running", "ok", MB_OK);
+
 		OVERLAPPED_ENTRY usedOvlEntry;
 		ULONG nUsedOverlaps;
 
@@ -620,49 +575,90 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 		// Protect from emulation thread (onexec, onread, etc)
 		m_CtxMutex.lock();
 
-		switch (evt)
+		ioDoEvent(lpListener);
+
+		if (lpListener->data != NULL)
 		{
-		case EVT_READ:
-			//ReadFile(fd, m_ioBaseBuf, sizeof(m_ioBaseBuf), NULL, lpUsedOvl);
-			printf(" Read operation (%d) (%d bytes)\n", fd, nBytesTransferred);
-			printf(m_ioBaseBuf);
-			break;
-
-		case EVT_WRITE:
-			printf(" Write operation\n");
-			break;
-
-		case EVT_ACCEPT:
-			printf(" Accept operation (%d)\n", fd);
-			duk_push_heapptr(m_Ctx, lpListener->callback);
-			// todo push socket fd arg0
-			duk_call(m_Ctx, 0);
-			// accept next client
-			ioAddListener(fd, EVT_ACCEPT, NULL);
-			break;
+			free(lpListener->data);
+			lpListener->finished = false;
 		}
 
 		m_CtxMutex.unlock();
+
+		int lastListenerIdx = m_ioListeners.size();
+		//todo peel off dead listeners
 	}
 
 	return 0;
 }
 
+duk_ret_t CScriptSystem::_ioAddListener(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	EVENTTYPE evt = (EVENTTYPE)duk_get_int(ctx, 1);
+	void* jsCallback = duk_get_heapptr(ctx, 2);
+	duk_pop_n(ctx, 3);
+	ioAddListener(fd, evt, jsCallback);
+	return 1;
+}
 
 duk_ret_t CScriptSystem::_ioSockCreate(duk_context* ctx)
 {
 	duk_pop_n(ctx, duk_get_top(ctx));
-	duk_push_uint(ctx, (UINT)ioSockCreate());
+	duk_push_int(ctx, (int)ioSockCreate());
 	return 1;
 }
 
 duk_ret_t CScriptSystem::_ioSockListen(duk_context* ctx)
 {
+	//MessageBox(NULL, "sock listening", "ok", MB_OK);
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	USHORT port = duk_get_uint(ctx, 1);
+	duk_pop_n(ctx, 2);
+	ioSockListen(fd, port);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::_ioSockAccept(duk_context* ctx)
+{
+	//MessageBox(NULL, "sock accepting", "ok", MB_OK);
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	void* jsCallback = duk_get_heapptr(ctx, 1);
+	duk_pop_n(ctx, 2);
+	ioSockAccept(fd, jsCallback);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::_ioRead(duk_context* ctx)
+{
+	// (fd, bufferSize, callback)
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	size_t bufferSize = duk_get_uint(ctx, 1);
 	void* jsCallback = duk_get_heapptr(ctx, 2);
 	duk_pop_n(ctx, 3);
-	ioSockListen(fd, port, jsCallback);
+
+	void* data = malloc(bufferSize); // freed after event is fired
+
+	ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::_ioWrite(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+
+	duk_size_t dataLen;
+	void* jsData = duk_to_buffer(ctx, 1, &dataLen);
+
+	void* jsCallback = duk_get_heapptr(ctx, 2);
+
+	char* data = (char*)malloc(dataLen + 1); // freed after event is fired
+	memcpy(data, jsData, dataLen);
+	data[dataLen] = '\0';
+	
+	duk_pop_n(ctx, 3);
+	// need buffer & size
+	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen);
 	return 1;
 }
 

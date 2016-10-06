@@ -52,6 +52,9 @@ typedef struct {
 	HANDLE     fd;
 	HANDLE     childFd; // accepted socket
 	UINT       id;
+	void*      data;
+	int        dataLen;
+	bool       finished; // set to true when done so object can be replaced
 	void*      callback;
 } IOListener;
 
@@ -91,24 +94,31 @@ private:
 	// Event loop
 	static HANDLE m_ioBasePort;
 	static char   m_ioBaseBuf[8192]; // io buffered here
+	static int    m_ioBaseBufLen;
 	static vector<IOListener> m_ioListeners;
 	static HANDLE m_ioEventsThread;
 
 	static DWORD WINAPI ioEventsProc(void* param);
+	static void ioDoEvent(IOListener* lpListener);
 
-	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* jsCallback);
+	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
+
 	static HANDLE ioCreateExistingFile(const char* path);
 	static HANDLE ioCreateServer();
 	static HANDLE ioSockCreate();
-	static bool   ioSockListen(HANDLE fd, USHORT port, void* jsCallback = NULL);
+	static bool   ioSockListen(HANDLE fd, USHORT port);
 	static bool   ioSockAccept(HANDLE fd, void* jsCallback);
 	
 	static duk_ret_t _ioAddListener(duk_context*);
 	static duk_ret_t _ioCreateExistingFile(duk_context*);
 	static duk_ret_t _ioCreateServer(duk_context*);
+
 	static duk_ret_t _ioSockCreate(duk_context*);
 	static duk_ret_t _ioSockListen(duk_context*);
 	static duk_ret_t _ioSockAccept(duk_context*);
+
+	static duk_ret_t _ioWrite(duk_context*);
+	static duk_ret_t _ioRead(duk_context*);
 
 	// Screen printing
 	//static HWND   m_RenderWindow;
@@ -131,12 +141,12 @@ private:
 	static duk_ret_t SetRDRAMU16     (duk_context* ctx); // (address, value)
 	static duk_ret_t SetRDRAMU32     (duk_context* ctx); // (address, value)
 
-	static duk_ret_t SockCreate      (duk_context* ctx);
-	static duk_ret_t SockListen      (duk_context* ctx);
-	static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
+	//static duk_ret_t SockCreate      (duk_context* ctx);
+	//static duk_ret_t SockListen      (duk_context* ctx);
+	//static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
 	//static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
-	static duk_ret_t SockReceiveN    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
-	static duk_ret_t SockReceive     (duk_context* ctx); // (socket) ; receive max 4kb
+	//static duk_ret_t SockReceiveN    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
+	//static duk_ret_t SockReceive     (duk_context* ctx); // (socket) ; receive max 4kb
 	static duk_ret_t ConsoleLog      (duk_context* ctx);
 
 	//static duk_ret_t Release         (duk_context* ctx); // set the mtsafe flag to false
