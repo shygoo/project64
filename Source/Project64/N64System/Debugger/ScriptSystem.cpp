@@ -105,10 +105,9 @@ void CScriptSystem::Init()
 	BindNativeFunction("sockCreate", _ioSockCreate);
 	BindNativeFunction("sockListen", _ioSockListen);
 	BindNativeFunction("sockAccept", _ioSockAccept);
-	BindNativeFunction("addListener", _ioAddListener);
+
 	BindNativeFunction("write", _ioWrite);
 	BindNativeFunction("read", _ioRead);
-	//BindNativeFunction("sockReceive", SockReceive);
 	
 	BindNativeFunction("msgBox", MsgBox);
 	
@@ -129,12 +128,7 @@ void CScriptSystem::Init()
 	//);
 	//m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
 	//m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
-
-
-	//HANDLE fd = ioSockCreate();
-	//ioSockListen(fd, 80);
-	//ioSockAccept(fd, NULL);
-
+	
 	// Control of the duk ctx is transferred to m_ioEventsThread here
 	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
 }
@@ -402,35 +396,16 @@ HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
 char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
 int    CScriptSystem::m_ioBaseBufLen;
-vector<IOListener> CScriptSystem::m_ioListeners;
+vector<IOListener*> CScriptSystem::m_ioListeners;
 
-void CScriptSystem::ioAddListener(HANDLE fd, EVENTTYPE evt, void* callback, void* data, int dataLen)
+void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
-	int len = m_ioListeners.size();
-	bool foundReplacement = false;
-
-	IOListener* lpListener;
-
-	for (int i = 0; i < len; i++)
-	{
-		// replace dead listener
-		if (m_ioListeners[i].finished == true)
-		{
-			lpListener = &m_ioListeners[i];
-			*lpListener = { 0 };
-			foundReplacement = true;
-			break;
-		}
-	}
-
-	if (!foundReplacement)
-	{
-		m_ioListeners.push_back({ 0 });
-		lpListener = &m_ioListeners[m_ioListeners.size() - 1];
-	}
-	
+	IOListener* lpListener = (IOListener*) malloc(sizeof(IOListener));
 	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
+	memset(lpListener, 0, sizeof(lpListener));
 
+	m_ioListeners.push_back(lpListener);
+	
 	lpListener->evt = evt;
 	lpListener->fd = fd;
 	lpListener->callback = callback;
@@ -469,7 +444,7 @@ void CScriptSystem::ioDoEvent(IOListener* lpListener)
 	switch (lpListener->evt)
 	{
 	case EVT_READ:
-		MessageBox(NULL, "read fired", "read", MB_OK);
+		//MessageBox(NULL, "read fired", "read", MB_OK);
 		duk_push_heapptr(m_Ctx, lpListener->callback);
 		duk_push_external_buffer(m_Ctx);
 		duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
@@ -552,7 +527,7 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 			INFINITE,
 			TRUE
 		);
-		
+
 		if (!status)
 		{
 			if (GetLastError() == STATUS_USER_APC)
@@ -566,40 +541,42 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 			MessageBox(NULL, errmsg, "Error", MB_OK);
 			break;
 		}
-		
+
 		IOListener* lpListener = (IOListener*)lpUsedOvl;
 
 		HANDLE fd = lpListener->fd;
-		EVENTTYPE evt = lpListener->evt;
-		
+		IOEVENTTYPE evt = lpListener->evt;
+
+		lpListener->dataLen = nBytesTransferred;
+
 		// Protect from emulation thread (onexec, onread, etc)
 		m_CtxMutex.lock();
 
 		ioDoEvent(lpListener);
 
+		m_CtxMutex.unlock();
+
+		// Destroy listener
+
 		if (lpListener->data != NULL)
 		{
 			free(lpListener->data);
-			lpListener->finished = false;
 		}
 
-		m_CtxMutex.unlock();
+		free(lpListener);
 
-		int lastListenerIdx = m_ioListeners.size();
-		//todo peel off dead listeners
+		UINT len = m_ioListeners.size();
+		for (UINT i = 0; i < len; i++)
+		{
+			if (m_ioListeners[i] == lpListener)
+			{
+				m_ioListeners.erase(m_ioListeners.begin() + i);
+				break;
+			}
+		}
 	}
 
 	return 0;
-}
-
-duk_ret_t CScriptSystem::_ioAddListener(duk_context* ctx)
-{
-	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
-	EVENTTYPE evt = (EVENTTYPE)duk_get_int(ctx, 1);
-	void* jsCallback = duk_get_heapptr(ctx, 2);
-	duk_pop_n(ctx, 3);
-	ioAddListener(fd, evt, jsCallback);
-	return 1;
 }
 
 duk_ret_t CScriptSystem::_ioSockCreate(duk_context* ctx)
@@ -646,18 +623,15 @@ duk_ret_t CScriptSystem::_ioRead(duk_context* ctx)
 duk_ret_t CScriptSystem::_ioWrite(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
-
 	duk_size_t dataLen;
 	void* jsData = duk_to_buffer(ctx, 1, &dataLen);
-
 	void* jsCallback = duk_get_heapptr(ctx, 2);
+	duk_pop_n(ctx, 3);
 
 	char* data = (char*)malloc(dataLen + 1); // freed after event is fired
 	memcpy(data, jsData, dataLen);
 	data[dataLen] = '\0';
 	
-	duk_pop_n(ctx, 3);
-	// need buffer & size
 	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen);
 	return 1;
 }

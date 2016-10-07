@@ -44,18 +44,17 @@ typedef enum {
 	EVT_READ,
 	EVT_WRITE,
 	EVT_ACCEPT
-} EVENTTYPE;
+} IOEVENTTYPE;
 
 typedef struct {
-	OVERLAPPED ovl;
-	EVENTTYPE  evt;
-	HANDLE     fd;
-	HANDLE     childFd; // accepted socket
-	UINT       id;
-	void*      data;
-	int        dataLen;
-	bool       finished; // set to true when done so object can be replaced
-	void*      callback;
+	OVERLAPPED  ovl;
+	IOEVENTTYPE evt;
+	HANDLE      fd;
+	HANDLE      childFd; // accepted socket
+	UINT        id;
+	void*       data;
+	DWORD       dataLen; // changed to bytes transferred after event is fired
+	void*       callback;
 } IOListener;
 
 class CScriptSystem {
@@ -95,13 +94,13 @@ private:
 	static HANDLE m_ioBasePort;
 	static char   m_ioBaseBuf[8192]; // io buffered here
 	static int    m_ioBaseBufLen;
-	static vector<IOListener> m_ioListeners;
+	static vector<IOListener*> m_ioListeners;
 	static HANDLE m_ioEventsThread;
 
 	static DWORD WINAPI ioEventsProc(void* param);
 	static void ioDoEvent(IOListener* lpListener);
 
-	static void   ioAddListener(HANDLE fd, EVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
+	static void   ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
 
 	static HANDLE ioCreateExistingFile(const char* path);
 	static HANDLE ioCreateServer();
@@ -109,7 +108,6 @@ private:
 	static bool   ioSockListen(HANDLE fd, USHORT port);
 	static bool   ioSockAccept(HANDLE fd, void* jsCallback);
 	
-	static duk_ret_t _ioAddListener(duk_context*);
 	static duk_ret_t _ioCreateExistingFile(duk_context*);
 	static duk_ret_t _ioCreateServer(duk_context*);
 
