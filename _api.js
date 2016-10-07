@@ -4,6 +4,8 @@ mem
  mem.u8[]
  mem.u16[]
  mem.u32[]
+ mem.float[]
+ mem.double[]
  mem.bindvar(obj, baseAddr, name, type)
  mem.bindvar(obj, vars)
  mem.bindstruct()
@@ -31,17 +33,15 @@ _native
  _native.addCallback(hook, callback, tag)
  _native.setGPRVal(regnum, val)
  _native.getGPRVal(regnum)
- _native.getRDRAMU8(address)
- _native.getRDRAMU16(address)
- _native.getRDRAMU32(address)
- _native.setRDRAMU8(address, value)
- _native.setRDRAMU16(address, value)
- _native.setRDRAMU32(address, value)
- 
- _native.sockCreate(port);
+ _native.getRDRAMInt(address, bitWidth)
+ _native.setRDRAMInt(address, bitWidth, val)
+ _native.getRDRAMFloat(address[, bDouble])
+ _native.setRDRAMFloat(address, val[, bDouble])
+ _native.sockCreate(port)
  _native.sockListen(fd)
  _native.sockAccept(fd)
- 
+ _native.sockRead(fd, callback)
+ _native.sockWrite(fd, data, callback)
  _native.msgBox(message[, caption])
 
 ****************************
@@ -54,7 +54,7 @@ Server
 	
 Socket
  new Socket()
- socket.recv(nBytes) // blocks calling thread, receives number of bytes and returns a Buffer object
+ socket.write(data, callback)
  server.on(evt, callback)
 	'data' -> callback(buffer)
 
@@ -100,7 +100,6 @@ const events = (function()
 	var callbacks = {};
 	var nextCallbackId = 0;
 	return {
-		// TODO need mutex because these are called outside the event loop
 		on: function(hook, callback, tag)
 		{
 			this._stashCallback(callback);
@@ -155,33 +154,88 @@ const mem = {
 	{
 		get: function(obj, prop)
 		{
-			return _native.getRDRAMU8(prop)
+			return _native.getRDRAMInt(prop, 8, false);
 		},
 		set: function(obj, prop, val)
 		{
-			_native.setRDRAMU8(prop, val)
+			_native.setRDRAMInt(prop, 8, val);
 		}
 	}),
 	u16: new Proxy({},
 	{
 		get: function(obj, prop)
 		{
-			return _native.getRDRAMU16(prop)
+			return _native.getRDRAMInt(prop, 16, false);
 		},
 		set: function(obj, prop, val)
 		{
-			_native.setRDRAMU16(prop, val)
+			_native.setRDRAMInt(prop, 16, val);
 		}
 	}),
 	u32: new Proxy({},
 	{
 		get: function(obj, prop)
 		{
-			return _native.getRDRAMU32(prop)
+			return _native.getRDRAMInt(prop, 32, false);
 		},
 		set: function(obj, prop, val)
 		{
-			_native.setRDRAMU32(prop, val)
+			_native.setRDRAMInt(prop, 32, val);
+		}
+	}),
+	s8: new Proxy({},
+	{
+		get: function(obj, prop)
+		{
+			return _native.getRDRAMInt(prop, 8, true);
+		},
+		set: function(obj, prop, val)
+		{
+			_native.setRDRAMInt(prop, 8, val);
+		}
+	}),
+	s16: new Proxy({},
+	{
+		get: function(obj, prop)
+		{
+			return _native.getRDRAMInt(prop, 16, true);
+		},
+		set: function(obj, prop, val)
+		{
+			_native.setRDRAMInt(prop, 16, val);
+		}
+	}),
+	s32: new Proxy({},
+	{
+		get: function(obj, prop)
+		{
+			return _native.getRDRAMInt(prop, 32, true);
+		},
+		set: function(obj, prop, val)
+		{
+			_native.setRDRAMInt(prop, 32, val);
+		}
+	}),
+	'float': new Proxy({},
+	{
+		get: function(obj, prop)
+		{
+			return _native.getRDRAMFloat(prop);
+		},
+		set: function(obj, prop, val)
+		{
+			_native.setRDRAMFloat(prop, val);
+		}
+	}),
+	'double': new Proxy({},
+	{
+		get: function(obj, prop)
+		{
+			return _native.getRDRAMFloat(prop, true);
+		},
+		set: function(obj, prop, val)
+		{
+			_native.setRDRAMFloat(prop, val, true);
 		}
 	}),
 	bindvar: function(obj, baseAddr, name, type)
@@ -249,7 +303,7 @@ function alert(text, caption){
 
 function Socket(fd)
 {
-	var _fd = fd || _native.sockCreate();
+	var _fd = fd;
 	
 	this.bufferSize = 2048;
 	

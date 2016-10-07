@@ -51,6 +51,7 @@ typedef struct {
 	IOEVENTTYPE evt;
 	HANDLE      fd;
 	HANDLE      childFd; // accepted socket
+	bool        bSocket;
 	UINT        id;
 	void*       data;
 	DWORD       dataLen; // changed to bytes transferred after event is fired
@@ -77,7 +78,6 @@ public:
 	static CCallbackList* GetCallbackList(const char* hookId);
 	static void Eval(const char* jsCode);
 	static void EvalFile(const char* jsPath);
-	static void BindNativeFunction(const char* name, duk_c_function func);
 	static void BindGlobalFunction(const char* name, duk_c_function func);
 
 	//static void Stash(void* heapptr);
@@ -100,52 +100,38 @@ private:
 	static DWORD WINAPI ioEventsProc(void* param);
 	static void ioDoEvent(IOListener* lpListener);
 
-	static void   ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
+	static void   ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0, bool bSocket = false);
+	static void   ioRemoveListener(IOListener* lpListener);
+
+	static HANDLE ioSockCreate();
 
 	static HANDLE ioCreateExistingFile(const char* path);
 	static HANDLE ioCreateServer();
-	static HANDLE ioSockCreate();
-	static bool   ioSockListen(HANDLE fd, USHORT port);
-	static bool   ioSockAccept(HANDLE fd, void* jsCallback);
-	
+
 	static duk_ret_t _ioCreateExistingFile(duk_context*);
-	static duk_ret_t _ioCreateServer(duk_context*);
-
-	static duk_ret_t _ioSockCreate(duk_context*);
-	static duk_ret_t _ioSockListen(duk_context*);
-	static duk_ret_t _ioSockAccept(duk_context*);
-
-	static duk_ret_t _ioWrite(duk_context*);
-	static duk_ret_t _ioRead(duk_context*);
-
+	
 	// Screen printing
 	//static HWND   m_RenderWindow;
 	static HFONT  m_FontFamily;
 	static HBRUSH m_FontColor;
 	static HPEN   m_FontOutline;
 	
-	//static vector<HANDLE> m_WorkerThreads;
-	//static DWORD WINAPI ThreadProc(LPVOID lpDukProcHeapPtr);
-	
 	// Bound functions
-	static duk_ret_t MsgBox          (duk_context* ctx); // (message, caption)
-	static duk_ret_t AddCallback     (duk_context* ctx); // (hookId, callback, tag)
-	static duk_ret_t GetGPRVal       (duk_context* ctx); // (regNum)
-	static duk_ret_t SetGPRVal       (duk_context* ctx); // (regNum, value)
-	static duk_ret_t GetRDRAMU8      (duk_context* ctx); // (address)
-	static duk_ret_t GetRDRAMU16     (duk_context* ctx); // (address)
-	static duk_ret_t GetRDRAMU32     (duk_context* ctx); // (address)
-	static duk_ret_t SetRDRAMU8      (duk_context* ctx); // (address, value)
-	static duk_ret_t SetRDRAMU16     (duk_context* ctx); // (address, value)
-	static duk_ret_t SetRDRAMU32     (duk_context* ctx); // (address, value)
+	static duk_ret_t js_ioSockCreate (duk_context*);
+	static duk_ret_t js_ioSockListen (duk_context*);
+	static duk_ret_t js_ioSockAccept (duk_context*);
+	static duk_ret_t js_ioRead       (duk_context*);
+	static duk_ret_t js_ioWrite      (duk_context*);
+	static duk_ret_t js_MsgBox       (duk_context*); // (message, caption)
+	static duk_ret_t js_AddCallback  (duk_context*); // (hookId, callback, tag)
+	static duk_ret_t js_GetGPRVal    (duk_context*); // (regNum)
+	static duk_ret_t js_SetGPRVal    (duk_context*); // (regNum, value)
 
-	//static duk_ret_t SockCreate      (duk_context* ctx);
-	//static duk_ret_t SockListen      (duk_context* ctx);
-	//static duk_ret_t SockAccept      (duk_context* ctx); // (serverSocket)   ; BLOCKING ; return client sock descriptor
-	//static duk_ret_t CreateServer    (duk_context* ctx); // (port) ; return sock descriptor
-	//static duk_ret_t SockReceiveN    (duk_context* ctx); // (socket, nBytes) ; BLOCKING
-	//static duk_ret_t SockReceive     (duk_context* ctx); // (socket) ; receive max 4kb
-	static duk_ret_t ConsoleLog      (duk_context* ctx);
+	static duk_ret_t js_GetRDRAMInt  (duk_context*); // (address, bitwidth, signed)
+	static duk_ret_t js_SetRDRAMInt  (duk_context*); // (address, bitwidth, signed, newValue)
 
-	//static duk_ret_t Release         (duk_context* ctx); // set the mtsafe flag to false
+	static duk_ret_t js_GetRDRAMFloat(duk_context*); // (address, bDouble)
+	static duk_ret_t js_SetRDRAMFloat(duk_context*); // (address, bDouble, newValue)
+	
+	static duk_ret_t ConsoleLog      (duk_context*);
 };

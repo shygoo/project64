@@ -79,37 +79,43 @@ CCallbackList CScriptSystem::m_ReadEvents;
 CCallbackList CScriptSystem::m_WriteEvents;
 CCallbackList CScriptSystem::m_WMEvents;
 
+HANDLE CScriptSystem::m_ioEventsThread;
+HANDLE CScriptSystem::m_ioBasePort;
+char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
+int    CScriptSystem::m_ioBaseBufLen;
+vector<IOListener*> CScriptSystem::m_ioListeners;
+
 void CScriptSystem::Init()
 {
 	m_Ctx = duk_create_heap_default();
+	
+	const duk_function_list_entry _native[] = {
+		{ "addCallback",   js_AddCallback,   DUK_VARARGS },
+		{ "setGPRVal",     js_SetGPRVal,     DUK_VARARGS },
+		{ "getGPRVal",     js_GetGPRVal,     DUK_VARARGS },
+		{ "getRDRAMInt",   js_GetRDRAMInt,   DUK_VARARGS },
+		{ "setRDRAMInt",   js_SetRDRAMInt,   DUK_VARARGS },
+		{ "getRDRAMFloat", js_GetRDRAMFloat, DUK_VARARGS },
+		{ "setRDRAMFloat", js_SetRDRAMFloat, DUK_VARARGS },
+		{ "sockCreate",    js_ioSockCreate,  DUK_VARARGS },
+		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
+		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
+		{ "write",         js_ioWrite,       DUK_VARARGS },
+		{ "read",          js_ioRead,        DUK_VARARGS },
+		{ "msgBox",        js_MsgBox,        DUK_VARARGS },
+		{NULL, NULL, 0}
+	};
 
 	duk_push_object(m_Ctx);
 	duk_put_global_string(m_Ctx, "_native");
-
+	duk_get_global_string(m_Ctx, "_native");
+	duk_put_function_list(m_Ctx, -1, _native);
+	duk_pop(m_Ctx);
+	
 	RegisterCallbackList("exec", &m_ExecEvents);
 	RegisterCallbackList("read", &m_ReadEvents);
 	RegisterCallbackList("write", &m_WriteEvents);
 	RegisterCallbackList("wm", &m_WMEvents);
-
-	BindNativeFunction("addCallback", AddCallback);
-	BindNativeFunction("setGPRVal", SetGPRVal);
-	BindNativeFunction("getGPRVal", GetGPRVal);
-
-	BindNativeFunction("getRDRAMU8", GetRDRAMU8);
-	BindNativeFunction("getRDRAMU16", GetRDRAMU16);
-	BindNativeFunction("getRDRAMU32", GetRDRAMU32);
-	BindNativeFunction("setRDRAMU8", SetRDRAMU8);
-	BindNativeFunction("setRDRAMU16", SetRDRAMU16);
-	BindNativeFunction("setRDRAMU32", SetRDRAMU32);
-
-	BindNativeFunction("sockCreate", _ioSockCreate);
-	BindNativeFunction("sockListen", _ioSockListen);
-	BindNativeFunction("sockAccept", _ioSockAccept);
-
-	BindNativeFunction("write", _ioWrite);
-	BindNativeFunction("read", _ioRead);
-	
-	BindNativeFunction("msgBox", MsgBox);
 	
 	// Init winsock
 	WSADATA wsaData;
@@ -147,7 +153,7 @@ void CScriptSystem::Eval(const char* jsCode)
 	const char* msg = duk_safe_to_string(m_Ctx, -1);
 	if (result != 0)
 	{
-		MessageBox(NULL, msg, "Script error", MB_OK);
+		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
 	}
 	duk_pop(m_Ctx);
 }
@@ -158,7 +164,7 @@ void CScriptSystem::EvalFile(const char* jsPath)
 	const char* msg = duk_safe_to_string(m_Ctx, -1);
 	if (result != 0)
 	{
-		MessageBox(NULL, msg, jsPath, MB_OK);
+		MessageBox(NULL, msg, jsPath, MB_OK | MB_ICONWARNING);
 	}
 	duk_pop(m_Ctx);
 }
@@ -167,13 +173,6 @@ void CScriptSystem::BindGlobalFunction(const char* name, duk_c_function func)
 {
 	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
 	duk_put_global_string(m_Ctx, name);
-}
-
-void CScriptSystem::BindNativeFunction(const char* name, duk_c_function func)
-{
-	duk_get_global_string(m_Ctx, "_native");
-	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
-	duk_put_prop_string(m_Ctx, 0, name);
 }
 
 void CScriptSystem::RegisterCallbackList(const char* hookId, CCallbackList* cbList)
@@ -212,154 +211,6 @@ void CScriptSystem::Invoke(void* heapptr)
 	duk_pop(m_Ctx);
 }
 
-duk_ret_t CScriptSystem::AddCallback(duk_context* ctx)
-{
-	const char* hookId;
-	void* heapptr;
-	uint32_t tag;
-
-	int argc = duk_get_top(ctx);
-
-	tag = 0;
-	if (argc == 3)
-	{
-		tag = duk_get_uint(ctx, 2);
-		duk_pop(ctx);
-	}
-
-	hookId = duk_get_string(ctx, 0);
-	heapptr = duk_get_heapptr(ctx, 1);
-	duk_pop_n(ctx, 2);
-
-	//Stash(heapptr);
-
-	int callbackId = -1;
-
-	CCallbackList* cbList = GetCallbackList(hookId);
-	if (cbList != NULL)
-	{
-		callbackId = cbList->Add(heapptr, tag);
-	}
-
-	duk_push_int(ctx, callbackId);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::GetGPRVal(duk_context* ctx)
-{
-	int regnum = duk_to_int(ctx, 0);
-	duk_pop_n(ctx, 1);
-	duk_push_uint(ctx, g_Reg->m_GPR[regnum].UW[0]);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::SetGPRVal(duk_context* ctx)
-{
-	int regnum = duk_to_int(ctx, 0);
-	uint32_t val = duk_to_uint32(ctx, 1);
-	duk_pop_n(ctx, 1);
-	g_Reg->m_GPR[regnum].UW[0] = val;
-	duk_push_uint(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::GetRDRAMU8(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	duk_pop(ctx);
-	uint8_t val = 0;
-	if (g_MMU != NULL)
-	{
-		g_MMU->LB_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::GetRDRAMU16(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	duk_pop(ctx);
-	uint16_t val = 0;
-	if (g_MMU != NULL)
-	{
-		g_MMU->LH_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::GetRDRAMU32(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	duk_pop(ctx);
-	uint32_t val = 0;
-	if (g_MMU != NULL)
-	{
-		g_MMU->LW_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::SetRDRAMU8(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	uint8_t val = duk_to_int(ctx, 1);
-	duk_pop_n(ctx, 2);
-	if (g_MMU != NULL)
-	{
-		g_MMU->SB_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::SetRDRAMU16(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	uint16_t val = duk_to_int(ctx, 1);
-	duk_pop_n(ctx, 2);
-	if (g_MMU != NULL)
-	{
-		g_MMU->SH_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::SetRDRAMU32(duk_context* ctx)
-{
-	uint32_t address = duk_to_uint32(ctx, 0);
-	uint32_t val = duk_to_int(ctx, 1);
-	duk_pop_n(ctx, 2);
-	if (g_MMU != NULL)
-	{
-		g_MMU->SW_VAddr(address, val);
-	}
-	duk_push_int(ctx, val);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::MsgBox(duk_context* ctx)
-{
-	int argc = duk_get_top(ctx);
-
-	const char* msg = duk_to_string(ctx, 0);
-	const char* caption = "";
-
-	if (argc > 1)
-	{
-		caption = duk_to_string(ctx, 1);
-	}
-
-	MessageBox(NULL, msg, caption, MB_OK);
-
-	duk_pop_n(ctx, argc);
-	duk_push_boolean(ctx, 1);
-	return 1;
-}
-
 void CScriptSystem::DrawTest()
 {
 	HWND renderWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
@@ -392,17 +243,11 @@ void CScriptSystem::DrawTest()
 	ReleaseDC(renderWindow, hdc);
 }
 
-HANDLE CScriptSystem::m_ioEventsThread;
-HANDLE CScriptSystem::m_ioBasePort;
-char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
-int    CScriptSystem::m_ioBaseBufLen;
-vector<IOListener*> CScriptSystem::m_ioListeners;
-
-void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
+void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen, bool bSocket)
 {
 	IOListener* lpListener = (IOListener*) malloc(sizeof(IOListener));
 	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
-	memset(lpListener, 0, sizeof(lpListener));
+	*lpListener = { 0 };
 
 	m_ioListeners.push_back(lpListener);
 	
@@ -411,19 +256,25 @@ void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, vo
 	lpListener->callback = callback;
 	lpListener->data = data;
 	lpListener->dataLen = dataLen;
+	lpListener->bSocket = bSocket;
 
 	switch (evt)
 	{
 	case EVT_READ:
-		ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
-		break;
-
+		{
+			bool status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
+			if (status == false && GetLastError() != ERROR_IO_PENDING)
+			{
+				MessageBox(NULL, "readex error", "", MB_OK);
+			}
+			break;
+		}
 	case EVT_WRITE:
 		WriteFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
 		break;
 
 	case EVT_ACCEPT:
-		// client socket
+		// Get client socket ready
 		lpListener->childFd = ioSockCreate();
 		AcceptEx(
 			(SOCKET)fd,
@@ -439,34 +290,125 @@ void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, vo
 	}
 }
 
+// Free listener & its buffer, remove from list
+void CScriptSystem::ioRemoveListener(IOListener* lpListener)
+{
+	if (lpListener->data != NULL)
+	{
+		free(lpListener->data);
+	}
+
+	free(lpListener);
+
+	UINT len = m_ioListeners.size();
+	for (UINT i = 0; i < len; i++)
+	{
+		if (m_ioListeners[i] == lpListener)
+		{
+			m_ioListeners.erase(m_ioListeners.begin() + i);
+			break;
+		}
+	}
+}
+
 void CScriptSystem::ioDoEvent(IOListener* lpListener)
 {
 	switch (lpListener->evt)
 	{
 	case EVT_READ:
-		//MessageBox(NULL, "read fired", "read", MB_OK);
-		duk_push_heapptr(m_Ctx, lpListener->callback);
-		duk_push_external_buffer(m_Ctx);
-		duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
-		duk_call(m_Ctx, 1);
-		duk_pop(m_Ctx);
+		if (lpListener->dataLen == 0)
+		{
+			if (lpListener->bSocket)
+			{
+				closesocket((SOCKET)lpListener->fd);
+			}
+			else
+			{
+				CloseHandle(lpListener->fd);
+			}
+			break;
+		}
+		if (lpListener->callback != NULL)
+		{
+			duk_push_heapptr(m_Ctx, lpListener->callback);
+			duk_push_external_buffer(m_Ctx);
+			duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
+			duk_call(m_Ctx, 1);
+			duk_pop(m_Ctx);
+		}
 		break;
 
 	case EVT_WRITE:
-		// todo pass num bytes transferred to callback
-		duk_push_heapptr(m_Ctx, lpListener->callback);
-		duk_call(m_Ctx, 0);
-		duk_pop(m_Ctx);
+		if (lpListener->callback != NULL)
+		{
+			duk_push_heapptr(m_Ctx, lpListener->callback);
+			duk_call(m_Ctx, 0);
+			duk_pop(m_Ctx);
+		}
 		break;
 
 	case EVT_ACCEPT:
 		// pass client socket fd to callback
-		duk_push_heapptr(m_Ctx, lpListener->callback);
-		duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
-		duk_call(m_Ctx, 1);
-		duk_pop(m_Ctx);
+		if (lpListener->callback != NULL)
+		{
+			duk_push_heapptr(m_Ctx, lpListener->callback);
+			duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
+			duk_call(m_Ctx, 1);
+			duk_pop(m_Ctx);
+		}
 		break;
 	}
+}
+
+DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
+{
+	while (1)
+	{
+		OVERLAPPED_ENTRY usedOvlEntry;
+		ULONG nUsedOverlaps;
+
+		// Wait for an IO completion or async proc call
+		BOOL status = GetQueuedCompletionStatusEx(
+			m_ioBasePort,
+			&usedOvlEntry,
+			1,
+			&nUsedOverlaps,
+			INFINITE,
+			TRUE
+		);
+
+		LPOVERLAPPED lpUsedOvl = usedOvlEntry.lpOverlapped;
+		DWORD nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
+
+		if (!status)
+		{
+			if (GetLastError() == STATUS_USER_APC)
+			{
+				// Interrupted by an async proc call
+				continue;
+			}
+			
+			char errmsg[128];
+			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", GetLastError());
+			MessageBox(NULL, errmsg, "Error", MB_OK);
+			break;
+		}
+
+		IOListener* lpListener = (IOListener*)lpUsedOvl;
+		lpListener->dataLen = nBytesTransferred;
+
+		// Protect from emulation thread (onexec, onread, etc)
+		m_CtxMutex.lock();
+
+		ioDoEvent(lpListener);
+
+		m_CtxMutex.unlock();
+
+		// Destroy listener
+		ioRemoveListener(lpListener);
+	}
+
+	return 0;
 }
 
 HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
@@ -480,133 +422,49 @@ HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
 HANDLE CScriptSystem::ioSockCreate()
 {
 	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	HANDLE iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
 	return fd;
 }
 
-bool CScriptSystem::ioSockListen(HANDLE fd, USHORT port)
+duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)
 {
-	SOCKET sock = (SOCKET)fd;
+	HANDLE fd = ioSockCreate();
+	duk_pop_n(ctx, duk_get_top(ctx));
+	duk_push_int(ctx, (int)fd);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_ioSockListen(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	USHORT port = duk_get_uint(ctx, 1);
+	duk_pop_n(ctx, 2);
+
 	SOCKADDR_IN serverAddr;
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = INADDR_ANY;
 	serverAddr.sin_port = htons(port);
-	if (::bind(sock, (SOCKADDR*) &serverAddr, sizeof(serverAddr)))
+	if (::bind((SOCKET)fd, (SOCKADDR*)&serverAddr, sizeof(serverAddr)))
 	{
-		MessageBox(NULL, "couldnt bind socket", "tes", MB_OK);
-		return false;
+		duk_push_boolean(ctx, false);
+		return 1;
 	}
-	listen(sock, 3);
-	return true;
-}
+	bool listenOkay = listen((SOCKET)fd, 3) == 0;
+	duk_push_boolean(ctx, listenOkay);
 
-bool CScriptSystem::ioSockAccept(HANDLE fd, void* jsCallback)
-{
-	ioAddListener(fd, EVT_ACCEPT, jsCallback);
-	return true;
-}
-
-DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
-{
-	while (1)
-	{
-		//MessageBox(NULL, "Events proc running", "ok", MB_OK);
-
-		OVERLAPPED_ENTRY usedOvlEntry;
-		ULONG nUsedOverlaps;
-
-		LPOVERLAPPED& lpUsedOvl = usedOvlEntry.lpOverlapped;
-		DWORD& nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
-
-		// Wait for an IO completion or async proc call
-		BOOL status = GetQueuedCompletionStatusEx(
-			m_ioBasePort,
-			&usedOvlEntry,
-			1,
-			&nUsedOverlaps,
-			INFINITE,
-			TRUE
-		);
-
-		if (!status)
-		{
-			if (GetLastError() == STATUS_USER_APC)
-			{
-				// Interrupted by an async proc call
-				continue;
-			}
-
-			char errmsg[128];
-			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", GetLastError());
-			MessageBox(NULL, errmsg, "Error", MB_OK);
-			break;
-		}
-
-		IOListener* lpListener = (IOListener*)lpUsedOvl;
-
-		HANDLE fd = lpListener->fd;
-		IOEVENTTYPE evt = lpListener->evt;
-
-		lpListener->dataLen = nBytesTransferred;
-
-		// Protect from emulation thread (onexec, onread, etc)
-		m_CtxMutex.lock();
-
-		ioDoEvent(lpListener);
-
-		m_CtxMutex.unlock();
-
-		// Destroy listener
-
-		if (lpListener->data != NULL)
-		{
-			free(lpListener->data);
-		}
-
-		free(lpListener);
-
-		UINT len = m_ioListeners.size();
-		for (UINT i = 0; i < len; i++)
-		{
-			if (m_ioListeners[i] == lpListener)
-			{
-				m_ioListeners.erase(m_ioListeners.begin() + i);
-				break;
-			}
-		}
-	}
-
-	return 0;
-}
-
-duk_ret_t CScriptSystem::_ioSockCreate(duk_context* ctx)
-{
-	duk_pop_n(ctx, duk_get_top(ctx));
-	duk_push_int(ctx, (int)ioSockCreate());
 	return 1;
 }
 
-duk_ret_t CScriptSystem::_ioSockListen(duk_context* ctx)
+duk_ret_t CScriptSystem::js_ioSockAccept(duk_context* ctx)
 {
-	//MessageBox(NULL, "sock listening", "ok", MB_OK);
-	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
-	USHORT port = duk_get_uint(ctx, 1);
-	duk_pop_n(ctx, 2);
-	ioSockListen(fd, port);
-	return 1;
-}
-
-duk_ret_t CScriptSystem::_ioSockAccept(duk_context* ctx)
-{
-	//MessageBox(NULL, "sock accepting", "ok", MB_OK);
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	void* jsCallback = duk_get_heapptr(ctx, 1);
 	duk_pop_n(ctx, 2);
-	ioSockAccept(fd, jsCallback);
+	ioAddListener(fd, EVT_ACCEPT, jsCallback, NULL, 0, true);
 	return 1;
 }
 
-duk_ret_t CScriptSystem::_ioRead(duk_context* ctx)
+duk_ret_t CScriptSystem::js_ioRead(duk_context* ctx)
 {
 	// (fd, bufferSize, callback)
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
@@ -616,11 +474,12 @@ duk_ret_t CScriptSystem::_ioRead(duk_context* ctx)
 
 	void* data = malloc(bufferSize); // freed after event is fired
 
-	ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize);
+	// TEMP bSocket true
+	ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize, true);
 	return 1;
 }
 
-duk_ret_t CScriptSystem::_ioWrite(duk_context* ctx)
+duk_ret_t CScriptSystem::js_ioWrite(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	duk_size_t dataLen;
@@ -632,7 +491,290 @@ duk_ret_t CScriptSystem::_ioWrite(duk_context* ctx)
 	memcpy(data, jsData, dataLen);
 	data[dataLen] = '\0';
 	
-	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen);
+	// TEMP bSocket true
+	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen, true);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_AddCallback(duk_context* ctx)
+{
+	const char* hookId;
+	void* heapptr;
+	uint32_t tag;
+
+	int argc = duk_get_top(ctx);
+
+	tag = 0;
+	if (argc == 3)
+	{
+		tag = duk_get_uint(ctx, 2);
+		duk_pop(ctx);
+	}
+
+	hookId = duk_get_string(ctx, 0);
+	heapptr = duk_get_heapptr(ctx, 1);
+	duk_pop_n(ctx, 2);
+
+	//Stash(heapptr);
+
+	int callbackId = -1;
+
+	CCallbackList* cbList = GetCallbackList(hookId);
+	if (cbList != NULL)
+	{
+		callbackId = cbList->Add(heapptr, tag);
+	}
+
+	duk_push_int(ctx, callbackId);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_GetGPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	duk_pop_n(ctx, 1);
+	duk_push_uint(ctx, g_Reg->m_GPR[regnum].UW[0]);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_SetGPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	uint32_t val = duk_to_uint32(ctx, 1);
+	duk_pop_n(ctx, 1);
+	g_Reg->m_GPR[regnum].UW[0] = val;
+	duk_push_uint(ctx, val);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_GetRDRAMInt(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	int bitwidth = duk_to_int(ctx, 1);
+	bool bSigned = duk_to_boolean(ctx, 2);
+
+	duk_pop_n(ctx, 3);
+	
+	if (g_MMU == NULL)
+	{
+		goto return_err;
+	}
+	
+	DWORD retval;
+
+	switch (bitwidth)
+	{
+	case 8:
+		{
+			uint8_t val;
+			if (!g_MMU->LB_VAddr(address, val))
+			{
+				goto return_err;
+			}
+			retval = bSigned ? (char)val : val;
+			break;
+		}
+	case 16:
+		{
+			uint16_t val;
+			if (!g_MMU->LH_VAddr(address, val))
+			{
+				goto return_err;
+			}
+			retval = bSigned ? (short)val : val;
+			break;
+		}
+	case 32:
+		{
+			uint32_t val;
+			if (!g_MMU->LW_VAddr(address, val))
+			{
+				goto return_err;
+			}
+			retval = bSigned ? (int)val : val;
+			break;
+		}
+	default:
+		goto return_err;
+	}
+	
+	if (bSigned)
+	{
+		duk_push_int(ctx, retval);
+	}
+	else
+	{
+		duk_push_uint(ctx, retval);
+	}
+	
+	return 1;
+
+	return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_SetRDRAMInt(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0);
+	int bitwidth = duk_to_int(ctx, 1);
+	DWORD newValue = duk_to_uint32(ctx, 2);
+
+	duk_pop_n(ctx, 3);
+
+	if (g_MMU == NULL)
+	{
+		goto return_err;
+	}
+
+	switch (bitwidth)
+	{
+	case 8:
+		if (!g_MMU->SB_VAddr(address, newValue))
+		{
+			goto return_err;
+		}
+		goto return_ok;
+	case 16:
+		if (!g_MMU->SH_VAddr(address, newValue))
+		{
+			goto return_err;
+		}
+		goto return_ok;
+	case 32:
+		if (!g_MMU->SW_VAddr(address, newValue))
+		{
+			goto return_err;
+		}
+		goto return_ok;
+	default:
+		goto return_err;
+	}
+
+	return_ok:
+	duk_push_boolean(ctx, true);
+	return 1;
+
+	return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_GetRDRAMFloat(duk_context* ctx)
+{
+	int argc = duk_get_top(ctx);
+	
+	uint32_t address = duk_to_uint32(ctx, 0);
+	bool bDouble = false;
+
+	if (argc > 1)
+	{
+		bDouble = duk_get_boolean(ctx, 1);
+	}
+
+	duk_pop_n(ctx, argc);
+
+	if (g_MMU == NULL)
+	{
+		goto return_err;
+	}
+
+	if (!bDouble)
+	{
+		uint32_t rawValue;
+		if (!g_MMU->LW_VAddr(address, rawValue))
+		{
+			goto return_err;
+		}
+
+		float floatValue;
+		memcpy(&floatValue, &rawValue, sizeof(float));
+		
+		duk_push_number(ctx, (double)floatValue);
+		return 1;
+	}
+
+	uint64_t rawValue;
+	if (!g_MMU->LD_VAddr(address, rawValue))
+	{
+		goto return_err;
+	}
+
+	double floatValue;
+	memcpy(&floatValue, &rawValue, sizeof(double));
+	
+	duk_push_number(ctx, floatValue);
+	return 1;
+
+return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_SetRDRAMFloat(duk_context* ctx)
+{
+	int argc = duk_get_top(ctx);
+
+	uint32_t address = duk_to_uint32(ctx, 0);
+	double value = duk_get_number(ctx, 1);
+	bool bDouble = false;
+
+	if (argc > 2)
+	{
+		bDouble = duk_get_boolean(ctx, 2);
+	}
+
+	duk_pop_n(ctx, argc);
+
+	if (g_MMU == NULL)
+	{
+		goto return_err;
+	}
+
+	if (!bDouble)
+	{
+		float floatValue = (float)value;
+		uint32_t rawValue;
+		memcpy(&rawValue, &floatValue, sizeof(float));
+		if (!g_MMU->SW_VAddr(address, rawValue))
+		{
+			goto return_ok;
+		}
+	}
+
+	double floatValue = (double)value;
+	uint64_t rawValue;
+	memcpy(&rawValue, &floatValue, sizeof(double));
+	if (!g_MMU->SD_VAddr(address, rawValue))
+	{
+		goto return_err;
+	}
+
+return_ok:
+	duk_push_boolean(ctx, true);
+	return 1;
+
+return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_MsgBox(duk_context* ctx)
+{
+	int argc = duk_get_top(ctx);
+
+	const char* msg = duk_to_string(ctx, 0);
+	const char* caption = "";
+
+	if (argc > 1)
+	{
+		caption = duk_to_string(ctx, 1);
+	}
+
+	MessageBox(NULL, msg, caption, MB_OK);
+
+	duk_pop_n(ctx, argc);
+	duk_push_boolean(ctx, 1);
 	return 1;
 }
 

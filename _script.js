@@ -1,4 +1,4 @@
-var server = new Server({port: 81});
+var server = new Server({port: 80});
 
 server.on('connection', function(client)
 {	
@@ -6,8 +6,6 @@ server.on('connection', function(client)
 
 	client.on('data', function(data)
 	{
-		alert(data);
-		
 		client.write(
 			'HTTP/1.1 200 OK\r\n'+
 			'Content-type: text/html\r\n'+
@@ -15,8 +13,10 @@ server.on('connection', function(client)
 			'\r\n' +
 			'http server in project64 what is life',
 			function(){
-				alert('finished write');
+				//alert('finished write');
 			}
 		);
 	});
+	
+
 });
