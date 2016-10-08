@@ -827,7 +827,7 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             //					Plugins->Gfx()->DrawScreen();
             //				}
             //			}
-			CScriptSystem::DrawTest();
+			//CScriptSystem::DrawTest();
 
             ValidateRect(hWnd, NULL);
         }

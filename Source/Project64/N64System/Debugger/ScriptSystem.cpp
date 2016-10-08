@@ -79,6 +79,8 @@ CCallbackList CScriptSystem::m_ReadEvents;
 CCallbackList CScriptSystem::m_WriteEvents;
 CCallbackList CScriptSystem::m_WMEvents;
 
+CRITICAL_SECTION CScriptSystem::m_CtxProtected;
+
 HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
 char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
@@ -135,6 +137,8 @@ void CScriptSystem::Init()
 	//m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
 	//m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 	
+	InitializeCriticalSection(&m_CtxProtected); // todo cleanup
+
 	// Control of the duk ctx is transferred to m_ioEventsThread here
 	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
 }
@@ -398,11 +402,11 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 		lpListener->dataLen = nBytesTransferred;
 
 		// Protect from emulation thread (onexec, onread, etc)
-		m_CtxMutex.lock();
+		EnterCriticalSection(&m_CtxProtected);
 
 		ioDoEvent(lpListener);
 
-		m_CtxMutex.unlock();
+		LeaveCriticalSection(&m_CtxProtected);
 
 		// Destroy listener
 		ioRemoveListener(lpListener);
@@ -738,19 +742,20 @@ duk_ret_t CScriptSystem::js_SetRDRAMFloat(duk_context* ctx)
 		memcpy(&rawValue, &floatValue, sizeof(float));
 		if (!g_MMU->SW_VAddr(address, rawValue))
 		{
-			goto return_ok;
+			goto return_err;
+		}
+	}
+	else
+	{
+		double floatValue = (double)value;
+		uint64_t rawValue;
+		memcpy(&rawValue, &floatValue, sizeof(double));
+		if (!g_MMU->SD_VAddr(address, rawValue))
+		{
+			goto return_err;
 		}
 	}
 
-	double floatValue = (double)value;
-	uint64_t rawValue;
-	memcpy(&rawValue, &floatValue, sizeof(double));
-	if (!g_MMU->SD_VAddr(address, rawValue))
-	{
-		goto return_err;
-	}
-
-return_ok:
 	duk_push_boolean(ctx, true);
 	return 1;
 

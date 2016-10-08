@@ -67,6 +67,8 @@ public:
 	static duk_context* m_Ctx;
 	static mutex m_CtxMutex;
 
+	static CRITICAL_SECTION m_CtxProtected;
+
 	static vector<EVENTHOOK> m_Hooks;
 	static CCallbackList m_ExecEvents;
 	static CCallbackList m_ReadEvents;

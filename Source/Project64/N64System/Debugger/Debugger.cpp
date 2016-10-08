@@ -201,21 +201,21 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 
 void CDebuggerUI::ExecEvents(uint32_t address)
 {
-	CScriptSystem::m_CtxMutex.lock();
+	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
 	CScriptSystem::m_ExecEvents.InvokeByTag(address);
-	CScriptSystem::m_CtxMutex.unlock();
+	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
 }
 
 void CDebuggerUI::WriteEvents(uint32_t address)
 {
-	CScriptSystem::m_CtxMutex.lock();
+	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
 	CScriptSystem::m_WriteEvents.InvokeByTag(address);
-	CScriptSystem::m_CtxMutex.unlock();
+	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
 }
 
 void CDebuggerUI::ReadEvents(uint32_t address)
 {
-	CScriptSystem::m_CtxMutex.lock();
+	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
 	CScriptSystem::m_ReadEvents.InvokeByTag(address);
-	CScriptSystem::m_CtxMutex.unlock();
+	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
 }
