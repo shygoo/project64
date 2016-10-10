@@ -108,8 +108,6 @@ private:
 	static HANDLE ioSockCreate();
 
 	static HANDLE ioCreateExistingFile(const char* path);
-	static HANDLE ioCreateServer();
-
 	static duk_ret_t _ioCreateExistingFile(duk_context*);
 	
 	// Screen printing
@@ -135,5 +133,5 @@ private:
 	static duk_ret_t js_GetRDRAMFloat(duk_context*); // (address, bDouble)
 	static duk_ret_t js_SetRDRAMFloat(duk_context*); // (address, bDouble, newValue)
 	
-	static duk_ret_t ConsoleLog      (duk_context*);
+	//static duk_ret_t ConsoleLog      (duk_context*);
 };

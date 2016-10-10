@@ -478,9 +478,3 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
         g_Notify->FatalError(GS(MSG_UNKNOWN_MEM_ACTION));
     }
 }
-
-// todo move this thing to CDebugger/g_Debugger, implement in CDebuggerUI
-inline void CInterpreterCPU::DebugEvents()
-{
-
-}

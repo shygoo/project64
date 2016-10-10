@@ -20,9 +20,7 @@ public:
     static void ExecuteCPU();
     static void ExecuteOps(int32_t Cycles);
     static void InPermLoop();
-
-	static inline void DebugEvents();
-
+	
 private:
     CInterpreterCPU();                                  // Disable default constructor
     CInterpreterCPU(const CInterpreterCPU&);            // Disable copy constructor

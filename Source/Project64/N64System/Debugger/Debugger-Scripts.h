@@ -17,7 +17,9 @@ class CEditEval : public CWindowImpl<CEditEval, CEdit>
 {
 private:
 	//static char* m_EvalString;
-
+	static const int HISTORY_MAX_ENTRIES = 20;
+	vector<char*> m_History;
+	int m_HistoryIdx;
 
 public:
 	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
@@ -25,18 +27,67 @@ public:
 		CScriptSystem::m_CtxMutex.lock();
 		CScriptSystem::Eval((const char*)lpJsCode);
 		CScriptSystem::m_CtxMutex.unlock();
-		free((char*)lpJsCode);
+		//free((char*)lpJsCode);
 	}
 
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-		if (wParam == VK_RETURN)
+		if (wParam == VK_UP)
+		{
+			if (m_HistoryIdx > 0)
+			{
+				char* code = m_History[--m_HistoryIdx];
+				SetWindowTextA(code);
+				int selEnd = strlen(code);
+				SetSel(selEnd, selEnd);
+			}
+		}
+		else if (wParam == VK_DOWN)
+		{
+			int size = m_History.size();
+			if (m_HistoryIdx < size - 1)
+			{
+				char* code = m_History[++m_HistoryIdx];
+				SetWindowTextA(code);
+				int selEnd = strlen(code);
+				SetSel(selEnd, selEnd);
+			}
+			else if(m_HistoryIdx < size)
+			{
+				SetWindowTextA("");
+				m_HistoryIdx++;
+			}
+		}
+		else if (wParam == VK_RETURN)
 		{
 			size_t codeLength = GetWindowTextLength() + 1;
 			char* code = (char*)malloc(codeLength);
 			GetWindowTextA(code, codeLength);
 			CScriptSystem::QueueAPC(EvalAsync, (ULONG_PTR)code); // code mem freed here
 			SetWindowTextA("");
+			int historySize = m_History.size();
+			
+			// remove duplicate
+			for (int i = 0; i < historySize; i++)
+			{
+				if (strcmp(code, m_History[i]) == 0)
+				{
+					free(m_History[i]);
+					m_History.erase(m_History.begin() + i);
+					historySize--;
+					break;
+				}
+			}
+
+			// remove oldest if maxed
+			if (historySize >= HISTORY_MAX_ENTRIES)
+			{
+				m_History.erase(m_History.begin() + 0);
+				historySize--;
+			}
+			
+			m_History.push_back(code);
+			m_HistoryIdx = ++historySize;
 		}
 		bHandled = FALSE;
 		return 0;
@@ -44,6 +95,7 @@ public:
 
 	BOOL Attach(HWND hWndNew)
 	{
+		m_HistoryIdx = 0;
 		return SubclassWindow(hWndNew);
 	}
 
