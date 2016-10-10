@@ -11,6 +11,9 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 
+#include <Project64-core/N64System/Interpreter/InterpreterCPU.h>
+#include <Project64-core/N64System/Interpreter/InterpreterOps.h>
+
 CPj64Module _Module;
 
 CDebuggerUI::CDebuggerUI () :
@@ -18,9 +21,7 @@ CDebuggerUI::CDebuggerUI () :
     m_MemoryView(NULL),
     m_MemorySearch(NULL),
     m_DebugTLB(NULL),
-    m_CommandsView(NULL),//,
-	//m_ScriptsView(NULL),
-   // m_ScriptSystem(NULL)
+    m_CommandsView(NULL),
 	m_Scripts(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
@@ -199,23 +200,67 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 	m_Scripts->ShowWindow();
 }
 
-void CDebuggerUI::ExecEvents(uint32_t address)
+void CDebuggerUI::CPUStepStarted()
 {
-	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
-	CScriptSystem::m_ExecEvents.InvokeByTag(address);
-	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
-}
+	uint32_t PROGRAM_COUNTER = g_Reg->m_PROGRAM_COUNTER;
+	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 
-void CDebuggerUI::WriteEvents(uint32_t address)
-{
-	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
-	CScriptSystem::m_WriteEvents.InvokeByTag(address);
-	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
-}
+	CScriptSystem::m_ExecEvents.InvokeByTag(PROGRAM_COUNTER);
 
-void CDebuggerUI::ReadEvents(uint32_t address)
-{
-	//EnterCriticalSection(&CScriptSystem::m_CtxProtected);
-	CScriptSystem::m_ReadEvents.InvokeByTag(address);
-	//LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
+	// PC breakpoints
+
+	if (CInterpreterDebug::EBPExists(PROGRAM_COUNTER))
+	{
+		CInterpreterDebug::Pause();
+		return;
+	}
+
+	// Memory breakpoints
+
+	OPCODE Opcode = R4300iOp::m_Opcode;
+	uint32_t op = Opcode.op;
+
+	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Read and write instructions
+	{
+		uint32_t memoryAddress = g_Reg->m_GPR[Opcode.base].UW[0] + (int16_t)Opcode.offset;
+
+		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
+		{
+			CScriptSystem::m_ReadEvents.InvokeByTag(memoryAddress);
+
+			if (CInterpreterDebug::RBPExists(memoryAddress))
+			{
+				CInterpreterDebug::Pause();
+				return;
+			}
+		}
+		else // Write instructions
+		{
+			CScriptSystem::m_WriteEvents.InvokeByTag(memoryAddress);
+
+			if (CInterpreterDebug::WBPExists(memoryAddress))
+			{
+				CInterpreterDebug::Pause();
+				return;
+			}
+		}
+	}
+
+	if (!CInterpreterDebug::isDebugging())
+	{
+		return;
+	}
+
+	if (R4300iOp::m_NextInstruction != JUMP)
+	{
+		CInterpreterDebug::Pause();
+		return;
+	}
+
+	if (JumpToLocation == PROGRAM_COUNTER + 4)
+	{
+		// Only pause on delay slots when branch isn't taken
+		CInterpreterDebug::Pause();
+		return;
+	}
 }

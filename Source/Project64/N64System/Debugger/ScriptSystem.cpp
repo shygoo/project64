@@ -39,7 +39,9 @@ void CCallbackList::InvokeById(int callbackId)
 	{
 		if (m_Callbacks[i].callbackId == callbackId)
 		{
+			EnterCriticalSection(&CScriptSystem::m_CtxProtected);
 			CScriptSystem::Invoke(m_Callbacks[i].heapptr);
+			LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
 			return;
 		}
 	}
@@ -51,7 +53,10 @@ void CCallbackList::InvokeByTag(uint32_t tag)
 	{
 		if (m_Callbacks[i].tag == tag)
 		{
+			EnterCriticalSection(&CScriptSystem::m_CtxProtected);
 			CScriptSystem::Invoke(m_Callbacks[i].heapptr);
+			LeaveCriticalSection(&CScriptSystem::m_CtxProtected);
+			return;
 		}
 	}
 }
@@ -67,7 +72,6 @@ duk_ret_t _vmbase(duk_context* ctx)
 	duk_push_uint(ctx, (uint32_t)g_MMU->Rdram());
 	return 1;
 }*/
-
 duk_context* CScriptSystem::m_Ctx = NULL;
 
 int CScriptSystem::m_NextStashIndex = 0;

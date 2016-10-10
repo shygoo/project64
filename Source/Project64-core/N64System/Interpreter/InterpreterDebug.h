@@ -28,7 +28,7 @@ public:
 	static int m_nWBP;
 	static int m_nEBP;
 
-	static void Pause(uint32_t address);
+	static void Pause();
 	static void Resume();
 	static void Skip();
 

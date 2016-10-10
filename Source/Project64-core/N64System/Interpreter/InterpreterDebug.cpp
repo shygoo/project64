@@ -29,7 +29,7 @@ int CInterpreterDebug::m_nRBP = 0;
 int CInterpreterDebug::m_nWBP = 0;
 int CInterpreterDebug::m_nEBP = 0;
 
-void CInterpreterDebug::Pause(uint32_t address)
+void CInterpreterDebug::Pause()
 {
 	KeepDebugging();
 	g_Debugger->BreakpointHit();

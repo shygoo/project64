@@ -299,7 +299,7 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			DebugEvents();
+			g_Debugger->CPUStepStarted();
 
 			if(CInterpreterDebug::m_Skipping)
 			{
@@ -482,65 +482,5 @@ void CInterpreterCPU::ExecuteOps(int32_t Cycles)
 // todo move this thing to CDebugger/g_Debugger, implement in CDebuggerUI
 inline void CInterpreterCPU::DebugEvents()
 {
-	uint32_t PROGRAM_COUNTER = *_PROGRAM_COUNTER;
-	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
-	
-	g_Debugger->ExecEvents(PROGRAM_COUNTER);
 
-	// PC breakpoints
-
-	if (CInterpreterDebug::m_nEBP > 0)
-	{
-		if (CInterpreterDebug::EBPExists(PROGRAM_COUNTER))
-		{
-			CInterpreterDebug::Pause(PROGRAM_COUNTER);
-			return;
-		}
-	}
-	
-	// Memory breakpoints
-
-	uint32_t op = R4300iOp::m_Opcode.op;
-
-	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Read and write instructions
-	{
-		uint32_t memoryAddress = _GPR[m_Opcode.base].UW[0] + (int16_t)m_Opcode.offset;
-
-		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
-		{
-			g_Debugger->ReadEvents(memoryAddress);
-			if (CInterpreterDebug::RBPExists(memoryAddress))
-			{
-				CInterpreterDebug::Pause(PROGRAM_COUNTER);
-				return;
-			}
-		}
-		else // Write instructions
-		{
-			g_Debugger->WriteEvents(memoryAddress);
-			if (CInterpreterDebug::WBPExists(memoryAddress))
-			{
-				CInterpreterDebug::Pause(PROGRAM_COUNTER);
-				return;
-			}
-		}
-	}
-
-	if (!CInterpreterDebug::isDebugging())
-	{
-		return;
-	}
-
-	if (R4300iOp::m_NextInstruction != JUMP)
-	{
-		CInterpreterDebug::Pause(PROGRAM_COUNTER);
-		return;
-	}
-
-	if (JumpToLocation == PROGRAM_COUNTER + 4)
-	{
-		// Only pause on delay slots when branch isn't taken
-		CInterpreterDebug::Pause(PROGRAM_COUNTER);
-		return;
-	}
 }

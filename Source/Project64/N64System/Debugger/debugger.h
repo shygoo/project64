@@ -21,9 +21,7 @@ __interface CDebugger
 {
     virtual void TLBChanged ( void ) = 0;
     virtual void BreakpointHit ( void ) = 0;
-	virtual void ExecEvents(uint32_t address) = 0;
-	virtual void ReadEvents(uint32_t address) = 0;
-	virtual void WriteEvents(uint32_t address) = 0;
+	virtual void CPUStepStarted ( void ) = 0;
 };
 
 class CDebuggerUI :
@@ -42,10 +40,7 @@ protected:
 
 	void TLBChanged ( void );
 	void BreakpointHit ( void );
-
-	void ExecEvents(uint32_t address);
-	void ReadEvents(uint32_t address);
-	void WriteEvents(uint32_t address);
+	void CPUStepStarted ( void );
 
 public:
     void Debug_Reset                ( void );
