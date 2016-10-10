@@ -493,12 +493,12 @@ duk_ret_t CScriptSystem::js_ioWrite(duk_context* ctx)
 	duk_size_t dataLen;
 	void* jsData = duk_to_buffer(ctx, 1, &dataLen);
 	void* jsCallback = duk_get_heapptr(ctx, 2);
-	duk_pop_n(ctx, 3);
 
 	char* data = (char*)malloc(dataLen + 1); // freed after event is fired
 	memcpy(data, jsData, dataLen);
 	data[dataLen] = '\0';
 	
+	duk_pop_n(ctx, 3);
 	// TEMP bSocket true
 	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen, true);
 	return 1;
