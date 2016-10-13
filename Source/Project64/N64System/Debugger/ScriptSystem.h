@@ -94,8 +94,6 @@ public:
 private:
 	// Event loop
 	static HANDLE m_ioBasePort;
-	static char   m_ioBaseBuf[8192]; // io buffered here
-	static int    m_ioBaseBufLen;
 	static vector<IOListener*> m_ioListeners;
 	static HANDLE m_ioEventsThread;
 
@@ -132,6 +130,6 @@ private:
 
 	static duk_ret_t js_GetRDRAMFloat(duk_context*); // (address, bDouble)
 	static duk_ret_t js_SetRDRAMFloat(duk_context*); // (address, bDouble, newValue)
-	
+
 	//static duk_ret_t ConsoleLog      (duk_context*);
 };

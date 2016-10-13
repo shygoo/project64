@@ -87,8 +87,6 @@ CRITICAL_SECTION CScriptSystem::m_CtxProtected;
 
 HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
-char   CScriptSystem::m_ioBaseBuf[8192]; // io buffered here
-int    CScriptSystem::m_ioBaseBufLen;
 vector<IOListener*> CScriptSystem::m_ioListeners;
 
 void CScriptSystem::Init()
@@ -287,7 +285,7 @@ void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, vo
 		AcceptEx(
 			(SOCKET)fd,
 			(SOCKET)lpListener->childFd,
-			m_ioBaseBuf,
+			lpListener->data, // local and remote SOCKADDR
 			0,
 			sizeof(SOCKADDR_IN) + 16,
 			sizeof(SOCKADDR_IN) + 16,
@@ -468,7 +466,9 @@ duk_ret_t CScriptSystem::js_ioSockAccept(duk_context* ctx)
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	void* jsCallback = duk_get_heapptr(ctx, 1);
 	duk_pop_n(ctx, 2);
-	ioAddListener(fd, EVT_ACCEPT, jsCallback, NULL, 0, true);
+
+	void* data = malloc(sizeof(SOCKADDR) * 2);
+	ioAddListener(fd, EVT_ACCEPT, jsCallback, data, 0, true);
 	return 1;
 }
 
