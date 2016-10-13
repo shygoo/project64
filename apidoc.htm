@@ -1,0 +1,300 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Project64d JS API</title>
+<style>
+body {
+	font-family: segoe ui, tahoma, sans;
+	font-size: 14px;
+	background-color: #EEE;
+}
+div.panel {
+	background-color: #FFF;
+	padding: 15px;
+	max-width: 600px;
+	border-top: 4px solid #FFAAAA;
+	margin: 15px;
+	box-shadow: -5px 5px 10px #BBB;
+}
+div.classname {
+	font-weight: bold;
+	font-size: 18px;
+}
+div.propertyname {
+	font-weight: bold;
+}
+div.property {
+	padding: 10px;
+}
+div.propertydesc {
+	padding: 10px;
+}
+pre.example {
+	background-color: #EFE;
+	border: 1px solid #BCB;
+	padding: 5px;
+	font-family: consolas, courier new, courier, monospace;
+	white-space: pre;
+	margin: 10px;
+	font-size: 12px;
+	color: #020;
+}
+span.snip {
+	background-color: #EFE;
+	color: #020;
+	font-family: consolas, courier new, courier, monospace;
+	font-size: 13px;
+}
+span.tag {
+	border: 2px solid #885;
+	border-radius: 5px;
+	background-color: #FFE;
+	color: #885;
+	font-weight: bold;
+	padding: 0px 2px;
+	font-size: 12px;
+}
+</style>
+</head>
+<body>
+<h3>Project64d Javascript API documentation</h3>
+<div class="panel">
+	<div class="classname">mem</div>
+	<div class="property">
+		<div class="propertyname">mem.u8|u16|u32|s8|s16|s32|float|double</div>
+		<div class="propertydesc">
+			Arrays for reading and modifying values in RDRAM.
+			These do not dereference like typical arrays; virtual addresses are always used for the index regardless of type size.
+			<pre class="example">
+var addr_power = 0x8033B21E
+
+if(mem.u8[addr_power] &lt; 1)
+{
+    mem.u8[addr_power] = 8
+}
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">mem.bindvar(obj, baseAddr, name, type)</div>
+		<div class="propertydesc">
+			Adds property <span class="snip">name</span> to <span class="snip">obj</span> and "binds" it to the RDRAM address specified by <span class="snip">baseAddr</span>.
+			Valid types are: <span class="snip">u8</span>, <span class="snip">u16</span>, <span class="snip">u32</span>, <span class="snip">s8</span>, <span class="snip">s16</span>, <span class="snip">s32</span>, <span class="snip">float</span>, and <span class="snip">double</span>.
+			Note that these types are global constants defined by the API, not language keywords.
+			<pre class="example">
+mem.bindvar(this, 0x8033B21E, 'power', u8)
+
+if(power &lt; 1)
+{
+    power = 8
+}
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">mem.bindvars(obj, vars)</div>
+		<div class="propertydesc">
+			Adds multiple RDRAM-bound properties to <span class="snip">obj</span>.
+			Returns <span class="snip">obj</span>.
+			<pre class="example">
+var mario = mem.bindvars({},
+[
+    [0x8033B1B0, 'y', float],
+    [0x8033B21E, 'power', u8]
+])
+
+mario.power = 5
+mario.y = 500.00
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">mem.bindstruct(obj, baseAddr, props)</div>
+		<div class="propertydesc">
+			Adds multiple RDRAM-bound properties to <span class="snip">obj</span>.
+			Addresses are determined by type sizes.
+			Returns <span class="snip">obj</span>.
+			<pre class="example">
+var marioPos = mem.bindstruct(this, 0x8033B1AC,
+{
+    x: float,
+    y: float,
+    z: float
+})
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">mem.typedef(props)</div>
+		<div class="propertydesc">
+			Returns a "struct" class that may be constructed with the virtual address of a real struct in RDRAM.
+			<pre class="example">
+const Point = mem.typedef(
+{
+    x: float,
+    y: float,
+    z: float
+})
+
+Point.prototype.move = function(x, y, z)
+{
+    this.x = x
+    this.y = y
+    this.z = z
+}
+
+var playerPos = new Point(0x8033B1AC)
+
+playerPos.move(100, 200, 300)
+</pre>
+		</div>
+	</div>
+</div>
+<div class="panel">
+	<div class="classname">events</div>
+	<!--
+	<div class="property">
+		<div class="propertyname">events.on(hook, callback, tag)</div>
+		<div class="propertydesc">
+			<pre class="example"></pre>
+		</div>
+	</div>-->
+	<div class="property">
+		<span class="tag" style="float: right;">interpreter mode</span>
+		<div class="propertyname">events.onexec(address, callback)</div>
+		<div class="propertydesc">
+			Adds a CPU execution callback for a virtual RAM address.
+			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
+			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
+			<pre class="example">
+events.onexec(0x802CB1C0, function()
+{
+    alert('CPU is calling 802CB1C0')
+})
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<span class="tag" style="float: right;">interpreter mode</span>
+		<div class="propertyname">events.onread(address, callback)</div>
+		<div class="propertydesc">
+			Adds a CPU read callback for a virtual RAM address.
+			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the current instruction is going to read from <span class="snip">address</span>.
+			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
+			<pre class="example">
+events.onread(0x8033B1B0, function()
+{
+    alert('CPU is reading 8033B1B0')
+})
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<span class="tag" style="float: right;">interpreter mode</span>
+		<div class="propertyname">events.onwrite(address, callback)</div>
+		<div class="propertydesc">
+			Adds a CPU write callback for a virtual RAM address.
+			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the current instruction is going to write to <span class="snip">address</span>.
+			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
+			<pre class="example">
+events.onwrite(0x8033B1B0, function()
+{
+    alert('CPU is modifying 8033B1B0')
+})
+</pre>
+		</div>
+	</div>
+	<!-- template
+	<div class="property">
+		<div class="propertyname"></div>
+		<div class="propertydesc">
+			<pre class="example"></pre>
+		</div>
+	</div>
+	-->
+</div>
+<div class="panel">
+	<div class="classname">gpr</div>
+	<div class="property">
+		<div class="propertyname">gpr.r0|at|v0|v1|a0 ...</div>
+		<div class="propertydesc">
+			Variables representing the lower 32 bits of each general purpose register.
+			<pre class="example">
+events.onexec(0x802CB1C0, function()
+{
+    if(gpr.a0 == 2)
+    {
+        gpr.a0 = 3
+    }
+})
+</pre>
+		</div>
+	</div>
+</div>
+<div class="panel">
+	<div class="classname">Server</div>
+	<div class="property">
+		<div class="propertyname">new Server(settings)</div>
+		<div class="propertydesc">
+			<pre class="example">var server = new Server({port: 80})</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">server.on('connection', callback)</div>
+		<div class="propertydesc">
+			<pre class="example">
+server.on('connection', function(socket)
+{
+    socket.on('data', function(data)
+    {
+        socket.write('hello')
+    })
+}</pre>
+		</div>
+	</div>
+	<!--
+ server.listen(port)
+ server.on(evt, callback)
+	'connection' -> callback(socket)-->
+</div>
+<div class="panel">
+<div class="classname">Socket</div>
+	<div class="property">
+		<div class="propertyname">new Socket([fd])</div>
+		<div class="propertydesc">
+			<pre class="example"></pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">socket.write(data[, callback])</div>
+		<div class="propertydesc">
+			<pre class="example"></pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">socket.on('data', callback)</div>
+		<div class="propertydesc">
+			<pre class="example"></pre>
+		</div>
+	</div>
+</div>
+<div class="panel">
+alert(message)<br>
+_native<br>
+ _native.addCallback(hook, callback, tag)<br>
+ _native.setGPRVal(regnum, val)<br>
+ _native.getGPRVal(regnum)<br>
+ _native.getRDRAMInt(address, bitWidth)<br>
+ _native.setRDRAMInt(address, bitWidth, val)<br>
+ _native.getRDRAMFloat(address[, bDouble])<br>
+ _native.setRDRAMFloat(address, val[, bDouble])<br>
+ _native.sockCreate(port)<br>
+ _native.sockListen(fd)<br>
+ _native.sockAccept(fd)<br>
+ _native.sockRead(fd, callback)<br>
+ _native.sockWrite(fd, data, callback)<br>
+ _native.msgBox(message[, caption])<br>
+</div>
+</body>
+</html>
