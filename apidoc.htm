@@ -9,13 +9,21 @@ body {
 	font-size: 14px;
 	background-color: #EEE;
 }
+a {
+	color: #494;
+	text-decoration: none;
+	font-weight: bold;
+}
+div.inline-content {
+	display: inline-block;
+	vertical-align: top;
+}
 div.panel {
 	background-color: #FFF;
-	padding: 15px;
-	max-width: 600px;
+	padding: 10px;
 	border-top: 4px solid #FFAAAA;
-	margin: 15px;
-	box-shadow: -5px 5px 10px #BBB;
+	margin-bottom: 10px;
+	box-shadow: -5px 5px 5px #BBB;
 }
 div.classname {
 	font-weight: bold;
@@ -47,6 +55,8 @@ span.snip {
 	font-size: 13px;
 }
 span.tag {
+	float: right;
+	margin-left: 2px;
 	border: 2px solid #885;
 	border-radius: 5px;
 	background-color: #FFE;
@@ -55,11 +65,32 @@ span.tag {
 	padding: 0px 2px;
 	font-size: 12px;
 }
+span.tag2 {
+	float: right;
+	margin-left: 2px;
+	border: 2px solid #588;
+	border-radius: 5px;
+	background-color: #EFF;
+	color: #588;
+	font-weight: bold;
+	padding: 0px 2px;
+	font-size: 12px;
+}
 </style>
 </head>
 <body>
-<h3>Project64d Javascript API documentation</h3>
-<div class="panel">
+<div style="margin: 10px; font-size: 24px;">Project64d Javascript API</div>
+<div  class="inline-content" style="width: 150px; min-width: 150px; margin-left: 10px;">
+	<div class="panel" id="sidebar" style="width: 120px; position: absolute;">
+		<a href="#mem">mem</a><br>
+		<a href="#events">events</a><br>
+		<a href="#gpr">gpr</a><br>
+		<a href="#Server">Server</a><br>
+		<a href="#Socket">Socket</a><br>
+	</div>
+</div>
+<div class="inline-content" style="max-width: 700px;">
+<div class="panel" id="mem">
 	<div class="classname">mem</div>
 	<div class="property">
 		<div class="propertyname">mem.u8|u16|u32|s8|s16|s32|float|double</div>
@@ -151,7 +182,7 @@ playerPos.move(100, 200, 300)
 		</div>
 	</div>
 </div>
-<div class="panel">
+<div class="panel" id="events">
 	<div class="classname">events</div>
 	<!--
 	<div class="property">
@@ -161,12 +192,12 @@ playerPos.move(100, 200, 300)
 		</div>
 	</div>-->
 	<div class="property">
-		<span class="tag" style="float: right;">interpreter mode</span>
+		<span class="tag2">emulation thread</span>
+		<span class="tag">interpreter mode</span>
 		<div class="propertyname">events.onexec(address, callback)</div>
 		<div class="propertydesc">
 			Adds a CPU execution callback for a virtual RAM address.
 			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
-			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
 			<pre class="example">
 events.onexec(0x802CB1C0, function()
 {
@@ -176,12 +207,12 @@ events.onexec(0x802CB1C0, function()
 		</div>
 	</div>
 	<div class="property">
-		<span class="tag" style="float: right;">interpreter mode</span>
+		<span class="tag2">emulation thread</span>
+		<span class="tag">interpreter mode</span>
 		<div class="propertyname">events.onread(address, callback)</div>
 		<div class="propertydesc">
 			Adds a CPU read callback for a virtual RAM address.
 			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the current instruction is going to read from <span class="snip">address</span>.
-			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
 			<pre class="example">
 events.onread(0x8033B1B0, function()
 {
@@ -191,12 +222,12 @@ events.onread(0x8033B1B0, function()
 		</div>
 	</div>
 	<div class="property">
-		<span class="tag" style="float: right;">interpreter mode</span>
+		<span class="tag2">emulation thread</span>
+		<span class="tag">interpreter mode</span>
 		<div class="propertyname">events.onwrite(address, callback)</div>
 		<div class="propertydesc">
 			Adds a CPU write callback for a virtual RAM address.
 			<span class="snip">callback</span> will be invoked at the beginning of a CPU step if the current instruction is going to write to <span class="snip">address</span>.
-			The <span class="snip">callback</span> function is invoked from the emulation thread; the game is paused until it completes.
 			<pre class="example">
 events.onwrite(0x8033B1B0, function()
 {
@@ -232,17 +263,27 @@ events.onexec(0x802CB1C0, function()
 		</div>
 	</div>
 </div>
-<div class="panel">
+<div class="panel" id="Server">
 	<div class="classname">Server</div>
 	<div class="property">
 		<div class="propertyname">new Server(settings)</div>
 		<div class="propertydesc">
+			Creates a new server socket.
+			If <span class="snip">port</span> is provided in <span class="snip">settings</span>, the server starts listening immediately.
 			<pre class="example">var server = new Server({port: 80})</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">server.listen(port)</div>
+		<div class="propertydesc">
+			Binds the server socket to a port and starts listening.
 		</div>
 	</div>
 	<div class="property">
 		<div class="propertyname">server.on('connection', callback)</div>
 		<div class="propertydesc">
+			Starts accepting clients.
+			When a client is accepted, a Socket object for it is created and passed to <span class="snip">callback</span>.
 			<pre class="example">
 server.on('connection', function(socket)
 {
@@ -258,7 +299,7 @@ server.on('connection', function(socket)
  server.on(evt, callback)
 	'connection' -> callback(socket)-->
 </div>
-<div class="panel">
+<div class="panel" id="Socket">
 <div class="classname">Socket</div>
 	<div class="property">
 		<div class="propertyname">new Socket([fd])</div>
@@ -275,7 +316,8 @@ server.on('connection', function(socket)
 	<div class="property">
 		<div class="propertyname">socket.on('data', callback)</div>
 		<div class="propertydesc">
-			<pre class="example"></pre>
+			Starts reading data from the socket asynchronously. When data arrives, it is passed to <span class="snip">callback</span> as a Buffer object.
+			<!--<pre class="example"></pre>-->
 		</div>
 	</div>
 </div>
@@ -296,5 +338,23 @@ _native<br>
  _native.sockWrite(fd, data, callback)<br>
  _native.msgBox(message[, caption])<br>
 </div>
+
+</div>
+
+<script>
+(function(){
+	var domSidebar = document.getElementById('sidebar');
+	var baseTop = domSidebar.getBoundingClientRect().top + window.scrollY;
+	document.onscroll = function(){
+		if(window.scrollY > baseTop) {
+			domSidebar.style.position = "fixed";
+			domSidebar.style.top = '0px';
+		} else {
+			domSidebar.style.position = "absolute";
+			domSidebar.style.top = baseTop + 'px';
+		}
+	}
+})();
+</script>
 </body>
 </html>
