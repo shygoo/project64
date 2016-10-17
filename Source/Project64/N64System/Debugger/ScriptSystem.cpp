@@ -101,6 +101,7 @@ void CScriptSystem::Init()
 		{ "setRDRAMInt",   js_SetRDRAMInt,   DUK_VARARGS },
 		{ "getRDRAMFloat", js_GetRDRAMFloat, DUK_VARARGS },
 		{ "setRDRAMFloat", js_SetRDRAMFloat, DUK_VARARGS },
+		{ "getRDRAMBlock", js_GetRDRAMBlock, DUK_VARARGS },
 		{ "sockCreate",    js_ioSockCreate,  DUK_VARARGS },
 		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
 		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
@@ -337,8 +338,11 @@ void CScriptSystem::ioDoEvent(IOListener* lpListener)
 		if (lpListener->callback != NULL)
 		{
 			duk_push_heapptr(m_Ctx, lpListener->callback);
-			duk_push_external_buffer(m_Ctx);
-			duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
+			//duk_push_external_buffer(m_Ctx);
+			//duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
+			void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
+			memcpy(data, lpListener->data, lpListener->dataLen);
+
 			duk_call(m_Ctx, 1);
 			duk_pop(m_Ctx);
 		}
@@ -467,7 +471,7 @@ duk_ret_t CScriptSystem::js_ioSockAccept(duk_context* ctx)
 	void* jsCallback = duk_get_heapptr(ctx, 1);
 	duk_pop_n(ctx, 2);
 
-	void* data = malloc(sizeof(SOCKADDR) * 2);
+	void* data = malloc(sizeof(SOCKADDR) * 4); // issue?
 	ioAddListener(fd, EVT_ACCEPT, jsCallback, data, 0, true);
 	return 1;
 }
@@ -767,6 +771,24 @@ return_err:
 	duk_push_boolean(ctx, false);
 	return 1;
 }
+
+duk_ret_t CScriptSystem::js_GetRDRAMBlock(duk_context* ctx)
+{
+	uint32_t address = duk_get_uint(ctx, 0);
+	uint32_t size = duk_get_uint(ctx, 1);
+
+	duk_pop_n(ctx, 2);
+
+	uint8_t* block = (uint8_t*) duk_push_buffer(m_Ctx, size, false);
+
+	for (uint32_t i = 0; i < size; i++)
+	{
+		g_MMU->LB_VAddr(address + i, block[i]);
+	}
+
+	return 1;
+}
+
 
 duk_ret_t CScriptSystem::js_MsgBox(duk_context* ctx)
 {
