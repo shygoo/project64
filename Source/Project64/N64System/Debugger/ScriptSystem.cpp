@@ -87,7 +87,8 @@ CRITICAL_SECTION CScriptSystem::m_CtxProtected;
 
 HANDLE CScriptSystem::m_ioEventsThread;
 HANDLE CScriptSystem::m_ioBasePort;
-vector<IOListener*> CScriptSystem::m_ioListeners;
+vector<IOLISTENER*> CScriptSystem::m_ioListeners;
+UINT CScriptSystem::m_ioNextListenerId;
 
 void CScriptSystem::Init()
 {
@@ -126,6 +127,7 @@ void CScriptSystem::Init()
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
+	m_ioNextListenerId = 0;
 	m_ioBasePort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 
 	EvalFile("_api.js");
@@ -213,8 +215,16 @@ void CScriptSystem::Stash(void* heapptr)
 
 void CScriptSystem::Invoke(void* heapptr)
 {
+	duk_int_t status;
 	duk_push_heapptr(m_Ctx, heapptr);
-	duk_call(m_Ctx, 0);
+	status = duk_pcall(m_Ctx, 0);
+	
+	if (status != DUK_EXEC_SUCCESS)
+	{
+		const char* msg = duk_safe_to_string(m_Ctx, -1);
+		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
+	}
+	
 	duk_pop(m_Ctx);
 }
 
@@ -252,13 +262,14 @@ void CScriptSystem::DrawTest()
 
 void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen, bool bSocket)
 {
-	IOListener* lpListener = (IOListener*) malloc(sizeof(IOListener));
+	IOLISTENER* lpListener = (IOLISTENER*) malloc(sizeof(IOLISTENER));
 	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
 	*lpListener = { 0 };
 
 	m_ioListeners.push_back(lpListener);
 	
-	lpListener->evt = evt;
+	lpListener->id = m_ioNextListenerId++;
+	lpListener->eventType = evt;
 	lpListener->fd = fd;
 	lpListener->callback = callback;
 	lpListener->data = data;
@@ -297,9 +308,10 @@ void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, vo
 	}
 }
 
-// Free listener & its buffer, remove from list
-void CScriptSystem::ioRemoveListener(IOListener* lpListener)
+void CScriptSystem::ioRemoveListenerByIndex(UINT index)
 {
+	IOLISTENER* lpListener = m_ioListeners[index];
+
 	if (lpListener->data != NULL)
 	{
 		free(lpListener->data);
@@ -307,27 +319,44 @@ void CScriptSystem::ioRemoveListener(IOListener* lpListener)
 
 	free(lpListener);
 
-	UINT len = m_ioListeners.size();
-	for (UINT i = 0; i < len; i++)
+	m_ioListeners.erase(m_ioListeners.begin() + index);
+
+}
+
+// Free listener & its buffer, remove from list
+void CScriptSystem::ioRemoveListenerByPtr(IOLISTENER* lpListener)
+{
+	for (UINT i = 0; i < m_ioListeners.size(); i++)
 	{
 		if (m_ioListeners[i] == lpListener)
 		{
-			m_ioListeners.erase(m_ioListeners.begin() + i);
+			ioRemoveListenerByIndex(i);
 			break;
 		}
 	}
 }
 
-void CScriptSystem::ioDoEvent(IOListener* lpListener)
+void CScriptSystem::ioRemoveListenersByFd(HANDLE fd)
 {
-	switch (lpListener->evt)
+	for (UINT i = 0; i < m_ioListeners.size(); i++)
+	{
+		if (m_ioListeners[i]->fd == fd)
+		{
+			ioRemoveListenerByIndex(i);
+		}
+	}
+}
+
+void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
+{
+	switch (lpListener->eventType)
 	{
 	case EVT_READ:
 		if (lpListener->dataLen == 0)
 		{
 			if (lpListener->bSocket)
 			{
-				closesocket((SOCKET)lpListener->fd);
+				ioSockClose(lpListener->fd);
 			}
 			else
 			{
@@ -338,8 +367,6 @@ void CScriptSystem::ioDoEvent(IOListener* lpListener)
 		if (lpListener->callback != NULL)
 		{
 			duk_push_heapptr(m_Ctx, lpListener->callback);
-			//duk_push_external_buffer(m_Ctx);
-			//duk_config_buffer(m_Ctx, -1, lpListener->data, lpListener->dataLen);
 			void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
 			memcpy(data, lpListener->data, lpListener->dataLen);
 
@@ -404,7 +431,7 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 			break;
 		}
 
-		IOListener* lpListener = (IOListener*)lpUsedOvl;
+		IOLISTENER* lpListener = (IOLISTENER*)lpUsedOvl;
 		lpListener->dataLen = nBytesTransferred;
 
 		// Protect from emulation thread (onexec, onread, etc)
@@ -415,7 +442,7 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 		LeaveCriticalSection(&m_CtxProtected);
 
 		// Destroy listener
-		ioRemoveListener(lpListener);
+		ioRemoveListenerByPtr(lpListener);
 	}
 
 	return 0;
@@ -434,6 +461,14 @@ HANDLE CScriptSystem::ioSockCreate()
 	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
 	return fd;
+}
+
+// Close socket and remove listeners
+bool CScriptSystem::ioSockClose(HANDLE fd)
+{
+	closesocket((SOCKET)fd);
+	ioRemoveListenersByFd(fd);
+	return true;
 }
 
 duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)

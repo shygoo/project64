@@ -246,6 +246,8 @@ function alert(text, caption){
 function Socket(fd)
 {
 	var _fd = fd
+	var _ondata = function(data){}
+	var _onclose = function(){}
 	
 	this.bufferSize = 2048
 	
@@ -253,13 +255,23 @@ function Socket(fd)
 	{
 		_native.write(_fd, data, callback)
 	}
-
-	var _ondata = function(data){}
 	
-	function _read(data)
+	this.close = function(){
+		_native.closesocket(_fd)
+		_onclose()
+	}
+	
+	function _read(data) // callback wrapper
 	{
-		_ondata(data)
-		_native.read(_fd, this.bufferSize, _read)
+		if(data.byteLength > 0)
+		{
+			// received data, invoke user callback and continue reading
+			_ondata(data)
+			_native.read(_fd, this.bufferSize, _read)
+			return
+		}
+		// no data, invoke user close callback
+		_onclose()
 	}
 	
 	this.on = function(eventType, callback)
@@ -269,6 +281,10 @@ function Socket(fd)
 		case 'data':
 			_ondata = callback
 			_native.read(_fd, this.bufferSize, _read)
+			break;
+		case 'close':
+			// note: does nothing if ondata not set
+			_onclose = callback
 			break;
 		}
 	}

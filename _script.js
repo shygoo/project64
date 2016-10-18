@@ -1,3 +1,30 @@
+var minServer = new Server({port: 81});
+
+minServer.on('connection', function(socket)
+{
+	socket.on('data', function(data)
+	{
+		var responseBody = "hello world";
+	
+		var response =
+			'HTTP/1.1 200 OK\r\n'+
+			'Content-Type: text/html\r\n'+
+			'Access-Control-Allow-Origin: *\r\n' +
+			'Content-Length: ' + responseBody.length + '\r\n' +
+			'\r\n' +
+			responseBody
+	
+		socket.write(response);
+	})
+	
+	socket.on('close', function(){
+		alert('connection closed');
+	})
+	
+});
+
+
+
 var server = new Server({port: 80});
 
 var startpoint = 0x801A45B0
@@ -11,15 +38,17 @@ mem.bindvar(this, 0x8033C600, 'lpPlayerCollisionTriangle', u32);
 
 // 2300
 
-server.on('connection', function(client)
-{
+server.on('connection', function(socket) {
 	var AWAITING_HEADER = 0;
 	var AWAITING_BODY = 1;
 	
 	var state = AWAITING_HEADER;
 	
-	client.on('data', function(data)
-	{
+	socket.on('close', function() {
+		alert('connection closed');
+	});
+	
+	socket.on('data', function(data) {
 		// var lines = data.toString().split(/\n/);
 		// var firstLine = lines[0].split(" ");
 		// var method = firstLine[0];
@@ -62,7 +91,7 @@ server.on('connection', function(client)
 		var collisionData = mem.getblock(startpoint, 0x30 * limit);
 		
 		var output = new ArrayBuffer(4 + collisionData.byteLength);
-
+		
 		// first four bytes = player idx, rest = collision data
 		
 		var dv = new DataView(output);
@@ -79,11 +108,9 @@ server.on('connection', function(client)
 			'\r\n' +
 			new Buffer(u8arr);
 			
-		client.write(
-			response,
-			function(){
-				//alert('finished write');
-			}
-		);
+		socket.write(response, function() {
+			//alert('finished write');
+		});
+		
 	});
 });

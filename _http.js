@@ -1,63 +1,170 @@
-var server = new Server({port: 80});
 
-server.on('connection', function(client)
+// http api draft
+
+function HTTPServer(settings)
 {
-	var AWAITING_HEADER = 0;
-	var AWAITING_BODY = 1;
+	// settings.port/defaultHeaders
+
+	var server = new Server({port: 80});
 	
-	var state = AWAITING_HEADER;
+	var _onrequest = function(){};
 	
-	client.on('data', function(data)
+	// httprequest.on/data on/end
+	
+	server.on('connection', function(socket)
 	{
-		var lines = data.toString().split(/\n/);
-		var firstLine = lines[0].split(" ");
-		var method = firstLine[0];
-		var path = firstLine[1];
-		var version = firstLine[2];
-		var querydata = path.split('?', 2);
-		if(querydata[1])
-		{
-			querydata = querydata[1].split('&');
-		}
-		var query = {};
-		if(querydata.length)
-		{
-			for(var i in querydata)
-			{
-				var spl = querydata[i].split('=');
-				query[spl[0]] = spl[1];
-			}
-		}
+		var haveCompleteHeaders = false;
+		var haveCompleteData = false;
 		
 		var headers = {};
 		
-		for(var i = 1; lines[i].trim() != ''; i++)
+		var headerData = '';
+		var bodyData = '';
+		
+		var httpRequest = {
+			headers: headers,
+			data: '',
+			_ondata_base: function(data){
+				
+			},
+			_ondata: function(data){},
+			_onend: function(){},
+		};
+		
+		var contentLength = 0;
+		
+		socket.on('data', function(data)
 		{
-			var header = lines[i].split(': ', 2);
-			headers[header[0]] = header[1].trim();
+			data = data.toString();
+			if(!haveCompleteHeaders)
+			{
+				var components = data.match(/(.+)(\r*\n\r*\n)?(.+)?/)
+				// 0 = fulltext, 1 = headerData, 2 = br, 3 = bodyData 
+				if(components[1])
+				{
+					headerData += components[1];
+					
+					if(components[2]) // double line break
+					{
+						haveCompleteHeaders = true;
+						httpRequest.headers = HTTPServer.parseHeaders(headerData);
+						
+						contentLength = httpRequest.headers.getValue('Content-length') | 0;	
+						
+						if(components[3])
+						{
+							// if data comes 'early', buffer it
+							httpRequest.data = components[3]
+							if(httpRequest.data.length == contentLength)
+							{
+								// already have all the data
+								_onrequest(httpRequest, null)
+							}
+						}
+					}
+				}
+			}
+			else if(!haveCompleteData)
+			{
+				httpRequest.data += data;
+				
+			}
+		})
+		
+		this.on = function(evt, callback)
+		{
+			switch(evt)
+			{
+			case 'request':
+				_onrequest = callback;
+				break;
+			}
 		}
 		
-		var body = {
-			method: method,
-			path: path,
-			query: query,
-			headers: headers
-		};
-
-		var bodyText = JSON.stringify(body);
-		
-		var response =
-			'HTTP/1.1 200 OK\r\n'+
-			'Content-type: application/json\r\n'+
-			'Content-length: ' + bodyText.length + '\r\n' +
-			'\r\n' +
-			bodyText;
+		socket.on('close', function()
+		{
 			
-		client.write(
-			response,
-			function(){
-				//alert('finished write');
-			}
-		);
-	});
-});
+		})
+	})
+}
+
+const http = {};
+
+http.Headers = function(headerData)
+{
+	var rawHeaderLines = headerData.split(/\r*\n/);
+	var rawStatusLine = rawHeaderLines.shift();
+	
+	var statusComponents = rawStatusLine.match(/(.+?) (.+?) (.+?)\/(.+)/);
+	
+	if(statusComponents == null)
+	{
+		return;
+	}
+	
+	statusComponents.shift();
+	this.method = statusComponents[0];
+	this.path = statusComponents[1];
+	this.protocol = statusComponents[2];
+	this.version = statusComponents[3];
+	
+	this.attributes = {}
+	
+	for(var i in rawHeaderLines)
+	{
+		var headerComponents = rawHeaderLines[i].match(/(.+?): *(.+)/);
+		
+		if(headerComponents == null)
+		{
+			return;
+		}
+		
+		headerComponents.shift();
+		
+		var name = headerComponents[0];
+		var value = headerComponents[1];
+		
+		name = name.toLowerCase();
+		
+		if(name)
+		{
+			this.attributes[name] = value;
+		}
+	}
+}
+
+http.Headers.prototype.getValue = function(name)
+{
+	name = name.toLowerCase()
+	
+	if(name in this.attributes)
+	{
+		return this.attributes[name];
+	}
+}
+
+http.Headers.prototype.raw = function()
+{
+	var rawHeaders = this.protocol + '/' +
+	                 this.version + ' ' +
+					 this.status + ' ' +
+					 this.statusRemark + '\r\n';
+	
+	for(var i in this.attributes)
+	{
+		rawHeaders += i + ': ' + this.attributes[i] + '\r\n';
+	}
+	
+	return rawHeaders;
+}
+
+
+/*
+
+http.createServer(function(request, response)
+{
+	response.setHeader()
+	response.end(data)
+})
+
+*/

@@ -38,7 +38,6 @@ typedef struct {
 	CCallbackList* cbList;
 } EVENTHOOK;
 
-
 // js event loop
 typedef enum {
 	EVT_READ,
@@ -48,7 +47,7 @@ typedef enum {
 
 typedef struct {
 	OVERLAPPED  ovl;
-	IOEVENTTYPE evt;
+	IOEVENTTYPE eventType;
 	HANDLE      fd;
 	HANDLE      childFd; // accepted socket
 	bool        bSocket;
@@ -56,7 +55,8 @@ typedef struct {
 	void*       data;
 	DWORD       dataLen; // changed to bytes transferred after event is fired
 	void*       callback;
-} IOListener;
+	//void*       closedCallback; // call if EVT_READ and nBytes == 0
+} IOLISTENER;
 
 class CScriptSystem {
 private:
@@ -94,16 +94,20 @@ public:
 private:
 	// Event loop
 	static HANDLE m_ioBasePort;
-	static vector<IOListener*> m_ioListeners;
+	static vector<IOLISTENER*> m_ioListeners;
+	static UINT m_ioNextListenerId;
 	static HANDLE m_ioEventsThread;
 
 	static DWORD WINAPI ioEventsProc(void* param);
-	static void ioDoEvent(IOListener* lpListener);
+	static void ioDoEvent(IOLISTENER* lpListener);
 
 	static void   ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0, bool bSocket = false);
-	static void   ioRemoveListener(IOListener* lpListener);
+	static void   ioRemoveListenerByIndex(UINT index);
+	static void   ioRemoveListenerByPtr(IOLISTENER* lpListener);
+	static void   ioRemoveListenersByFd(HANDLE fd);
 
 	static HANDLE ioSockCreate();
+	static bool   ioSockClose(HANDLE fd);
 
 	static HANDLE ioCreateExistingFile(const char* path);
 	static duk_ret_t _ioCreateExistingFile(duk_context*);
@@ -120,6 +124,7 @@ private:
 	static duk_ret_t js_ioSockAccept (duk_context*);
 	static duk_ret_t js_ioRead       (duk_context*);
 	static duk_ret_t js_ioWrite      (duk_context*);
+	static duk_ret_t js_ioSockClose  (duk_context*);
 	static duk_ret_t js_MsgBox       (duk_context*); // (message, caption)
 	static duk_ret_t js_AddCallback  (duk_context*); // (hookId, callback, tag)
 	static duk_ret_t js_GetGPRVal    (duk_context*); // (regNum)
