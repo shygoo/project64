@@ -258,16 +258,15 @@ function Socket(fd)
 	
 	this.close = function(){
 		_native.closesocket(_fd)
-		_onclose()
 	}
 	
 	function _read(data) // callback wrapper
 	{
-		if(data.byteLength > 0)
+		if(data != null)
 		{
-			// received data, invoke user callback and continue reading
-			_ondata(data)
+			// received data, continue reading and invoke user callback
 			_native.read(_fd, this.bufferSize, _read)
+			_ondata(data)
 			return
 		}
 		// no data, invoke user close callback

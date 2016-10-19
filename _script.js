@@ -10,15 +10,16 @@ minServer.on('connection', function(socket)
 			'HTTP/1.1 200 OK\r\n'+
 			'Content-Type: text/html\r\n'+
 			'Access-Control-Allow-Origin: *\r\n' +
-			'Content-Length: ' + responseBody.length + '\r\n' +
+			'Content-Length: 5\r\n' +
 			'\r\n' +
-			responseBody
+			'hello'
 	
 		socket.write(response);
+		//socket.close();
 	})
 	
 	socket.on('close', function(){
-		alert('connection closed');
+		//alert('connection closed');
 	})
 	
 });

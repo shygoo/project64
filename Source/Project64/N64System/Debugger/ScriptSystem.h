@@ -58,6 +58,12 @@ typedef struct {
 	//void*       closedCallback; // call if EVT_READ and nBytes == 0
 } IOLISTENER;
 
+typedef struct {
+	HANDLE fd;
+	HANDLE iocp;
+	bool bSocket;
+} IOFD;
+
 class CScriptSystem {
 private:
 	CScriptSystem(CDebuggerUI* debugger);
@@ -75,6 +81,9 @@ public:
 	static CCallbackList m_WriteEvents;
 	static CCallbackList m_WMEvents;
 
+	static void ioAddFd(HANDLE fd, bool bSocket = false);
+	static void ioCloseFd(HANDLE fd);
+	
 	static void Init();
 	static void RegisterCallbackList(const char* hookId, CCallbackList* cbList);
 	static CCallbackList* GetCallbackList(const char* hookId);
@@ -94,8 +103,12 @@ public:
 private:
 	// Event loop
 	static HANDLE m_ioBasePort;
+	
+	static vector<IOFD> m_ioFds;
+
 	static vector<IOLISTENER*> m_ioListeners;
 	static UINT m_ioNextListenerId;
+	
 	static HANDLE m_ioEventsThread;
 
 	static DWORD WINAPI ioEventsProc(void* param);

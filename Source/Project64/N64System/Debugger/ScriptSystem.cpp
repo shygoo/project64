@@ -90,6 +90,8 @@ HANDLE CScriptSystem::m_ioBasePort;
 vector<IOLISTENER*> CScriptSystem::m_ioListeners;
 UINT CScriptSystem::m_ioNextListenerId;
 
+vector<IOFD> CScriptSystem::m_ioFds;
+
 void CScriptSystem::Init()
 {
 	m_Ctx = duk_create_heap_default();
@@ -106,6 +108,7 @@ void CScriptSystem::Init()
 		{ "sockCreate",    js_ioSockCreate,  DUK_VARARGS },
 		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
 		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
+		{ "sockClose",     js_ioSockClose,   DUK_VARARGS },
 		{ "write",         js_ioWrite,       DUK_VARARGS },
 		{ "read",          js_ioRead,        DUK_VARARGS },
 		{ "msgBox",        js_MsgBox,        DUK_VARARGS },
@@ -352,24 +355,21 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 	switch (lpListener->eventType)
 	{
 	case EVT_READ:
-		if (lpListener->dataLen == 0)
-		{
-			if (lpListener->bSocket)
-			{
-				ioSockClose(lpListener->fd);
-			}
-			else
-			{
-				CloseHandle(lpListener->fd);
-			}
-			break;
-		}
 		if (lpListener->callback != NULL)
 		{
 			duk_push_heapptr(m_Ctx, lpListener->callback);
-			void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
-			memcpy(data, lpListener->data, lpListener->dataLen);
 
+			if (lpListener->dataLen > 0)
+			{
+				void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
+				memcpy(data, lpListener->data, lpListener->dataLen);
+			}
+			else
+			{
+				// socket must have closed, pass null to callback
+				duk_push_null(m_Ctx);
+			}
+			
 			duk_call(m_Ctx, 1);
 			duk_pop(m_Ctx);
 		}
@@ -452,14 +452,19 @@ HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
 {
 	HANDLE fd = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
 		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-	CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	//CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	ioAddFd(fd);
+	
 	return fd;
 }
 
 HANDLE CScriptSystem::ioSockCreate()
 {
 	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	//HANDLE iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	
+	ioAddFd(fd, true);
+
 	return fd;
 }
 
@@ -469,6 +474,55 @@ bool CScriptSystem::ioSockClose(HANDLE fd)
 	closesocket((SOCKET)fd);
 	ioRemoveListenersByFd(fd);
 	return true;
+}
+
+void CScriptSystem::ioAddFd(HANDLE fd, bool bSocket)
+{
+	IOFD iofd;
+	iofd.fd = fd;
+	iofd.iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	m_ioFds.push_back(iofd);
+}
+
+void CScriptSystem::ioCloseFd(HANDLE fd)
+{
+	for (int i = 0; i < m_ioFds.size(); i++)
+	{
+		IOFD iofd = m_ioFds[i];
+		if (iofd.fd != fd)
+		{
+			continue;
+		}
+
+		// Close file handle
+		if (iofd.bSocket)
+		{
+			closesocket((SOCKET)iofd.fd);
+		}
+		else
+		{
+			CloseHandle(iofd.fd);
+		}
+
+		// Close io completion port
+		CloseHandle(iofd.iocp);
+
+		// Remove reference
+		m_ioFds.erase(m_ioFds.begin() + i);
+
+		// Remove listeners
+		ioRemoveListenersByFd(fd);
+		break;
+	}
+}
+
+
+duk_ret_t CScriptSystem::js_ioSockClose(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	ioSockClose(fd);
+	return 1;
 }
 
 duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)
