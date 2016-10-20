@@ -18,6 +18,24 @@
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
 
+static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendBuffer,
+	DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped)
+{
+	LPFN_CONNECTEX ConnectExPtr = NULL;
+	DWORD nBytes;
+	GUID guid = WSAID_CONNECTEX;
+	int fetched = WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER, (void*)&guid,
+		sizeof(GUID), (void*)ConnectExPtr, sizeof(LPFN_CONNECTEX), NULL, NULL, NULL);
+
+	if (fetched == 0 && ConnectExPtr != NULL)
+	{
+		return ConnectExPtr(s, name, namelen, lpSendBuffer, dwSendDataLength, lpdwBytesSent, lpOverlapped);
+	}
+
+	return false;
+
+}
+
 mutex CScriptSystem::m_CtxMutex;
 
 //HWND CScriptSystem::m_RenderWindow = NULL;
@@ -83,6 +101,7 @@ vector<IOFD> CScriptSystem::m_ioFds;
 
 void CScriptSystem::Init()
 {
+
 	m_Ctx = duk_create_heap_default();
 	
 	const duk_function_list_entry _native[] = {
@@ -97,7 +116,7 @@ void CScriptSystem::Init()
 		{ "sockCreate",    js_ioSockCreate,  DUK_VARARGS },
 		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
 		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
-		{ "sockClose",     js_ioSockClose,   DUK_VARARGS },
+		{ "sockConnect",   js_ioSockConnect, DUK_VARARGS },
 		{ "close",         js_ioClose,       DUK_VARARGS },
 		{ "write",         js_ioWrite,       DUK_VARARGS },
 		{ "read",          js_ioRead,        DUK_VARARGS },
@@ -130,6 +149,7 @@ void CScriptSystem::Init()
 
 	// Control of the duk ctx is transferred to m_ioEventsThread here
 	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
+
 }
 
 void CScriptSystem::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
@@ -162,12 +182,6 @@ void CScriptSystem::EvalFile(const char* jsPath)
 	duk_pop(m_Ctx);
 }
 
-void CScriptSystem::BindGlobalFunction(const char* name, duk_c_function func)
-{
-	duk_push_c_function(m_Ctx, func, DUK_VARARGS);
-	duk_put_global_string(m_Ctx, name);
-}
-
 void CScriptSystem::RegisterCallbackList(const char* hookId, CCallbackList* cbList)
 {
 	EVENTHOOK eventHook = { hookId, cbList };
@@ -189,9 +203,9 @@ CCallbackList* CScriptSystem::GetCallbackList(const char* hookId)
 
 void CScriptSystem::Invoke(void* heapptr)
 {
-	duk_int_t status;
 	duk_push_heapptr(m_Ctx, heapptr);
-	status = duk_pcall(m_Ctx, 0);
+	
+	duk_int_t status = duk_pcall(m_Ctx, 0);
 	
 	if (status != DUK_EXEC_SUCCESS)
 	{
@@ -201,41 +215,8 @@ void CScriptSystem::Invoke(void* heapptr)
 	
 	duk_pop(m_Ctx);
 }
-/*
-void CScriptSystem::DrawTest()
-{
-	HWND renderWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
 
-	HDC hdc = GetDC(renderWindow);
-
-	SelectObject(hdc, m_FontFamily);
-	SelectObject(hdc, m_FontColor);
-	SelectObject(hdc, m_FontOutline);
-	
-	SetBkMode(hdc, TRANSPARENT);
-
-	SetTextColor(hdc, RGB(0xFF, 0xFF, 0xFF));
-
-	char str[256];
-	strcpy(str, "screen print test");
-
-	RECT rect;
-	rect.top = 50;
-	rect.left = 50;
-
-	BeginPath(hdc);
-	TextOut(hdc, 50, 50, str, strlen(str));
-	EndPath(hdc);
-	StrokePath(hdc);
-	AbortPath(hdc);
-
-	TextOut(hdc, 50, 50, str, strlen(str));
-
-	ReleaseDC(renderWindow, hdc);
-}
-*/
-
-void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen, bool bSocket)
+IOLISTENER* CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
 	IOLISTENER* lpListener = (IOLISTENER*) malloc(sizeof(IOLISTENER));
 	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
@@ -249,38 +230,8 @@ void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, vo
 	lpListener->callback = callback;
 	lpListener->data = data;
 	lpListener->dataLen = dataLen;
-	lpListener->bSocket = bSocket;
 
-	switch (evt)
-	{
-	case EVT_READ:
-		{
-			bool status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
-			if (status == false && GetLastError() != ERROR_IO_PENDING)
-			{
-				MessageBox(NULL, "readex error", "", MB_OK);
-			}
-			break;
-		}
-	case EVT_WRITE:
-		WriteFile(fd, lpListener->data, lpListener->dataLen, NULL, lpOvl);
-		break;
-
-	case EVT_ACCEPT:
-		// Get client socket ready
-		lpListener->childFd = ioSockCreate();
-		AcceptEx(
-			(SOCKET)fd,
-			(SOCKET)lpListener->childFd,
-			lpListener->data, // local and remote SOCKADDR
-			0,
-			sizeof(SOCKADDR_IN) + 16,
-			sizeof(SOCKADDR_IN) + 16,
-			NULL,
-			lpOvl
-		);
-		break;
-	}
+	return lpListener;
 }
 
 void CScriptSystem::ioRemoveListenerByIndex(UINT index)
@@ -295,7 +246,6 @@ void CScriptSystem::ioRemoveListenerByIndex(UINT index)
 	free(lpListener);
 
 	m_ioListeners.erase(m_ioListeners.begin() + index);
-
 }
 
 // Free listener & its buffer, remove from list
@@ -324,49 +274,46 @@ void CScriptSystem::ioRemoveListenersByFd(HANDLE fd)
 
 void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 {
+	if (lpListener->callback == NULL)
+	{
+		return;
+	}
+
+	duk_push_heapptr(m_Ctx, lpListener->callback);
+
+	int nargs = 0;
+
 	switch (lpListener->eventType)
 	{
 	case EVT_READ:
-		if (lpListener->callback != NULL)
+		nargs = 1;
+		if (lpListener->dataLen > 0)
 		{
-			duk_push_heapptr(m_Ctx, lpListener->callback);
-
-			if (lpListener->dataLen > 0)
-			{
-				void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
-				memcpy(data, lpListener->data, lpListener->dataLen);
-			}
-			else
-			{
-				// socket must have closed, pass null to callback
-				duk_push_null(m_Ctx);
-			}
-			
-			duk_call(m_Ctx, 1);
-			duk_pop(m_Ctx);
+			void* data = duk_push_buffer(m_Ctx, lpListener->dataLen, false);
+			memcpy(data, lpListener->data, lpListener->dataLen);
+		}
+		else
+		{
+			// socket must have closed, pass null to callback
+			duk_push_null(m_Ctx);
 		}
 		break;
-
 	case EVT_WRITE:
-		if (lpListener->callback != NULL)
-		{
-			duk_push_heapptr(m_Ctx, lpListener->callback);
-			duk_call(m_Ctx, 0);
-			duk_pop(m_Ctx);
-		}
+		nargs = 1;
+		duk_push_uint(m_Ctx, lpListener->dataLen); // num bytes written
 		break;
-
 	case EVT_ACCEPT:
 		// pass client socket fd to callback
-		if (lpListener->callback != NULL)
-		{
-			duk_push_heapptr(m_Ctx, lpListener->callback);
-			duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
-			duk_call(m_Ctx, 1);
-			duk_pop(m_Ctx);
-		}
+		nargs = 1;
+		duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
+		break;
+	case EVT_CONNECT:
+		nargs = 0;
 		break;
 	}
+
+	duk_call(m_Ctx, nargs);
+	duk_pop(m_Ctx);
 }
 
 DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
@@ -424,28 +371,15 @@ HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
 {
 	HANDLE fd = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ,
 		NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
-	//CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
 	ioAddFd(fd);
-	
 	return fd;
 }
 
 HANDLE CScriptSystem::ioSockCreate()
 {
 	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	//HANDLE iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
-	
 	ioAddFd(fd, true);
-
 	return fd;
-}
-
-// Close socket and remove listeners
-bool CScriptSystem::ioSockClose(HANDLE fd)
-{
-	closesocket((SOCKET)fd);
-	ioRemoveListenersByFd(fd);
-	return true;
 }
 
 void CScriptSystem::ioAddFd(HANDLE fd, bool bSocket)
@@ -477,15 +411,37 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 		}
 
 		// Close io completion port
-		CloseHandle(iofd.iocp);
+		//CloseHandle(iofd.iocp);
 
 		// Remove reference
 		m_ioFds.erase(m_ioFds.begin() + i);
 
-		// Remove listeners
+		// Remove overlappeds/listeners
 		ioRemoveListenersByFd(fd);
 		break;
 	}
+}
+
+duk_ret_t CScriptSystem::js_ioSockConnect(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE) duk_get_uint(ctx, 0);
+	const char* ipStr = duk_to_string(ctx, 1);
+	USHORT port = duk_get_uint(ctx, 2);
+	void* callback = duk_get_heapptr(ctx, 3);
+
+	char ipBytes[sizeof(uint32_t)];
+	sscanf(ipStr, "%d.%d.%d.%d", ipBytes, ipBytes + 1, ipBytes + 2, ipBytes + 3);
+
+	SOCKADDR_IN addr;
+	addr.sin_addr.s_addr = *(uint32_t*)ipBytes;
+	addr.sin_port = htons(port);
+	addr.sin_family = AF_INET;
+	
+	IOLISTENER* lpListener = ioAddListener(fd, EVT_CONNECT, callback);
+	ConnectEx((SOCKET)fd, (SOCKADDR*)&addr, sizeof(SOCKADDR), NULL, 0, NULL, (LPOVERLAPPED)lpListener);
+	
+	duk_pop_n(ctx, 4);
+	return 1;
 }
 
 duk_ret_t CScriptSystem::js_ioClose(duk_context* ctx)
@@ -496,14 +452,6 @@ duk_ret_t CScriptSystem::js_ioClose(duk_context* ctx)
 	return 1;
 }
 
-
-duk_ret_t CScriptSystem::js_ioSockClose(duk_context* ctx)
-{
-	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
-	duk_pop(ctx);
-	ioSockClose(fd);
-	return 1;
-}
 
 duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)
 {
@@ -517,6 +465,7 @@ duk_ret_t CScriptSystem::js_ioSockListen(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	USHORT port = duk_get_uint(ctx, 1);
+	
 	duk_pop_n(ctx, 2);
 
 	SOCKADDR_IN serverAddr;
@@ -530,7 +479,7 @@ duk_ret_t CScriptSystem::js_ioSockListen(duk_context* ctx)
 	}
 	bool listenOkay = listen((SOCKET)fd, 3) == 0;
 	duk_push_boolean(ctx, listenOkay);
-
+	
 	return 1;
 }
 
@@ -538,10 +487,25 @@ duk_ret_t CScriptSystem::js_ioSockAccept(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	void* jsCallback = duk_get_heapptr(ctx, 1);
-	duk_pop_n(ctx, 2);
-
+	
 	void* data = malloc(sizeof(SOCKADDR) * 4); // issue?
-	ioAddListener(fd, EVT_ACCEPT, jsCallback, data, 0, true);
+
+	IOLISTENER* lpListener = ioAddListener(fd, EVT_ACCEPT, jsCallback, data, 0);
+
+	lpListener->childFd = ioSockCreate();
+
+	AcceptEx(
+		(SOCKET)fd,
+		(SOCKET)lpListener->childFd,
+		lpListener->data, // local and remote SOCKADDR
+		0,
+		sizeof(SOCKADDR_IN) + 16,
+		sizeof(SOCKADDR_IN) + 16,
+		NULL,
+		(LPOVERLAPPED) lpListener
+	);
+	
+	duk_pop_n(ctx, 2);
 	return 1;
 }
 
@@ -551,12 +515,20 @@ duk_ret_t CScriptSystem::js_ioRead(duk_context* ctx)
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	size_t bufferSize = duk_get_uint(ctx, 1);
 	void* jsCallback = duk_get_heapptr(ctx, 2);
-	duk_pop_n(ctx, 3);
-
+	
 	void* data = malloc(bufferSize); // freed after event is fired
 
 	// TEMP bSocket true
-	ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize, true);
+
+	IOLISTENER* lpListener = ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize);
+	bool status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED) lpListener);
+	
+	if (status == false && GetLastError() != ERROR_IO_PENDING)
+	{
+		MessageBox(NULL, "readex error", "", MB_OK);
+	}
+	
+	duk_pop_n(ctx, 3);
 	return 1;
 }
 
@@ -571,9 +543,10 @@ duk_ret_t CScriptSystem::js_ioWrite(duk_context* ctx)
 	memcpy(data, jsData, dataLen);
 	data[dataLen] = '\0';
 	
+	IOLISTENER* lpListener = ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen);
+	WriteFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED)lpListener);
+
 	duk_pop_n(ctx, 3);
-	// TEMP bSocket true
-	ioAddListener(fd, EVT_WRITE, jsCallback, data, dataLen, true);
 	return 1;
 }
 
@@ -594,10 +567,7 @@ duk_ret_t CScriptSystem::js_AddCallback(duk_context* ctx)
 
 	hookId = duk_get_string(ctx, 0);
 	heapptr = duk_get_heapptr(ctx, 1);
-	duk_pop_n(ctx, 2);
-
-	//Stash(heapptr);
-
+	
 	int callbackId = -1;
 
 	CCallbackList* cbList = GetCallbackList(hookId);
@@ -607,6 +577,8 @@ duk_ret_t CScriptSystem::js_AddCallback(duk_context* ctx)
 	}
 
 	duk_push_int(ctx, callbackId);
+
+	duk_pop_n(ctx, 2);
 	return 1;
 }
 
@@ -622,8 +594,8 @@ duk_ret_t CScriptSystem::js_SetGPRVal(duk_context* ctx)
 {
 	int regnum = duk_to_int(ctx, 0);
 	uint32_t val = duk_to_uint32(ctx, 1);
-	duk_pop_n(ctx, 1);
 	g_Reg->m_GPR[regnum].UW[0] = val;
+	duk_pop_n(ctx, 1);
 	duk_push_uint(ctx, val);
 	return 1;
 }
@@ -858,7 +830,6 @@ duk_ret_t CScriptSystem::js_GetRDRAMBlock(duk_context* ctx)
 	return 1;
 }
 
-
 duk_ret_t CScriptSystem::js_MsgBox(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
@@ -877,162 +848,3 @@ duk_ret_t CScriptSystem::js_MsgBox(duk_context* ctx)
 	duk_push_boolean(ctx, 1);
 	return 1;
 }
-
-/******************** windows **********************/
-/*
-
-// win32 bindings
-
-enum HandlerType {
-	MESSAGES = 0,
-	NOTIFICATIONS = 1,
-	COMMANDS = 2
-};
-
-typedef struct {
-	HandlerType handlerType;
-	HWND parentWnd;
-	UINT code;
-	WORD ctrl;
-	int eventId;
-	int handlerId;
-} MESSAGEHANDLER;
-
-std::vector<MESSAGEHANDLER> messageHandlers;
-
-int nextHandlerId = 0;
-
-LRESULT CALLBACK MainWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	int nMessageHandlers = messageHandlers.size();
-	
-	for (int i = 0; i < nMessageHandlers; i++)
-	{
-		MESSAGEHANDLER handler = messageHandlers[i];
-
-		if (handler.parentWnd != hWnd)
-		{
-			continue;
-		}
-
-		if (uMsg == WM_COMMAND && messageHandlers[i].handlerType == COMMANDS)
-		{
-			if (handler.code == HIWORD(wParam) && handler.ctrl == LOWORD(wParam))
-			{
-				CScriptSystem::InvokeEvent(handler.eventId);
-			}
-		}
-		else if (uMsg == WM_NOTIFY && messageHandlers[i].handlerType == NOTIFICATIONS)
-		{
-			NMHDR* lpNMHDR = (NMHDR*)lParam;
-			if (handler.code == lpNMHDR->code && handler.ctrl == lpNMHDR->idFrom)
-			{
-				CScriptSystem::InvokeEvent(handler.eventId);
-			}
-		}
-		else if (messageHandlers[i].handlerType == MESSAGES)
-		{
-			if (handler.code == uMsg)
-			{
-				CScriptSystem::InvokeEvent(handler.eventId);
-			}
-		}
-	}
-	return DefWindowProc(hWnd, uMsg, wParam, lParam);
-}
-
-duk_ret_t _NewWindow(duk_context* ctx) {
-
-	WNDCLASSEX wcx;
-
-	wcx.cbSize = sizeof(wcx);
-	wcx.style = CS_HREDRAW | CS_VREDRAW;
-	wcx.lpfnWndProc = MainWndProc;
-	wcx.cbClsExtra = 0;
-	wcx.cbWndExtra = 0;
-	wcx.hInstance = GetModuleHandle(NULL);
-	wcx.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wcx.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wcx.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	wcx.lpszMenuName = "MainMenu";
-	wcx.lpszClassName = "MainWClass";
-	wcx.hIconSm = (HICON)LoadImage(GetModuleHandle(NULL),
-		MAKEINTRESOURCE(5),
-		IMAGE_ICON,
-		GetSystemMetrics(SM_CXSMICON),
-		GetSystemMetrics(SM_CYSMICON),
-		LR_DEFAULTCOLOR);
-
-	RegisterClassEx(&wcx);
-
-	HWND hWnd = CreateWindow(
-		"MainWClass",
-		"test",
-		WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		500, 100,
-		NULL,
-		NULL,
-		NULL, // hInstance
-		NULL
-	);
-
-	ShowWindow(hWnd, SW_SHOW);
-
-	duk_push_int(ctx, (int)hWnd);
-	return 1;
-}
-
-UINT currentMenuId = 1;
-
-duk_ret_t _AddCtrl(duk_context* ctx)
-{
-	// in hwnd, wndclass, position
-	// out menuId
-	HWND hWnd = (HWND)duk_get_int(ctx, 0);
-	const char* wndClass = duk_get_string(ctx, 1);
-	const char* lpWindowName = duk_get_string(ctx, 2);
-	int xPos = duk_get_int(ctx, 3);
-	int yPos = duk_get_int(ctx, 4);
-	int width = duk_get_int(ctx, 5);
-	int height = duk_get_int(ctx, 6);
-	duk_pop_n(ctx, 7);
-
-	HWND hwndButton = CreateWindowA(
-		wndClass,  // Predefined class;
-		"OK",      // Button text 
-		WS_TABSTOP | WS_VISIBLE | WS_CHILD, //| BS_DEFPUSHBUTTON,  // Styles 
-		xPos,         // x position 
-		yPos,         // y position 
-		width,        // Button width
-		height,       // Button height
-		hWnd,		// Parent window
-		(HMENU)currentMenuId,       // No menu.
-		(HINSTANCE)GetWindowLong(hWnd, GWL_HINSTANCE),
-		NULL);      // Pointer not needed.
-
-	duk_push_uint(ctx, currentMenuId);
-	currentMenuId++;
-	return 1;
-}
-
-duk_ret_t _AddMessageHandler(duk_context* ctx) {
-	// in type, hParentWnd, code, ctrlId, eventId
-	// ret handlerId
-	HandlerType type = (HandlerType)duk_get_int(ctx, 0);
-	HWND hParentWnd = (HWND)duk_get_uint(ctx, 1);
-	UINT code = duk_get_uint(ctx, 2);
-	UINT ctrl = duk_get_uint(ctx, 3);
-	int eventId = duk_get_int(ctx, 4);
-	duk_pop_n(ctx, 5);
-
-	MESSAGEHANDLER handler = {type, hParentWnd, code, ctrl, eventId, nextHandlerId};
-	nextHandlerId++;
-
-	messageHandlers.push_back(handler);
-
-	duk_push_int(ctx, handler.handlerId);
-	return 1;
-}
-
-*/

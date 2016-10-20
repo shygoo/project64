@@ -245,19 +245,28 @@ function alert(text, caption){
 
 function Socket(fd)
 {
-	var _fd = fd
+	var _fd = fd || _native.sockCreate();
+	
 	var _ondata = function(data){}
 	var _onclose = function(){}
+	var _finishwrite = function(){}
 	
 	this.bufferSize = 2048
 	
 	this.write = function(data, callback)
 	{
+		_finishwrite = callback // TEMP protect from garbage collector
 		_native.write(_fd, data, callback)
 	}
 	
-	this.close = function(){
-		_native.closesocket(_fd)
+	this.close = function()
+	{
+		_native.close(_fd)
+	}
+	
+	this.connect = function()
+	{
+		_native.sockConnect(_fd, ipAddr, port);
 	}
 	
 	function _read(data) // callback wrapper

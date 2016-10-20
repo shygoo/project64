@@ -23,7 +23,7 @@ server.on('connection', function(socket)
 	})
 })
 
-/*
+
 var minServer = new Server({port: 81});
 
 minServer.on('connection', function(socket)
@@ -40,8 +40,9 @@ minServer.on('connection', function(socket)
 			'\r\n' +
 			'hello'
 	
-		socket.write(response);
-		socket.close();
+		socket.write(response, function(){
+			socket.close();
+		});
 	})
 	
 	socket.on('close', function(){
@@ -49,7 +50,7 @@ minServer.on('connection', function(socket)
 	})
 	
 });
-
+/*
 
 
 var server = new Server({port: 80});
