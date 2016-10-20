@@ -80,9 +80,6 @@ public:
 	static CCallbackList m_ReadEvents;
 	static CCallbackList m_WriteEvents;
 	static CCallbackList m_WMEvents;
-
-	static void ioAddFd(HANDLE fd, bool bSocket = false);
-	static void ioCloseFd(HANDLE fd);
 	
 	static void Init();
 	static void RegisterCallbackList(const char* hookId, CCallbackList* cbList);
@@ -119,6 +116,9 @@ private:
 	static void   ioRemoveListenerByPtr(IOLISTENER* lpListener);
 	static void   ioRemoveListenersByFd(HANDLE fd);
 
+	static void   ioAddFd(HANDLE fd, bool bSocket = false);
+	static void   ioCloseFd(HANDLE fd);
+	
 	static HANDLE ioSockCreate();
 	static bool   ioSockClose(HANDLE fd);
 
@@ -138,6 +138,9 @@ private:
 	static duk_ret_t js_ioRead       (duk_context*);
 	static duk_ret_t js_ioWrite      (duk_context*);
 	static duk_ret_t js_ioSockClose  (duk_context*);
+
+	static duk_ret_t js_ioClose      (duk_context* ctx); // (fd) ; file or socket
+
 	static duk_ret_t js_MsgBox       (duk_context*); // (message, caption)
 	static duk_ret_t js_AddCallback  (duk_context*); // (hookId, callback, tag)
 	static duk_ret_t js_GetGPRVal    (duk_context*); // (regNum)

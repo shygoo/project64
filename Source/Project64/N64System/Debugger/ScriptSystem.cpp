@@ -61,17 +61,6 @@ void CCallbackList::InvokeByTag(uint32_t tag)
 	}
 }
 
-// hooks: ui, read, write, exec
-
-//duk_ret_t _NewWindow(duk_context* ctx);
-//duk_ret_t _AddCtrl(duk_context* ctx);
-//duk_ret_t _AddMessageHandler(duk_context* ctx);
-/*
-duk_ret_t _vmbase(duk_context* ctx)
-{
-	duk_push_uint(ctx, (uint32_t)g_MMU->Rdram());
-	return 1;
-}*/
 duk_context* CScriptSystem::m_Ctx = NULL;
 
 int CScriptSystem::m_NextStashIndex = 0;
@@ -109,6 +98,7 @@ void CScriptSystem::Init()
 		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
 		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
 		{ "sockClose",     js_ioSockClose,   DUK_VARARGS },
+		{ "close",         js_ioClose,       DUK_VARARGS },
 		{ "write",         js_ioWrite,       DUK_VARARGS },
 		{ "read",          js_ioRead,        DUK_VARARGS },
 		{ "msgBox",        js_MsgBox,        DUK_VARARGS },
@@ -135,15 +125,6 @@ void CScriptSystem::Init()
 
 	EvalFile("_api.js");
 	EvalFile("_script.js");
-
-	// screen print test
-	//m_FontFamily = CreateFont(-13, 0, 0, 0,
-	//	FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-	//	OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-	//	DEFAULT_QUALITY, FF_DONTCARE, "Courier New"
-	//);
-	//m_FontColor = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
-	//m_FontOutline = CreatePen(PS_SOLID, 3, RGB(0, 0, 0));
 	
 	InitializeCriticalSection(&m_CtxProtected); // todo cleanup
 
@@ -206,16 +187,6 @@ CCallbackList* CScriptSystem::GetCallbackList(const char* hookId)
 	return NULL;
 }
 
-/*
-// Protect js object/function from garbage collector
-void CScriptSystem::Stash(void* heapptr)
-{
-	duk_push_global_stash(m_Ctx);
-	duk_push_heapptr(m_Ctx, heapptr);
-	duk_put_prop_index(m_Ctx, -2, m_NextStashIndex);
-	duk_pop_n(m_Ctx, 1);
-}*/
-
 void CScriptSystem::Invoke(void* heapptr)
 {
 	duk_int_t status;
@@ -230,7 +201,7 @@ void CScriptSystem::Invoke(void* heapptr)
 	
 	duk_pop(m_Ctx);
 }
-
+/*
 void CScriptSystem::DrawTest()
 {
 	HWND renderWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
@@ -262,6 +233,7 @@ void CScriptSystem::DrawTest()
 
 	ReleaseDC(renderWindow, hdc);
 }
+*/
 
 void CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen, bool bSocket)
 {
@@ -514,6 +486,14 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 		ioRemoveListenersByFd(fd);
 		break;
 	}
+}
+
+duk_ret_t CScriptSystem::js_ioClose(duk_context* ctx)
+{
+	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
+	duk_pop(ctx);
+	ioCloseFd(fd);
+	return 1;
 }
 
 

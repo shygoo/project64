@@ -1,3 +1,29 @@
+var mario = mem.bindvars({}, [
+	[0x8033B1AC, 'x', float],
+	[0x8033B1B0, 'y', float],
+	[0x8033B1B4, 'z', float],
+])
+
+var server = new Server({port: 80})
+
+server.on('connection', function(socket)
+{
+	socket.on('data', function(data)
+	{
+		if(data.byteLength == 12)
+		{
+			var floats = new Float32Array(data)
+			
+			alert('got data ' + floats[0] + ' ' + floats[1] + ' ' + floats[2]);
+			
+			mario.x = floats[0];
+			mario.y = floats[1];
+			mario.z = floats[2];
+		}
+	})
+})
+
+/*
 var minServer = new Server({port: 81});
 
 minServer.on('connection', function(socket)
@@ -15,7 +41,7 @@ minServer.on('connection', function(socket)
 			'hello'
 	
 		socket.write(response);
-		//socket.close();
+		socket.close();
 	})
 	
 	socket.on('close', function(){
@@ -115,3 +141,4 @@ server.on('connection', function(socket) {
 		
 	});
 });
+*/
