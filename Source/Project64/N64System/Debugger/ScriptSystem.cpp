@@ -24,16 +24,17 @@ static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendB
 	LPFN_CONNECTEX ConnectExPtr = NULL;
 	DWORD nBytes;
 	GUID guid = WSAID_CONNECTEX;
-	int fetched = WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER, (void*)&guid,
-		sizeof(GUID), (void*)ConnectExPtr, sizeof(LPFN_CONNECTEX), NULL, NULL, NULL);
+	int fetched = WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER,
+		(void*)&guid, sizeof(GUID),
+		&ConnectExPtr, sizeof(LPFN_CONNECTEX),
+		&nBytes, NULL, NULL);
 
 	if (fetched == 0 && ConnectExPtr != NULL)
 	{
-		return ConnectExPtr(s, name, namelen, lpSendBuffer, dwSendDataLength, lpdwBytesSent, lpOverlapped);
+		ConnectExPtr(s, name, namelen, lpSendBuffer, dwSendDataLength, lpdwBytesSent, lpOverlapped);
 	}
 
 	return false;
-
 }
 
 mutex CScriptSystem::m_CtxMutex;
@@ -101,7 +102,6 @@ vector<IOFD> CScriptSystem::m_ioFds;
 
 void CScriptSystem::Init()
 {
-
 	m_Ctx = duk_create_heap_default();
 	
 	const duk_function_list_entry _native[] = {
@@ -243,6 +243,8 @@ void CScriptSystem::ioRemoveListenerByIndex(UINT index)
 		free(lpListener->data);
 	}
 
+	CancelIoEx(lpListener->fd, (LPOVERLAPPED) lpListener);
+
 	free(lpListener);
 
 	m_ioListeners.erase(m_ioListeners.begin() + index);
@@ -278,7 +280,7 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 	{
 		return;
 	}
-
+	
 	duk_push_heapptr(m_Ctx, lpListener->callback);
 
 	int nargs = 0;
@@ -294,7 +296,10 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 		}
 		else
 		{
-			// socket must have closed, pass null to callback
+			// handle must have closed, safe to untrack fd and remove all associated listeners
+			ioRemoveFd(lpListener->fd);
+
+			// push null to callback
 			duk_push_null(m_Ctx);
 		}
 		break;
@@ -311,9 +316,16 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 		nargs = 0;
 		break;
 	}
+	
+	duk_int_t status = duk_pcall(m_Ctx, nargs);
 
-	duk_call(m_Ctx, nargs);
-	duk_pop(m_Ctx);
+	if (status != DUK_EXEC_SUCCESS)
+	{
+		const char* msg = duk_safe_to_string(m_Ctx, -1);
+		//MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
+	}
+
+	//MessageBox(NULL, "Finished firing", "done", MB_OK);
 }
 
 DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
@@ -336,16 +348,21 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 		LPOVERLAPPED lpUsedOvl = usedOvlEntry.lpOverlapped;
 		DWORD nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
 
+		//char t[256]; sprintf(t, "bytes transferred: %d", nBytesTransferred);
+		//MessageBox(NULL, t, "event bytes transferred", MB_OK);
+
 		if (!status)
 		{
-			if (GetLastError() == STATUS_USER_APC)
+			int err = GetLastError();
+
+			if (err == STATUS_USER_APC || err == ERROR_ABANDONED_WAIT_0 || err == ERROR_SUCCESS)
 			{
-				// Interrupted by an async proc call
+				// Interrupted by an async proc call or completion port/file handle was closed
 				continue;
 			}
 			
 			char errmsg[128];
-			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", GetLastError());
+			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", err);
 			MessageBox(NULL, errmsg, "Error", MB_OK);
 			break;
 		}
@@ -392,6 +409,9 @@ void CScriptSystem::ioAddFd(HANDLE fd, bool bSocket)
 
 void CScriptSystem::ioCloseFd(HANDLE fd)
 {
+	// Causes EVT_READ with length 0
+	// Not safe to remove listeners until then
+
 	for (int i = 0; i < m_ioFds.size(); i++)
 	{
 		IOFD iofd = m_ioFds[i];
@@ -399,7 +419,7 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 		{
 			continue;
 		}
-
+		
 		// Close file handle
 		if (iofd.bSocket)
 		{
@@ -409,14 +429,22 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 		{
 			CloseHandle(iofd.fd);
 		}
+		break;
+	}
+}
 
-		// Close io completion port
-		//CloseHandle(iofd.iocp);
+void CScriptSystem::ioRemoveFd(HANDLE fd)
+{
+	// Stop tracking an fd and remove all of its listeners
+	for (int i = 0; i < m_ioFds.size(); i++)
+	{
+		IOFD iofd = m_ioFds[i];
+		if (iofd.fd != fd)
+		{
+			continue;
+		}
 
-		// Remove reference
 		m_ioFds.erase(m_ioFds.begin() + i);
-
-		// Remove overlappeds/listeners
 		ioRemoveListenersByFd(fd);
 		break;
 	}
@@ -428,18 +456,25 @@ duk_ret_t CScriptSystem::js_ioSockConnect(duk_context* ctx)
 	const char* ipStr = duk_to_string(ctx, 1);
 	USHORT port = duk_get_uint(ctx, 2);
 	void* callback = duk_get_heapptr(ctx, 3);
-
+	
 	char ipBytes[sizeof(uint32_t)];
-	sscanf(ipStr, "%d.%d.%d.%d", ipBytes, ipBytes + 1, ipBytes + 2, ipBytes + 3);
+	sscanf(ipStr, "%hhu.%hhu.%hhu.%hhu", &ipBytes[0], &ipBytes[1], &ipBytes[2], &ipBytes[3]);
+	
+	SOCKADDR_IN serverAddr;
+	serverAddr.sin_addr.s_addr = *(uint32_t*)ipBytes;
+	serverAddr.sin_port = htons(port);
+	serverAddr.sin_family = AF_INET;
+	
+	SOCKADDR_IN clientAddr;
+	clientAddr.sin_addr.s_addr = INADDR_ANY;
+	clientAddr.sin_port = 0;
+	clientAddr.sin_family = AF_INET;
 
-	SOCKADDR_IN addr;
-	addr.sin_addr.s_addr = *(uint32_t*)ipBytes;
-	addr.sin_port = htons(port);
-	addr.sin_family = AF_INET;
-	
+	::bind((SOCKET)fd, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR));
+
 	IOLISTENER* lpListener = ioAddListener(fd, EVT_CONNECT, callback);
-	ConnectEx((SOCKET)fd, (SOCKADDR*)&addr, sizeof(SOCKADDR), NULL, 0, NULL, (LPOVERLAPPED)lpListener);
-	
+	ConnectEx((SOCKET)fd, (SOCKADDR*)&serverAddr, sizeof(SOCKADDR), NULL, 0, NULL, (LPOVERLAPPED)lpListener);
+
 	duk_pop_n(ctx, 4);
 	return 1;
 }
@@ -519,7 +554,7 @@ duk_ret_t CScriptSystem::js_ioRead(duk_context* ctx)
 	void* data = malloc(bufferSize); // freed after event is fired
 
 	// TEMP bSocket true
-
+	
 	IOLISTENER* lpListener = ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize);
 	bool status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED) lpListener);
 	

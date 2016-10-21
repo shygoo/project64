@@ -116,7 +116,8 @@ private:
 
 	static void   ioAddFd(HANDLE fd, bool bSocket = false);
 	static void   ioCloseFd(HANDLE fd);
-	
+	static void   ioRemoveFd(HANDLE fd);
+
 	static HANDLE ioSockCreate();
 
 	static HANDLE ioCreateExistingFile(const char* path);

@@ -245,17 +245,32 @@ function alert(text, caption){
 
 function Socket(fd)
 {
-	var _fd = fd || _native.sockCreate();
+	var connected = false;
+	
+	var _fd;
+	
+	if(fd)
+	{
+		// assume this was constructed from Server
+		_fd = fd;
+		connected = true;
+	} else {
+		_fd = _native.sockCreate();
+	}
 	
 	var _ondata = function(data){}
 	var _onclose = function(){}
-	var _finishwrite = function(){}
+	var _onconnect = function(){}
 	
-	this.bufferSize = 2048
+	var _onconnect_base = function(){
+		connected = 1;
+		_onconnect();
+	}
+	
+	var _bufferSize = 2048
 	
 	this.write = function(data, callback)
 	{
-		_finishwrite = callback // TEMP protect from garbage collector
 		_native.write(_fd, data, callback)
 	}
 	
@@ -264,22 +279,25 @@ function Socket(fd)
 		_native.close(_fd)
 	}
 	
-	this.connect = function()
+	this.connect = function(settings, callback)
 	{
-		_native.sockConnect(_fd, ipAddr, port);
+		if(!connected)
+		{
+			_onconnect = callback;
+			_native.sockConnect(_fd, settings.host || '127.0.0.1', settings.port || 80, _onconnect_base);
+		}
 	}
 	
-	function _read(data) // callback wrapper
+	var _read = function(data)
 	{
-		if(data != null)
+		if(data == null)
 		{
-			// received data, continue reading and invoke user callback
-			_native.read(_fd, this.bufferSize, _read)
-			_ondata(data)
-			return
+			connected = false;
+			_onclose();
+			return;
 		}
-		// no data, invoke user close callback
-		_onclose()
+		_native.read(_fd, _bufferSize, _read)
+		_ondata(data)
 	}
 	
 	this.on = function(eventType, callback)
@@ -288,7 +306,7 @@ function Socket(fd)
 		{
 		case 'data':
 			_ondata = callback
-			_native.read(_fd, this.bufferSize, _read)
+			_native.read(_fd, _bufferSize, _read)
 			break;
 		case 'close':
 			// note: does nothing if ondata not set
@@ -305,11 +323,14 @@ function Server(settings)
 	
 	var _onconnection = function(socket){}
 	
-	_native.sockListen(_fd, settings.port || 80)
+	if(settings.port)
+	{
+		_native.sockListen(_fd, settings.port || 80)
+	}
 	
 	// Intermediate callback
 	//  convert clientFd to Socket and accept next client
-	function _acceptClient(clientFd)
+	var _acceptClient = function(clientFd)
 	{
 		_onconnection(new Socket(clientFd))
 		_native.sockAccept(_fd, _acceptClient)
