@@ -1,3 +1,4 @@
+/*
 var minServer = new Server({port: 82});
 
 minServer.on('connection', function(socket)
@@ -31,4 +32,4 @@ socket.connect({port: 80, host: '103.18.110.230'}, function()
 	
 	socket.write('GET / HTTP/1.1\r\nHost: origami64.net\r\n\r\n')
 })
-
+*/

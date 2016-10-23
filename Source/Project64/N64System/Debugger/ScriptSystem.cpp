@@ -100,6 +100,9 @@ UINT CScriptSystem::m_ioNextListenerId;
 
 vector<IOFD> CScriptSystem::m_ioFds;
 
+// native module test
+//typedef int(__stdcall *ModuleFunction)(duk_context*);
+
 void CScriptSystem::Init()
 {
 	m_Ctx = duk_create_heap_default();
@@ -147,6 +150,19 @@ void CScriptSystem::Init()
 	
 	InitializeCriticalSection(&m_CtxProtected); // todo cleanup
 
+	// native module test
+	/*
+	HINSTANCE hNativeModule = LoadLibrary("test.dll");
+	// FreeLibrary(hNativeModule)
+	if (hNativeModule)
+	{
+		ModuleFunction DllMain = (ModuleFunction) GetProcAddress(hNativeModule, "DllMain");
+		if (DllMain)
+		{
+			DllMain(m_Ctx);
+		}
+	}
+	*/
 	// Control of the duk ctx is transferred to m_ioEventsThread here
 	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
 

@@ -243,6 +243,24 @@ void CDebuggerUI::CPUStepStarted()
 				CInterpreterDebug::Pause();
 				return;
 			}
+
+			if (memoryAddress == 0xA460000C) // catch dma
+			{
+				uint32_t dmaAddr = g_Reg->PI_DRAM_ADDR_REG | 0x80000000;
+				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0]; // assume u32 for now
+				uint32_t endAddr = dmaAddr + dmaLen;
+
+				for (int i = 0; i < CInterpreterDebug::m_nWBP; i++)
+				{
+					uint32_t wbpAddr = CInterpreterDebug::m_WBP[i];
+					if (wbpAddr >= dmaAddr && wbpAddr < endAddr)
+					{
+						CInterpreterDebug::Pause();
+					}
+				}
+				return;
+			}
+
 		}
 	}
 
