@@ -37,8 +37,6 @@ static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendB
 	return false;
 }
 
-mutex CScriptSystem::m_CtxMutex;
-
 //HWND CScriptSystem::m_RenderWindow = NULL;
 HFONT CScriptSystem::m_FontFamily = NULL;
 HBRUSH CScriptSystem::m_FontColor = NULL;
@@ -81,8 +79,6 @@ void CCallbackList::InvokeByTag(uint32_t tag)
 }
 
 duk_context* CScriptSystem::m_Ctx = NULL;
-
-int CScriptSystem::m_NextStashIndex = 0;
 
 vector<EVENTHOOK> CScriptSystem::m_Hooks;
 
@@ -235,10 +231,8 @@ void CScriptSystem::Invoke(void* heapptr)
 IOLISTENER* CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
 	IOLISTENER* lpListener = (IOLISTENER*) malloc(sizeof(IOLISTENER));
-	OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
-	*lpListener = { 0 };
-
-	m_ioListeners.push_back(lpListener);
+	//OVERLAPPED* lpOvl = (OVERLAPPED*)lpListener;
+	memset(lpListener, 0x00, sizeof(IOLISTENER));
 	
 	lpListener->id = m_ioNextListenerId++;
 	lpListener->eventType = evt;
@@ -246,6 +240,8 @@ IOLISTENER* CScriptSystem::ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* callb
 	lpListener->callback = callback;
 	lpListener->data = data;
 	lpListener->dataLen = dataLen;
+
+	m_ioListeners.push_back(lpListener);
 
 	return lpListener;
 }
@@ -315,7 +311,7 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 			// handle must have closed, safe to untrack fd and remove all associated listeners
 			ioRemoveFd(lpListener->fd);
 
-			// push null to callback
+			// pass null to callback
 			duk_push_null(m_Ctx);
 		}
 		break;
@@ -338,10 +334,8 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 	if (status != DUK_EXEC_SUCCESS)
 	{
 		const char* msg = duk_safe_to_string(m_Ctx, -1);
-		//MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
+		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
 	}
-
-	//MessageBox(NULL, "Finished firing", "done", MB_OK);
 }
 
 DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
@@ -363,17 +357,14 @@ DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 
 		LPOVERLAPPED lpUsedOvl = usedOvlEntry.lpOverlapped;
 		DWORD nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
-
-		//char t[256]; sprintf(t, "bytes transferred: %d", nBytesTransferred);
-		//MessageBox(NULL, t, "event bytes transferred", MB_OK);
-
+		
 		if (!status)
 		{
 			int err = GetLastError();
 
-			if (err == STATUS_USER_APC || err == ERROR_ABANDONED_WAIT_0 || err == ERROR_SUCCESS)
+			if (err == STATUS_USER_APC)
 			{
-				// Interrupted by an async proc call or completion port/file handle was closed
+				// Interrupted by an async proc call
 				continue;
 			}
 			
@@ -626,10 +617,10 @@ duk_ret_t CScriptSystem::js_AddCallback(duk_context* ctx)
 	{
 		callbackId = cbList->Add(heapptr, tag);
 	}
+	
+	duk_pop_n(ctx, 2);
 
 	duk_push_int(ctx, callbackId);
-
-	duk_pop_n(ctx, 2);
 	return 1;
 }
 

@@ -13,7 +13,6 @@
 
 #include "stdafx.h"
 #include <3rdParty/duktape/duktape.h>
-#include <mutex>
 
 typedef struct {
 	int      callbackId;
@@ -56,7 +55,6 @@ typedef struct {
 	void*       data;
 	DWORD       dataLen; // changed to bytes transferred after event is fired
 	void*       callback;
-	//void*       closedCallback; // call if EVT_READ and nBytes == 0
 } IOLISTENER;
 
 typedef struct {
@@ -70,9 +68,7 @@ private:
 	CScriptSystem(CDebuggerUI* debugger);
 
 public:
-	static int m_NextStashIndex;
 	static duk_context* m_Ctx;
-	static mutex m_CtxMutex;
 
 	static CRITICAL_SECTION m_CtxProtected;
 
@@ -95,28 +91,26 @@ public:
 	static void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
 private:
-	
 	// Event loop
 	static HANDLE m_ioBasePort;
 	
 	static vector<IOFD> m_ioFds;
 
+	static HANDLE m_ioEventsThread;
+	
 	static vector<IOLISTENER*> m_ioListeners;
 	static UINT m_ioNextListenerId;
-	
-	static HANDLE m_ioEventsThread;
 
 	static DWORD WINAPI ioEventsProc(void* param);
 	static void ioDoEvent(IOLISTENER* lpListener);
-
 	static IOLISTENER* ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
-	static void   ioRemoveListenerByIndex(UINT index);
-	static void   ioRemoveListenerByPtr(IOLISTENER* lpListener);
-	static void   ioRemoveListenersByFd(HANDLE fd);
+	static void ioRemoveListenerByIndex(UINT index);
+	static void ioRemoveListenerByPtr(IOLISTENER* lpListener);
+	static void ioRemoveListenersByFd(HANDLE fd);
 
-	static void   ioAddFd(HANDLE fd, bool bSocket = false);
-	static void   ioCloseFd(HANDLE fd);
-	static void   ioRemoveFd(HANDLE fd);
+	static void ioAddFd(HANDLE fd, bool bSocket = false);
+	static void ioCloseFd(HANDLE fd);
+	static void ioRemoveFd(HANDLE fd);
 
 	static HANDLE ioSockCreate();
 
@@ -132,25 +126,25 @@ private:
 	// Bound functions (_native object)
 	static duk_ret_t js_ioSockCreate (duk_context*);
 	static duk_ret_t js_ioSockListen (duk_context*);
-	static duk_ret_t js_ioSockAccept (duk_context*);
-	static duk_ret_t js_ioSockConnect(duk_context*);
+	static duk_ret_t js_ioSockAccept  (duk_context*); // async
+	static duk_ret_t js_ioSockConnect(duk_context*); // async
 
-	static duk_ret_t js_ioRead       (duk_context*);
-	static duk_ret_t js_ioWrite      (duk_context*);
-	static duk_ret_t js_ioClose      (duk_context* ctx); // (fd) ; file or socket
-
-	static duk_ret_t js_MsgBox       (duk_context*); // (message, caption)
+	static duk_ret_t js_ioRead   (duk_context*); // async
+	static duk_ret_t js_ioWrite  (duk_context*); // async
+	static duk_ret_t js_ioClose (duk_context*); // (fd) ; file or socket
 	
-	static duk_ret_t js_AddCallback  (duk_context*); // (hookId, callback, tag) ; external events
-
-	static duk_ret_t js_GetGPRVal    (duk_context*); // (regNum)
-	static duk_ret_t js_SetGPRVal    (duk_context*); // (regNum, value)
-
-	static duk_ret_t js_GetRDRAMInt  (duk_context*); // (address, bitwidth, signed)
-	static duk_ret_t js_SetRDRAMInt  (duk_context*); // (address, bitwidth, signed, newValue)
-	static duk_ret_t js_GetRDRAMFloat(duk_context*); // (address, bDouble)
-	static duk_ret_t js_SetRDRAMFloat(duk_context*); // (address, bDouble, newValue)
-	static duk_ret_t js_GetRDRAMBlock(duk_context*); // (address, nBytes) ; returns Buffer
+	static duk_ret_t js_MsgBox        (duk_context*); // (message, caption)
+	
+	static duk_ret_t js_AddCallback   (duk_context*); // (hookId, callback, tag) ; external events
+	
+	static duk_ret_t js_GetGPRVal     (duk_context*); // (regNum)
+	static duk_ret_t js_SetGPRVal     (duk_context*); // (regNum, value)
+	
+	static duk_ret_t js_GetRDRAMInt   (duk_context*); // (address, bitwidth, signed)
+	static duk_ret_t js_SetRDRAMInt   (duk_context*); // (address, bitwidth, signed, newValue)
+	static duk_ret_t js_GetRDRAMFloat (duk_context*); // (address, bDouble)
+	static duk_ret_t js_SetRDRAMFloat (duk_context*); // (address, bDouble, newValue)
+	static duk_ret_t js_GetRDRAMBlock (duk_context*); // (address, nBytes) ; returns Buffer
 	
 	//static duk_ret_t ConsoleLog      (duk_context*);
 };
