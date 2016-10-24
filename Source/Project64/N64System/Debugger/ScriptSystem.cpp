@@ -186,7 +186,15 @@ void CScriptSystem::SetScriptsWindow(CDebugScripts* scriptsWindow)
 	}
 }
 
-void CScriptSystem::Eval(const char* jsCode)
+void CScriptSystem::ConsolePrint(const char* text)
+{
+	if (m_ScriptsWindow != NULL)
+	{
+		m_ScriptsWindow->ConsolePrint(text);
+	}
+}
+
+const char* CScriptSystem::Eval(const char* jsCode)
 {
 	int result = duk_peval_string(m_Ctx, jsCode);
 	const char* msg = duk_safe_to_string(m_Ctx, -1);
@@ -195,6 +203,7 @@ void CScriptSystem::Eval(const char* jsCode)
 		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
 	}
 	duk_pop(m_Ctx);
+	return msg;
 }
 
 void CScriptSystem::EvalFile(const char* jsPath)
@@ -936,11 +945,7 @@ duk_ret_t CScriptSystem::js_GetRDRAMString(duk_context* ctx)
 duk_ret_t CScriptSystem::js_ConsolePrint(duk_context* ctx)
 {
 	const char* text = duk_to_string(ctx, 0);
-	if (m_ScriptsWindow != NULL)
-	{
-		m_ScriptsWindow->ConsolePrint(text);
-	}
-	duk_pop(ctx);
+	ConsolePrint(text);
 	return 1;
 }
 

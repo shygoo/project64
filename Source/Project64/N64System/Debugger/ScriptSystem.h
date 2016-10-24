@@ -81,7 +81,7 @@ public:
 	static void Init();
 	static void RegisterCallbackList(const char* hookId, CCallbackList* cbList);
 	static CCallbackList* GetCallbackList(const char* hookId);
-	static void Eval(const char* jsCode);
+	static const char* Eval(const char* jsCode);
 	static void EvalFile(const char* jsPath);
 
 	static void Invoke(void* heapptr);
@@ -91,6 +91,8 @@ public:
 	static void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
 	static void SetScriptsWindow(CDebugScripts* m_ScriptsWindow);
+
+	static void ConsolePrint(const char* text);
 
 private:
 	static CDebugScripts* m_ScriptsWindow;

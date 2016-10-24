@@ -24,9 +24,12 @@ private:
 public:
 	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
 	{
-		//todo QueueAPC
-		CScriptSystem::Eval((const char*)lpJsCode);
-		//free((char*)lpJsCode);
+		const char* jsCode = (const char*)lpJsCode;
+		int result = duk_peval_string(CScriptSystem::m_Ctx, jsCode);
+		const char* msg = duk_safe_to_string(CScriptSystem::m_Ctx, -1);
+		CScriptSystem::ConsolePrint(msg);
+		CScriptSystem::ConsolePrint("\r\n");
+		duk_pop(CScriptSystem::m_Ctx);
 	}
 
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
