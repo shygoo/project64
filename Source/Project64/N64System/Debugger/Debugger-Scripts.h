@@ -24,6 +24,7 @@ private:
 public:
 	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
 	{
+		//todo QueueAPC
 		CScriptSystem::Eval((const char*)lpJsCode);
 		//free((char*)lpJsCode);
 	}
