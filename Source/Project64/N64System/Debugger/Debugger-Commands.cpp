@@ -955,6 +955,12 @@ void CRegisterTabs::ShowTab(int nPage)
 	);
 }
 
+void CDebugCommandsView::ShowPIRegTab()
+{
+	m_RegisterTabs.SetCurSel(2);
+	m_RegisterTabs.ShowTab(2);
+}
+
 LRESULT CDebugCommandsView::OnRegisterTabChange(NMHDR* pNMHDR)
 {
 	int nPage = m_RegisterTabs.GetCurSel();

@@ -58,9 +58,10 @@ private:
 
 class CRegisterTabs : public CTabCtrl
 {
-public:
+private:
 	vector<int> m_TabIds;
 	vector<CWindow> m_TabWindows;
+public:
 	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
 	void ShowTab(int nPage);
 	void ResetTabs();
@@ -91,6 +92,7 @@ public:
 	virtual ~CDebugCommandsView(void);
 
 	void ShowAddress(DWORD address, BOOL top);
+	void ShowPIRegTab();
 
 	static DWORD GPREditIds[32];
 	static DWORD FPREditIds[32];
