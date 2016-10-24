@@ -18,6 +18,7 @@
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
 CDebugDialog<CDebugScripts>(debugger)
 {
+	CScriptSystem::SetScriptsWindow(this);
 }
 
 LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -33,16 +34,14 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 
 	m_EvalEdit.SetFont(monoFont);
 	m_ConsoleEdit.SetFont(monoFont);
-
-	ConsolePrint("test");
-	ConsolePrint("test");
-
+	
 	WindowCreated();
 	return 0;
 }
 
-void CDebugScripts::ConsolePrint(char* text)
+void CDebugScripts::ConsolePrint(const char* text)
 {
+	::ShowWindow(*this, SW_SHOWNOACTIVATE);
 	int curLength = m_ConsoleEdit.GetWindowTextLengthA();
 	int textLength = strlen(text);
 	int newLength = curLength + textLength + 1;

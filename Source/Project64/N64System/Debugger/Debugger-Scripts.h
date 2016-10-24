@@ -116,7 +116,7 @@ public:
 	CDebugScripts(CDebuggerUI * debugger);
 	//virtual ~CDebugScripts(void);
 
-	void ConsolePrint(char* text);
+	void ConsolePrint(const char* text);
 	void ConsoleClear();
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -132,5 +132,4 @@ public:
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
-
 };

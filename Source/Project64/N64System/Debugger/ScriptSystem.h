@@ -90,7 +90,11 @@ public:
 	// Queue a routine to be called from the event loop thread
 	static void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
+	static void SetScriptsWindow(CDebugScripts* m_ScriptsWindow);
+
 private:
+	static CDebugScripts* m_ScriptsWindow;
+
 	// Event loop
 	static HANDLE m_ioBasePort;
 	
@@ -147,5 +151,6 @@ private:
 	static duk_ret_t js_GetRDRAMBlock (duk_context*); // (address, nBytes) ; returns Buffer
 	static duk_ret_t js_GetRDRAMString(duk_context*); // fetch zero terminated string from memory
 
-	//static duk_ret_t ConsoleLog      (duk_context*);
+	static duk_ret_t js_ConsolePrint  (duk_context*);
+	static duk_ret_t js_ConsoleClear  (duk_context*);
 };

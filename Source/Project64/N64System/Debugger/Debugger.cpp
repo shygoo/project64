@@ -243,17 +243,18 @@ void CDebuggerUI::CPUStepStarted()
 				CInterpreterDebug::Pause();
 				return;
 			}
-
-			if (memoryAddress == 0xA460000C) // catch dma
+			
+			// Catch cart -> rdram dma
+			if (memoryAddress == 0xA460000C) // PI_WR_LEN_REG
 			{
 				uint32_t dmaAddr = g_Reg->PI_DRAM_ADDR_REG | 0x80000000;
-				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0]; // assume u32 for now
+				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0] + 1; // Assume u32 for now
 				uint32_t endAddr = dmaAddr + dmaLen;
 
 				for (int i = 0; i < CInterpreterDebug::m_nWBP; i++)
 				{
 					uint32_t wbpAddr = CInterpreterDebug::m_WBP[i];
-					if (wbpAddr >= dmaAddr && wbpAddr < endAddr + 1)
+					if (wbpAddr >= dmaAddr && wbpAddr < endAddr)
 					{
 						m_CommandsView->ShowWindow();
 						m_CommandsView->ShowPIRegTab();
@@ -261,9 +262,7 @@ void CDebuggerUI::CPUStepStarted()
 						return;
 					}
 				}
-				return;
 			}
-
 		}
 	}
 

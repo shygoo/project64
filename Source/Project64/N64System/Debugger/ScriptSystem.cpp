@@ -10,6 +10,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include "ScriptSystem.h"
+#include "Debugger-Scripts.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -87,6 +88,8 @@ CCallbackList CScriptSystem::m_ReadEvents;
 CCallbackList CScriptSystem::m_WriteEvents;
 CCallbackList CScriptSystem::m_WMEvents;
 
+CDebugScripts* CScriptSystem::m_ScriptsWindow = NULL;
+
 CRITICAL_SECTION CScriptSystem::m_CtxProtected;
 
 HANDLE CScriptSystem::m_ioEventsThread;
@@ -121,6 +124,8 @@ void CScriptSystem::Init()
 		{ "write",          js_ioWrite,        DUK_VARARGS },
 		{ "read",           js_ioRead,         DUK_VARARGS },
 		{ "msgBox",         js_MsgBox,         DUK_VARARGS },
+		{ "consolePrint",   js_ConsolePrint,   DUK_VARARGS },
+		{ "consoleClear",   js_ConsoleClear,   DUK_VARARGS },
 		{NULL, NULL, 0}
 	};
 
@@ -170,6 +175,14 @@ void CScriptSystem::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
 	if(m_ioEventsThread != NULL)
 	{
 		QueueUserAPC(userProc, m_ioEventsThread, param);
+	}
+}
+
+void CScriptSystem::SetScriptsWindow(CDebugScripts* scriptsWindow)
+{
+	if(m_ScriptsWindow == NULL)
+	{
+		m_ScriptsWindow = scriptsWindow;
 	}
 }
 
@@ -917,5 +930,25 @@ duk_ret_t CScriptSystem::js_GetRDRAMString(duk_context* ctx)
 	duk_pop(ctx);
 	duk_push_string(ctx, (char*)str);
 	free(str); // duk creates internal copy
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_ConsolePrint(duk_context* ctx)
+{
+	const char* text = duk_to_string(ctx, 0);
+	if (m_ScriptsWindow != NULL)
+	{
+		m_ScriptsWindow->ConsolePrint(text);
+	}
+	duk_pop(ctx);
+	return 1;
+}
+
+duk_ret_t CScriptSystem::js_ConsoleClear(duk_context* ctx)
+{
+	if (m_ScriptsWindow != NULL)
+	{
+		m_ScriptsWindow->ConsoleClear();
+	}
 	return 1;
 }

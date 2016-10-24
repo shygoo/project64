@@ -1,3 +1,5 @@
+console.log('hello world')
+
 /*
 var minServer = new Server({port: 82});
 

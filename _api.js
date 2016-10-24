@@ -28,6 +28,29 @@ const _regNums = {
 	gp: 28, sp: 29, fp: 30, ra: 31
 }
 
+const console = {
+	print: function(data)
+	{
+		_native.consolePrint(data);
+	},
+	log: function()
+	{
+		for(var i in arguments)
+		{
+			console.print(arguments[i].toString())
+			if(i < arguments.length - 1)
+			{
+				console.print(" ")
+			}
+		}
+		console.print("\r\n")
+	},
+	clear: function()
+	{
+		_native.consoleClear();
+	}
+}
+
 const system = {
 	pause: function(){},
 	resume: function(){}
