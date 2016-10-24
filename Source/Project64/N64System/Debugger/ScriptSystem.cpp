@@ -104,22 +104,23 @@ void CScriptSystem::Init()
 	m_Ctx = duk_create_heap_default();
 	
 	const duk_function_list_entry _native[] = {
-		{ "addCallback",   js_AddCallback,   DUK_VARARGS },
-		{ "setGPRVal",     js_SetGPRVal,     DUK_VARARGS },
-		{ "getGPRVal",     js_GetGPRVal,     DUK_VARARGS },
-		{ "getRDRAMInt",   js_GetRDRAMInt,   DUK_VARARGS },
-		{ "setRDRAMInt",   js_SetRDRAMInt,   DUK_VARARGS },
-		{ "getRDRAMFloat", js_GetRDRAMFloat, DUK_VARARGS },
-		{ "setRDRAMFloat", js_SetRDRAMFloat, DUK_VARARGS },
-		{ "getRDRAMBlock", js_GetRDRAMBlock, DUK_VARARGS },
-		{ "sockCreate",    js_ioSockCreate,  DUK_VARARGS },
-		{ "sockListen",    js_ioSockListen,  DUK_VARARGS },
-		{ "sockAccept",    js_ioSockAccept,  DUK_VARARGS },
-		{ "sockConnect",   js_ioSockConnect, DUK_VARARGS },
-		{ "close",         js_ioClose,       DUK_VARARGS },
-		{ "write",         js_ioWrite,       DUK_VARARGS },
-		{ "read",          js_ioRead,        DUK_VARARGS },
-		{ "msgBox",        js_MsgBox,        DUK_VARARGS },
+		{ "addCallback",    js_AddCallback,    DUK_VARARGS },
+		{ "setGPRVal",      js_SetGPRVal,      DUK_VARARGS },
+		{ "getGPRVal",      js_GetGPRVal,      DUK_VARARGS },
+		{ "getRDRAMInt",    js_GetRDRAMInt,    DUK_VARARGS },
+		{ "setRDRAMInt",    js_SetRDRAMInt,    DUK_VARARGS },
+		{ "getRDRAMFloat",  js_GetRDRAMFloat,  DUK_VARARGS },
+		{ "setRDRAMFloat",  js_SetRDRAMFloat,  DUK_VARARGS },
+		{ "getRDRAMBlock",  js_GetRDRAMBlock,  DUK_VARARGS },
+		{ "getRDRAMString", js_GetRDRAMString, DUK_VARARGS },
+		{ "sockCreate",     js_ioSockCreate,   DUK_VARARGS },
+		{ "sockListen",     js_ioSockListen,   DUK_VARARGS },
+		{ "sockAccept",     js_ioSockAccept,   DUK_VARARGS },
+		{ "sockConnect",    js_ioSockConnect,  DUK_VARARGS },
+		{ "close",          js_ioClose,        DUK_VARARGS },
+		{ "write",          js_ioWrite,        DUK_VARARGS },
+		{ "read",           js_ioRead,         DUK_VARARGS },
+		{ "msgBox",         js_MsgBox,         DUK_VARARGS },
 		{NULL, NULL, 0}
 	};
 
@@ -340,6 +341,8 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 
 DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
 {
+	UNREFERENCED_PARAMETER(param);
+
 	while (1)
 	{
 		OVERLAPPED_ENTRY usedOvlEntry;
@@ -411,6 +414,7 @@ void CScriptSystem::ioAddFd(HANDLE fd, bool bSocket)
 	IOFD iofd;
 	iofd.fd = fd;
 	iofd.iocp = CreateIoCompletionPort(fd, m_ioBasePort, (ULONG_PTR)fd, 0);
+	iofd.bSocket = bSocket;
 	m_ioFds.push_back(iofd);
 }
 
@@ -419,7 +423,7 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 	// Causes EVT_READ with length 0
 	// Not safe to remove listeners until then
 
-	for (int i = 0; i < m_ioFds.size(); i++)
+	for (uint32_t i = 0; i < m_ioFds.size(); i++)
 	{
 		IOFD iofd = m_ioFds[i];
 		if (iofd.fd != fd)
@@ -443,7 +447,7 @@ void CScriptSystem::ioCloseFd(HANDLE fd)
 void CScriptSystem::ioRemoveFd(HANDLE fd)
 {
 	// Stop tracking an fd and remove all of its listeners
-	for (int i = 0; i < m_ioFds.size(); i++)
+	for (uint32_t i = 0; i < m_ioFds.size(); i++)
 	{
 		IOFD iofd = m_ioFds[i];
 		if (iofd.fd != fd)
@@ -461,7 +465,7 @@ duk_ret_t CScriptSystem::js_ioSockConnect(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE) duk_get_uint(ctx, 0);
 	const char* ipStr = duk_to_string(ctx, 1);
-	USHORT port = duk_get_uint(ctx, 2);
+	USHORT port = (USHORT)duk_get_uint(ctx, 2);
 	void* callback = duk_get_heapptr(ctx, 3);
 	
 	char ipBytes[sizeof(uint32_t)];
@@ -494,7 +498,6 @@ duk_ret_t CScriptSystem::js_ioClose(duk_context* ctx)
 	return 1;
 }
 
-
 duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)
 {
 	HANDLE fd = ioSockCreate();
@@ -506,7 +509,7 @@ duk_ret_t CScriptSystem::js_ioSockCreate(duk_context* ctx)
 duk_ret_t CScriptSystem::js_ioSockListen(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
-	USHORT port = duk_get_uint(ctx, 1);
+	USHORT port = (USHORT)duk_get_uint(ctx, 1);
 	
 	duk_pop_n(ctx, 2);
 
@@ -559,11 +562,9 @@ duk_ret_t CScriptSystem::js_ioRead(duk_context* ctx)
 	void* jsCallback = duk_get_heapptr(ctx, 2);
 	
 	void* data = malloc(bufferSize); // freed after event is fired
-
-	// TEMP bSocket true
 	
 	IOLISTENER* lpListener = ioAddListener(fd, EVT_READ, jsCallback, data, bufferSize);
-	bool status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED) lpListener);
+	BOOL status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED) lpListener);
 	
 	if (status == false && GetLastError() != ERROR_IO_PENDING)
 	{
@@ -646,7 +647,7 @@ duk_ret_t CScriptSystem::js_GetRDRAMInt(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);
 	int bitwidth = duk_to_int(ctx, 1);
-	bool bSigned = duk_to_boolean(ctx, 2);
+	duk_bool_t bSigned = duk_to_boolean(ctx, 2);
 
 	duk_pop_n(ctx, 3);
 	
@@ -725,19 +726,19 @@ duk_ret_t CScriptSystem::js_SetRDRAMInt(duk_context* ctx)
 	switch (bitwidth)
 	{
 	case 8:
-		if (!g_MMU->SB_VAddr(address, newValue))
+		if (!g_MMU->SB_VAddr(address, (uint8_t)newValue))
 		{
 			goto return_err;
 		}
 		goto return_ok;
 	case 16:
-		if (!g_MMU->SH_VAddr(address, newValue))
+		if (!g_MMU->SH_VAddr(address, (uint16_t)newValue))
 		{
 			goto return_err;
 		}
 		goto return_ok;
 	case 32:
-		if (!g_MMU->SW_VAddr(address, newValue))
+		if (!g_MMU->SW_VAddr(address, (uint32_t)newValue))
 		{
 			goto return_err;
 		}
@@ -760,7 +761,7 @@ duk_ret_t CScriptSystem::js_GetRDRAMFloat(duk_context* ctx)
 	int argc = duk_get_top(ctx);
 	
 	uint32_t address = duk_to_uint32(ctx, 0);
-	bool bDouble = false;
+	duk_bool_t bDouble = false;
 
 	if (argc > 1)
 	{
@@ -812,7 +813,7 @@ duk_ret_t CScriptSystem::js_SetRDRAMFloat(duk_context* ctx)
 
 	uint32_t address = duk_to_uint32(ctx, 0);
 	double value = duk_get_number(ctx, 1);
-	bool bDouble = false;
+	duk_bool_t bDouble = false;
 
 	if (argc > 2)
 	{
@@ -888,5 +889,33 @@ duk_ret_t CScriptSystem::js_MsgBox(duk_context* ctx)
 
 	duk_pop_n(ctx, argc);
 	duk_push_boolean(ctx, 1);
+	return 1;
+}
+
+// Return zero-terminated string from ram
+duk_ret_t CScriptSystem::js_GetRDRAMString(duk_context* ctx)
+{
+	// (address)
+	uint32_t address = duk_get_uint(ctx, 0);
+
+	uint8_t test = 0xFF;
+	int len = 0;
+
+	// determine length of string
+	while (g_MMU->LB_VAddr(address + len, test) && test != 0) // todo protect from ram overrun
+	{
+		len++;
+	}
+	
+	uint8_t* str = (uint8_t*)malloc(len);
+	
+	for (int i = 0; i < len; i++)
+	{
+		str[i] = g_MMU->LB_VAddr(address + i, str[i]);
+	}
+	
+	duk_pop(ctx);
+	duk_push_string(ctx, (char*)str);
+	free(str); // duk creates internal copy
 	return 1;
 }

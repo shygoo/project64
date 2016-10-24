@@ -18,6 +18,7 @@
 
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DWORD CDebugCommandsView::GPREditIds[32] = {
 	IDC_R0_EDIT,  IDC_R1_EDIT,  IDC_R2_EDIT,  IDC_R3_EDIT,
@@ -41,7 +42,15 @@ DWORD CDebugCommandsView::FPREditIds[32] = {
 	IDC_F28_EDIT, IDC_F29_EDIT, IDC_F30_EDIT, IDC_F31_EDIT
 };
 
-int CDebugCommandsView::MapGPREdit(DWORD controlId) {
+DWORD CDebugCommandsView::PIEditIds[13] = {
+	IDC_PI00_EDIT, IDC_PI04_EDIT, IDC_PI08_EDIT, IDC_PI0C_EDIT,
+	IDC_PI10_EDIT, IDC_PI14_EDIT, IDC_PI18_EDIT, IDC_PI1C_EDIT,
+	IDC_PI20_EDIT, IDC_PI24_EDIT, IDC_PI28_EDIT, IDC_PI2C_EDIT,
+	IDC_PI30_EDIT
+};
+
+int CDebugCommandsView::MapGPREdit(DWORD controlId)
+{
 	for (int i = 0; i < 32; i++)
 	{
 		if (GPREditIds[i] == controlId)
@@ -52,10 +61,23 @@ int CDebugCommandsView::MapGPREdit(DWORD controlId) {
 	return -1;
 }
 
-int CDebugCommandsView::MapFPREdit(DWORD controlId) {
+int CDebugCommandsView::MapFPREdit(DWORD controlId)
+{
 	for (int i = 0; i < 32; i++)
 	{
 		if (FPREditIds[i] == controlId)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+int CDebugCommandsView::MapPIEdit(DWORD controlId)
+{
+	for (int i = 0; i < 13; i++)
+	{
+		if (PIEditIds[i] == controlId)
 		{
 			return i;
 		}
@@ -101,12 +123,19 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 	m_GPRTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
 	m_FPRTab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
+	m_PITab  = m_RegisterTabs.AddTab("PI",  IDD_Debugger_PI,  TabProcPI);
 
 	for (int i = 0; i < 32; i++)
 	{
 		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
 		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
 		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
+	}
+
+	for (int i = 0; i < 13; i++)
+	{
+		m_PIEdits[i].Attach(m_PITab.GetDlgItem(PIEditIds[i]));
+		m_PIEdits[i].SetDisplayType(CEditNumber::DisplayHex);
 	}
 
 	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
@@ -233,6 +262,20 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		}
 		m_HIEdit.SetValue(g_Reg->m_HI.UDW);
 		m_LOEdit.SetValue(g_Reg->m_LO.UDW);
+		
+		m_PIEdits[0].SetValue(g_Reg->PI_DRAM_ADDR_REG, false, true);
+		m_PIEdits[1].SetValue(g_Reg->PI_CART_ADDR_REG, false, true);
+		m_PIEdits[2].SetValue(g_Reg->PI_RD_LEN_REG, false, true);
+		m_PIEdits[3].SetValue(g_Reg->PI_WR_LEN_REG, false, true);
+		m_PIEdits[4].SetValue(g_Reg->PI_STATUS_REG, false, true);
+		m_PIEdits[5].SetValue(g_Reg->PI_BSD_DOM1_LAT_REG, false, true);
+		m_PIEdits[6].SetValue(g_Reg->PI_BSD_DOM1_PWD_REG, false, true);
+		m_PIEdits[7].SetValue(g_Reg->PI_BSD_DOM1_PGS_REG, false, true);
+		m_PIEdits[8].SetValue(g_Reg->PI_BSD_DOM1_RLS_REG, false, true);
+		m_PIEdits[9].SetValue(g_Reg->PI_BSD_DOM2_LAT_REG, false, true);
+		m_PIEdits[10].SetValue(g_Reg->PI_BSD_DOM2_PWD_REG, false, true);
+		m_PIEdits[11].SetValue(g_Reg->PI_BSD_DOM2_PGS_REG, false, true);
+		m_PIEdits[12].SetValue(g_Reg->PI_BSD_DOM2_RLS_REG, false, true);
 	}
 	else
 	{
@@ -240,6 +283,7 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		{
 			m_GPREdits[i].SetValue(0);
 			m_FPREdits[i].SetWindowTextA("00000000");
+			m_PIEdits[i].SetWindowTextA("00000000");
 		}
 		m_HIEdit.SetValue(0);
 		m_LOEdit.SetValue(0);
@@ -771,7 +815,7 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	return FALSE;
 }
 
-static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_INITDIALOG)
 	{
@@ -804,6 +848,57 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		g_Reg->m_FPR[nReg].UDW = value;
 	}
 
+	return FALSE;
+}
+
+static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_INITDIALOG)
+	{
+		return TRUE;
+	}
+	if (msg != WM_COMMAND)
+	{
+		return FALSE;
+	}
+
+	WORD notification = HIWORD(wParam);
+
+	if (notification == EN_KILLFOCUS)
+	{
+
+		WORD controlID = LOWORD(wParam);
+		char regText[9];
+		CWindow edit = GetDlgItem(hDlg, controlID);
+		edit.GetWindowTextA(regText, 9);
+		uint32_t value = strtoul(regText, NULL, 16);
+		sprintf(regText, "%08X", value);
+		edit.SetWindowTextA(regText);
+
+		if (g_MMU == NULL || !CInterpreterDebug::isDebugging())
+		{
+			return FALSE;
+		}
+
+		int nReg = CDebugCommandsView::MapPIEdit(controlID);
+
+		switch (nReg)
+		{
+		case 0:  g_Reg->PI_DRAM_ADDR_REG = value; break;
+		case 1:  g_Reg->PI_CART_ADDR_REG = value; break;
+		case 2:  g_Reg->PI_RD_LEN_REG = value; break;
+		case 3:  g_Reg->PI_WR_LEN_REG = value; break;
+		case 4:  g_Reg->PI_STATUS_REG = value; break;
+		case 5:  g_Reg->PI_BSD_DOM1_LAT_REG = value; break;
+		case 6:  g_Reg->PI_BSD_DOM1_PWD_REG = value; break;
+		case 7:  g_Reg->PI_BSD_DOM1_PGS_REG = value; break;
+		case 8:  g_Reg->PI_BSD_DOM1_RLS_REG = value; break;
+		case 9:  g_Reg->PI_BSD_DOM2_LAT_REG = value; break;
+		case 10: g_Reg->PI_BSD_DOM2_PWD_REG = value; break;
+		case 11: g_Reg->PI_BSD_DOM2_PGS_REG = value; break;
+		case 12: g_Reg->PI_BSD_DOM2_RLS_REG = value; break;
+		}
+	}
 	return FALSE;
 }
 

@@ -145,6 +145,7 @@ private:
 	static duk_ret_t js_GetRDRAMFloat (duk_context*); // (address, bDouble)
 	static duk_ret_t js_SetRDRAMFloat (duk_context*); // (address, bDouble, newValue)
 	static duk_ret_t js_GetRDRAMBlock (duk_context*); // (address, nBytes) ; returns Buffer
-	
+	static duk_ret_t js_GetRDRAMString(duk_context*); // fetch zero terminated string from memory
+
 	//static duk_ret_t ConsoleLog      (duk_context*);
 };

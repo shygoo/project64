@@ -58,6 +58,8 @@
 #define IDD_Settings_GameStatus         164
 #define IDD_Debugger_FPR                166
 #define IDD_Debugger_Scripts            169
+#define IDD_Debugger_GPR1               170
+#define IDD_Debugger_PI                 170
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -456,6 +458,19 @@
 #define IDC_CONSOLE_EDIT                1271
 #define IDC_EVAL_EDIT                   1272
 #define IDC_SCRIPTS_TREE                1273
+#define IDC_PI00_EDIT                   1274
+#define IDC_PI04_EDIT                   1275
+#define IDC_PI08_EDIT                   1276
+#define IDC_PI0C_EDIT                   1277
+#define IDC_PI10_EDIT                   1278
+#define IDC_PI14_EDIT                   1279
+#define IDC_PI18_EDIT                   1280
+#define IDC_PI1C_EDIT                   1281
+#define IDC_PI20_EDIT                   1282
+#define IDC_PI24_EDIT                   1283
+#define IDC_PI28_EDIT                   1284
+#define IDC_PI2C_EDIT                   1285
+#define IDC_PI30_EDIT                   1286
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -475,7 +490,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        171
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1274
+#define _APS_NEXT_CONTROL_VALUE         1287
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

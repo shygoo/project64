@@ -94,9 +94,11 @@ public:
 
 	static DWORD GPREditIds[32];
 	static DWORD FPREditIds[32];
+	static DWORD PIEditIds[13];
 
 	static int MapGPREdit(DWORD controlId);
 	static int MapFPREdit(DWORD controlId);
+	static int MapPIEdit(DWORD controlId);
 
 private:
 	CEditReg64 m_TestEdit;
@@ -112,6 +114,9 @@ private:
 	CScrollBar m_Scrollbar;
 
 	CRegisterTabs m_RegisterTabs;
+
+	CWindow m_PITab;
+	CEditNumber m_PIEdits[13];
 
 	CWindow m_GPRTab;
 	CEditReg64 m_GPREdits[32];
