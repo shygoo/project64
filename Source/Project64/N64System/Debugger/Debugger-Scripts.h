@@ -24,9 +24,7 @@ private:
 public:
 	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
 	{
-		CScriptSystem::m_CtxMutex.lock();
 		CScriptSystem::Eval((const char*)lpJsCode);
-		CScriptSystem::m_CtxMutex.unlock();
 		//free((char*)lpJsCode);
 	}
 
