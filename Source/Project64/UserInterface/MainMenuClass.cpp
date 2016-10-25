@@ -546,6 +546,7 @@ bool CMainMenu::ProcessMessage(HWND hWnd, DWORD /*FromAccelerator*/, DWORD MenuI
     case ID_DEBUGGER_INTERRUPT_DP: g_BaseSystem->ExternalEvent(SysEvent_Interrupt_DP); break;
 	case ID_DEBUGGER_BREAKPOINTS: m_Gui->Debug_ShowCommandsWindow(); break;
 	case ID_DEBUGGER_SCRIPTS: m_Gui->Debug_ShowScriptsWindow(); break;
+	case ID_DEBUGGER_SYMBOLS: m_Gui->Debug_ShowSymbolsWindow(); break;
 	case ID_CURRENT_SAVE_DEFAULT:
         g_Notify->DisplayMessage(3, stdstr_f(GS(MENU_SLOT_SAVE), GetSaveSlotString(MenuID - ID_CURRENT_SAVE_DEFAULT).c_str()).c_str());
         g_Settings->SaveDword(Game_CurrentSaveState, (DWORD)(MenuID - ID_CURRENT_SAVE_DEFAULT));
@@ -1161,6 +1162,12 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
         //Item.SetItemEnabled(CPURunning);
         DebugMenu.push_back(Item);
         
+		/* Debugger - Symbols
+		****************/
+		Item.Reset(ID_DEBUGGER_SYMBOLS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Symbols...");
+		//Item.SetItemEnabled(CPURunning);
+		DebugMenu.push_back(Item);
+
 		/* Debug - Scripts
 		*******************/
 		Item.Reset(ID_DEBUGGER_SCRIPTS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Scripts...");

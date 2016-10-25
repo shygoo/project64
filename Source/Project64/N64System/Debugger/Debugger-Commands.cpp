@@ -159,7 +159,6 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 	// Setup command list
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
-
 	m_CommandList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 	m_CommandList.AddColumn("Address", 0);
@@ -169,6 +168,23 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_CommandList.SetColumnWidth(1, 60);
 	m_CommandList.SetColumnWidth(2, 140);
 	
+	// Setup stack list
+	m_StackList.Attach(GetDlgItem(IDC_STACK_LIST));
+	m_StackList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+	m_StackList.AddColumn("#", 0);
+	m_StackList.AddColumn("00", 1);
+	m_StackList.AddColumn("04", 2);
+	m_StackList.AddColumn("08", 3);
+	m_StackList.AddColumn("0C", 4);
+
+	m_StackList.SetColumnWidth(0, 22);
+	m_StackList.SetColumnWidth(1, 60);
+	m_StackList.SetColumnWidth(2, 60);
+	m_StackList.SetColumnWidth(3, 60);
+	m_StackList.SetColumnWidth(4, 60);
+	
+	RefreshStackList();
+
 	ShowAddress(m_StartAddress, TRUE);
 
 	WindowCreated();
@@ -240,10 +256,11 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		m_CommandList.AddItem(i, 1, cmdName);
 		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
-
+	
 	if (!top) // update registers when called via breakpoint
 	{
 		RefreshRegisterEdits();
+		RefreshStackList();
 	}
 	
 	m_CommandList.SetRedraw(TRUE);
@@ -313,6 +330,44 @@ void CDebugCommandsView::RefreshBreakpointList()
 		int index = m_BreakpointList.AddString(rowStr);
 		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_EBP[i]);
 	}
+}
+
+void CDebugCommandsView::RefreshStackList()
+{
+	m_StackList.SetRedraw(FALSE);
+	m_StackList.DeleteAllItems();
+
+	uint32_t spBase;
+	
+	if (g_Reg)
+	{
+		spBase = g_Reg->m_GPR[29].UW[0];
+	}
+
+	for (int i = 0; i < 0x10; i++)
+	{
+		char t[4];
+		sprintf(t, "%02X", i * 0x10);
+		m_StackList.AddItem(i, 0, t);
+
+		for (int j = 0; j < 4; j++)
+		{
+			if (g_MMU == NULL)
+			{
+				m_StackList.AddItem(i, j + 1, "????????");
+				continue;
+			}
+
+			uint32_t val;
+			g_MMU->LW_VAddr(spBase + i * 0x10 + j * 4, val);
+
+			char valStr[9];
+			sprintf(valStr, "%08X", val);
+			m_StackList.AddItem(i, j + 1, valStr);
+		}
+	}
+
+	m_StackList.SetRedraw(TRUE);
 }
 
 void CDebugCommandsView::RemoveSelectedBreakpoints()

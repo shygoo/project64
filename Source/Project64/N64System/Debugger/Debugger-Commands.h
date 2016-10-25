@@ -115,6 +115,8 @@ private:
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
 
+	CListViewCtrl m_StackList;
+
 	CRegisterTabs m_RegisterTabs;
 
 	CWindow m_PITab;
@@ -133,6 +135,7 @@ private:
 	void RefreshBreakpointList();
 	void RemoveSelectedBreakpoints();
 	void RefreshRegisterEdits();
+	void RefreshStackList();
 	
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);

@@ -76,6 +76,7 @@
     <ClCompile Include="Settings\UISettings.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Commands.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-Scripts.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-Symbols.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -106,6 +107,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="N64System\Debugger\Debugger-Symbols.h" />
     <ClInclude Include="N64System\Debugger\Debugger-Scripts.h" />
     <ClInclude Include="N64System\Debugger\Debugger-Commands.h" />
     <ClInclude Include="Multilanguage\LanguageSelector.h" />

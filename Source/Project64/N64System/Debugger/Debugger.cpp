@@ -22,7 +22,8 @@ CDebuggerUI::CDebuggerUI () :
     m_MemorySearch(NULL),
     m_DebugTLB(NULL),
     m_CommandsView(NULL),
-	m_Scripts(NULL)
+	m_Scripts(NULL),
+	m_Symbols(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
@@ -198,6 +199,15 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 		m_Scripts = new CDebugScripts(this);
 	}
 	m_Scripts->ShowWindow();
+}
+
+void CDebuggerUI::Debug_ShowSymbolsWindow()
+{
+	if (m_Symbols == NULL)
+	{
+		m_Symbols = new CDebugSymbols(this);
+	}
+	m_Symbols->ShowWindow();
 }
 
 void CDebuggerUI::CPUStepStarted()

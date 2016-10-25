@@ -9,3 +9,4 @@
 #include "Debugger-TLB.h"
 #include "Debugger-Commands.h"
 #include "Debugger-Scripts.h"
+#include "Debugger-Symbols.h"

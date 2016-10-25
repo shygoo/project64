@@ -16,6 +16,7 @@ class CDebugMemorySearch;
 class CDebugTlb;
 class CDebugCommandsView;
 class CDebugScripts;
+class CDebugSymbols;
 
 __interface CDebugger
 {
@@ -33,6 +34,7 @@ class CDebuggerUI :
     CDebugTlb          * m_DebugTLB;
 	CDebugCommandsView * m_CommandsView;
 	CDebugScripts      * m_Scripts;
+	CDebugSymbols      * m_Symbols;
 
 protected:
     CDebuggerUI();
@@ -52,7 +54,8 @@ public:
     void Debug_RefreshTLBWindow     ( void );
     void Debug_ShowCommandsWindow   ( void );
     void Debug_ShowCommandsLocation ( uint32_t address, bool top );
-	void Debug_ShowScriptsWindow    ( void );
-    
+    void Debug_ShowScriptsWindow    ( void );
+    void Debug_ShowSymbolsWindow    ( void );
+
     static void GameReset ( CDebuggerUI * _this );
 };

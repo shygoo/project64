@@ -128,7 +128,7 @@ public:
 		return 0;
 	}
 	
-	LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 	BEGIN_MSG_MAP_EX(CDebugScripts)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
