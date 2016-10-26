@@ -59,7 +59,6 @@
 #define IDD_Debugger_FPR                166
 #define IDD_Debugger_Scripts            169
 #define IDD_Debugger_PI                 170
-#define IDD_DIALOG1                     172
 #define IDD_Debugger_Symbols            172
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
@@ -473,6 +472,7 @@
 #define IDC_PI2C_EDIT                   1285
 #define IDC_PI30_EDIT                   1286
 #define IDC_STACK_LIST                  1288
+#define IDC_SYMBOLS_LIST                1290
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -492,7 +492,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        174
 #define _APS_NEXT_COMMAND_VALUE         40009
-#define _APS_NEXT_CONTROL_VALUE         1290
+#define _APS_NEXT_CONTROL_VALUE         1291
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
