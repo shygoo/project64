@@ -253,6 +253,19 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		char* cmdName = strtok((char*)command, "\t");
 		char* cmdArgs = strtok(NULL, "\t");
 
+		if (strcmp(cmdName, "JAL") == 0)
+		{
+			uint32_t targetAddr = (0x80000000 | (OpCode.target << 2));
+
+			// todo move symbols management to CDebuggerUI
+			const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(targetAddr);
+			
+			if (targetSymbolName != NULL)
+			{
+				cmdArgs = (char*)targetSymbolName;
+			}
+		}
+		
 		m_CommandList.AddItem(i, 1, cmdName);
 		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
@@ -569,6 +582,9 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 {
 	switch (wID)
 	{
+	case IDC_SYMBOLS_BTN:
+		m_Debugger->Debug_ShowSymbolsWindow();
+		break;
 	case IDC_GO_BTN:
 		CInterpreterDebug::StopDebugging();
 		CInterpreterDebug::Resume();

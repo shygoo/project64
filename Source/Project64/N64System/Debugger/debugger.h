@@ -36,6 +36,8 @@ class CDebuggerUI :
 	CDebugScripts      * m_Scripts;
 	CDebugSymbols      * m_Symbols;
 
+	friend class CDebugCommandsView; // need m_Symbols
+
 protected:
     CDebuggerUI();
     virtual ~CDebuggerUI();

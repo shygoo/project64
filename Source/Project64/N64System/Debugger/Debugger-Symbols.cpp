@@ -74,6 +74,8 @@ void CDebugSymbols::LoadGameSymbols()
 	m_SymFileHandle.Open(symFilePath, CFileBase::modeReadWrite);
 	m_SymFileHandle.SeekToBegin();
 
+	m_Symbols.clear();
+
 	if (m_SymFileBuffer != NULL)
 	{
 		free(m_SymFileBuffer);
@@ -158,6 +160,66 @@ void CDebugSymbols::LoadGameSymbols()
 			m_SymbolsListView.AddItem(listIndex, 1, curSymbolEntry.type_str);
 			m_SymbolsListView.AddItem(listIndex, 2, curSymbolEntry.name);
 			m_SymbolsListView.AddItem(listIndex, 3, curSymbolEntry.description);
+
+			char valueStr[64];
+			valueStr[0] = '\0';
+
+			// TODO hex mode
+
+			uint8_t val8;
+			uint16_t val16;
+			uint32_t val32;
+			uint64_t val64;
+			float valf;
+			double vald;
+
+			switch (curSymbolEntry.type)
+			{
+			case TYPE_U8:
+				g_MMU->LB_VAddr(curSymbolEntry.address, val8);
+				sprintf(valueStr, "%uhh", val8);
+				break;
+			case TYPE_U16:
+				g_MMU->LH_VAddr(curSymbolEntry.address, val16);
+				sprintf(valueStr, "%uh", val16);
+				break;
+			case TYPE_U32:
+				g_MMU->LW_VAddr(curSymbolEntry.address, val32);
+				sprintf(valueStr, "%ud", val32);
+				break;
+			case TYPE_U64:
+				g_MMU->LD_VAddr(curSymbolEntry.address, val64);
+				sprintf(valueStr, "%ull", val64);
+				break;
+			case TYPE_S8:
+				g_MMU->LB_VAddr(curSymbolEntry.address, val8);
+				sprintf(valueStr, "%ihh", val8);
+				break;
+			case TYPE_S16:
+				g_MMU->LH_VAddr(curSymbolEntry.address, val16);
+				sprintf(valueStr, "%ih", val16);
+				break;
+			case TYPE_S32:
+				g_MMU->LW_VAddr(curSymbolEntry.address, val32);
+				sprintf(valueStr, "%id", val32);
+				break;
+			case TYPE_S64:
+				g_MMU->LD_VAddr(curSymbolEntry.address, val64);
+				sprintf(valueStr, "%ill", val64);
+				break;
+			case TYPE_FLOAT:
+				g_MMU->LW_VAddr(curSymbolEntry.address, val32);
+				valf = *(float*)&val32;
+				sprintf(valueStr, "%f", valf);
+				break;
+			case TYPE_DOUBLE:
+				g_MMU->LD_VAddr(curSymbolEntry.address, val64);
+				vald = *(double*)&val64;
+				sprintf(valueStr, "%f", vald);
+				break;
+			}
+
+			m_SymbolsListView.AddItem(listIndex, 4, valueStr);
 			m_SymbolsListView.SetItemData(listIndex, curSymbolEntry.id);
 
 			lineNumber++;
@@ -180,6 +242,9 @@ void CDebugSymbols::LoadGameSymbols()
 	}
 
 error_check:
+
+	free(bufCopy);
+
 	switch (errorCode)
 	{
 	case ERR_SUCCESS:
@@ -197,8 +262,6 @@ error_check:
 		ParseErrorAlert("Missing required field(s)", lineNumber);
 		break;
 	}
-
-	free(bufCopy);
 }
 
 void CDebugSymbols::ParseErrorAlert(char* message, int lineNumber)
@@ -219,6 +282,19 @@ SYMBOLENTRY* CDebugSymbols::GetSymbolEntryById(int id)
 	}
 }
 
+const char* CDebugSymbols::GetSymbolNameByAddress(uint32_t address)
+{
+	int len = m_Symbols.size();
+	for (uint32_t i = 0; i < len; i++)
+	{
+		if (m_Symbols[i].address == address)
+		{
+			return m_Symbols[i].name;
+		}
+	}
+	return NULL;
+}
+
 LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	m_SymbolsListView.Attach(GetDlgItem(IDC_SYMBOLS_LIST));
@@ -228,6 +304,7 @@ LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_SymbolsListView.AddColumn("Type", 1);
 	m_SymbolsListView.AddColumn("Name", 2);
 	m_SymbolsListView.AddColumn("Description", 3);
+	m_SymbolsListView.AddColumn("Value", 4);
 	
 	m_SymbolsListView.SetColumnWidth(0, 70);
 	m_SymbolsListView.SetColumnWidth(1, 40);
@@ -249,4 +326,25 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		break;
 	}
 	return FALSE;
+}
+
+LRESULT	CDebugSymbols::OnListClicked(NMHDR* pNMHDR)
+{
+	// Open it in memory viewer/commands viewer
+	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	int nItem = pIA->iItem;
+
+	int id = m_SymbolsListView.GetItemData(nItem);
+	SYMBOLENTRY* symbol = GetSymbolEntryById(id);
+
+	if (symbol->type == 0) // code
+	{
+		m_Debugger->Debug_ShowCommandsLocation(symbol->address, true);
+	}
+	else // data/number
+	{
+		m_Debugger->Debug_ShowMemoryLocation(symbol->address, true);
+	}
+
+	return CDRF_DODEFAULT;
 }
