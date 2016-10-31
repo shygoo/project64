@@ -284,15 +284,44 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
             {
                 Changed = true;
             }
+
             sprintf(Hex, "%02X", m_CurrentData[Pos]);
-            m_MemoryList->SetItemText(LineNumber, col, Hex);
+           
+			m_MemoryList->SetItemText(LineNumber, col, Hex);
             m_MemoryList->SetItemFormat(LineNumber, col, ITEM_FORMAT_EDIT, ITEM_FLAGS_EDIT_HEX);
             m_MemoryList->SetItemMaxEditLen(LineNumber, col, 2);
-            m_MemoryList->SetItemColours(LineNumber, col, GetSysColor(COLOR_WINDOW),
-                Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
-            m_MemoryList->SetItemHighlightColours(LineNumber, col,
-                Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
-            if (m_CurrentData[Pos] < 30)
+
+			bool bHaveReadBP = CInterpreterDebug::RBPExists(m_DataStartLoc + Pos);
+			bool bHaveWriteBP = CInterpreterDebug::WBPExists(m_DataStartLoc + Pos);
+
+			COLORREF bgColor, fgColor, fgHiColor;
+
+			if (bHaveReadBP && bHaveWriteBP)
+			{
+				bgColor = RGB(0xAA, 0xDD, 0xDD);
+				fgColor = fgHiColor = RGB(0x00, 0x22, 0x22);
+			}
+			else if(bHaveReadBP)
+			{
+				bgColor = RGB(0xDD, 0xDD, 0xAA);
+				fgColor = fgHiColor = RGB(0x22, 0x22, 0x00);
+			}
+			else if (bHaveWriteBP)
+			{
+				bgColor = RGB(0xAA, 0xAA, 0xDD);
+				fgColor = fgHiColor = RGB(0x00, 0x00, 0x22);
+			}
+			else
+			{
+				bgColor = GetSysColor(COLOR_WINDOW);
+				fgColor = Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT);
+				fgHiColor = Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT);
+			}
+
+			m_MemoryList->SetItemColours(LineNumber, col, bgColor, fgColor);
+            m_MemoryList->SetItemHighlightColours(LineNumber, col, fgHiColor);
+            
+			if (m_CurrentData[Pos] < 30)
             {
                 strcat(Ascii, ".");
             }

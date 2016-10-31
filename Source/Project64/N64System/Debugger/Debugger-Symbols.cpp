@@ -244,6 +244,7 @@ void CDebugSymbols::LoadGameSymbols()
 error_check:
 
 	free(bufCopy);
+	m_SymFileHandle.Close();
 
 	switch (errorCode)
 	{
