@@ -153,6 +153,16 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
 		CInterpreterDebug::WBPRemove(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
+	case ID_POPUPMENU_CLEARALLBPS:
+		CInterpreterDebug::RBPClear();
+		CInterpreterDebug::WBPClear();
+		RefreshMemory(true);
+		break;
+	case ID_POPUPMENU_VIEWDISASM:
+		m_Debugger->Debug_ShowCommandsLocation(m_CtxMenuAddr, true);
+		break;
+	case ID_POPUPMENU_ADDSYMBOL:
+		break;
     }
     return FALSE;
 }
@@ -173,12 +183,34 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 	int offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
 
 	m_CtxMenuAddr = m_DataStartLoc + offset;
-	
-	RefreshMemory(true);
 
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
-	HMENU hPopupMenu = (HMENU)GetSubMenu(hMenu, 0);
+	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
 
+	bool bHaveBreakpoint = false;
+
+	if (CInterpreterDebug::RBPExists(m_CtxMenuAddr))
+	{
+		EnableMenuItem(hPopupMenu, ID_POPUPMENU_SETRBP, MF_DISABLED | MF_GRAYED);
+		bHaveBreakpoint = true;
+	}
+	
+	if (CInterpreterDebug::WBPExists(m_CtxMenuAddr))
+	{
+		EnableMenuItem(hPopupMenu, ID_POPUPMENU_SETWBP, MF_DISABLED | MF_GRAYED);
+		bHaveBreakpoint = true;
+	}
+
+	if (!bHaveBreakpoint)
+	{
+		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARBP, MF_DISABLED | MF_GRAYED);
+	}
+
+	if (CInterpreterDebug::m_RBP.size() == 0 && CInterpreterDebug::m_WBP.size() == 0)
+	{
+		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARALLBPS, MF_DISABLED | MF_GRAYED);
+	}
+	
 	POINT mouse;
 	GetCursorPos(&mouse);
 

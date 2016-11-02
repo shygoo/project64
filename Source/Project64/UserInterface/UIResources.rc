@@ -1300,9 +1300,10 @@ IDR_MEM_BP_POPUP MENU
 BEGIN
     POPUP "PopupMenu"
     BEGIN
-        MENUITEM "Set read breakpoint",         ID_POPUPMENU_SETRBP
-        MENUITEM "Set write breakpoint",        ID_POPUPMENU_SETWBP
-        MENUITEM "Clear breakpoint",            ID_POPUPMENU_CLEARBP
+        MENUITEM "Add read breakpoint",         ID_POPUPMENU_SETRBP
+        MENUITEM "Add write breakpoint",        ID_POPUPMENU_SETWBP
+        MENUITEM "Remove breakpoint(s)",        ID_POPUPMENU_CLEARBP
+        MENUITEM "Remove all breakpoints",      ID_POPUPMENU_CLEARALLBPS
         MENUITEM SEPARATOR
         MENUITEM "View disassembly...",         ID_POPUPMENU_VIEWDISASM
         MENUITEM SEPARATOR
