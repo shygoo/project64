@@ -32,7 +32,6 @@ int CInterpreterDebug::m_nEBP = 0;
 void CInterpreterDebug::Pause()
 {
 	KeepDebugging();
-	g_Debugger->BreakpointHit();
 	g_System->Pause();
 }
 
@@ -63,20 +62,29 @@ void CInterpreterDebug::Skip()
 
 void CInterpreterDebug::RBPAdd(uint32_t address)
 {
-	m_RBP.push_back(address);
-	m_nRBP = m_RBP.size();
+	if (!RBPExists(address))
+	{
+		m_RBP.push_back(address);
+		m_nRBP = m_RBP.size();
+	}
 }
 
 void CInterpreterDebug::WBPAdd(uint32_t address)
 {
-	m_WBP.push_back(address);
-	m_nWBP = m_WBP.size();
+	if (!WBPExists(address))
+	{
+		m_WBP.push_back(address);
+		m_nWBP = m_WBP.size();
+	}
 }
 
 void CInterpreterDebug::EBPAdd(uint32_t address)
 {
-	m_EBP.push_back(address);
-	m_nEBP = m_EBP.size();
+	if (!EBPExists(address))
+	{
+		m_EBP.push_back(address);
+		m_nEBP = m_EBP.size();
+	}
 }
 
 void CInterpreterDebug::RBPRemove(uint32_t address)
