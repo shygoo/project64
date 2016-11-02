@@ -186,10 +186,8 @@ void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top)
 
 void CDebuggerUI::BreakpointHit()
 {
-	if (m_CommandsView)
-	{
-		Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
-	}
+	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
+	CInterpreterDebug::Pause();
 }
 
 void CDebuggerUI::Debug_ShowScriptsWindow()
@@ -221,7 +219,7 @@ void CDebuggerUI::CPUStepStarted()
 
 	if (CInterpreterDebug::EBPExists(PROGRAM_COUNTER))
 	{
-		CInterpreterDebug::Pause();
+		BreakpointHit();
 		return;
 	}
 
@@ -240,7 +238,7 @@ void CDebuggerUI::CPUStepStarted()
 
 			if (CInterpreterDebug::RBPExists(memoryAddress))
 			{
-				CInterpreterDebug::Pause();
+				BreakpointHit();
 				return;
 			}
 		}
@@ -250,7 +248,7 @@ void CDebuggerUI::CPUStepStarted()
 
 			if (CInterpreterDebug::WBPExists(memoryAddress))
 			{
-				CInterpreterDebug::Pause();
+				BreakpointHit();
 				return;
 			}
 			
