@@ -140,6 +140,19 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
     case IDCANCEL:
         EndDialog(0);
         break;
+	case ID_POPUPMENU_SETRBP:
+		CInterpreterDebug::RBPAdd(m_CtxMenuAddr);
+		RefreshMemory(true);
+		break;
+	case ID_POPUPMENU_SETWBP:
+		CInterpreterDebug::WBPAdd(m_CtxMenuAddr);
+		RefreshMemory(true);
+		break;
+	case ID_POPUPMENU_CLEARBP:
+		CInterpreterDebug::RBPRemove(m_CtxMenuAddr);
+		CInterpreterDebug::WBPRemove(m_CtxMenuAddr);
+		RefreshMemory(true);
+		break;
     }
     return FALSE;
 }
@@ -159,20 +172,19 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 
 	int offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
 
-	uint32_t address = m_DataStartLoc + offset;
-
-	// just wbp for now until context menu is added
-	// also todo *BPToggle()
-	if (CInterpreterDebug::WBPExists(address))
-	{
-		CInterpreterDebug::WBPRemove(address);
-	}
-	else
-	{
-		CInterpreterDebug::WBPAdd(address);
-	}
+	m_CtxMenuAddr = m_DataStartLoc + offset;
 	
 	RefreshMemory(true);
+
+	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
+	HMENU hPopupMenu = (HMENU)GetSubMenu(hMenu, 0);
+
+	POINT mouse;
+	GetCursorPos(&mouse);
+
+	TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, NULL);
+
+	DestroyMenu(hMenu);
 
 	return 0;
 }

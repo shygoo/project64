@@ -48,6 +48,8 @@ private:
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;
 
+	DWORD         m_CtxMenuAddr;
+
     DWORD         m_DataStartLoc;
     bool          m_DataVAddrr;
     BYTE          m_CurrentData[MemoryToDisplay];

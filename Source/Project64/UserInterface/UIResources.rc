@@ -1296,6 +1296,20 @@ BEGIN
     END
 END
 
+IDR_MEM_BP_POPUP MENU
+BEGIN
+    POPUP "PopupMenu"
+    BEGIN
+        MENUITEM "Set read breakpoint",         ID_POPUPMENU_SETRBP
+        MENUITEM "Set write breakpoint",        ID_POPUPMENU_SETWBP
+        MENUITEM "Clear breakpoint",            ID_POPUPMENU_CLEARBP
+        MENUITEM SEPARATOR
+        MENUITEM "View disassembly...",         ID_POPUPMENU_VIEWDISASM
+        MENUITEM SEPARATOR
+        MENUITEM "Add symbol...",               ID_POPUPMENU_ADDSYMBOL
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

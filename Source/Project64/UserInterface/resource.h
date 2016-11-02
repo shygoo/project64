@@ -60,8 +60,8 @@
 #define IDD_Debugger_Scripts            169
 #define IDD_Debugger_PI                 170
 #define IDD_Debugger_Symbols            172
-#define IDD_DIALOG1                     174
 #define IDD_Debugger_AddSymbol          174
+#define IDR_MEM_BP_POPUP                177
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -482,6 +482,15 @@
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
+#define ID_POPUPMENU_SETREADBREAKPOINT  40009
+#define ID_POPUPMENU_SETWRITEBREAKPOINT 40010
+#define ID_POPUPMENU_CLEARBREAKPOINT    40011
+#define ID_POPUPMENU_VIEWDISASSEMBLY    40012
+#define ID_POPUPMENU_ADDSYMBOL          40013
+#define ID_POPUPMENU_SETRBP             40014
+#define ID_POPUPMENU_SETWBP             40015
+#define ID_POPUPMENU_CLEARBP            40016
+#define ID_POPUPMENU_VIEWDISASM         40017
 #define ID_POPUPMENU_ROMDIRECTORY       40137
 #define ID_POPUPMENU_REFRESHROMLIST     40138
 #define ID_POPUPMENU_PLAYGAME           40152
@@ -496,8 +505,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        177
-#define _APS_NEXT_COMMAND_VALUE         40009
+#define _APS_NEXT_RESOURCE_VALUE        178
+#define _APS_NEXT_COMMAND_VALUE         40018
 #define _APS_NEXT_CONTROL_VALUE         1295
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
