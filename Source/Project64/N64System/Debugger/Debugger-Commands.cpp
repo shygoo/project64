@@ -217,7 +217,7 @@ void CDebugCommandsView::CheckCPUType()
 
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
-	if (address > 0x807FFFFC || address < 0x80000000)
+	if (address > g_MMU->RdramSize() - 4 || address < 0x80000000)
 	{
 		return;
 	}
@@ -258,11 +258,13 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			uint32_t targetAddr = (0x80000000 | (OpCode.target << 2));
 
 			// todo move symbols management to CDebuggerUI
-			const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(targetAddr);
-			
-			if (targetSymbolName != NULL)
+			if(m_Debugger->m_Symbols)
 			{
-				cmdArgs = (char*)targetSymbolName;
+				const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(targetAddr);
+				if (targetSymbolName != NULL)
+				{
+					cmdArgs = (char*)targetSymbolName;
+				}
 			}
 		}
 		
@@ -270,11 +272,13 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		m_CommandList.AddItem(i, 2, cmdArgs);
 	}
 	
-	if (!top) // update registers when called via breakpoint
+	if (!top) // update registers & stack when called via breakpoint/stepping
 	{
 		RefreshRegisterEdits();
 		RefreshStackList();
 	}
+
+	RefreshBreakpointList();
 	
 	m_CommandList.SetRedraw(TRUE);
 	m_CommandList.RedrawWindow();
