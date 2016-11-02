@@ -27,6 +27,7 @@ private:
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
         COMMAND_HANDLER_EX(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
         NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_MODIFIED, OnMemoryModified)
+		NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_RIGHTCLICK, OnMemoryRightClicked)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_VSCROLL(OnVScroll)
     END_MSG_MAP()
@@ -36,6 +37,7 @@ private:
     void				OnAddrChanged(UINT Code, int id, HWND ctl);
     void                OnVScroll(int request, short Pos, HWND ctrl);
     LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
+	LRESULT             OnMemoryRightClicked(LPNMHDR lpNMHDR);
     LRESULT             OnDestroy(void);
 
     void Insert_MemoryLineDump(int LineNumber);

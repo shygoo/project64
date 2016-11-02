@@ -144,6 +144,39 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
     return FALSE;
 }
 
+LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
+{
+	CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
+
+	int nRow = pListNotify->m_nItem;
+	int nCol = pListNotify->m_nSubItem - 1;
+
+	// Skip address, divider, ascii section
+	if (nCol < 0 || (nCol % 5) == 4)
+	{
+		return 0;
+	}
+
+	int offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
+
+	uint32_t address = m_DataStartLoc + offset;
+
+	// just wbp for now until context menu is added
+	// also todo *BPToggle()
+	if (CInterpreterDebug::WBPExists(address))
+	{
+		CInterpreterDebug::WBPRemove(address);
+	}
+	else
+	{
+		CInterpreterDebug::WBPAdd(address);
+	}
+	
+	RefreshMemory(true);
+
+	return 0;
+}
+
 LRESULT CDebugMemoryView::OnMemoryModified(LPNMHDR lpNMHDR)
 {
     CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
