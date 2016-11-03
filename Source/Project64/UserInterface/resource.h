@@ -479,6 +479,7 @@
 #define IDC_EDIT2                       1292
 #define IDC_COMBO1                      1293
 #define IDC_EDIT3                       1294
+#define IDC_OPCODE_BOX                  1295
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -509,7 +510,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        178
 #define _APS_NEXT_COMMAND_VALUE         40020
-#define _APS_NEXT_CONTROL_VALUE         1295
+#define _APS_NEXT_CONTROL_VALUE         1296
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

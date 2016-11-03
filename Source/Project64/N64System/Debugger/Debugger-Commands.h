@@ -65,7 +65,8 @@ public:
 	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
 	void ShowTab(int nPage);
 	void ResetTabs();
-	
+	CRect GetPageRect();
+	void RedrawCurrentTab();
 	//LRESULT OnSelChange(NMHDR* lpNMHDR)
 	//
 	//BEGIN_MSG_MAP_EX(CRegisterTabs)
@@ -83,7 +84,9 @@ public:
 };
 
 
-class CDebugCommandsView : public CDebugDialog<CDebugCommandsView>
+class CDebugCommandsView :
+	public CDebugDialog<CDebugCommandsView>,
+	public CDialogResize<CDebugCommandsView>
 {
 public:
 	enum { IDD = IDD_Debugger_Commands };
@@ -140,7 +143,7 @@ private:
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnSizing             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT	OnGetMinMaxInfo      (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	//LRESULT	OnGetMinMaxInfo      (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnMouseWheel         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnScroll             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnMeasureItem        (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -173,6 +176,24 @@ private:
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
 		CHAIN_MSG_MAP_MEMBER(m_CommandList)
 		MSG_WM_DESTROY(OnDestroy)
+		CHAIN_MSG_MAP(CDialogResize<CDebugCommandsView>)
 	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(CDebugCommandsView)
+		DLGRESIZE_CONTROL(IDC_GO_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_STEP_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_SKIP_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_ADDR_EDIT, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_SYMBOLS_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_OPCODE_BOX, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_BP_LIST, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_ADDBP_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_RMBP_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_CLEARBP_BTN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_REG_TABS, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_STACK_LIST, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_CMD_LIST, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_SCRL_BAR, DLSZ_MOVE_X | DLSZ_SIZE_Y)
+	END_DLGRESIZE_MAP()
 };
 

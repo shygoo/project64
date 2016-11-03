@@ -186,6 +186,7 @@ void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top)
 
 void CDebuggerUI::BreakpointHit()
 {
+	//CSystemRegisters::_PROGRAM_COUNTER;
 	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
 	CInterpreterDebug::Pause();
 }
@@ -281,14 +282,14 @@ void CDebuggerUI::CPUStepStarted()
 
 	if (R4300iOp::m_NextInstruction != JUMP)
 	{
-		CInterpreterDebug::Pause();
+		BreakpointHit();
 		return;
 	}
 
 	if (JumpToLocation == PROGRAM_COUNTER + 4)
 	{
 		// Only pause on delay slots when branch isn't taken
-		CInterpreterDebug::Pause();
+		BreakpointHit();
 		return;
 	}
 }

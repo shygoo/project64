@@ -98,10 +98,12 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	//m_TestEdit.Attach(GetDlgItem(IDC_EDIT1));
-	//regEdit.Attach(GetDlgItem(IDC_EDIT1));
+	DlgResize_Init(false, false);
 
-	m_CommandListRows = 48;
+	m_ptMinTrackSize.x = 580;
+	m_ptMinTrackSize.y = 490;
+
+	m_CommandListRows = 45;
 
 	CheckCPUType();
 	
@@ -164,9 +166,11 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_CommandList.AddColumn("Address", 0);
 	m_CommandList.AddColumn("Command", 1);
 	m_CommandList.AddColumn("Parameters", 2);
+	m_CommandList.AddColumn("Symbol", 3);
 	m_CommandList.SetColumnWidth(0, 60);
 	m_CommandList.SetColumnWidth(1, 60);
-	m_CommandList.SetColumnWidth(2, 140);
+	m_CommandList.SetColumnWidth(2, 120);
+	m_CommandList.SetColumnWidth(3, 120);
 	
 	// Setup stack list
 	m_StackList.Attach(GetDlgItem(IDC_STACK_LIST));
@@ -178,15 +182,15 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_StackList.AddColumn("0C", 4);
 
 	m_StackList.SetColumnWidth(0, 22);
-	m_StackList.SetColumnWidth(1, 60);
-	m_StackList.SetColumnWidth(2, 60);
-	m_StackList.SetColumnWidth(3, 60);
-	m_StackList.SetColumnWidth(4, 60);
+	m_StackList.SetColumnWidth(1, 64);
+	m_StackList.SetColumnWidth(2, 64);
+	m_StackList.SetColumnWidth(3, 64);
+	m_StackList.SetColumnWidth(4, 64);
 	
 	RefreshStackList();
 
 	ShowAddress(m_StartAddress, TRUE);
-
+	
 	WindowCreated();
 	return TRUE;
 }
@@ -196,7 +200,8 @@ LRESULT CDebugCommandsView::OnDestroy(void)
 	return 0;
 }
 
-LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
+/*
+LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	// Allow only vertical resizing
 	MINMAXINFO* minMax = (MINMAXINFO*)lParam;
@@ -204,7 +209,7 @@ LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT /*uMsg*/, WPARAM /*wParam*/, LP
 	minMax->ptMaxTrackSize.x = m_DefaultWindowRect.Width();
 	minMax->ptMinTrackSize.y = m_DefaultWindowRect.Height();
 	return FALSE;
-}
+}*/
 
 void CDebugCommandsView::CheckCPUType()
 {
@@ -217,7 +222,18 @@ void CDebugCommandsView::CheckCPUType()
 
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
-	if (address > g_MMU->RdramSize() - 4 || address < 0x80000000)
+	uint32_t maxRamAddr;
+
+	if (g_MMU != NULL)
+	{
+		maxRamAddr = 0x80000000 | (g_MMU->RdramSize() - 4);
+	}
+	else
+	{
+		maxRamAddr = 0x803FFFFC;
+	}
+	
+	if (address > maxRamAddr || address < 0x80000000)
 	{
 		return;
 	}
@@ -235,7 +251,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 	for (int i = 0; i < m_CommandListRows; i++)
 	{	
-		sprintf(addrStr, "%08X", m_StartAddress + i * 4);
+		uint32_t opAddr = m_StartAddress + i * 4;
+
+		sprintf(addrStr, "%08X", opAddr);
 		
 		m_CommandList.AddItem(i, 0, addrStr);
 
@@ -247,9 +265,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		}
 		
 		OPCODE OpCode;
-		g_MMU->LW_VAddr(m_StartAddress + i * 4, OpCode.Hex);
+		g_MMU->LW_VAddr(opAddr, OpCode.Hex);
 
-		char* command = (char*)R4300iOpcodeName(OpCode.Hex, m_StartAddress + i * 4);
+		char* command = (char*)R4300iOpcodeName(OpCode.Hex, opAddr);
 		char* cmdName = strtok((char*)command, "\t");
 		char* cmdArgs = strtok(NULL, "\t");
 
@@ -270,6 +288,16 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		
 		m_CommandList.AddItem(i, 1, cmdName);
 		m_CommandList.AddItem(i, 2, cmdArgs);
+
+		if (m_Debugger->m_Symbols)
+		{
+			const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(opAddr);
+			if (targetSymbolName != NULL)
+			{
+				m_CommandList.AddItem(i, 3, targetSymbolName);
+			}
+		}
+
 	}
 	
 	if (!top) // update registers & stack when called via breakpoint/stepping
@@ -722,28 +750,23 @@ LRESULT CDebugCommandsView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	return FALSE;
 }
 
+
 LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	CRect rect;
 	GetClientRect(&rect);
 	int height = rect.Height();
-
-	CRect scrollbarRect;
-	CRect listRect;
-
-	m_CommandList.GetClientRect(&listRect);
-	m_CommandList.ResizeClient(listRect.Width(), height);
 	
-	m_Scrollbar.GetClientRect(&scrollbarRect);
-	m_Scrollbar.ResizeClient(scrollbarRect.Width(), height);
-
-	int rows = height / 13 - 2; // 13 row height
+	int rows = (height / 13) - 4; // 13 row height
 
 	if (m_CommandListRows != rows)
 	{
 		m_CommandListRows = rows;
 		ShowAddress(m_StartAddress, TRUE);
 	}
+	
+	m_RegisterTabs.RedrawCurrentTab();
+
 	return FALSE;
 }
 
@@ -977,6 +1000,16 @@ static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	return FALSE;
 }
 
+CRect CRegisterTabs::GetPageRect()
+{
+	CWindow parentWin = GetParent();
+	CRect pageRect;
+	GetWindowRect(&pageRect);
+	parentWin.ScreenToClient(&pageRect);
+	AdjustRect(FALSE, &pageRect);
+	return pageRect;
+}
+
 CWindow CRegisterTabs::AddTab(char* caption, int dialogId, DLGPROC dlgProc)
 {
 	AddItem(caption);
@@ -984,10 +1017,7 @@ CWindow CRegisterTabs::AddTab(char* caption, int dialogId, DLGPROC dlgProc)
 	CWindow parentWin = GetParent();
 	CWindow tabWin = ::CreateDialog(NULL, MAKEINTRESOURCE(dialogId), parentWin, dlgProc);
 
-	CRect pageRect;
-	GetWindowRect(&pageRect);
-	parentWin.ScreenToClient(&pageRect);
-	AdjustRect(FALSE, &pageRect);
+	CRect pageRect = GetPageRect();
 
 	::SetParent(tabWin, parentWin);
 
@@ -1022,11 +1052,32 @@ void CRegisterTabs::ShowTab(int nPage)
 		::ShowWindow(m_TabWindows[i], SW_HIDE);
 	}
 	
+	CRect pageRect = GetPageRect();
+
 	::SetWindowPos(
 		m_TabWindows[nPage],
 		m_hWnd,
-		0, 0, 0, 0,
-		SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE
+		pageRect.left,
+		pageRect.top,
+		pageRect.Width(),
+		pageRect.Height(),
+		SWP_SHOWWINDOW
+	);
+}
+
+void CRegisterTabs::RedrawCurrentTab()
+{
+	int nPage = GetCurSel();
+	CRect pageRect = GetPageRect();
+
+	::SetWindowPos(
+		m_TabWindows[nPage],
+		m_hWnd,
+		pageRect.left,
+		pageRect.top,
+		pageRect.Width(),
+		pageRect.Height(),
+		SWP_SHOWWINDOW
 	);
 }
 
