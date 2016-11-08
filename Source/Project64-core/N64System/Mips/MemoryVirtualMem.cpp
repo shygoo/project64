@@ -107,7 +107,7 @@ void CMipsMemoryVM::Reset(bool /*EraseMemory*/)
 
 void CMipsMemoryVM::ReserveMemory()
 {
-    m_Reserve1 = (uint8_t *)AllocateAddressSpace(0x20000000);
+    m_Reserve1 = (uint8_t *)AllocateAddressSpace(0x20000000, (LPVOID)0x10000000);
     if (g_Settings->LoadBool(Debugger_Enabled))
     {
         m_Reserve2 = (uint8_t *)AllocateAddressSpace(0x20000000);

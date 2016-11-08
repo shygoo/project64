@@ -265,9 +265,10 @@ void CDebuggerUI::CPUStepStarted()
 					uint32_t wbpAddr = CInterpreterDebug::m_WBP[i];
 					if (wbpAddr >= dmaAddr && wbpAddr < endAddr)
 					{
-						m_CommandsView->ShowWindow();
-						m_CommandsView->ShowPIRegTab();
-						CInterpreterDebug::Pause();
+						BreakpointHit();
+						//m_CommandsView->ShowWindow();
+						//m_CommandsView->ShowPIRegTab();
+						//CInterpreterDebug::Pause();
 						return;
 					}
 				}
