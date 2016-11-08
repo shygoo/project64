@@ -52,12 +52,6 @@ void CDebuggerUI::Debug_Reset ( void )
         delete m_MemoryDump;
         m_MemoryDump = NULL;
     }
-    if (m_MemoryView)
-    {
-        m_MemoryView->HideWindow();
-        delete m_MemoryView;
-        m_MemoryView = NULL;
-    }
     if (m_MemorySearch)
     {
         m_MemorySearch->HideWindow();
@@ -70,7 +64,15 @@ void CDebuggerUI::Debug_Reset ( void )
         delete m_DebugTLB;
         m_DebugTLB = NULL;
     }
-	/*if (m_CommandsView)
+
+	/*
+	if (m_MemoryView)
+	{
+		m_MemoryView->HideWindow();
+		delete m_MemoryView;
+		m_MemoryView = NULL;
+	}
+	if (m_CommandsView)
 	{
 		m_CommandsView->HideWindow();
 		delete m_CommandsView;

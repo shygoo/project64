@@ -36,17 +36,22 @@ public:
 	static void KeepDebugging();
 	static void StopDebugging();
 
-	static void RBPAdd(uint32_t address);
+	static bool RBPAdd(uint32_t address);
 	static void RBPRemove(uint32_t address);
+	static void RBPToggle(uint32_t address);
 	static void RBPClear();
 
-	static void WBPAdd(uint32_t address);
+	static bool WBPAdd(uint32_t address);
 	static void WBPRemove(uint32_t address);
+	static void WBPToggle(uint32_t address);
 	static void WBPClear();
 
-	static void EBPAdd(uint32_t address);
+	static bool EBPAdd(uint32_t address);
 	static void EBPRemove(uint32_t address);
+	static void EBPToggle(uint32_t address);
 	static void EBPClear();
+
+	
 
 	static void BPClear();
 

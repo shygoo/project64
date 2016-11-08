@@ -50,7 +50,7 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
 
     m_MemAddr.Attach(GetDlgItem(IDC_ADDR_EDIT));
     m_MemAddr.SetDisplayType(CEditNumber::DisplayHex);
-    m_MemAddr.SetValue(0x80000000, true, true);
+    m_MemAddr.SetValue(0x80000000, false, true);
 
     SendDlgItemMessage(IDC_CHK_VADDR, BM_SETCHECK, BST_CHECKED, 0);
 
@@ -107,11 +107,19 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
         ::SetWindowPos(GetDlgItem(IDC_SCRL_BAR), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
     }
     WindowCreated();
+
+	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
+
     return TRUE;
 }
 
 LRESULT CDebugMemoryView::OnDestroy(void)
 {
+	if (m_AutoRefreshThread != NULL)
+	{
+		TerminateThread(m_AutoRefreshThread, 0);
+		CloseHandle(m_AutoRefreshThread);
+	}
     if (m_MemoryList)
     {
         m_MemoryList->UnsubclassWindow();
@@ -119,6 +127,16 @@ LRESULT CDebugMemoryView::OnDestroy(void)
         m_MemoryList = NULL;
     }
     return 0;
+}
+
+DWORD WINAPI CDebugMemoryView::AutoRefreshProc(void* _this)
+{
+	CDebugMemoryView* self = (CDebugMemoryView*)_this;
+	while (true)
+	{
+		self->RefreshMemory(true);
+		Sleep(100);
+	}
 }
 
 LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& /*bHandled*/)
@@ -140,17 +158,12 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
     case IDCANCEL:
         EndDialog(0);
         break;
-	case ID_POPUPMENU_SETRBP:
-		CInterpreterDebug::RBPAdd(m_CtxMenuAddr);
+	case ID_POPUPMENU_TOGGLERBP:
+		CInterpreterDebug::RBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
-	case ID_POPUPMENU_SETWBP:
-		CInterpreterDebug::WBPAdd(m_CtxMenuAddr);
-		RefreshMemory(true);
-		break;
-	case ID_POPUPMENU_CLEARBP:
-		CInterpreterDebug::RBPRemove(m_CtxMenuAddr);
-		CInterpreterDebug::WBPRemove(m_CtxMenuAddr);
+	case ID_POPUPMENU_TOGGLEWBP:
+		CInterpreterDebug::WBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_CLEARALLBPS:
@@ -180,32 +193,13 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 		return 0;
 	}
 
-	int offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
+	uint32_t offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
 
 	m_CtxMenuAddr = m_DataStartLoc + offset;
 
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
-
-	bool bHaveBreakpoint = false;
-
-	if (CInterpreterDebug::RBPExists(m_CtxMenuAddr))
-	{
-		EnableMenuItem(hPopupMenu, ID_POPUPMENU_SETRBP, MF_DISABLED | MF_GRAYED);
-		bHaveBreakpoint = true;
-	}
 	
-	if (CInterpreterDebug::WBPExists(m_CtxMenuAddr))
-	{
-		EnableMenuItem(hPopupMenu, ID_POPUPMENU_SETWBP, MF_DISABLED | MF_GRAYED);
-		bHaveBreakpoint = true;
-	}
-
-	if (!bHaveBreakpoint)
-	{
-		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARBP, MF_DISABLED | MF_GRAYED);
-	}
-
 	if (CInterpreterDebug::m_RBP.size() == 0 && CInterpreterDebug::m_WBP.size() == 0)
 	{
 		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARALLBPS, MF_DISABLED | MF_GRAYED);
@@ -309,7 +303,7 @@ void CDebugMemoryView::ShowAddress(DWORD Address, bool VAddr)
     }
 
     SendDlgItemMessage(IDC_CHK_VADDR, BM_SETCHECK, VAddr ? BST_CHECKED : BST_UNCHECKED, 0);
-    m_MemAddr.SetValue(Address, true, true);
+    m_MemAddr.SetValue(Address, false, true);
     RefreshMemory(true);
 }
 
@@ -445,27 +439,46 @@ void CDebugMemoryView::OnVScroll(int request, short Pos, HWND ctrl)
     switch (request)
     {
     case SB_LINEDOWN:
-        m_MemAddr.SetValue(Location < 0xFFFFFFEF ? Location + 0x10 : 0xFFFFFFFF, true, true);
+        m_MemAddr.SetValue(Location < 0xFFFFFFEF ? Location + 0x10 : 0xFFFFFFFF, false, true);
         break;
     case SB_LINEUP:
-        m_MemAddr.SetValue(Location > 0x10 ? Location - 0x10 : 0, true, true);
+        m_MemAddr.SetValue(Location > 0x10 ? Location - 0x10 : 0, false, true);
         break;
     case SB_PAGEDOWN:
-        m_MemAddr.SetValue(Location < 0xFFFFFEFF ? Location + 0x100 : 0xFFFFFFFF, true, true);
+        m_MemAddr.SetValue(Location < 0xFFFFFEFF ? Location + 0x100 : 0xFFFFFFFF, false, true);
         break;
     case SB_PAGEUP:
-        m_MemAddr.SetValue(Location > 0x100 ? Location - 0x100 : 0, true, true);
+        m_MemAddr.SetValue(Location > 0x100 ? Location - 0x100 : 0, false, true);
         break;
     case SB_THUMBPOSITION:
-        m_MemAddr.SetValue((DWORD)Pos << 0x10, true, true);
+        m_MemAddr.SetValue((DWORD)Pos << 0x10, false, true);
         break;
     default:
         break;
     }
 }
 
+LRESULT CDebugMemoryView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	WORD type = LOWORD(wParam);
+
+	if (type == WA_INACTIVE)
+	{
+		return FALSE;
+	}
+	
+	RefreshMemory(false);
+
+	return FALSE;
+}
+
 void CDebugMemoryView::RefreshMemory(bool ResetCompare)
 {
+	if (g_MMU == NULL)
+	{
+		return;
+	}
+
     if (m_MemoryList && m_MemoryList->GetHasEditItem())
     {
         m_MemoryList->SetFocus();

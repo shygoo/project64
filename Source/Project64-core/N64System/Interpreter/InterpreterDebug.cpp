@@ -60,31 +60,37 @@ void CInterpreterDebug::Skip()
 	m_Skipping = TRUE;
 }
 
-void CInterpreterDebug::RBPAdd(uint32_t address)
+bool CInterpreterDebug::RBPAdd(uint32_t address)
 {
 	if (!RBPExists(address))
 	{
 		m_RBP.push_back(address);
 		m_nRBP = m_RBP.size();
+		return true;
 	}
+	return false;
 }
 
-void CInterpreterDebug::WBPAdd(uint32_t address)
+bool CInterpreterDebug::WBPAdd(uint32_t address)
 {
 	if (!WBPExists(address))
 	{
 		m_WBP.push_back(address);
 		m_nWBP = m_WBP.size();
+		return true;
 	}
+	return false;
 }
 
-void CInterpreterDebug::EBPAdd(uint32_t address)
+bool CInterpreterDebug::EBPAdd(uint32_t address)
 {
 	if (!EBPExists(address))
 	{
 		m_EBP.push_back(address);
 		m_nEBP = m_EBP.size();
+		return true;
 	}
+	return false;
 }
 
 void CInterpreterDebug::RBPRemove(uint32_t address)
@@ -123,6 +129,30 @@ void CInterpreterDebug::EBPRemove(uint32_t address)
 			m_nEBP = m_EBP.size();
 			return;
 		}
+	}
+}
+
+void CInterpreterDebug::RBPToggle(uint32_t address)
+{
+	if (RBPAdd(address) == false)
+	{
+		RBPRemove(address);
+	}
+}
+
+void CInterpreterDebug::WBPToggle(uint32_t address)
+{
+	if (WBPAdd(address) == false)
+	{
+		WBPRemove(address);
+	}
+}
+
+void CInterpreterDebug::EBPToggle(uint32_t address)
+{
+	if (EBPAdd(address) == false)
+	{
+		EBPRemove(address);
 	}
 }
 
