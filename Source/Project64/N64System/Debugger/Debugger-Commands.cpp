@@ -12,6 +12,8 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 
+#include "Symbols.h"
+
 #include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
 #include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
@@ -276,26 +278,20 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			uint32_t targetAddr = (0x80000000 | (OpCode.target << 2));
 
 			// todo move symbols management to CDebuggerUI
-			if(m_Debugger->m_Symbols)
+			const char* targetSymbolName = CSymbols::GetNameByAddress(targetAddr);
+			if (targetSymbolName != NULL)
 			{
-				const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(targetAddr);
-				if (targetSymbolName != NULL)
-				{
-					cmdArgs = (char*)targetSymbolName;
-				}
+				cmdArgs = (char*)targetSymbolName;
 			}
 		}
 		
 		m_CommandList.AddItem(i, 1, cmdName);
 		m_CommandList.AddItem(i, 2, cmdArgs);
 
-		if (m_Debugger->m_Symbols)
+		const char* targetSymbolName = CSymbols::GetNameByAddress(opAddr);
+		if (targetSymbolName != NULL)
 		{
-			const char* targetSymbolName = m_Debugger->m_Symbols->GetSymbolNameByAddress(opAddr);
-			if (targetSymbolName != NULL)
-			{
-				m_CommandList.AddItem(i, 3, targetSymbolName);
-			}
+			m_CommandList.AddItem(i, 3, targetSymbolName);
 		}
 
 	}
