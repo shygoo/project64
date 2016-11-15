@@ -10,3 +10,4 @@
 #include "Debugger-Commands.h"
 #include "Debugger-Scripts.h"
 #include "Debugger-Symbols.h"
+#include "Debugger-AddBreakpoint.h"

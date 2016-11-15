@@ -53,6 +53,8 @@ private:
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;
 
+	CBreakpoints* m_Breakpoints;
+
 	DWORD         m_CtxMenuAddr;
 
     DWORD         m_DataStartLoc;

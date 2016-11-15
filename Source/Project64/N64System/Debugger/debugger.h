@@ -17,6 +17,9 @@ class CDebugTlb;
 class CDebugCommandsView;
 class CDebugScripts;
 class CDebugSymbols;
+class CDebugAddBreakpoint;
+
+class CBreakpoints;
 
 __interface CDebugger
 {
@@ -27,17 +30,20 @@ __interface CDebugger
 class CDebuggerUI :
 	public CDebugger
 {
-    CDumpMemory        * m_MemoryDump;
-    CDebugMemoryView   * m_MemoryView;
-    CDebugMemorySearch * m_MemorySearch;
-    CDebugTlb          * m_DebugTLB;
-	CDebugCommandsView * m_CommandsView;
-	CDebugScripts      * m_Scripts;
-	CDebugSymbols      * m_Symbols;
+    CDumpMemory         * m_MemoryDump;
+    CDebugMemoryView    * m_MemoryView;
+    CDebugMemorySearch  * m_MemorySearch;
+    CDebugTlb           * m_DebugTLB;
+	CDebugCommandsView  * m_CommandsView;
+	CDebugScripts       * m_Scripts;
+	CDebugSymbols       * m_Symbols;
+	CDebugAddBreakpoint * m_AddBreakpoint;
+
+	CBreakpoints       * m_Breakpoints;
 
 	void BreakpointHit(void);
 
-	friend class CDebugCommandsView; // need m_Symbols
+	//friend class CDebugCommandsView; // need m_Symbols
 
 protected:
     CDebuggerUI();
@@ -58,6 +64,10 @@ public:
     void Debug_ShowCommandsLocation ( uint32_t address, bool top );
     void Debug_ShowScriptsWindow    ( void );
     void Debug_ShowSymbolsWindow    ( void );
+	void Debug_ShowModalAddBreakpoint ( void );
+
+	CBreakpoints* Breakpoints();
+	CDebugSymbols* Symbols();
 
     static void GameReset ( CDebuggerUI * _this );
 };

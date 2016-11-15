@@ -35,27 +35,6 @@ public:
 	END_MSG_MAP()
 };
 
-class CAddBreakpointDlg : public CDialogImpl<CAddBreakpointDlg>
-{
-public:
-	enum { IDD = IDD_Debugger_AddBreakpoint};
-
-private:
-	BEGIN_MSG_MAP_EX(CAddBreakpointDlg)
-		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-		MSG_WM_DESTROY(OnDestroy)
-	END_MSG_MAP()
-	
-	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-	LRESULT OnDestroy(void);
-	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-	{
-		CenterWindow();
-		return FALSE;
-	}
-};
-
 class CRegisterTabs : public CTabCtrl
 {
 private:
@@ -106,6 +85,9 @@ public:
 	static int MapPIEdit(DWORD controlId);
 
 private:
+
+	CBreakpoints* m_Breakpoints;
+
 	CEditReg64 m_TestEdit;
 
 	DWORD m_StartAddress;
@@ -114,7 +96,7 @@ private:
 	CEditNumber m_AddressEdit;
 	CCommandsList m_CommandList;
 	int m_CommandListRows;
-	CAddBreakpointDlg m_AddBreakpointDlg;
+	//CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
 

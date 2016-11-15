@@ -17,16 +17,25 @@
 #include <Project64-core/N64System/Mips/OpcodeName.h>
 #include <Project64-core/N64System/N64Class.h>
 
-BOOL CBreakpoints::m_Debugging = FALSE;
-BOOL CBreakpoints::m_Skipping = FALSE;
+//BOOL CBreakpoints::m_Debugging = FALSE;
+//BOOL CBreakpoints::m_Skipping = FALSE;
+//
+//std::vector<uint32_t> CBreakpoints::m_RBP;
+//std::vector<uint32_t> CBreakpoints::m_WBP;
+//std::vector<uint32_t> CBreakpoints::m_EBP;
+//
+//int CBreakpoints::m_nRBP = 0;
+//int CBreakpoints::m_nWBP = 0;
+//int CBreakpoints::m_nEBP = 0;
 
-std::vector<uint32_t> CBreakpoints::m_RBP;
-std::vector<uint32_t> CBreakpoints::m_WBP;
-std::vector<uint32_t> CBreakpoints::m_EBP;
-
-int CBreakpoints::m_nRBP = 0;
-int CBreakpoints::m_nWBP = 0;
-int CBreakpoints::m_nEBP = 0;
+CBreakpoints::CBreakpoints()
+{
+	m_Debugging = FALSE;
+	m_Skipping = FALSE;
+	m_nRBP = 0;
+	m_nWBP = 0;
+	m_nEBP = 0;
+}
 
 void CBreakpoints::Pause()
 {

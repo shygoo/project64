@@ -21,6 +21,9 @@ m_MemoryList(NULL)
         m_MemoryList = new CListCtrl;
         m_MemoryList->RegisterClass();
     }
+
+	m_Breakpoints = m_Debugger->Breakpoints();
+
 }
 
 CDebugMemoryView::~CDebugMemoryView()
@@ -159,16 +162,16 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
         EndDialog(0);
         break;
 	case ID_POPUPMENU_TOGGLERBP:
-		CBreakpoints::RBPToggle(m_CtxMenuAddr);
+		m_Breakpoints->RBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_TOGGLEWBP:
-		CBreakpoints::WBPToggle(m_CtxMenuAddr);
+		m_Breakpoints->WBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_CLEARALLBPS:
-		CBreakpoints::RBPClear();
-		CBreakpoints::WBPClear();
+		m_Breakpoints->RBPClear();
+		m_Breakpoints->WBPClear();
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_VIEWDISASM:
@@ -200,7 +203,7 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
 	
-	if (CBreakpoints::m_RBP.size() == 0 && CBreakpoints::m_WBP.size() == 0)
+	if (m_Breakpoints->m_RBP.size() == 0 && m_Breakpoints->m_WBP.size() == 0)
 	{
 		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARALLBPS, MF_DISABLED | MF_GRAYED);
 	}
@@ -362,8 +365,8 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
             m_MemoryList->SetItemFormat(LineNumber, col, ITEM_FORMAT_EDIT, ITEM_FLAGS_EDIT_HEX);
             m_MemoryList->SetItemMaxEditLen(LineNumber, col, 2);
 
-			bool bHaveReadBP = CBreakpoints::RBPExists(m_DataStartLoc + Pos);
-			bool bHaveWriteBP = CBreakpoints::WBPExists(m_DataStartLoc + Pos);
+			bool bHaveReadBP = m_Breakpoints->RBPExists(m_DataStartLoc + Pos);
+			bool bHaveWriteBP = m_Breakpoints->WBPExists(m_DataStartLoc + Pos);
 
 			COLORREF bgColor, fgColor, fgHiColor;
 
