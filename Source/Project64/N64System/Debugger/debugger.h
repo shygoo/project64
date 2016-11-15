@@ -21,8 +21,7 @@ class CDebugSymbols;
 __interface CDebugger
 {
     virtual void TLBChanged ( void ) = 0;
-    virtual void BreakpointHit ( void ) = 0;
-	virtual void CPUStepStarted ( void ) = 0;
+	virtual bool CPUStepStarted ( void ) = 0;
 };
 
 class CDebuggerUI :
@@ -36,6 +35,8 @@ class CDebuggerUI :
 	CDebugScripts      * m_Scripts;
 	CDebugSymbols      * m_Symbols;
 
+	void BreakpointHit(void);
+
 	friend class CDebugCommandsView; // need m_Symbols
 
 protected:
@@ -43,9 +44,8 @@ protected:
     virtual ~CDebuggerUI();
 
 	void TLBChanged ( void );
-	void BreakpointHit ( void );
-	void CPUStepStarted ( void );
-
+	bool CPUStepStarted ( void );
+	
 public:
     void Debug_Reset                ( void );
     void Debug_ShowMemoryDump       ( void );

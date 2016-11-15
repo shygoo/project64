@@ -151,11 +151,6 @@ void CDebuggerUI::Debug_RefreshTLBWindow(void)
     }
 }
 
-void CDebuggerUI::TLBChanged()
-{
-	Debug_RefreshTLBWindow();
-}
-
 void CDebuggerUI::Debug_ShowMemorySearch()
 {
     if (m_MemorySearch == NULL)
@@ -186,13 +181,6 @@ void CDebuggerUI::Debug_ShowCommandsLocation(uint32_t address, bool top)
 	}
 }
 
-void CDebuggerUI::BreakpointHit()
-{
-	//CSystemRegisters::_PROGRAM_COUNTER;
-	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
-	CInterpreterDebug::Pause();
-}
-
 void CDebuggerUI::Debug_ShowScriptsWindow()
 {
 	if (m_Scripts == NULL)
@@ -211,8 +199,31 @@ void CDebuggerUI::Debug_ShowSymbolsWindow()
 	m_Symbols->ShowWindow();
 }
 
-void CDebuggerUI::CPUStepStarted()
+void CDebuggerUI::BreakpointHit()
 {
+	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
+	CBreakpoints::Pause();
+}
+
+// CDebugger implementation
+
+void CDebuggerUI::TLBChanged()
+{
+	Debug_RefreshTLBWindow();
+}
+
+static inline BOOL bDoExec()
+{
+	BOOL bSkip = CBreakpoints::m_Skipping;
+	CBreakpoints::m_Skipping = FALSE;
+	return !bSkip;
+}
+
+// Called from the interpreter core at the beginning of every CPU step
+// Returns false when the instruction should be skipped
+bool CDebuggerUI::CPUStepStarted()
+{
+	BOOL& bSkip = CBreakpoints::m_Skipping;
 	uint32_t PROGRAM_COUNTER = g_Reg->m_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 
@@ -220,10 +231,10 @@ void CDebuggerUI::CPUStepStarted()
 
 	// PC breakpoints
 
-	if (CInterpreterDebug::EBPExists(PROGRAM_COUNTER))
+	if (CBreakpoints::EBPExists(PROGRAM_COUNTER))
 	{
 		BreakpointHit();
-		return;
+		return bDoExec();
 	}
 
 	// Memory breakpoints
@@ -239,20 +250,20 @@ void CDebuggerUI::CPUStepStarted()
 		{
 			CScriptSystem::m_ReadEvents.InvokeByTag(memoryAddress);
 
-			if (CInterpreterDebug::RBPExists(memoryAddress))
+			if (CBreakpoints::RBPExists(memoryAddress))
 			{
 				BreakpointHit();
-				return;
+				return bDoExec();
 			}
 		}
 		else // Write instructions
 		{
 			CScriptSystem::m_WriteEvents.InvokeByTag(memoryAddress);
 
-			if (CInterpreterDebug::WBPExists(memoryAddress))
+			if (CBreakpoints::WBPExists(memoryAddress))
 			{
 				BreakpointHit();
-				return;
+				return bDoExec();
 			}
 			
 			// Catch cart -> rdram dma
@@ -262,37 +273,39 @@ void CDebuggerUI::CPUStepStarted()
 				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0] + 1; // Assume u32 for now
 				uint32_t endAddr = dmaAddr + dmaLen;
 
-				for (int i = 0; i < CInterpreterDebug::m_nWBP; i++)
+				for (int i = 0; i < CBreakpoints::m_nWBP; i++)
 				{
-					uint32_t wbpAddr = CInterpreterDebug::m_WBP[i];
+					uint32_t wbpAddr = CBreakpoints::m_WBP[i];
 					if (wbpAddr >= dmaAddr && wbpAddr < endAddr)
 					{
 						BreakpointHit();
 						//m_CommandsView->ShowWindow();
 						//m_CommandsView->ShowPIRegTab();
-						//CInterpreterDebug::Pause();
-						return;
+						//CBreakpoints::Pause();
+						return bDoExec();
 					}
 				}
 			}
 		}
 	}
 
-	if (!CInterpreterDebug::isDebugging())
+	if (!CBreakpoints::isDebugging())
 	{
-		return;
+		return bDoExec();
 	}
 
 	if (R4300iOp::m_NextInstruction != JUMP)
 	{
 		BreakpointHit();
-		return;
+		return bDoExec();
 	}
 
 	if (JumpToLocation == PROGRAM_COUNTER + 4)
 	{
 		// Only pause on delay slots when branch isn't taken
 		BreakpointHit();
-		return;
+		return bDoExec();
 	}
+
+	return bDoExec();
 }

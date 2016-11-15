@@ -11,7 +11,6 @@
 
 #include "stdafx.h"
 #include "InterpreterCPU.h"
-#include "InterpreterDebug.h"
 #include "Debugger.h"
 
 #include <Project64-core/N64System/SystemGlobals.h>
@@ -299,11 +298,9 @@ void CInterpreterCPU::ExecuteCPU()
                 continue;
             }
 
-			g_Debugger->CPUStepStarted();
-
-			if(CInterpreterDebug::m_Skipping)
+			if (!g_Debugger->CPUStepStarted())
 			{
-				CInterpreterDebug::m_Skipping = FALSE;
+				//MessageBox(NULL, "skipping", "skipping", MB_OK);
 				PROGRAM_COUNTER += 4;
 				continue;
 			}

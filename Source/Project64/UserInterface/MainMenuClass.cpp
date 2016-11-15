@@ -2,7 +2,7 @@
 #include "RomInformationClass.h"
 #include <Project64-core/N64System/N64DiskClass.h>
 
-#include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
+#include <Project64/N64System/Debugger/Breakpoints.h>
 #include <Project64/N64System/Debugger/ScriptSystem.h>
 
 #include <windows.h>

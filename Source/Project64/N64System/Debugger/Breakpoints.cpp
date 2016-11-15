@@ -10,57 +10,56 @@
 ****************************************************************************/
 
 #include "stdafx.h"
-#include "InterpreterDebug.h"
+#include "Breakpoints.h"
 
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
 #include <Project64-core/N64System/N64Class.h>
-#include <Project64-core/Debugger.h>
 
-BOOL CInterpreterDebug::m_Debugging = FALSE;
-BOOL CInterpreterDebug::m_Skipping = FALSE;
+BOOL CBreakpoints::m_Debugging = FALSE;
+BOOL CBreakpoints::m_Skipping = FALSE;
 
-std::vector<uint32_t> CInterpreterDebug::m_RBP;
-std::vector<uint32_t> CInterpreterDebug::m_WBP;
-std::vector<uint32_t> CInterpreterDebug::m_EBP;
+std::vector<uint32_t> CBreakpoints::m_RBP;
+std::vector<uint32_t> CBreakpoints::m_WBP;
+std::vector<uint32_t> CBreakpoints::m_EBP;
 
-int CInterpreterDebug::m_nRBP = 0;
-int CInterpreterDebug::m_nWBP = 0;
-int CInterpreterDebug::m_nEBP = 0;
+int CBreakpoints::m_nRBP = 0;
+int CBreakpoints::m_nWBP = 0;
+int CBreakpoints::m_nEBP = 0;
 
-void CInterpreterDebug::Pause()
+void CBreakpoints::Pause()
 {
 	KeepDebugging();
 	g_System->Pause();
 }
 
-void CInterpreterDebug::Resume()
+void CBreakpoints::Resume()
 {
 	g_System->ExternalEvent(SysEvent_ResumeCPU_FromMenu);
 }
 
-BOOL CInterpreterDebug::isDebugging()
+BOOL CBreakpoints::isDebugging()
 {
 	return m_Debugging;
 }
 
-void CInterpreterDebug::KeepDebugging()
+void CBreakpoints::KeepDebugging()
 {
 	m_Debugging = TRUE;
 }
 
-void CInterpreterDebug::StopDebugging()
+void CBreakpoints::StopDebugging()
 {
 	m_Debugging = FALSE;
 }
 
-void CInterpreterDebug::Skip()
+void CBreakpoints::Skip()
 {
 	m_Skipping = TRUE;
 }
 
-bool CInterpreterDebug::RBPAdd(uint32_t address)
+bool CBreakpoints::RBPAdd(uint32_t address)
 {
 	if (!RBPExists(address))
 	{
@@ -71,7 +70,7 @@ bool CInterpreterDebug::RBPAdd(uint32_t address)
 	return false;
 }
 
-bool CInterpreterDebug::WBPAdd(uint32_t address)
+bool CBreakpoints::WBPAdd(uint32_t address)
 {
 	if (!WBPExists(address))
 	{
@@ -82,7 +81,7 @@ bool CInterpreterDebug::WBPAdd(uint32_t address)
 	return false;
 }
 
-bool CInterpreterDebug::EBPAdd(uint32_t address)
+bool CBreakpoints::EBPAdd(uint32_t address)
 {
 	if (!EBPExists(address))
 	{
@@ -93,7 +92,7 @@ bool CInterpreterDebug::EBPAdd(uint32_t address)
 	return false;
 }
 
-void CInterpreterDebug::RBPRemove(uint32_t address)
+void CBreakpoints::RBPRemove(uint32_t address)
 {
 	for (int i = 0; i < m_nRBP; i++)
 	{
@@ -106,7 +105,7 @@ void CInterpreterDebug::RBPRemove(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::WBPRemove(uint32_t address)
+void CBreakpoints::WBPRemove(uint32_t address)
 {
 	for (int i = 0; i < m_nWBP; i++)
 	{
@@ -119,7 +118,7 @@ void CInterpreterDebug::WBPRemove(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::EBPRemove(uint32_t address)
+void CBreakpoints::EBPRemove(uint32_t address)
 {
 	for (int i = 0; i < m_nEBP; i++)
 	{
@@ -132,7 +131,7 @@ void CInterpreterDebug::EBPRemove(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::RBPToggle(uint32_t address)
+void CBreakpoints::RBPToggle(uint32_t address)
 {
 	if (RBPAdd(address) == false)
 	{
@@ -140,7 +139,7 @@ void CInterpreterDebug::RBPToggle(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::WBPToggle(uint32_t address)
+void CBreakpoints::WBPToggle(uint32_t address)
 {
 	if (WBPAdd(address) == false)
 	{
@@ -148,7 +147,7 @@ void CInterpreterDebug::WBPToggle(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::EBPToggle(uint32_t address)
+void CBreakpoints::EBPToggle(uint32_t address)
 {
 	if (EBPAdd(address) == false)
 	{
@@ -156,25 +155,25 @@ void CInterpreterDebug::EBPToggle(uint32_t address)
 	}
 }
 
-void CInterpreterDebug::RBPClear()
+void CBreakpoints::RBPClear()
 {
 	m_RBP.clear();
 	m_nRBP = 0;
 }
 
-void CInterpreterDebug::WBPClear()
+void CBreakpoints::WBPClear()
 {
 	m_WBP.clear();
 	m_nWBP = 0;
 }
 
-void CInterpreterDebug::EBPClear()
+void CBreakpoints::EBPClear()
 {
 	m_EBP.clear();
 	m_nEBP = 0;
 }
 
-void CInterpreterDebug::BPClear()
+void CBreakpoints::BPClear()
 {
 	RBPClear();
 	WBPClear();

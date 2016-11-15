@@ -13,9 +13,9 @@
 
 #include <stdint.h>
 
-class CInterpreterDebug {
+class CBreakpoints {
 private:
-	CInterpreterDebug();
+	CBreakpoints();
 
 public:
 	static BOOL m_Debugging;
@@ -50,9 +50,7 @@ public:
 	static void EBPRemove(uint32_t address);
 	static void EBPToggle(uint32_t address);
 	static void EBPClear();
-
 	
-
 	static void BPClear();
 
 	// inlines

@@ -12,7 +12,7 @@
 #pragma once
 
 #include <Project64/UserInterface/resource.h>
-#include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
+#include <Project64/N64System/Debugger/Breakpoints.h>
 
 class CEditReg64 : public CWindowImpl<CEditReg64, CEdit>
 {

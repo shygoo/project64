@@ -13,6 +13,5 @@
 __interface CDebugger
 {
 	virtual void TLBChanged(void) = 0;
-	virtual void BreakpointHit(void) = 0;
-	virtual void CPUStepStarted(void) = 0;
+	virtual bool CPUStepStarted(void) = 0;
 };

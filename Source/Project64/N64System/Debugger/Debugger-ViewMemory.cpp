@@ -159,16 +159,16 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
         EndDialog(0);
         break;
 	case ID_POPUPMENU_TOGGLERBP:
-		CInterpreterDebug::RBPToggle(m_CtxMenuAddr);
+		CBreakpoints::RBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_TOGGLEWBP:
-		CInterpreterDebug::WBPToggle(m_CtxMenuAddr);
+		CBreakpoints::WBPToggle(m_CtxMenuAddr);
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_CLEARALLBPS:
-		CInterpreterDebug::RBPClear();
-		CInterpreterDebug::WBPClear();
+		CBreakpoints::RBPClear();
+		CBreakpoints::WBPClear();
 		RefreshMemory(true);
 		break;
 	case ID_POPUPMENU_VIEWDISASM:
@@ -200,7 +200,7 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
 	
-	if (CInterpreterDebug::m_RBP.size() == 0 && CInterpreterDebug::m_WBP.size() == 0)
+	if (CBreakpoints::m_RBP.size() == 0 && CBreakpoints::m_WBP.size() == 0)
 	{
 		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARALLBPS, MF_DISABLED | MF_GRAYED);
 	}
@@ -362,8 +362,8 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
             m_MemoryList->SetItemFormat(LineNumber, col, ITEM_FORMAT_EDIT, ITEM_FLAGS_EDIT_HEX);
             m_MemoryList->SetItemMaxEditLen(LineNumber, col, 2);
 
-			bool bHaveReadBP = CInterpreterDebug::RBPExists(m_DataStartLoc + Pos);
-			bool bHaveWriteBP = CInterpreterDebug::WBPExists(m_DataStartLoc + Pos);
+			bool bHaveReadBP = CBreakpoints::RBPExists(m_DataStartLoc + Pos);
+			bool bHaveWriteBP = CBreakpoints::WBPExists(m_DataStartLoc + Pos);
 
 			COLORREF bgColor, fgColor, fgHiColor;
 

@@ -13,10 +13,10 @@
 #include "DebuggerUI.h"
 
 #include "Symbols.h"
+#include "Breakpoints.h"
 
 #include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
-#include <Project64-core/N64System/Interpreter/InterpreterDebug.h>
 
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -353,23 +353,23 @@ void CDebugCommandsView::RefreshBreakpointList()
 {
 	m_BreakpointList.ResetContent();
 	char rowStr[16];
-	for (int i = 0; i < CInterpreterDebug::m_nRBP; i++)
+	for (int i = 0; i < CBreakpoints::m_nRBP; i++)
 	{
-		sprintf(rowStr, "R %08X", CInterpreterDebug::m_RBP[i]);
+		sprintf(rowStr, "R %08X", CBreakpoints::m_RBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_RBP[i]);
+		m_BreakpointList.SetItemData(index, CBreakpoints::m_RBP[i]);
 	}
-	for (int i = 0; i < CInterpreterDebug::m_nWBP; i++)
+	for (int i = 0; i < CBreakpoints::m_nWBP; i++)
 	{
-		sprintf(rowStr, "W %08X", CInterpreterDebug::m_WBP[i]);
+		sprintf(rowStr, "W %08X", CBreakpoints::m_WBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_WBP[i]);
+		m_BreakpointList.SetItemData(index, CBreakpoints::m_WBP[i]);
 	}
-	for (int i = 0; i < CInterpreterDebug::m_nEBP; i++)
+	for (int i = 0; i < CBreakpoints::m_nEBP; i++)
 	{
-		sprintf(rowStr, "E %08X", CInterpreterDebug::m_EBP[i]);
+		sprintf(rowStr, "E %08X", CBreakpoints::m_EBP[i]);
 		int index = m_BreakpointList.AddString(rowStr);
-		m_BreakpointList.SetItemData(index, CInterpreterDebug::m_EBP[i]);
+		m_BreakpointList.SetItemData(index, CBreakpoints::m_EBP[i]);
 	}
 }
 
@@ -424,13 +424,13 @@ void CDebugCommandsView::RemoveSelectedBreakpoints()
 		switch (itemText[0])
 		{
 		case 'E':
-			CInterpreterDebug::EBPRemove(address);
+			CBreakpoints::EBPRemove(address);
 			break;
 		case 'W':
-			CInterpreterDebug::WBPRemove(address);
+			CBreakpoints::WBPRemove(address);
 			break;
 		case 'R':
-			CInterpreterDebug::RBPRemove(address);
+			CBreakpoints::RBPRemove(address);
 			break;
 		}
 	}
@@ -476,7 +476,7 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 
 	if (nSubItem == 0) // addr
 	{
-		if (CInterpreterDebug::EBPExists(address))
+		if (CBreakpoints::EBPExists(address))
 		{
 			// breakpoint
 			pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
@@ -552,7 +552,7 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 		pLVCD->clrText = RGB(0x00, 0x00, 0x00);
 	}
 
-	if (!CInterpreterDebug::isDebugging())
+	if (!CBreakpoints::isDebugging())
 	{
 		return CDRF_DODEFAULT;
 	}
@@ -614,20 +614,20 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		m_Debugger->Debug_ShowSymbolsWindow();
 		break;
 	case IDC_GO_BTN:
-		CInterpreterDebug::StopDebugging();
-		CInterpreterDebug::Resume();
+		CBreakpoints::StopDebugging();
+		CBreakpoints::Resume();
 		break;
 	case IDC_STEP_BTN:
-		CInterpreterDebug::KeepDebugging();
-		CInterpreterDebug::Resume();
+		CBreakpoints::KeepDebugging();
+		CBreakpoints::Resume();
 		break;
 	case IDC_SKIP_BTN:
-		CInterpreterDebug::KeepDebugging();
-		CInterpreterDebug::Skip();
-		CInterpreterDebug::Resume();
+		CBreakpoints::KeepDebugging();
+		CBreakpoints::Skip();
+		CBreakpoints::Resume();
 		break;
 	case IDC_CLEARBP_BTN:
-		CInterpreterDebug::BPClear();
+		CBreakpoints::BPClear();
 		RefreshBreakpointList();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
@@ -689,13 +689,13 @@ LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
 	int nItem = pIA->iItem;
 	
 	uint32_t address = m_StartAddress + nItem * 4;
-	if (CInterpreterDebug::EBPExists(address))
+	if (CBreakpoints::EBPExists(address))
 	{
-		CInterpreterDebug::EBPRemove(address);
+		CBreakpoints::EBPRemove(address);
 	}
 	else
 	{
-		CInterpreterDebug::EBPAdd(address);
+		CBreakpoints::EBPAdd(address);
 	}
 	// Cancel blue highlight
 	m_AddressEdit.SetFocus();
@@ -807,15 +807,15 @@ LRESULT CAddBreakpointDlg::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL&
 
 			if (read)
 			{
-				CInterpreterDebug::RBPAdd(address);
+				CBreakpoints::RBPAdd(address);
 			}
 			if (write)
 			{
-				CInterpreterDebug::WBPAdd(address);
+				CBreakpoints::WBPAdd(address);
 			}
 			if (exec)
 			{
-				CInterpreterDebug::EBPAdd(address);
+				CBreakpoints::EBPAdd(address);
 			}
 			EndDialog(0);
 			break;
@@ -876,7 +876,7 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	
 	if (notification == EN_KILLFOCUS)
 	{
-		if (g_Reg == NULL || !CInterpreterDebug::isDebugging())
+		if (g_Reg == NULL || !CBreakpoints::isDebugging())
 		{
 			return FALSE;
 		}
@@ -933,7 +933,7 @@ INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		sprintf(regText, "%08X", value);
 		edit.SetWindowTextA(regText);
 
-		if (g_Reg == NULL || !CInterpreterDebug::isDebugging())
+		if (g_Reg == NULL || !CBreakpoints::isDebugging())
 		{
 			return FALSE;
 		}
@@ -969,7 +969,7 @@ static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 		sprintf(regText, "%08X", value);
 		edit.SetWindowTextA(regText);
 
-		if (g_MMU == NULL || !CInterpreterDebug::isDebugging())
+		if (g_MMU == NULL || !CBreakpoints::isDebugging())
 		{
 			return FALSE;
 		}
@@ -1115,7 +1115,7 @@ BOOL CEditReg64::Attach(HWND hWndNew)
 
 LRESULT CEditReg64::OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	if (!CInterpreterDebug::isDebugging())
+	if (!CBreakpoints::isDebugging())
 	{
 		goto canceled;
 	}
