@@ -180,13 +180,16 @@
     <ClCompile Include="N64System\Debugger\Debugger-Symbols.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Debugger\Symbols.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
-    </ClCompile>
     <ClCompile Include="N64System\Debugger\Breakpoints.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
     <ClCompile Include="N64System\Debugger\Debugger-AddBreakpoint.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="N64System\Debugger\Symbols.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ScriptContext.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -345,6 +348,9 @@
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="N64System\Debugger\Debugger-AddBreakpoint.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptContext.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>

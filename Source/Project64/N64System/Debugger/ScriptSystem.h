@@ -15,9 +15,22 @@
 #include <3rdParty/duktape/duktape.h>
 
 typedef struct {
+	duk_context* ctx;
+	char* path;
+	CRITICAL_SECTION criticalSection;
+	HANDLE hThread;
+	HANDLE hIOCompletionPort;
+	vector<IOFD> ioFds;
+	vector<IOLISTENER*> ioListeners;
+	UINT ioNextListenerId;
+	bool bActive; // event loop is running
+} JSCONTEXT;
+
+typedef struct {
 	int      callbackId;
 	void*    heapptr;
 	uint32_t tag;
+	duk_context* ctx;
 } JSCALLBACK;
 
 class CCallbackList {
@@ -38,57 +51,36 @@ typedef struct {
 } EVENTHOOK;
 
 // js event loop
-typedef enum {
-	EVT_READ,
-	EVT_WRITE,
-	EVT_ACCEPT,
-	EVT_CONNECT
-} IOEVENTTYPE;
-
-typedef struct {
-	OVERLAPPED  ovl;
-	IOEVENTTYPE eventType;
-	HANDLE      fd;
-	HANDLE      childFd; // accepted socket
-	bool        bSocket;
-	UINT        id;
-	void*       data;
-	DWORD       dataLen; // changed to bytes transferred after event is fired
-	void*       callback;
-} IOLISTENER;
-
-typedef struct {
-	HANDLE fd;
-	HANDLE iocp;
-	bool bSocket;
-} IOFD;
 
 class CScriptSystem {
-private:
+public:
 	CScriptSystem(CDebuggerUI* debugger);
 
+	// Run a script in its own context/thread
+	void RunScript(char* path);
+
+	// Kill a script context/thread by its path
+	void StopScript(char* path);
+
+private:
+	// Static list of existing contexts accessible by js_* functions
+	static vector<JSCONTEXT*> m_Contexts;
+	
+	vector<EVENTHOOK> m_Hooks;
+
+	CCallbackList m_ExecEvents;
+	CCallbackList m_ReadEvents;
+	CCallbackList m_WriteEvents;
+	
 public:
-	static duk_context* m_Ctx;
 
-	static CRITICAL_SECTION m_CtxProtected;
-
-	static vector<EVENTHOOK> m_Hooks;
-	static CCallbackList m_ExecEvents;
-	static CCallbackList m_ReadEvents;
-	static CCallbackList m_WriteEvents;
-	static CCallbackList m_WMEvents;
-
-	static void Init();
-	static void RegisterCallbackList(const char* hookId, CCallbackList* cbList);
+	static void RegisterCallbackList(const char* hookId, CCallbackList* cbList); // associate string id with callback list
 	static CCallbackList* GetCallbackList(const char* hookId);
-	static const char* Eval(const char* jsCode);
-	static void EvalFile(const char* jsPath);
 
-	static void Invoke(void* heapptr);
 	//static void DrawTest();
 
 	// Queue a routine to be called from the event loop thread
-	static void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
+	
 
 	static void SetScriptsWindow(CDebugScripts* m_ScriptsWindow);
 
@@ -98,16 +90,8 @@ private:
 	static CDebugScripts* m_ScriptsWindow;
 
 	// Event loop
-	static HANDLE m_ioBasePort;
+	//static HANDLE m_ioBasePort;
 	
-	static vector<IOFD> m_ioFds;
-
-	static HANDLE m_ioEventsThread;
-	
-	static vector<IOLISTENER*> m_ioListeners;
-	static UINT m_ioNextListenerId;
-
-	static DWORD WINAPI ioEventsProc(void* param);
 	static void ioDoEvent(IOLISTENER* lpListener);
 	static IOLISTENER* ioAddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
 	static void ioRemoveListenerByIndex(UINT index);
@@ -121,38 +105,6 @@ private:
 	static HANDLE ioSockCreate();
 
 	static HANDLE ioCreateExistingFile(const char* path);
-	static duk_ret_t _ioCreateExistingFile(duk_context*);
 	
-	// Screen printing
-	//static HWND   m_RenderWindow;
-	static HFONT  m_FontFamily;
-	static HBRUSH m_FontColor;
-	static HPEN   m_FontOutline;
-	
-	// Bound functions (_native object)
-	static duk_ret_t js_ioSockCreate (duk_context*);
-	static duk_ret_t js_ioSockListen (duk_context*);
-	static duk_ret_t js_ioSockAccept  (duk_context*); // async
-	static duk_ret_t js_ioSockConnect(duk_context*); // async
 
-	static duk_ret_t js_ioRead   (duk_context*); // async
-	static duk_ret_t js_ioWrite  (duk_context*); // async
-	static duk_ret_t js_ioClose (duk_context*); // (fd) ; file or socket
-	
-	static duk_ret_t js_MsgBox        (duk_context*); // (message, caption)
-	
-	static duk_ret_t js_AddCallback   (duk_context*); // (hookId, callback, tag) ; external events
-	
-	static duk_ret_t js_GetGPRVal     (duk_context*); // (regNum)
-	static duk_ret_t js_SetGPRVal     (duk_context*); // (regNum, value)
-	
-	static duk_ret_t js_GetRDRAMInt   (duk_context*); // (address, bitwidth, signed)
-	static duk_ret_t js_SetRDRAMInt   (duk_context*); // (address, bitwidth, signed, newValue)
-	static duk_ret_t js_GetRDRAMFloat (duk_context*); // (address, bDouble)
-	static duk_ret_t js_SetRDRAMFloat (duk_context*); // (address, bDouble, newValue)
-	static duk_ret_t js_GetRDRAMBlock (duk_context*); // (address, nBytes) ; returns Buffer
-	static duk_ret_t js_GetRDRAMString(duk_context*); // fetch zero terminated string from memory
-
-	static duk_ret_t js_ConsolePrint  (duk_context*);
-	static duk_ret_t js_ConsoleClear  (duk_context*);
 };

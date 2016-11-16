@@ -235,7 +235,7 @@ bool CDebuggerUI::CPUStepStarted()
 {
 	uint32_t PROGRAM_COUNTER = g_Reg->m_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
-
+	
 	CScriptSystem::m_ExecEvents.InvokeByTag(PROGRAM_COUNTER);
 
 	// PC breakpoints

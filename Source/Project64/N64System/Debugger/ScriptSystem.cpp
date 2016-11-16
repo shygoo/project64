@@ -12,36 +12,10 @@
 #include "ScriptSystem.h"
 #include "Debugger-Scripts.h"
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <mswsock.h>
-
-#pragma comment(lib, "Ws2_32.lib")
-#pragma comment(lib, "Mswsock.lib")
-
-static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendBuffer,
-	DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped)
-{
-	LPFN_CONNECTEX ConnectExPtr = NULL;
-	DWORD nBytes;
-	GUID guid = WSAID_CONNECTEX;
-	int fetched = WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER,
-		(void*)&guid, sizeof(GUID),
-		&ConnectExPtr, sizeof(LPFN_CONNECTEX),
-		&nBytes, NULL, NULL);
-
-	if (fetched == 0 && ConnectExPtr != NULL)
-	{
-		ConnectExPtr(s, name, namelen, lpSendBuffer, dwSendDataLength, lpdwBytesSent, lpOverlapped);
-	}
-
-	return false;
-}
-
 //HWND CScriptSystem::m_RenderWindow = NULL;
-HFONT CScriptSystem::m_FontFamily = NULL;
-HBRUSH CScriptSystem::m_FontColor = NULL;
-HPEN CScriptSystem::m_FontOutline = NULL;
+//HFONT CScriptSystem::m_FontFamily = NULL;
+//HBRUSH CScriptSystem::m_FontColor = NULL;
+//HPEN CScriptSystem::m_FontOutline = NULL;
 
 int CCallbackList::Add(void* heapptr, uint32_t tag = 0)
 {
@@ -79,95 +53,93 @@ void CCallbackList::InvokeByTag(uint32_t tag)
 	}
 }
 
-duk_context* CScriptSystem::m_Ctx = NULL;
+/////////////////// CScriptSystem
 
-vector<EVENTHOOK> CScriptSystem::m_Hooks;
-
-CCallbackList CScriptSystem::m_ExecEvents;
-CCallbackList CScriptSystem::m_ReadEvents;
-CCallbackList CScriptSystem::m_WriteEvents;
-CCallbackList CScriptSystem::m_WMEvents;
-
-CDebugScripts* CScriptSystem::m_ScriptsWindow = NULL;
-
-CRITICAL_SECTION CScriptSystem::m_CtxProtected;
-
-HANDLE CScriptSystem::m_ioEventsThread;
-HANDLE CScriptSystem::m_ioBasePort;
-vector<IOLISTENER*> CScriptSystem::m_ioListeners;
-UINT CScriptSystem::m_ioNextListenerId;
-
-vector<IOFD> CScriptSystem::m_ioFds;
-
-// native module test
-//typedef int(__stdcall *ModuleFunction)(duk_context*);
-
-void CScriptSystem::Init()
+CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
 {
-	m_Ctx = duk_create_heap_default();
-	
-	const duk_function_list_entry _native[] = {
-		{ "addCallback",    js_AddCallback,    DUK_VARARGS },
-		{ "setGPRVal",      js_SetGPRVal,      DUK_VARARGS },
-		{ "getGPRVal",      js_GetGPRVal,      DUK_VARARGS },
-		{ "getRDRAMInt",    js_GetRDRAMInt,    DUK_VARARGS },
-		{ "setRDRAMInt",    js_SetRDRAMInt,    DUK_VARARGS },
-		{ "getRDRAMFloat",  js_GetRDRAMFloat,  DUK_VARARGS },
-		{ "setRDRAMFloat",  js_SetRDRAMFloat,  DUK_VARARGS },
-		{ "getRDRAMBlock",  js_GetRDRAMBlock,  DUK_VARARGS },
-		{ "getRDRAMString", js_GetRDRAMString, DUK_VARARGS },
-		{ "sockCreate",     js_ioSockCreate,   DUK_VARARGS },
-		{ "sockListen",     js_ioSockListen,   DUK_VARARGS },
-		{ "sockAccept",     js_ioSockAccept,   DUK_VARARGS },
-		{ "sockConnect",    js_ioSockConnect,  DUK_VARARGS },
-		{ "close",          js_ioClose,        DUK_VARARGS },
-		{ "write",          js_ioWrite,        DUK_VARARGS },
-		{ "read",           js_ioRead,         DUK_VARARGS },
-		{ "msgBox",         js_MsgBox,         DUK_VARARGS },
-		{ "consolePrint",   js_ConsolePrint,   DUK_VARARGS },
-		{ "consoleClear",   js_ConsoleClear,   DUK_VARARGS },
-		{NULL, NULL, 0}
-	};
-
-	duk_push_object(m_Ctx);
-	duk_put_global_string(m_Ctx, "_native");
-	duk_get_global_string(m_Ctx, "_native");
-	duk_put_function_list(m_Ctx, -1, _native);
-	duk_pop(m_Ctx);
-	
-	RegisterCallbackList("exec", &m_ExecEvents);
-	RegisterCallbackList("read", &m_ReadEvents);
-	RegisterCallbackList("write", &m_WriteEvents);
-	RegisterCallbackList("wm", &m_WMEvents);
-	
-	// Init winsock
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-	m_ioNextListenerId = 0;
-	m_ioBasePort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	RegisterCallbackList("exec", &m_ExecEvents);
+	RegisterCallbackList("read", &m_ReadEvents);
+	RegisterCallbackList("write", &m_WriteEvents);
+}
 
-	EvalFile("_api.js");
-	EvalFile("_script.js");
-	
-	InitializeCriticalSection(&m_CtxProtected); // todo cleanup
+DWORD CALLBACK CScriptSystem::StartScriptProc(void* jsContext)
+{
+	JSCONTEXT* lpJsContext = (JSCONTEXT*)jsContext;
+	duk_context* ctx = lpJsContext->ctx;
+	char* path = lpJsContext->path;
 
-	// native module test
-	/*
-	HINSTANCE hNativeModule = LoadLibrary("test.dll");
-	// FreeLibrary(hNativeModule)
-	if (hNativeModule)
+	lpJsContext->hThread = GetCurrentThread();
+
+	duk_push_object(ctx);
+	duk_put_global_string(ctx, "_native");
+	duk_get_global_string(ctx, "_native");
+	duk_put_function_list(ctx, -1, NativeFunctions);
+	duk_pop(ctx);
+
+	duk_peval_file(ctx, "_api.js");
+
+	if (path != NULL)
 	{
-		ModuleFunction DllMain = (ModuleFunction) GetProcAddress(hNativeModule, "DllMain");
-		if (DllMain)
+		duk_peval_file(ctx, path);
+	}
+
+	// todo function that counts listeners to determine if context is still active
+
+	StartEventLoop(lpJsContext);
+
+	return 0;
+}
+
+void CScriptSystem::RunScript(char* path)
+{
+	JSCONTEXT* lpJsContext = (JSCONTEXT*)malloc(sizeof(JSCONTEXT));
+	duk_context* ctx = duk_create_heap_default();
+
+	lpJsContext->ctx = ctx;
+	lpJsContext->path = path;
+	lpJsContext->active = true;
+
+	lpJsContext->hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	InitializeCriticalSection(&lpJsContext->criticalSection);
+
+	m_Contexts.push_back(lpJsContext);
+
+	CreateThread(NULL, 0, StartScriptProc, (void*)lpJsContext, 0, NULL);
+}
+
+void CScriptSystem::StopScript(char* path)
+{
+	int nContexts = m_Contexts.size();
+	for (int i = 0; i < nContexts; i++)
+	{
+		if (strcmp(m_Contexts[i]->path, path) == 0)
 		{
-			DllMain(m_Ctx);
+			JSCONTEXT* jsContext = m_Contexts[i];
+			CloseHandle(jsContext->hThread);
+			DeleteCriticalSection(&jsContext->criticalSection);
+			duk_destroy_heap(jsContext->ctx);
+			// todo clear callbacks
+			free(jsContext);
+			m_Contexts.erase(m_Contexts.begin() + i);
+			return;
 		}
 	}
-	*/
-	// Control of the duk ctx is transferred to m_ioEventsThread here
-	m_ioEventsThread = CreateThread(NULL, 0, ioEventsProc, NULL, 0, NULL);
+}
 
+JSCONTEXT* CScriptSystem::GetContextByPtr(duk_context* ctx)
+{
+	int nContexts = m_Contexts.size();
+	for (int i = 0; i < nContexts; i++)
+	{
+		if (m_Contexts[i]->ctx == ctx)
+		{
+			return m_Contexts[i];
+		}
+	}
+	return NULL;
 }
 
 void CScriptSystem::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
@@ -359,61 +331,6 @@ void CScriptSystem::ioDoEvent(IOLISTENER* lpListener)
 		const char* msg = duk_safe_to_string(m_Ctx, -1);
 		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
 	}
-}
-
-DWORD WINAPI CScriptSystem::ioEventsProc(void* param)
-{
-	UNREFERENCED_PARAMETER(param);
-
-	while (1)
-	{
-		OVERLAPPED_ENTRY usedOvlEntry;
-		ULONG nUsedOverlaps;
-
-		// Wait for an IO completion or async proc call
-		BOOL status = GetQueuedCompletionStatusEx(
-			m_ioBasePort,
-			&usedOvlEntry,
-			1,
-			&nUsedOverlaps,
-			INFINITE,
-			TRUE
-		);
-
-		LPOVERLAPPED lpUsedOvl = usedOvlEntry.lpOverlapped;
-		DWORD nBytesTransferred = usedOvlEntry.dwNumberOfBytesTransferred;
-		
-		if (!status)
-		{
-			int err = GetLastError();
-
-			if (err == STATUS_USER_APC)
-			{
-				// Interrupted by an async proc call
-				continue;
-			}
-			
-			char errmsg[128];
-			sprintf(errmsg, "GetQueuedCompletionStatus error (%d)", err);
-			MessageBox(NULL, errmsg, "Error", MB_OK);
-			break;
-		}
-
-		IOLISTENER* lpListener = (IOLISTENER*)lpUsedOvl;
-		lpListener->dataLen = nBytesTransferred;
-
-		// Protect from emulation thread (onexec, onread, etc)
-		EnterCriticalSection(&m_CtxProtected);
-
-		ioDoEvent(lpListener);
-
-		LeaveCriticalSection(&m_CtxProtected);
-
-		// Destroy listener
-		ioRemoveListenerByPtr(lpListener);
-	}
-
-	return 0;
 }
 
 HANDLE CScriptSystem::ioCreateExistingFile(const char* path)
