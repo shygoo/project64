@@ -26,9 +26,7 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
 		g_Plugins->SetRenderWindows(&MainWindow, &HiddenWindow);
         Notify().SetMainWindow(&MainWindow);
         CSupportWindow SupportWindow;
-
-		CScriptSystem::Init();
-
+		
         if (g_Settings->LoadStringVal(Cmd_RomFile).length() > 0)
         {
             MainWindow.Show(true);	//Show the main window

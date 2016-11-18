@@ -1,17 +1,19 @@
 
-var spawnhack = {
-	enabled: false,
-	object: 0x00
-}
+alert(123);
 
-events.onexec(0x800FC9C0, function()
-{
-	if(spawnhack.enabled)
-	{
-		mem.u8[gpr.a1 + 2] = spawnhack.object;
-		console.log("force-spawned " + spawnhack.object.hex(2))
-	}
-})
+//var spawnhack = {
+//	enabled: false,
+//	object: 0x00
+//}
+//
+//events.onexec(0x800FC9C0, function()
+//{
+//	if(spawnhack.enabled)
+//	{
+//		mem.u8[gpr.a1 + 2] = spawnhack.object;
+//		console.log("force-spawned " + spawnhack.object.hex(2))
+//	}
+//})
 
 /*
 

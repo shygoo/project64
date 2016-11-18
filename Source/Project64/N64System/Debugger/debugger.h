@@ -20,6 +20,7 @@ class CDebugSymbols;
 class CDebugAddBreakpoint;
 
 class CBreakpoints;
+class CScriptSystem;
 
 __interface CDebugger
 {
@@ -39,7 +40,8 @@ class CDebuggerUI :
 	CDebugSymbols       * m_Symbols;
 	CDebugAddBreakpoint * m_AddBreakpoint;
 
-	CBreakpoints       * m_Breakpoints;
+	CBreakpoints        * m_Breakpoints;
+	CScriptSystem       * m_ScriptSystem;
 
 	void BreakpointHit(void);
 
@@ -68,6 +70,7 @@ public:
 
 	CBreakpoints* Breakpoints();
 	CDebugSymbols* Symbols();
+	CScriptSystem* ScriptSystem();
 
     static void GameReset ( CDebuggerUI * _this );
 };

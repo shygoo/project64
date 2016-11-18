@@ -7,6 +7,8 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 
+//#include "ScriptSystem.h"
+
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
 
@@ -35,10 +37,15 @@ typedef struct {
 	bool bSocket;
 } IOFD;
 
-class CScriptContext {
+class CScriptSystem;
+
+class CScriptContext
+{
 public:
-	CScriptContext(char* path);
+	CScriptContext(CScriptSystem* scriptSystem, char* path);
 	~CScriptContext();
+
+	void Invoke(void* heapptr);
 
 private:
 	duk_context*        m_Ctx;
@@ -54,23 +61,31 @@ private:
 	
 	bool                m_bActive;
 	
+	CScriptSystem*      m_ScriptSystem;
+	CScriptSystem*      ScriptSystem();
+
+	duk_context*        DuktapeContext();
+
 	void AddFile(HANDLE fd, bool bSocket = false);
 	void CloseFile(HANDLE fd);
 	void RemoveFile(HANDLE fd);
+	HANDLE CreateSocket();
 	
 	IOLISTENER* AddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
 	void RemoveListenerByIndex(UINT index);
 	void RemoveListenerByPtr(IOLISTENER* lpListener);
 	void RemoveListenersByFd(HANDLE fd);
-	void InvokeListenerEvent(IOLISTENER* lpListener);
-
-	void Eval(const char* jsCode);
-	void EvalFile(const char* jsPath);
-	void Invoke(void* heapptr);
+	void InvokeListenerCallback(IOLISTENER* lpListener);
+	
+	const char* Eval(const char* jsCode);
+	const char* EvalFile(const char* jsPath);
+	
 	void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
 	static DWORD CALLBACK StartScriptProc(CScriptContext* _this);
 	static void StartEventLoop(CScriptContext* _this);
+
+	bool IsActive(); // check for listeners and callbacks
 
 	// Lookup CScriptContext instance for static duk functions
 	static vector<CScriptContext*> Cache;
@@ -123,30 +138,3 @@ private:
 		{ NULL, NULL, 0 }
 	};
 };
-
-
-BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendBuffer,
-	DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped)
-{
-	LPFN_CONNECTEX ConnectExPtr = NULL;
-	DWORD nBytes;
-	GUID guid = WSAID_CONNECTEX;
-	int fetched = WSAIoctl(
-		s,
-		SIO_GET_EXTENSION_FUNCTION_POINTER,
-		(void*)&guid,
-		sizeof(GUID),
-		&ConnectExPtr,
-		sizeof(LPFN_CONNECTEX),
-		&nBytes,
-		NULL,
-		NULL
-	);
-
-	if (fetched == 0 && ConnectExPtr != NULL)
-	{
-		ConnectExPtr(s, name, namelen, lpSendBuffer, dwSendDataLength, lpdwBytesSent, lpOverlapped);
-	}
-
-	return false;
-}

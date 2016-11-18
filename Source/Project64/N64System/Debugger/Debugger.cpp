@@ -10,6 +10,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include "DebuggerUI.h"
+#include "ScriptHook.h"
 
 #include <Project64-core/N64System/Interpreter/InterpreterCPU.h>
 #include <Project64-core/N64System/Interpreter/InterpreterOps.h>
@@ -24,18 +25,26 @@ CDebuggerUI::CDebuggerUI () :
     m_CommandsView(NULL),
 	m_Scripts(NULL),
 	m_Symbols(NULL),
-	m_Breakpoints(NULL)
+	m_Breakpoints(NULL),
+	m_ScriptSystem(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
 
 	m_Breakpoints = new CBreakpoints();
+	m_ScriptSystem = new CScriptSystem(this);
 }
 
 CDebuggerUI::~CDebuggerUI (void)
 {
 	g_Settings->UnregisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
     Debug_Reset();
+	delete m_MemoryView;
+	delete m_CommandsView;
+	delete m_Scripts;
+	delete m_ScriptSystem;
+	delete m_Breakpoints;
+	delete m_Symbols;
 }
 
 void CDebuggerUI::GameReset ( CDebuggerUI * _this )
@@ -216,6 +225,11 @@ CBreakpoints* CDebuggerUI::Breakpoints()
 	return m_Breakpoints;
 }
 
+CScriptSystem* CDebuggerUI::ScriptSystem()
+{
+	return m_ScriptSystem;
+}
+
 void CDebuggerUI::BreakpointHit()
 {
 	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
@@ -236,8 +250,8 @@ bool CDebuggerUI::CPUStepStarted()
 	uint32_t PROGRAM_COUNTER = g_Reg->m_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 	
-	CScriptSystem::m_ExecEvents.InvokeByTag(PROGRAM_COUNTER);
-
+	m_ScriptSystem->HookCPUExec()->InvokeByTag(PROGRAM_COUNTER);
+	
 	// PC breakpoints
 
 	if (m_Breakpoints->EBPExists(PROGRAM_COUNTER))
@@ -257,8 +271,8 @@ bool CDebuggerUI::CPUStepStarted()
 
 		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
-			CScriptSystem::m_ReadEvents.InvokeByTag(memoryAddress);
-
+			m_ScriptSystem->HookCPURead()->InvokeByTag(memoryAddress);
+			
 			if (m_Breakpoints->RBPExists(memoryAddress))
 			{
 				BreakpointHit();
@@ -267,7 +281,7 @@ bool CDebuggerUI::CPUStepStarted()
 		}
 		else // Write instructions
 		{
-			CScriptSystem::m_WriteEvents.InvokeByTag(memoryAddress);
+			m_ScriptSystem->HookCPUWrite()->InvokeByTag(memoryAddress);
 
 			if (m_Breakpoints->WBPExists(memoryAddress))
 			{

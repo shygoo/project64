@@ -18,7 +18,7 @@
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
 CDebugDialog<CDebugScripts>(debugger)
 {
-	CScriptSystem::SetScriptsWindow(this);
+	//CScriptSystem::SetScriptsWindow(this);
 }
 
 LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -35,6 +35,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_EvalEdit.SetFont(monoFont);
 	m_ConsoleEdit.SetFont(monoFont);
 	
+	m_Debugger->ScriptSystem()->RunScript("_script.js");
+
 	WindowCreated();
 	return 0;
 }

@@ -24,12 +24,12 @@ private:
 public:
 	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
 	{
-		const char* jsCode = (const char*)lpJsCode;
-		int result = duk_peval_string(CScriptSystem::m_Ctx, jsCode);
-		const char* msg = duk_safe_to_string(CScriptSystem::m_Ctx, -1);
-		CScriptSystem::ConsolePrint(msg);
-		CScriptSystem::ConsolePrint("\r\n");
-		duk_pop(CScriptSystem::m_Ctx);
+		//const char* jsCode = (const char*)lpJsCode;
+		//int result = duk_peval_string(CScriptSystem::m_Ctx, jsCode);
+		//const char* msg = duk_safe_to_string(CScriptSystem::m_Ctx, -1);
+		//CScriptSystem::ConsolePrint(msg);
+		//CScriptSystem::ConsolePrint("\r\n");
+		//duk_pop(CScriptSystem::m_Ctx);
 	}
 
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -65,7 +65,7 @@ public:
 			size_t codeLength = GetWindowTextLength() + 1;
 			char* code = (char*)malloc(codeLength);
 			GetWindowTextA(code, codeLength);
-			CScriptSystem::QueueAPC(EvalAsync, (ULONG_PTR)code); // code mem freed here
+			//CScriptSystem::QueueAPC(EvalAsync, (ULONG_PTR)code); // code mem freed here
 			SetWindowTextA("");
 			int historySize = m_History.size();
 			
