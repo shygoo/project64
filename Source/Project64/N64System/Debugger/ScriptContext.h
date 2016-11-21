@@ -7,40 +7,38 @@
 #include <ws2tcpip.h>
 #include <mswsock.h>
 
-//#include "ScriptSystem.h"
-
 #pragma comment(lib, "Ws2_32.lib")
 #pragma comment(lib, "Mswsock.lib")
-
-typedef enum {
-	EVT_READ,
-	EVT_WRITE,
-	EVT_ACCEPT,
-	EVT_CONNECT
-} IOEVENTTYPE;
-
-typedef struct {
-	OVERLAPPED  ovl;
-	IOEVENTTYPE eventType;
-	HANDLE      fd;
-	HANDLE      childFd; // accepted socket
-	bool        bSocket;
-	UINT        id;
-	void*       data;
-	DWORD       dataLen; // changed to bytes transferred after event is fired
-	void*       callback;
-} IOLISTENER;
-
-typedef struct {
-	HANDLE fd;
-	HANDLE iocp;
-	bool bSocket;
-} IOFD;
 
 class CScriptSystem;
 
 class CScriptContext
 {
+	typedef enum {
+		EVT_READ,
+		EVT_WRITE,
+		EVT_ACCEPT,
+		EVT_CONNECT
+	} IOEVENTTYPE;
+
+	typedef struct {
+		OVERLAPPED  ovl;
+		IOEVENTTYPE eventType;
+		HANDLE      fd;
+		HANDLE      childFd; // accepted socket
+		bool        bSocket;
+		UINT        id;
+		void*       data;
+		DWORD       dataLen; // changed to bytes transferred after event is fired
+		void*       callback;
+	} IOLISTENER;
+
+	typedef struct {
+		HANDLE fd;
+		HANDLE iocp;
+		bool bSocket;
+	} IOFD;
+
 public:
 	CScriptContext(CScriptSystem* scriptSystem, char* path);
 	~CScriptContext();
@@ -87,11 +85,12 @@ private:
 
 	bool IsActive(); // check for listeners and callbacks
 
-	// Lookup CScriptContext instance for static duk functions
+	// Lookup list of CScriptContext instances for static js_* functions
 	static vector<CScriptContext*> Cache;
 	static void CacheContext(CScriptContext* _this);
 	static void UncacheContext(CScriptContext* _this);
 	static CScriptContext* FetchContext(duk_context* ctx);
+	static CScriptContext* FetchContext(char* path);
 
 	// Bound functions (_native object)
 	static duk_ret_t js_ioSockCreate   (duk_context*);

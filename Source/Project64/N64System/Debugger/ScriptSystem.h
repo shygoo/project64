@@ -15,6 +15,7 @@
 #include <3rdParty/duktape/duktape.h>
 
 class CScriptHook;
+class CScriptContext;
 
 class CScriptSystem
 {
@@ -38,11 +39,15 @@ private:
 	CScriptHook* m_HookCPUExec;
 	CScriptHook* m_HookCPURead;
 	CScriptHook* m_HookCPUWrite;
-	
+
 	void RegisterHook(const char* hookId, CScriptHook* cbList); // associate string id with callback list
 	void UnregisterHooks();
 
 public:
+	// Returns true if any of the script hooks have callbacks for scriptContext
+
+	bool HaveCallbacksForContext(CScriptContext* scriptContext);
+
 	CScriptHook* GetHook(const char* hookId);
 	
 	inline CScriptHook* HookCPUExec()

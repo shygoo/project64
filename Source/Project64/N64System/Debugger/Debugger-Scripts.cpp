@@ -29,13 +29,20 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		CLEARTYPE_QUALITY, FF_DONTCARE, "Consolas"
 	);
 	
+	m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
+	m_ScriptList.AddColumn("Script", 0, 0);
+	m_ScriptList.SetColumnWidth(0, 100);
+	m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
+
 	m_EvalEdit.Attach(GetDlgItem(IDC_EVAL_EDIT));
 	m_ConsoleEdit.Attach(GetDlgItem(IDC_CONSOLE_EDIT));
 
 	m_EvalEdit.SetFont(monoFont);
 	m_ConsoleEdit.SetFont(monoFont);
 	
-	m_Debugger->ScriptSystem()->RunScript("_script.js");
+	//m_Debugger->ScriptSystem()->RunScript("_script.js");
+
+	RefreshList();
 
 	WindowCreated();
 	return 0;
@@ -56,6 +63,23 @@ void CDebugScripts::ConsolePrint(const char* text)
 void CDebugScripts::ConsoleClear()
 {
 	m_ConsoleEdit.SetWindowTextA("");
+}
+
+void CDebugScripts::RefreshList()
+{
+	CPath SearchPath("Scripts", "*");
+
+	if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
+	{
+		return;
+	}
+
+	do
+	{
+		stdstr scriptFileName = SearchPath.GetNameExtension();
+		m_ScriptList.AddItem(0, 0, scriptFileName.c_str());
+	} while (SearchPath.FindNext());
+
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)

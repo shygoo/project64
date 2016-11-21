@@ -187,7 +187,7 @@ HANDLE CScriptContext::CreateSocket()
 	return fd;
 }
 
-IOLISTENER* CScriptContext::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
+CScriptContext::IOLISTENER* CScriptContext::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
 	IOLISTENER* lpListener = (IOLISTENER*)malloc(sizeof(IOLISTENER));
 	memset(lpListener, 0x00, sizeof(IOLISTENER));

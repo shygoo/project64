@@ -64,6 +64,14 @@ void CScriptSystem::StopScript(char* path)
 	//}
 }
 
+bool CScriptSystem::HaveCallbacksForContext(CScriptContext* scriptContext)
+{
+	return
+		m_HookCPUExec->HasContext(scriptContext) ||
+		m_HookCPURead->HasContext(scriptContext) ||
+		m_HookCPUWrite->HasContext(scriptContext);
+}
+
 void CScriptSystem::RegisterHook(const char* hookId, CScriptHook* cbList)
 {
 	HOOKENTRY hook = { hookId, cbList };

@@ -112,6 +112,7 @@ class CDebugScripts :
 private:
 	CEditEval m_EvalEdit;
 	CEdit m_ConsoleEdit;
+	CListViewCtrl m_ScriptList;
 
 public:
 	enum { IDD = IDD_Debugger_Scripts };
@@ -121,6 +122,8 @@ public:
 
 	void ConsolePrint(const char* text);
 	void ConsoleClear();
+
+	void RefreshList();
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void)
