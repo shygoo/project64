@@ -80,7 +80,7 @@
     <ClCompile Include="N64System\Debugger\Debugger-Symbols.cpp" />
     <ClCompile Include="N64System\Debugger\Symbols.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-AddBreakpoint.cpp" />
-    <ClCompile Include="N64System\Debugger\ScriptContext.cpp" />
+    <ClCompile Include="N64System\Debugger\ScriptInstance.cpp" />
     <ClCompile Include="N64System\Debugger\ScriptHook.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -113,7 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="N64System\Debugger\ScriptHook.h" />
-    <ClInclude Include="N64System\Debugger\ScriptContext.h" />
+    <ClInclude Include="N64System\Debugger\ScriptInstance.h" />
     <ClInclude Include="N64System\Debugger\Debugger-AddBreakpoint.h" />
     <ClInclude Include="N64System\Debugger\Breakpoints.h" />
     <ClInclude Include="N64System\Debugger\Symbols.h" />
@@ -190,8 +190,11 @@
   <ItemGroup>
     <None Include="res\divider.cur" />
     <None Include="res\hand.cur" />
+    <None Include="API.js" />
+    <None Include="UserInterface\icons\bin00001.bin" />
     <None Include="UserInterface\Icons\divider.cur" />
     <None Include="UserInterface\Icons\hand.cur" />
+    <None Include="UserInterface\icons\javascri.bin" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ListItems.bmp" />

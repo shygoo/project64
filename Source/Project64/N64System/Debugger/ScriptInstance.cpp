@@ -1,20 +1,20 @@
 #include <stdafx.h>
 
-#include "ScriptContext.h"
+#include "ScriptInstance.h"
 #include "ScriptSystem.h"
 #include "ScriptHook.h"
 
 static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendBuffer,
 	DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped);
 
-vector<CScriptContext*> CScriptContext::Cache;
+vector<CScriptInstance*> CScriptInstance::Cache;
 
-void CScriptContext::CacheContext(CScriptContext* _this)
+void CScriptInstance::CacheContext(CScriptInstance* _this)
 {
 	Cache.push_back(_this);
 }
 
-void CScriptContext::UncacheContext(CScriptContext* _this)
+void CScriptInstance::UncacheContext(CScriptInstance* _this)
 {
 	for (int i = 0; i < Cache.size(); i++)
 	{
@@ -25,7 +25,7 @@ void CScriptContext::UncacheContext(CScriptContext* _this)
 	}
 }
 
-CScriptContext* CScriptContext::FetchContext(duk_context* ctx)
+CScriptInstance* CScriptInstance::FetchContext(duk_context* ctx)
 {
 	for (int i = 0; i < Cache.size(); i++)
 	{
@@ -36,15 +36,30 @@ CScriptContext* CScriptContext::FetchContext(duk_context* ctx)
 	}
 }
 
-CScriptContext::CScriptContext(CScriptSystem* scriptSystem, char* path)
+CScriptInstance* CScriptInstance::FetchContext(char* path)
+{
+	for (int i = 0; i < Cache.size(); i++)
+	{
+		if (strcmp(Cache[i]->m_Path, path) == 0)
+		{
+			return Cache[i];
+		}
+	}
+}
+
+CScriptInstance::CScriptInstance(CScriptSystem* scriptSystem, char* path)
 {
 	m_Path = path;
 	m_Ctx = duk_create_heap_default();
+	m_ScriptSystem = scriptSystem;
+	m_NextListenerId = 0;
+	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	InitializeCriticalSection(&m_CriticalSection);
 	CacheContext(this);
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
+	m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
 }
 
-CScriptContext::~CScriptContext()
+CScriptInstance::~CScriptInstance()
 {
 	UncacheContext(this);
 	TerminateThread(m_hThread, 0);
@@ -54,17 +69,17 @@ CScriptContext::~CScriptContext()
 	// todo clear callbacks/listeners
 }
 
-CScriptSystem* CScriptContext::ScriptSystem()
+CScriptSystem* CScriptInstance::ScriptSystem()
 {
 	return m_ScriptSystem;
 }
 
-duk_context* CScriptContext::DuktapeContext()
+duk_context* CScriptInstance::DuktapeContext()
 {
 	return m_Ctx;
 }
 
-DWORD CALLBACK CScriptContext::StartScriptProc(CScriptContext* _this)
+DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 {
 	duk_context* ctx = _this->m_Ctx;
 
@@ -74,21 +89,38 @@ DWORD CALLBACK CScriptContext::StartScriptProc(CScriptContext* _this)
 	duk_put_function_list(ctx, -1, NativeFunctions);
 	duk_pop(ctx);
 	
-	duk_peval_file(ctx, "Scripts/_api.js");
+	const char* apiScript = _this->m_ScriptSystem->APIScript();
 	
-	if (_this->m_Path != NULL)
+	duk_int_t apiresult = duk_peval_string(ctx, apiScript);
+	
+	if (apiresult != 0)
 	{
-		duk_peval_file(ctx, _this->m_Path);
+		MessageBox(NULL, duk_safe_to_string(ctx, -1), "API Script Error", MB_OK | MB_ICONERROR);
+		return 0;
+	}
+
+	if (_this->m_Path)
+	{
+		duk_int_t scriptresult = duk_peval_file(ctx, _this->m_Path);
+
+		if (scriptresult != 0)
+		{
+			MessageBox(NULL, duk_safe_to_string(ctx, -1), "Script error", MB_OK | MB_ICONWARNING);
+			return 0;
+		}
 	}
 	
 	StartEventLoop(_this);
 	return 0;
 }
 
-void CScriptContext::StartEventLoop(CScriptContext* _this)
+void CScriptInstance::StartEventLoop(CScriptInstance* _this)
 {
-	// todo while(listeners > 0)
-	while (true)
+	_this->m_bEventLoopRunning = true;
+
+	// Todo interrupt with an apc when an event is removed and event count is 0
+
+	while (_this->HasEvents())
 	{
 		OVERLAPPED_ENTRY usedOvlEntry;
 		ULONG nUsedOverlaps;
@@ -105,10 +137,13 @@ void CScriptContext::StartEventLoop(CScriptContext* _this)
 		
 		if (!status)
 		{
-			if (GetLastError() == STATUS_USER_APC)
+			DWORD errorCode = GetLastError();
+			if (errorCode == STATUS_USER_APC)
 			{
 				continue; // Interrupted by an async proc call
 			}
+			stdstr errorMessage = stdstr_f("GetQueuedCompletionStatusEx error %d", errorCode);
+			MessageBox(NULL, errorMessage.c_str(), "", MB_OK);
 			break; // Error occurred
 		}
 
@@ -118,17 +153,25 @@ void CScriptContext::StartEventLoop(CScriptContext* _this)
 		_this->InvokeListenerCallback(lpListener);
 		_this->RemoveListenerByPtr(lpListener);
 	}
+
+	MessageBox(NULL, "Event loop ended", "", MB_OK);
+
+	_this->m_bEventLoopRunning = false;
 }
 
-bool CScriptContext::IsActive()
+bool CScriptInstance::HasEvents()
 {
-	if (m_Listeners.size() > 0)
+	bool result =
+		(m_Listeners.size() > 0) ||
+		m_ScriptSystem->HasCallbacksForContext(this);
+	if (!result)
 	{
-		return true;
+		MessageBox(NULL, "no events", "", MB_OK);
 	}
+	return result;
 }
 
-void CScriptContext::AddFile(HANDLE fd, bool bSocket)
+void CScriptInstance::AddFile(HANDLE fd, bool bSocket)
 {
 	IOFD iofd;
 	iofd.fd = fd;
@@ -137,7 +180,7 @@ void CScriptContext::AddFile(HANDLE fd, bool bSocket)
 	m_Files.push_back(iofd);
 }
 
-void CScriptContext::CloseFile(HANDLE fd)
+void CScriptInstance::CloseFile(HANDLE fd)
 {
 	// Causes EVT_READ with length 0
 	// Not safe to remove listeners until then
@@ -163,7 +206,7 @@ void CScriptContext::CloseFile(HANDLE fd)
 	}
 }
 
-void CScriptContext::RemoveFile(HANDLE fd)
+void CScriptInstance::RemoveFile(HANDLE fd)
 {
 	// Stop tracking an fd and remove all of its listeners
 	for (uint32_t i = 0; i < m_Files.size(); i++)
@@ -180,14 +223,14 @@ void CScriptContext::RemoveFile(HANDLE fd)
 	}
 }
 
-HANDLE CScriptContext::CreateSocket()
+HANDLE CScriptInstance::CreateSocket()
 {
 	HANDLE fd = (HANDLE)WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	AddFile(fd, true);
 	return fd;
 }
 
-CScriptContext::IOLISTENER* CScriptContext::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
+CScriptInstance::IOLISTENER* CScriptInstance::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
 	IOLISTENER* lpListener = (IOLISTENER*)malloc(sizeof(IOLISTENER));
 	memset(lpListener, 0x00, sizeof(IOLISTENER));
@@ -204,7 +247,7 @@ CScriptContext::IOLISTENER* CScriptContext::AddListener(HANDLE fd, IOEVENTTYPE e
 	return lpListener;
 }
 
-void CScriptContext::RemoveListenerByIndex(UINT index)
+void CScriptInstance::RemoveListenerByIndex(UINT index)
 {
 	IOLISTENER* lpListener = m_Listeners[index];
 
@@ -221,7 +264,7 @@ void CScriptContext::RemoveListenerByIndex(UINT index)
 }
 
 // Free listener & its buffer, remove from list
-void CScriptContext::RemoveListenerByPtr(IOLISTENER* lpListener)
+void CScriptInstance::RemoveListenerByPtr(IOLISTENER* lpListener)
 {
 	for (UINT i = 0; i < m_Listeners.size(); i++)
 	{
@@ -233,7 +276,7 @@ void CScriptContext::RemoveListenerByPtr(IOLISTENER* lpListener)
 	}
 }
 
-void CScriptContext::RemoveListenersByFd(HANDLE fd)
+void CScriptInstance::RemoveListenersByFd(HANDLE fd)
 {
 	for (UINT i = 0; i < m_Listeners.size(); i++)
 	{
@@ -244,7 +287,7 @@ void CScriptContext::RemoveListenersByFd(HANDLE fd)
 	}
 }
 
-void CScriptContext::InvokeListenerCallback(IOLISTENER* lpListener)
+void CScriptInstance::InvokeListenerCallback(IOLISTENER* lpListener)
 {
 	if (lpListener->callback == NULL)
 	{
@@ -300,7 +343,7 @@ void CScriptContext::InvokeListenerCallback(IOLISTENER* lpListener)
 	LeaveCriticalSection(&m_CriticalSection);
 }
 
-const char* CScriptContext::Eval(const char* jsCode)
+const char* CScriptInstance::Eval(const char* jsCode)
 {
 	int result = duk_peval_string(m_Ctx, jsCode);
 	const char* msg = duk_safe_to_string(m_Ctx, -1);
@@ -312,7 +355,7 @@ const char* CScriptContext::Eval(const char* jsCode)
 	return msg;
 }
 
-const char* CScriptContext::EvalFile(const char* jsPath)
+const char* CScriptInstance::EvalFile(const char* jsPath)
 {
 	int result = duk_peval_file(m_Ctx, jsPath);
 	const char* msg = duk_safe_to_string(m_Ctx, -1);
@@ -324,7 +367,7 @@ const char* CScriptContext::EvalFile(const char* jsPath)
 	return msg;
 }
 
-void CScriptContext::Invoke(void* heapptr)
+void CScriptInstance::Invoke(void* heapptr)
 {
 	EnterCriticalSection(&m_CriticalSection);
 	duk_push_heapptr(m_Ctx, heapptr);
@@ -341,7 +384,7 @@ void CScriptContext::Invoke(void* heapptr)
 	LeaveCriticalSection(&m_CriticalSection);
 }
 
-void CScriptContext::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
+void CScriptInstance::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
 {
 	if (m_hThread != NULL)
 	{
@@ -351,9 +394,9 @@ void CScriptContext::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
 
 /****************************/
 
-duk_ret_t CScriptContext::js_ioSockConnect(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioSockConnect(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	const char* ipStr = duk_to_string(ctx, 1);
@@ -382,18 +425,18 @@ duk_ret_t CScriptContext::js_ioSockConnect(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioClose(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioClose(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	duk_pop(ctx);
 	_this->CloseFile(fd);
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioSockCreate(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioSockCreate(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	HANDLE fd = _this->CreateSocket();
 	duk_pop_n(ctx, duk_get_top(ctx));
@@ -401,7 +444,7 @@ duk_ret_t CScriptContext::js_ioSockCreate(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioSockListen(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioSockListen(duk_context* ctx)
 {
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	USHORT port = (USHORT)duk_get_uint(ctx, 1);
@@ -423,9 +466,9 @@ duk_ret_t CScriptContext::js_ioSockListen(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioSockAccept(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioSockAccept(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	void* jsCallback = duk_get_heapptr(ctx, 1);
@@ -451,9 +494,9 @@ duk_ret_t CScriptContext::js_ioSockAccept(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioRead(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioRead(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	// (fd, bufferSize, callback)
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
@@ -474,9 +517,9 @@ duk_ret_t CScriptContext::js_ioRead(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ioWrite(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ioWrite(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	duk_size_t dataLen;
@@ -494,41 +537,44 @@ duk_ret_t CScriptContext::js_ioWrite(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_AddCallback(duk_context* ctx)
+duk_ret_t CScriptInstance::js_AddCallback(duk_context* ctx)
 {
-	CScriptContext* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchContext(ctx);
 
 	const char* hookId;
 	void* heapptr;
-	uint32_t tag;
+	uint32_t tag = 0;
+	bool bOnce = false;
 
 	int argc = duk_get_top(ctx);
 
-	tag = 0;
-	if (argc == 3)
-	{
-		tag = duk_get_uint(ctx, 2);
-		duk_pop(ctx);
-	}
-
 	hookId = duk_get_string(ctx, 0);
 	heapptr = duk_get_heapptr(ctx, 1);
-
+	
+	if (argc > 2)
+	{
+		tag = duk_get_uint(ctx, 2);
+		if (argc > 3)
+		{
+			bOnce = duk_get_boolean(ctx, 3);
+		}
+	}
+	
 	int callbackId = -1;
 
-	CScriptHook* cbList = _this->ScriptSystem()->GetHook(hookId);
-	if (cbList != NULL)
+	CScriptHook* hook = _this->ScriptSystem()->GetHook(hookId);
+	if (hook != NULL)
 	{
-		callbackId = cbList->Add(_this, heapptr, tag);
+		callbackId = hook->Add(_this, heapptr, tag, bOnce);
 	}
 
-	duk_pop_n(ctx, 2);
+	duk_pop_n(ctx, argc);
 
 	duk_push_int(ctx, callbackId);
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_GetGPRVal(duk_context* ctx)
+duk_ret_t CScriptInstance::js_GetGPRVal(duk_context* ctx)
 {
 	int regnum = duk_to_int(ctx, 0);
 	duk_pop_n(ctx, 1);
@@ -536,7 +582,7 @@ duk_ret_t CScriptContext::js_GetGPRVal(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_SetGPRVal(duk_context* ctx)
+duk_ret_t CScriptInstance::js_SetGPRVal(duk_context* ctx)
 {
 	int regnum = duk_to_int(ctx, 0);
 	uint32_t val = duk_to_uint32(ctx, 1);
@@ -546,7 +592,7 @@ duk_ret_t CScriptContext::js_SetGPRVal(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_GetRDRAMInt(duk_context* ctx)
+duk_ret_t CScriptInstance::js_GetRDRAMInt(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);
 	int bitwidth = duk_to_int(ctx, 1);
@@ -613,7 +659,7 @@ return_err:
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_SetRDRAMInt(duk_context* ctx)
+duk_ret_t CScriptInstance::js_SetRDRAMInt(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);
 	int bitwidth = duk_to_int(ctx, 1);
@@ -659,7 +705,7 @@ return_err:
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_GetRDRAMFloat(duk_context* ctx)
+duk_ret_t CScriptInstance::js_GetRDRAMFloat(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
 
@@ -710,7 +756,7 @@ return_err:
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_SetRDRAMFloat(duk_context* ctx)
+duk_ret_t CScriptInstance::js_SetRDRAMFloat(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
 
@@ -759,7 +805,7 @@ return_err:
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_GetRDRAMBlock(duk_context* ctx)
+duk_ret_t CScriptInstance::js_GetRDRAMBlock(duk_context* ctx)
 {
 	uint32_t address = duk_get_uint(ctx, 0);
 	uint32_t size = duk_get_uint(ctx, 1);
@@ -776,7 +822,7 @@ duk_ret_t CScriptContext::js_GetRDRAMBlock(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_MsgBox(duk_context* ctx)
+duk_ret_t CScriptInstance::js_MsgBox(duk_context* ctx)
 {
 	int argc = duk_get_top(ctx);
 
@@ -796,7 +842,7 @@ duk_ret_t CScriptContext::js_MsgBox(duk_context* ctx)
 }
 
 // Return zero-terminated string from ram
-duk_ret_t CScriptContext::js_GetRDRAMString(duk_context* ctx)
+duk_ret_t CScriptInstance::js_GetRDRAMString(duk_context* ctx)
 {
 	// (address)
 	uint32_t address = duk_get_uint(ctx, 0);
@@ -823,14 +869,17 @@ duk_ret_t CScriptContext::js_GetRDRAMString(duk_context* ctx)
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ConsolePrint(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ConsolePrint(duk_context* ctx)
 {
+	CScriptInstance* _this = FetchContext(ctx);
 	const char* text = duk_to_string(ctx, 0);
+	//_this->ScriptSystem()->LogText(text);
+	//_this->ScriptSystem()->Debugger()->ScriptConsole();
 	//ConsolePrint(text);
 	return 1;
 }
 
-duk_ret_t CScriptContext::js_ConsoleClear(duk_context* ctx)
+duk_ret_t CScriptInstance::js_ConsoleClear(duk_context* ctx)
 {
 	//if (m_ScriptsWindow != NULL)
 	//{

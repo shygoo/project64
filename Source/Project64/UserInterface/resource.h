@@ -7,10 +7,8 @@
 #define VERSION_MAJOR                   2
 #define IDAPPLY                         3
 #define VERSION_MINOR                   3
-#define IDOK2                           3
-#define IDOK3                           4
-#define IDOK4                           5
 #define IDI_PJ64_Icon                   101
+#define IDC_BORDER                      101
 #define IDD_Rom_Information             104
 #define IDD_Key_Prompt                  108
 #define IDI_RIGHT                       110
@@ -62,6 +60,7 @@
 #define IDD_Debugger_Symbols            172
 #define IDD_Debugger_AddSymbol          174
 #define IDR_MEM_BP_POPUP                177
+#define IDR_JSAPI_TEXT                  181
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -255,7 +254,6 @@
 #define IDC_AUDIO_NAME                  1099
 #define IDC_ROM_REGCACHE                1099
 #define IDC_COUNTPERBYTE_TEXT           1099
-#define IDC_BORDER                      1099
 #define IDC_CONT_NAME                   1100
 #define IDC_COUNTPERBYTE                1100
 #define ID_SUPPORT_PJ64                 1100
@@ -269,31 +267,19 @@
 #define IDC_DIR_FRAME3                  1103
 #define IDC_DIR_FRAME4                  1104
 #define IDC_DIR_FRAME5                  1105
-#define IDC_TEXTBOX1                    1106
-#define IDC_TEXTBOX2                    1107
-#define IDC_TEXTBOX3                    1108
-#define IDC_TEXTBOX4                    1109
 #define IDC_MAXROMS_TXT                 1111
 #define IDC_ROMSEL_TEXT2                1112
-#define IDC_TEXTBOX5                    1112
 #define IDC_R0_EDIT                     1112
 #define IDC_MAXROMDIR_TXT               1113
-#define IDC_TEXTBOX6                    1113
 #define IDC_CMD_LIST                    1113
-#define IDC_R0_EDIT2                    1113
 #define IDC_ROMSEL_TEXT4                1114
-#define IDC_TEXTBOX7                    1114
 #define IDC_R1_EDIT                     1114
 #define IDC_GO_BTN                      1116
 #define IDC_UNMARK                      1119
-#define IDC_TEXTBOX12                   1119
-#define IDC_BUTTON1                     1119
 #define IDC_STEP_BTN                    1119
 #define IDC_ADDSYMBOL_BTN               1119
 #define IDC_NOTES                       1120
-#define IDC_TEXTBOX13                   1120
 #define IDC_CHEAT_LIST                  1121
-#define IDC_TEXTBOX14                   1121
 #define IDC_CHEAT_NAME                  1122
 #define IDC_DELAY_SI                    1123
 #define IDC_VALUE                       1124
@@ -384,17 +370,13 @@
 #define IDC_R31_EDIT                    1180
 #define IDC_HI_EDIT                     1183
 #define IDC_LO_EDIT                     1184
-#define IDC_LIST1                       1185
 #define IDC_BP_LIST                     1185
 #define IDC_CTX_INFO_EDIT               1185
-#define IDC_BUTTON2                     1186
 #define IDC_ADDBP_BTN                   1186
 #define IDC_RUN_BTN                     1186
 #define IDC_REMOVESYMBOL_BTN            1186
-#define IDC_BUTTON4                     1187
 #define IDC_RMBP_BTN                    1187
 #define IDC_CHEATSFRAME                 1188
-#define IDC_BUTTON5                     1188
 #define IDC_CLEARBP_BTN                 1188
 #define IDC_ADDCHEATSFRAME              1189
 #define IDC_CHEAT_OPTIONS               1190
@@ -408,7 +390,6 @@
 #define IDC_CART_ID                     1195
 #define IDC_MANUFACTURER                1196
 #define IDC_COUNTRY                     1197
-#define IDC_RADIO1                      1197
 #define IDC_CRC1                        1198
 #define IDC_CRC2                        1199
 #define IDC_CIC_CHIP                    1200
@@ -459,11 +440,9 @@
 #define IDC_F30_EDIT                    1234
 #define IDC_F31_EDIT                    1235
 #define IDC_SKIP_BTN                    1268
-#define IDC_EDIT1                       1271
 #define IDC_CONSOLE_EDIT                1271
 #define IDC_SEARCH_EDIT                 1271
 #define IDC_EVAL_EDIT                   1272
-#define IDC_SCRIPTS_TREE                1273
 #define IDC_PI00_EDIT                   1274
 #define IDC_PI04_EDIT                   1275
 #define IDC_PI08_EDIT                   1276
@@ -516,9 +495,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        178
+#define _APS_NEXT_RESOURCE_VALUE        182
 #define _APS_NEXT_COMMAND_VALUE         40023
 #define _APS_NEXT_CONTROL_VALUE         1298
-#define _APS_NEXT_SYMED_VALUE           101
+#define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

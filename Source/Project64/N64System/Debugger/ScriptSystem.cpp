@@ -12,7 +12,7 @@
 #include "ScriptSystem.h"
 #include "Debugger-Scripts.h"
 
-#include "ScriptContext.h"
+#include "ScriptInstance.h"
 #include "ScriptHook.h"
 
 
@@ -30,6 +30,11 @@ CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
 	RegisterHook("exec", m_HookCPUExec);
 	RegisterHook("read", m_HookCPURead);
 	RegisterHook("write", m_HookCPUWrite);
+
+	HMODULE hInst = GetModuleHandle(NULL);
+	HRSRC hRes = FindResource(hInst, MAKEINTRESOURCE(IDR_JSAPI_TEXT), "TEXT");
+	HGLOBAL hGlob = LoadResource(hInst, hRes);
+	m_APIScript = reinterpret_cast<const char*>(LockResource(hGlob));
 }
 
 CScriptSystem::~CScriptSystem()
@@ -40,9 +45,14 @@ CScriptSystem::~CScriptSystem()
 	UnregisterHooks();
 }
 
+const char* CScriptSystem::APIScript()
+{
+	return m_APIScript;
+}
+
 void CScriptSystem::RunScript(char* path)
 {
-	new CScriptContext(this, path);
+	new CScriptInstance(this, path);
 }
 
 void CScriptSystem::StopScript(char* path)
@@ -64,12 +74,17 @@ void CScriptSystem::StopScript(char* path)
 	//}
 }
 
-bool CScriptSystem::HaveCallbacksForContext(CScriptContext* scriptContext)
+bool CScriptSystem::HasCallbacksForContext(CScriptInstance* scriptInstance)
 {
-	return
-		m_HookCPUExec->HasContext(scriptContext) ||
-		m_HookCPURead->HasContext(scriptContext) ||
-		m_HookCPUWrite->HasContext(scriptContext);
+	bool result =
+		m_HookCPUExec->HasContext(scriptInstance) ||
+		m_HookCPURead->HasContext(scriptInstance) ||
+		m_HookCPUWrite->HasContext(scriptInstance);
+	if (!result)
+	{
+		MessageBox(NULL, "no callbacks", "", MB_OK);
+	}
+	return result;
 }
 
 void CScriptSystem::RegisterHook(const char* hookId, CScriptHook* cbList)

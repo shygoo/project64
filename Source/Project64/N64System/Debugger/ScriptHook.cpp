@@ -1,11 +1,17 @@
 #include <stdafx.h>
 
 #include "ScriptHook.h"
-#include "ScriptContext.h"
+#include "ScriptInstance.h"
 
-int CScriptHook::Add(CScriptContext* scriptContext, void* heapptr, uint32_t tag)
+int CScriptHook::Add(CScriptInstance* scriptInstance, void* heapptr, uint32_t param, bool bOnce)
 {
-	m_Callbacks.push_back({ scriptContext, heapptr, tag, m_NextCallbackId });
+	JSCALLBACK jsCallback;
+	jsCallback.scriptInstance = scriptInstance;
+	jsCallback.heapptr = heapptr;
+	jsCallback.callbackId = m_NextCallbackId;
+	jsCallback.param = param;
+	jsCallback.bOnce = bOnce;
+	m_Callbacks.push_back(jsCallback);
 	return m_NextCallbackId++;
 }
 
@@ -16,20 +22,20 @@ void CScriptHook::InvokeById(int callbackId)
 	{
 		if (m_Callbacks[i].callbackId == callbackId)
 		{
-			m_Callbacks[i].scriptContext->Invoke(m_Callbacks[i].heapptr);
+			m_Callbacks[i].scriptInstance->Invoke(m_Callbacks[i].heapptr);
 			return;
 		}
 	}
 }
 
-void CScriptHook::InvokeByTag(uint32_t tag)
+void CScriptHook::InvokeByParam(uint32_t param)
 {
 	int nCallbacks = m_Callbacks.size();
 	for (int i = 0; i < nCallbacks; i++)
 	{
-		if (m_Callbacks[i].tag == tag)
+		if (m_Callbacks[i].param == param)
 		{
-			m_Callbacks[i].scriptContext->Invoke(m_Callbacks[i].heapptr);
+			m_Callbacks[i].scriptInstance->Invoke(m_Callbacks[i].heapptr);
 			return;
 		}
 	}
@@ -40,7 +46,7 @@ void CScriptHook::InvokeAll()
 	int nCallbacks = m_Callbacks.size();
 	for (int i = 0; i < nCallbacks; i++)
 	{
-		m_Callbacks[i].scriptContext->Invoke(m_Callbacks[i].heapptr);
+		m_Callbacks[i].scriptInstance->Invoke(m_Callbacks[i].heapptr);
 	}
 }
 
@@ -57,12 +63,12 @@ void CScriptHook::RemoveById(int callbackId)
 	}
 }
 
-void CScriptHook::RemoveByTag(uint32_t tag)
+void CScriptHook::RemoveByParam(uint32_t param)
 {
 	int nCallbacks = m_Callbacks.size();
 	for (int i = 0; i < nCallbacks; i++)
 	{
-		if (m_Callbacks[i].tag == tag)
+		if (m_Callbacks[i].param == param)
 		{
 			m_Callbacks.erase(m_Callbacks.begin() + i);
 			return;
@@ -70,23 +76,25 @@ void CScriptHook::RemoveByTag(uint32_t tag)
 	}
 }
 
-void CScriptHook::RemoveByContext(CScriptContext* scriptContext)
+void CScriptHook::RemoveByContext(CScriptInstance* scriptInstance)
 {
 	for (int i = 0; i < m_Callbacks.size(); i++)
 	{
-		if (m_Callbacks[i].scriptContext == scriptContext)
+		if (m_Callbacks[i].scriptInstance == scriptInstance)
 		{
 			m_Callbacks.erase(m_Callbacks.begin() + i);
 		}
 	}
 }
 
-bool CScriptHook::HasContext(CScriptContext* scriptContext)
+bool CScriptHook::HasContext(CScriptInstance* scriptInstance)
 {
 	for (int i = 0; i < m_Callbacks.size(); i++)
 	{
-		if (m_Callbacks[i].scriptContext == scriptContext)
+		if (m_Callbacks[i].scriptInstance == scriptInstance)
 		{
+			stdstr msg = stdstr_f("%08X %08X", m_Callbacks[i].scriptInstance, scriptInstance);
+			MessageBox(NULL, msg.c_str(), "", MB_OK);
 			return true;
 		}
 	}

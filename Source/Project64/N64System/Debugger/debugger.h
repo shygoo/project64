@@ -67,10 +67,13 @@ public:
     void Debug_ShowScriptsWindow    ( void );
     void Debug_ShowSymbolsWindow    ( void );
 	void Debug_ShowModalAddBreakpoint ( void );
+	
+	void Debug_RefreshScriptsWindow(void);
 
 	CBreakpoints* Breakpoints();
 	CDebugSymbols* Symbols();
 	CScriptSystem* ScriptSystem();
+	CDebugScripts* ScriptConsole();
 
     static void GameReset ( CDebuggerUI * _this );
 };

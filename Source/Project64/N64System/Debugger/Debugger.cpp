@@ -202,6 +202,11 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 	m_Scripts->ShowWindow();
 }
 
+void CDebuggerUI::Debug_RefreshScriptsWindow()
+{
+	m_Scripts->RefreshList();
+}
+
 void CDebuggerUI::Debug_ShowSymbolsWindow()
 {
 	if (m_Symbols == NULL)
@@ -230,6 +235,11 @@ CScriptSystem* CDebuggerUI::ScriptSystem()
 	return m_ScriptSystem;
 }
 
+CDebugScripts* CDebuggerUI::ScriptConsole()
+{
+	return m_Scripts;
+}
+
 void CDebuggerUI::BreakpointHit()
 {
 	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
@@ -250,7 +260,7 @@ bool CDebuggerUI::CPUStepStarted()
 	uint32_t PROGRAM_COUNTER = g_Reg->m_PROGRAM_COUNTER;
 	uint32_t JumpToLocation = R4300iOp::m_JumpToLocation;
 	
-	m_ScriptSystem->HookCPUExec()->InvokeByTag(PROGRAM_COUNTER);
+	m_ScriptSystem->HookCPUExec()->InvokeByParam(PROGRAM_COUNTER);
 	
 	// PC breakpoints
 
@@ -271,7 +281,7 @@ bool CDebuggerUI::CPUStepStarted()
 
 		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
-			m_ScriptSystem->HookCPURead()->InvokeByTag(memoryAddress);
+			m_ScriptSystem->HookCPURead()->InvokeByParam(memoryAddress);
 			
 			if (m_Breakpoints->RBPExists(memoryAddress))
 			{
@@ -281,7 +291,7 @@ bool CDebuggerUI::CPUStepStarted()
 		}
 		else // Write instructions
 		{
-			m_ScriptSystem->HookCPUWrite()->InvokeByTag(memoryAddress);
+			m_ScriptSystem->HookCPUWrite()->InvokeByParam(memoryAddress);
 
 			if (m_Breakpoints->WBPExists(memoryAddress))
 			{

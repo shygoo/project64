@@ -15,7 +15,7 @@
 #include <3rdParty/duktape/duktape.h>
 
 class CScriptHook;
-class CScriptContext;
+class CScriptInstance;
 
 class CScriptSystem
 {
@@ -28,13 +28,21 @@ public:
 	// Kill a script context/thread by its path
 	void StopScript(char* path);
 
+	const char* APIScript();
+
 private:
 	typedef struct {
 		const char* hookId;
 		CScriptHook* cbList;
 	} HOOKENTRY;
 
+	CDebuggerUI* m_Debugger;
+
+	const char* m_APIScript;
+
 	vector<HOOKENTRY> m_Hooks;
+
+	vector<char*> m_LogData;
 
 	CScriptHook* m_HookCPUExec;
 	CScriptHook* m_HookCPURead;
@@ -44,9 +52,22 @@ private:
 	void UnregisterHooks();
 
 public:
-	// Returns true if any of the script hooks have callbacks for scriptContext
+	// Returns true if any of the script hooks have callbacks for scriptInstance
 
-	bool HaveCallbacksForContext(CScriptContext* scriptContext);
+	inline vector<char*>* LogData()
+	{
+		return &m_LogData;
+	}
+	
+	inline void LogText(const char* text)
+	{
+		char* newStr = (char*)malloc(strlen(text));
+		strcpy(newStr, text);
+		m_LogData.push_back(newStr);
+		m_Debugger->Debug_RefreshScriptsWindow();
+	}
+	
+	bool HasCallbacksForContext(CScriptInstance* scriptInstance);
 
 	CScriptHook* GetHook(const char* hookId);
 	

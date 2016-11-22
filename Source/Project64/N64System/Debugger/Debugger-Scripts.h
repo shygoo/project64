@@ -124,6 +124,7 @@ public:
 	void ConsoleClear();
 
 	void RefreshList();
+	void RefreshConsole();
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void)
@@ -132,10 +133,12 @@ public:
 	}
 	
 	LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnScriptListClicked(NMHDR* pNMHDR);
 
 	BEGIN_MSG_MAP_EX(CDebugScripts)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_DBLCLK, OnScriptListClicked)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 };

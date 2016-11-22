@@ -40,8 +40,6 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_EvalEdit.SetFont(monoFont);
 	m_ConsoleEdit.SetFont(monoFont);
 	
-	//m_Debugger->ScriptSystem()->RunScript("_script.js");
-
 	RefreshList();
 
 	WindowCreated();
@@ -60,6 +58,21 @@ void CDebugScripts::ConsolePrint(const char* text)
 	m_ConsoleEdit.SetWindowTextA(newText);
 }
 
+void CDebugScripts::RefreshConsole()
+{
+	m_Debugger->Debug_ShowScriptsWindow();
+	CScriptSystem* scriptSystem = m_Debugger->ScriptSystem();
+	vector<char*>* logData = scriptSystem->LogData();
+
+	while(logData->size() != 0)
+	{
+		ConsolePrint((*logData)[0]);
+		free((*logData)[0]);
+		logData->erase(logData->begin() + 0);
+	}
+
+}
+
 void CDebugScripts::ConsoleClear()
 {
 	m_ConsoleEdit.SetWindowTextA("");
@@ -68,7 +81,6 @@ void CDebugScripts::ConsoleClear()
 void CDebugScripts::RefreshList()
 {
 	CPath SearchPath("Scripts", "*");
-
 	if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
 	{
 		return;
@@ -79,7 +91,6 @@ void CDebugScripts::RefreshList()
 		stdstr scriptFileName = SearchPath.GetNameExtension();
 		m_ScriptList.AddItem(0, 0, scriptFileName.c_str());
 	} while (SearchPath.FindNext());
-
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -91,4 +102,23 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		break;
 	}
 	return FALSE;
+}
+
+LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+{
+	// Set PC breakpoint (right click, double click)
+	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	int nItem = pIA->iItem;
+
+	char scriptName[MAX_PATH];
+	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
+	
+	stdstr path = stdstr_f("Scripts/%s", scriptName);
+
+	char* t = (char*)malloc(strlen(path.c_str()));
+	strcpy(t, path.c_str());
+
+	m_Debugger->ScriptSystem()->RunScript(t);
+
+	return CDRF_DODEFAULT;
 }

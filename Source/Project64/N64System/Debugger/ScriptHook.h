@@ -2,16 +2,17 @@
 
 #include <stdafx.h>
 
-class CScriptContext;
+class CScriptInstance;
 
 class CScriptHook
 {
 private:
 	typedef struct {
-		CScriptContext* scriptContext;
+		CScriptInstance* scriptInstance;
 		void* heapptr;
-		uint32_t tag;
+		uint32_t param;
 		int callbackId;
+		bool bOnce;
 	} JSCALLBACK;
 
 	int m_NextCallbackId;
@@ -20,13 +21,13 @@ private:
 public:
 	CScriptHook();
 	~CScriptHook();
-	int Add(CScriptContext* scriptContext, void* heapptr, uint32_t tag = 0);
+	int Add(CScriptInstance* scriptInstance, void* heapptr, uint32_t tag = 0, bool bOnce = false);
 	void InvokeAll();
 	void InvokeById(int callbackId);
-	void InvokeByTag(uint32_t tag);
+	void InvokeByParam(uint32_t tag);
 	void RemoveById(int callbackId);
-	void RemoveByTag(uint32_t tag);
-	void RemoveByContext(CScriptContext* scriptContext);
-	bool HasContext(CScriptContext* scriptContext);
+	void RemoveByParam(uint32_t tag);
+	void RemoveByContext(CScriptInstance* scriptInstance);
+	bool HasContext(CScriptInstance* scriptInstance);
 	//bool HasTag(uint32_t tag);
 };

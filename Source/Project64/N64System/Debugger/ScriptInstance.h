@@ -12,7 +12,7 @@
 
 class CScriptSystem;
 
-class CScriptContext
+class CScriptInstance
 {
 	typedef enum {
 		EVT_READ,
@@ -40,8 +40,8 @@ class CScriptContext
 	} IOFD;
 
 public:
-	CScriptContext(CScriptSystem* scriptSystem, char* path);
-	~CScriptContext();
+	CScriptInstance(CScriptSystem* scriptSystem, char* path);
+	~CScriptInstance();
 
 	void Invoke(void* heapptr);
 
@@ -57,7 +57,7 @@ private:
 	vector<IOLISTENER*> m_Listeners;
 	UINT                m_NextListenerId;
 	
-	bool                m_bActive;
+	bool                m_bEventLoopRunning;
 	
 	CScriptSystem*      m_ScriptSystem;
 	CScriptSystem*      ScriptSystem();
@@ -80,17 +80,18 @@ private:
 	
 	void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
-	static DWORD CALLBACK StartScriptProc(CScriptContext* _this);
-	static void StartEventLoop(CScriptContext* _this);
+	static DWORD CALLBACK StartScriptProc(CScriptInstance* _this);
+	static void StartEventLoop(CScriptInstance* _this);
 
+	bool HasEvents();
 	bool IsActive(); // check for listeners and callbacks
 
-	// Lookup list of CScriptContext instances for static js_* functions
-	static vector<CScriptContext*> Cache;
-	static void CacheContext(CScriptContext* _this);
-	static void UncacheContext(CScriptContext* _this);
-	static CScriptContext* FetchContext(duk_context* ctx);
-	static CScriptContext* FetchContext(char* path);
+	// Lookup list of CScriptInstance instances for static js_* functions
+	static vector<CScriptInstance*> Cache;
+	static void CacheContext(CScriptInstance* _this);
+	static void UncacheContext(CScriptInstance* _this);
+	static CScriptInstance* FetchContext(duk_context* ctx);
+	static CScriptInstance* FetchContext(char* path);
 
 	// Bound functions (_native object)
 	static duk_ret_t js_ioSockCreate   (duk_context*);
