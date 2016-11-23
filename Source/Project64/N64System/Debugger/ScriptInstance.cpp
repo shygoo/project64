@@ -9,12 +9,12 @@ static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendB
 
 vector<CScriptInstance*> CScriptInstance::Cache;
 
-void CScriptInstance::CacheContext(CScriptInstance* _this)
+void CScriptInstance::CacheInstance(CScriptInstance* _this)
 {
 	Cache.push_back(_this);
 }
 
-void CScriptInstance::UncacheContext(CScriptInstance* _this)
+void CScriptInstance::UncacheInstance(CScriptInstance* _this)
 {
 	for (int i = 0; i < Cache.size(); i++)
 	{
@@ -25,43 +25,30 @@ void CScriptInstance::UncacheContext(CScriptInstance* _this)
 	}
 }
 
-CScriptInstance* CScriptInstance::FetchContext(duk_context* ctx)
+CScriptInstance* CScriptInstance::FetchInstance(duk_context* ctx)
 {
 	for (int i = 0; i < Cache.size(); i++)
 	{
-		if (Cache[i]->DuktapeContext() == ctx)
+		if (Cache[i]->DukContext() == ctx)
 		{
 			return Cache[i];
 		}
 	}
 }
 
-CScriptInstance* CScriptInstance::FetchContext(char* path)
+CScriptInstance::CScriptInstance(CScriptSystem* scriptSystem)
 {
-	for (int i = 0; i < Cache.size(); i++)
-	{
-		if (strcmp(Cache[i]->m_Path, path) == 0)
-		{
-			return Cache[i];
-		}
-	}
-}
-
-CScriptInstance::CScriptInstance(CScriptSystem* scriptSystem, char* path)
-{
-	m_Path = path;
 	m_Ctx = duk_create_heap_default();
 	m_ScriptSystem = scriptSystem;
 	m_NextListenerId = 0;
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	InitializeCriticalSection(&m_CriticalSection);
-	CacheContext(this);
-	m_hThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
+	CacheInstance(this);
 }
 
 CScriptInstance::~CScriptInstance()
 {
-	UncacheContext(this);
+	UncacheInstance(this);
 	TerminateThread(m_hThread, 0);
 	CloseHandle(m_hThread);
 	DeleteCriticalSection(&m_CriticalSection);
@@ -69,18 +56,32 @@ CScriptInstance::~CScriptInstance()
 	// todo clear callbacks/listeners
 }
 
+void CScriptInstance::Start(char* path)
+{
+	m_TempPath = path;
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
+}
+
 CScriptSystem* CScriptInstance::ScriptSystem()
 {
 	return m_ScriptSystem;
 }
 
-duk_context* CScriptInstance::DuktapeContext()
+duk_context* CScriptInstance::DukContext()
 {
 	return m_Ctx;
 }
 
+CScriptInstance::INSTANCE_STATE CScriptInstance::GetState()
+{
+	return m_State;
+}
+
 DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 {
+	_this->m_hThread = GetCurrentThread();
+	_this->m_State = STATE_STARTED;
+
 	duk_context* ctx = _this->m_Ctx;
 
 	duk_push_object(ctx);
@@ -99,9 +100,11 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 		return 0;
 	}
 
-	if (_this->m_Path)
+	if (_this->m_TempPath)
 	{
-		duk_int_t scriptresult = duk_peval_file(ctx, _this->m_Path);
+		duk_int_t scriptresult = duk_peval_file(ctx, _this->m_TempPath);
+
+		_this->m_TempPath = NULL;
 
 		if (scriptresult != 0)
 		{
@@ -110,65 +113,77 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 		}
 	}
 	
-	StartEventLoop(_this);
+	_this->StartEventLoop();
 	return 0;
 }
 
-void CScriptInstance::StartEventLoop(CScriptInstance* _this)
+CScriptInstance::EVENT_STATUS
+CScriptInstance::WaitForEvent(IOLISTENER** lpListener)
 {
-	_this->m_bEventLoopRunning = true;
+	OVERLAPPED_ENTRY usedOvlEntry;
+	ULONG nUsedOverlaps;
 
-	// Todo interrupt with an apc when an event is removed and event count is 0
+	// Wait for an IO completion or async proc call
+	BOOL status = GetQueuedCompletionStatusEx(
+		m_hIOCompletionPort,
+		&usedOvlEntry,
+		1,
+		&nUsedOverlaps,
+		INFINITE,
+		TRUE
+	);
 
-	while (_this->HasEvents())
+	if (!status)
 	{
-		OVERLAPPED_ENTRY usedOvlEntry;
-		ULONG nUsedOverlaps;
-
-		// Wait for an IO completion or async proc call
-		BOOL status = GetQueuedCompletionStatusEx(
-			_this->m_hIOCompletionPort,
-			&usedOvlEntry,
-			1,
-			&nUsedOverlaps,
-			INFINITE,
-			TRUE
-		);
-		
-		if (!status)
+		*lpListener = NULL;
+		DWORD errorCode = GetLastError();
+		if (errorCode == STATUS_USER_APC)
 		{
-			DWORD errorCode = GetLastError();
-			if (errorCode == STATUS_USER_APC)
-			{
-				continue; // Interrupted by an async proc call
-			}
-			stdstr errorMessage = stdstr_f("GetQueuedCompletionStatusEx error %d", errorCode);
-			MessageBox(NULL, errorMessage.c_str(), "", MB_OK);
-			break; // Error occurred
+			return EVENT_STATUS_INTERRUPTED;
 		}
-
-		IOLISTENER* lpListener = (IOLISTENER*)usedOvlEntry.lpOverlapped;
-		lpListener->dataLen = usedOvlEntry.dwNumberOfBytesTransferred;
-		
-		_this->InvokeListenerCallback(lpListener);
-		_this->RemoveListenerByPtr(lpListener);
+		return EVENT_STATUS_ERROR;
 	}
 
-	MessageBox(NULL, "Event loop ended", "", MB_OK);
+	*lpListener = (IOLISTENER*) usedOvlEntry.lpOverlapped;
 
-	_this->m_bEventLoopRunning = false;
+	(*lpListener)->dataLen = usedOvlEntry.dwNumberOfBytesTransferred;
+
+	return EVENT_STATUS_OK;
 }
 
-bool CScriptInstance::HasEvents()
+void CScriptInstance::StartEventLoop()
 {
-	bool result =
+	m_State = STATE_RUNNING;
+
+	// Todo interrupt with an apc when an event is removed and event count is 0
+	while (HaveEvents())
+	{
+		IOLISTENER* lpListener;
+		EVENT_STATUS status = WaitForEvent(&lpListener);
+
+		if (status == EVENT_STATUS_INTERRUPTED)
+		{
+			continue;
+		}
+
+		if (status == EVENT_STATUS_ERROR)
+		{
+			break;
+		}
+		
+		InvokeListenerCallback(lpListener);
+		RemoveListenerByPtr(lpListener);
+	}
+
+	m_State = STATE_STOPPED;
+	// Todo signal state change to scripts window
+}
+
+bool CScriptInstance::HaveEvents()
+{
+	return
 		(m_Listeners.size() > 0) ||
 		m_ScriptSystem->HasCallbacksForContext(this);
-	if (!result)
-	{
-		MessageBox(NULL, "no events", "", MB_OK);
-	}
-	return result;
 }
 
 void CScriptInstance::AddFile(HANDLE fd, bool bSocket)
@@ -230,9 +245,10 @@ HANDLE CScriptInstance::CreateSocket()
 	return fd;
 }
 
-CScriptInstance::IOLISTENER* CScriptInstance::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
+CScriptInstance::IOLISTENER*
+CScriptInstance::AddListener(HANDLE fd, IOEVENTTYPE evt, void* callback, void* data, int dataLen)
 {
-	IOLISTENER* lpListener = (IOLISTENER*)malloc(sizeof(IOLISTENER));
+	IOLISTENER* lpListener = (IOLISTENER*) malloc(sizeof(IOLISTENER));
 	memset(lpListener, 0x00, sizeof(IOLISTENER));
 
 	lpListener->id = m_NextListenerId++;
@@ -302,7 +318,7 @@ void CScriptInstance::InvokeListenerCallback(IOLISTENER* lpListener)
 
 	switch (lpListener->eventType)
 	{
-	case EVT_READ:
+	case EVENT_READ:
 		nargs = 1;
 		if (lpListener->dataLen > 0)
 		{
@@ -318,16 +334,16 @@ void CScriptInstance::InvokeListenerCallback(IOLISTENER* lpListener)
 			duk_push_null(m_Ctx);
 		}
 		break;
-	case EVT_WRITE:
+	case EVENT_WRITE:
 		nargs = 1;
 		duk_push_uint(m_Ctx, lpListener->dataLen); // num bytes written
 		break;
-	case EVT_ACCEPT:
+	case EVENT_ACCEPT:
 		// pass client socket fd to callback
 		nargs = 1;
 		duk_push_uint(m_Ctx, (UINT)lpListener->childFd);
 		break;
-	case EVT_CONNECT:
+	case EVENT_CONNECT:
 		nargs = 0;
 		break;
 	}
@@ -396,7 +412,7 @@ void CScriptInstance::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
 
 duk_ret_t CScriptInstance::js_ioSockConnect(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	const char* ipStr = duk_to_string(ctx, 1);
@@ -418,7 +434,7 @@ duk_ret_t CScriptInstance::js_ioSockConnect(duk_context* ctx)
 
 	::bind((SOCKET)fd, (SOCKADDR*)&clientAddr, sizeof(SOCKADDR));
 
-	IOLISTENER* lpListener = _this->AddListener(fd, EVT_CONNECT, callback);
+	IOLISTENER* lpListener = _this->AddListener(fd, EVENT_CONNECT, callback);
 	ConnectEx((SOCKET)fd, (SOCKADDR*)&serverAddr, sizeof(SOCKADDR), NULL, 0, NULL, (LPOVERLAPPED)lpListener);
 
 	duk_pop_n(ctx, 4);
@@ -427,7 +443,7 @@ duk_ret_t CScriptInstance::js_ioSockConnect(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ioClose(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	duk_pop(ctx);
 	_this->CloseFile(fd);
@@ -436,7 +452,7 @@ duk_ret_t CScriptInstance::js_ioClose(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ioSockCreate(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	HANDLE fd = _this->CreateSocket();
 	duk_pop_n(ctx, duk_get_top(ctx));
@@ -455,11 +471,13 @@ duk_ret_t CScriptInstance::js_ioSockListen(duk_context* ctx)
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = INADDR_ANY;
 	serverAddr.sin_port = htons(port);
+
 	if (::bind((SOCKET)fd, (SOCKADDR*)&serverAddr, sizeof(serverAddr)))
 	{
 		duk_push_boolean(ctx, false);
 		return 1;
 	}
+
 	bool listenOkay = listen((SOCKET)fd, 3) == 0;
 	duk_push_boolean(ctx, listenOkay);
 
@@ -468,14 +486,14 @@ duk_ret_t CScriptInstance::js_ioSockListen(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ioSockAccept(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	void* jsCallback = duk_get_heapptr(ctx, 1);
 
 	void* data = malloc(sizeof(SOCKADDR) * 4); // issue?
 
-	IOLISTENER* lpListener = _this->AddListener(fd, EVT_ACCEPT, jsCallback, data, 0);
+	IOLISTENER* lpListener = _this->AddListener(fd, EVENT_ACCEPT, jsCallback, data, 0);
 
 	lpListener->childFd = _this->CreateSocket();
 
@@ -496,7 +514,7 @@ duk_ret_t CScriptInstance::js_ioSockAccept(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ioRead(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	// (fd, bufferSize, callback)
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
@@ -505,7 +523,7 @@ duk_ret_t CScriptInstance::js_ioRead(duk_context* ctx)
 
 	void* data = malloc(bufferSize); // freed after event is fired
 
-	IOLISTENER* lpListener = _this->AddListener(fd, EVT_READ, jsCallback, data, bufferSize);
+	IOLISTENER* lpListener = _this->AddListener(fd, EVENT_READ, jsCallback, data, bufferSize);
 	BOOL status = ReadFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED)lpListener);
 
 	if (status == false && GetLastError() != ERROR_IO_PENDING)
@@ -519,7 +537,7 @@ duk_ret_t CScriptInstance::js_ioRead(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ioWrite(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	HANDLE fd = (HANDLE)duk_get_uint(ctx, 0);
 	duk_size_t dataLen;
@@ -530,7 +548,7 @@ duk_ret_t CScriptInstance::js_ioWrite(duk_context* ctx)
 	memcpy(data, jsData, dataLen);
 	data[dataLen] = '\0';
 
-	IOLISTENER* lpListener = _this->AddListener(fd, EVT_WRITE, jsCallback, data, dataLen);
+	IOLISTENER* lpListener = _this->AddListener(fd, EVENT_WRITE, jsCallback, data, dataLen);
 	WriteFile(fd, lpListener->data, lpListener->dataLen, NULL, (LPOVERLAPPED)lpListener);
 
 	duk_pop_n(ctx, 3);
@@ -539,7 +557,7 @@ duk_ret_t CScriptInstance::js_ioWrite(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_AddCallback(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 
 	const char* hookId;
 	void* heapptr;
@@ -871,7 +889,7 @@ duk_ret_t CScriptInstance::js_GetRDRAMString(duk_context* ctx)
 
 duk_ret_t CScriptInstance::js_ConsolePrint(duk_context* ctx)
 {
-	CScriptInstance* _this = FetchContext(ctx);
+	CScriptInstance* _this = FetchInstance(ctx);
 	const char* text = duk_to_string(ctx, 0);
 	//_this->ScriptSystem()->LogText(text);
 	//_this->ScriptSystem()->Debugger()->ScriptConsole();

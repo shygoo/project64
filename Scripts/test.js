@@ -1,2 +1,3 @@
-alert("hello world");
-console.log('hello world');
+events.onexec(0x802CB1C0, function(){
+	alert('ayy');
+});

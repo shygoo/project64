@@ -52,7 +52,37 @@ const char* CScriptSystem::APIScript()
 
 void CScriptSystem::RunScript(char* path)
 {
-	new CScriptInstance(this, path);
+	CScriptInstance* scriptInstance = new CScriptInstance(this);
+	char* pathSaved = (char*)malloc(strlen(path));
+	strcpy(pathSaved, path);
+	scriptInstance->Start(path);
+	m_RunningInstances.push_back({ path, scriptInstance });
+}
+
+void CScriptSystem::DeleteStoppedInstances()
+{
+	for (int i = 0; i < m_RunningInstances.size(); i++)
+	{
+		if (m_RunningInstances[i].scriptInstance->GetState() == CScriptInstance::STATE_STOPPED)
+		{
+			free(m_RunningInstances[i].path);
+			delete m_RunningInstances[i].scriptInstance;
+			m_RunningInstances.erase(m_RunningInstances.begin() + i);
+		}
+	}
+}
+
+CScriptInstance::INSTANCE_STATE
+CScriptSystem::GetInstanceState(char* path)
+{
+	for (int i = 0; i < m_RunningInstances.size(); i++)
+	{
+		if (strcmp(m_RunningInstances[i].path, path) == 0)
+		{
+			return m_RunningInstances[i].scriptInstance->GetState();
+		}
+	}
+	return CScriptInstance::STATE_INVALID;
 }
 
 void CScriptSystem::StopScript(char* path)
@@ -76,15 +106,10 @@ void CScriptSystem::StopScript(char* path)
 
 bool CScriptSystem::HasCallbacksForContext(CScriptInstance* scriptInstance)
 {
-	bool result =
+	return
 		m_HookCPUExec->HasContext(scriptInstance) ||
 		m_HookCPURead->HasContext(scriptInstance) ||
 		m_HookCPUWrite->HasContext(scriptInstance);
-	if (!result)
-	{
-		MessageBox(NULL, "no callbacks", "", MB_OK);
-	}
-	return result;
 }
 
 void CScriptSystem::RegisterHook(const char* hookId, CScriptHook* cbList)

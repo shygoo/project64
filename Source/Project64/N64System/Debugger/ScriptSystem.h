@@ -14,8 +14,9 @@
 #include <stdafx.h>
 #include <3rdParty/duktape/duktape.h>
 
+#include "ScriptInstance.h"
+
 class CScriptHook;
-class CScriptInstance;
 
 class CScriptSystem
 {
@@ -36,11 +37,17 @@ private:
 		CScriptHook* cbList;
 	} HOOKENTRY;
 
+	typedef struct {
+		char* path;
+		CScriptInstance* scriptInstance;
+	} INSTANCE_ENTRY;
+
 	CDebuggerUI* m_Debugger;
 
 	const char* m_APIScript;
 
 	vector<HOOKENTRY> m_Hooks;
+	vector<INSTANCE_ENTRY> m_RunningInstances;
 
 	vector<char*> m_LogData;
 
@@ -71,17 +78,20 @@ public:
 
 	CScriptHook* GetHook(const char* hookId);
 	
-	inline CScriptHook* HookCPUExec()
+	void DeleteStoppedInstances();
+	CScriptInstance::INSTANCE_STATE GetInstanceState(char* path);
+
+	CScriptHook* HookCPUExec()
 	{
 		return m_HookCPUExec;
 	}
 
-	inline CScriptHook* HookCPURead()
+	CScriptHook* HookCPURead()
 	{
 		return m_HookCPURead;
 	}
 
-	inline CScriptHook* HookCPUWrite()
+	CScriptHook* HookCPUWrite()
 	{
 		return m_HookCPUWrite;
 	}

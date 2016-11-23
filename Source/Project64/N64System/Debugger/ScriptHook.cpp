@@ -93,8 +93,6 @@ bool CScriptHook::HasContext(CScriptInstance* scriptInstance)
 	{
 		if (m_Callbacks[i].scriptInstance == scriptInstance)
 		{
-			stdstr msg = stdstr_f("%08X %08X", m_Callbacks[i].scriptInstance, scriptInstance);
-			MessageBox(NULL, msg.c_str(), "", MB_OK);
 			return true;
 		}
 	}

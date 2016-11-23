@@ -15,10 +15,10 @@ class CScriptSystem;
 class CScriptInstance
 {
 	typedef enum {
-		EVT_READ,
-		EVT_WRITE,
-		EVT_ACCEPT,
-		EVT_CONNECT
+		EVENT_READ,
+		EVENT_WRITE,
+		EVENT_ACCEPT,
+		EVENT_CONNECT
 	} IOEVENTTYPE;
 
 	typedef struct {
@@ -33,21 +33,39 @@ class CScriptInstance
 		void*       callback;
 	} IOLISTENER;
 
+	// Wrapper for file/socket descriptor and completion port
 	typedef struct {
 		HANDLE fd;
 		HANDLE iocp;
 		bool bSocket;
 	} IOFD;
+	
+	typedef enum {
+		EVENT_STATUS_OK,
+		EVENT_STATUS_INTERRUPTED,
+		EVENT_STATUS_ERROR
+	} EVENT_STATUS;
 
 public:
-	CScriptInstance(CScriptSystem* scriptSystem, char* path);
+
+	typedef enum {
+		STATE_STARTED, // initial evaluation & execution
+		STATE_RUNNING, // event loop running with pending events
+		STATE_STOPPED,  // no pending events
+		STATE_INVALID
+	} INSTANCE_STATE;
+
+	CScriptInstance(CScriptSystem* scriptSystem);
 	~CScriptInstance();
 
+	void Start(char* path);
 	void Invoke(void* heapptr);
+	INSTANCE_STATE GetState();
 
 private:
 	duk_context*        m_Ctx;
-	char*               m_Path;
+	duk_context*        DukContext();
+	char*               m_TempPath;
 	
 	HANDLE              m_hThread;
 	HANDLE              m_hIOCompletionPort;
@@ -57,12 +75,17 @@ private:
 	vector<IOLISTENER*> m_Listeners;
 	UINT                m_NextListenerId;
 	
-	bool                m_bEventLoopRunning;
-	
 	CScriptSystem*      m_ScriptSystem;
 	CScriptSystem*      ScriptSystem();
 
-	duk_context*        DuktapeContext();
+	INSTANCE_STATE      m_State;
+	
+	static DWORD CALLBACK StartScriptProc(CScriptInstance* _this);
+	void StartEventLoop();
+	bool HaveEvents();
+	EVENT_STATUS WaitForEvent(IOLISTENER** lpListener);
+
+	void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
 	void AddFile(HANDLE fd, bool bSocket = false);
 	void CloseFile(HANDLE fd);
@@ -78,21 +101,12 @@ private:
 	const char* Eval(const char* jsCode);
 	const char* EvalFile(const char* jsPath);
 	
-	void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
-
-	static DWORD CALLBACK StartScriptProc(CScriptInstance* _this);
-	static void StartEventLoop(CScriptInstance* _this);
-
-	bool HasEvents();
-	bool IsActive(); // check for listeners and callbacks
-
 	// Lookup list of CScriptInstance instances for static js_* functions
 	static vector<CScriptInstance*> Cache;
-	static void CacheContext(CScriptInstance* _this);
-	static void UncacheContext(CScriptInstance* _this);
-	static CScriptInstance* FetchContext(duk_context* ctx);
-	static CScriptInstance* FetchContext(char* path);
-
+	static void CacheInstance(CScriptInstance* _this);
+	static void UncacheInstance(CScriptInstance* _this);
+	static CScriptInstance* FetchInstance(duk_context* ctx);
+	
 	// Bound functions (_native object)
 	static duk_ret_t js_ioSockCreate   (duk_context*);
 	static duk_ret_t js_ioSockListen   (duk_context*);
