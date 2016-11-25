@@ -13,6 +13,13 @@
 #include "DebuggerUI.h"
 #include "ScriptSystem.h"
 
+class CScriptList : public CListViewCtrl
+{
+public:
+	BEGIN_MSG_MAP_EX(CScriptList)
+	END_MSG_MAP()
+};
+
 class CEditEval : public CWindowImpl<CEditEval, CEdit>
 {
 private:
@@ -112,7 +119,7 @@ class CDebugScripts :
 private:
 	CEditEval m_EvalEdit;
 	CEdit m_ConsoleEdit;
-	CListViewCtrl m_ScriptList;
+	CScriptList m_ScriptList;
 
 public:
 	enum { IDD = IDD_Debugger_Scripts };
@@ -134,11 +141,14 @@ public:
 	
 	LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnScriptListClicked(NMHDR* pNMHDR);
+	LRESULT OnScriptListCustomDraw(NMHDR* pNMHDR);
 
 	BEGIN_MSG_MAP_EX(CDebugScripts)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_DBLCLK, OnScriptListClicked)
+		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
+		CHAIN_MSG_MAP_MEMBER(m_ScriptList)
 		MSG_WM_DESTROY(OnDestroy)
 	END_MSG_MAP()
 };

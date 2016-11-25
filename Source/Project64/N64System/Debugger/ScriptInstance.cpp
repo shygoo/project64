@@ -102,8 +102,8 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 
 	if (_this->m_TempPath)
 	{
-		duk_int_t scriptresult = duk_peval_file(ctx, _this->m_TempPath);
-
+		stdstr fullPath = stdstr_f("Scripts/%s", _this->m_TempPath);
+		duk_int_t scriptresult = duk_peval_file(ctx, fullPath.c_str());
 		_this->m_TempPath = NULL;
 
 		if (scriptresult != 0)

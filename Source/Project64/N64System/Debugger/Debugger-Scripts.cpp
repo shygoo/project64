@@ -32,7 +32,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
 	m_ScriptList.AddColumn("Script", 0, 0);
 	m_ScriptList.SetColumnWidth(0, 100);
-	m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
+	m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+	m_ScriptList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 
 	m_EvalEdit.Attach(GetDlgItem(IDC_EVAL_EDIT));
 	m_ConsoleEdit.Attach(GetDlgItem(IDC_CONSOLE_EDIT));
@@ -70,7 +71,6 @@ void CDebugScripts::RefreshConsole()
 		free((*logData)[0]);
 		logData->erase(logData->begin() + 0);
 	}
-
 }
 
 void CDebugScripts::ConsoleClear()
@@ -81,6 +81,7 @@ void CDebugScripts::ConsoleClear()
 void CDebugScripts::RefreshList()
 {
 	CPath SearchPath("Scripts", "*");
+
 	if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
 	{
 		return;
@@ -113,12 +114,43 @@ LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 	char scriptName[MAX_PATH];
 	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
 	
-	stdstr path = stdstr_f("Scripts/%s", scriptName);
+	m_Debugger->ScriptSystem()->RunScript(scriptName);
 
-	char* t = (char*)malloc(strlen(path.c_str()));
-	strcpy(t, path.c_str());
+	return CDRF_DODEFAULT;
+}
 
-	m_Debugger->ScriptSystem()->RunScript(t);
+LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
+{
+	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
+	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
 
+	switch (drawStage)
+	{
+		case CDDS_PREPAINT:
+			return CDRF_NOTIFYITEMDRAW;
+		case CDDS_ITEMPREPAINT:
+			return CDRF_NOTIFYSUBITEMDRAW;
+		case (CDDS_ITEMPREPAINT | CDDS_SUBITEM):
+			break;
+		default:
+			return CDRF_DODEFAULT;
+	}
+
+	DWORD nItem = pLVCD->nmcd.dwItemSpec;
+
+	char scriptName[MAX_PATH];
+	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
+
+	CScriptInstance::INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
+
+	if (state == CScriptInstance::STATE_STARTED)
+	{
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+	}
+	else if (state == CScriptInstance::STATE_RUNNING)
+	{
+		pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
+	}
+	
 	return CDRF_DODEFAULT;
 }

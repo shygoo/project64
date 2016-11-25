@@ -15,7 +15,6 @@
 #include "ScriptInstance.h"
 #include "ScriptHook.h"
 
-
 /////////////////// CScriptSystem
 
 CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
@@ -53,10 +52,10 @@ const char* CScriptSystem::APIScript()
 void CScriptSystem::RunScript(char* path)
 {
 	CScriptInstance* scriptInstance = new CScriptInstance(this);
-	char* pathSaved = (char*)malloc(strlen(path));
+	char* pathSaved = (char*)malloc(strlen(path)); // freed via DeleteStoppedInstances
 	strcpy(pathSaved, path);
-	scriptInstance->Start(path);
-	m_RunningInstances.push_back({ path, scriptInstance });
+	m_RunningInstances.push_back({ pathSaved, scriptInstance });
+	scriptInstance->Start(pathSaved);
 }
 
 void CScriptSystem::DeleteStoppedInstances()
@@ -77,6 +76,7 @@ CScriptSystem::GetInstanceState(char* path)
 {
 	for (int i = 0; i < m_RunningInstances.size(); i++)
 	{
+		//MessageBox(NULL, m_RunningInstances[i].path, path, MB_OK);
 		if (strcmp(m_RunningInstances[i].path, path) == 0)
 		{
 			return m_RunningInstances[i].scriptInstance->GetState();
