@@ -36,10 +36,11 @@ CScriptInstance* CScriptInstance::FetchInstance(duk_context* ctx)
 	}
 }
 
-CScriptInstance::CScriptInstance(CScriptSystem* scriptSystem)
+CScriptInstance::CScriptInstance(CDebuggerUI* debugger)
 {
+	m_Debugger = debugger;
 	m_Ctx = duk_create_heap_default();
-	m_ScriptSystem = scriptSystem;
+	m_ScriptSystem = debugger->ScriptSystem();
 	m_NextListenerId = 0;
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	InitializeCriticalSection(&m_CriticalSection);
@@ -62,10 +63,11 @@ void CScriptInstance::Start(char* path)
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
 }
 
+/*
 CScriptSystem* CScriptInstance::ScriptSystem()
 {
 	return m_ScriptSystem;
-}
+}*/
 
 duk_context* CScriptInstance::DukContext()
 {
@@ -81,6 +83,7 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 {
 	_this->m_hThread = GetCurrentThread();
 	_this->m_State = STATE_STARTED;
+	//_this->StateChanged();
 
 	duk_context* ctx = _this->m_Ctx;
 
@@ -90,10 +93,11 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 	duk_put_function_list(ctx, -1, NativeFunctions);
 	duk_pop(ctx);
 	
+	MessageBox(NULL, "Fetching api script (broken?)", "", MB_OK);
 	const char* apiScript = _this->m_ScriptSystem->APIScript();
 	
 	duk_int_t apiresult = duk_peval_string(ctx, apiScript);
-	
+
 	if (apiresult != 0)
 	{
 		MessageBox(NULL, duk_safe_to_string(ctx, -1), "API Script Error", MB_OK | MB_ICONERROR);
@@ -113,8 +117,41 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 		}
 	}
 	
-	_this->StartEventLoop();
+	if (_this->HaveEvents())
+	{
+		_this->StartEventLoop();
+	}
+	
 	return 0;
+}
+
+void CScriptInstance::StartEventLoop()
+{
+	m_State = STATE_RUNNING;
+	//StateChanged();
+
+	// Todo interrupt with an apc when an event is removed and event count is 0
+	while (HaveEvents())
+	{
+		IOLISTENER* lpListener;
+		EVENT_STATUS status = WaitForEvent(&lpListener);
+
+		if (status == EVENT_STATUS_INTERRUPTED)
+		{
+			continue;
+		}
+
+		if (status == EVENT_STATUS_ERROR)
+		{
+			break;
+		}
+
+		InvokeListenerCallback(lpListener);
+		RemoveListenerByPtr(lpListener);
+	}
+
+	m_State = STATE_STOPPED;
+	//StateChanged();
 }
 
 CScriptInstance::EVENT_STATUS
@@ -151,32 +188,11 @@ CScriptInstance::WaitForEvent(IOLISTENER** lpListener)
 	return EVENT_STATUS_OK;
 }
 
-void CScriptInstance::StartEventLoop()
+void CScriptInstance::StateChanged()
 {
-	m_State = STATE_RUNNING;
-
-	// Todo interrupt with an apc when an event is removed and event count is 0
-	while (HaveEvents())
-	{
-		IOLISTENER* lpListener;
-		EVENT_STATUS status = WaitForEvent(&lpListener);
-
-		if (status == EVENT_STATUS_INTERRUPTED)
-		{
-			continue;
-		}
-
-		if (status == EVENT_STATUS_ERROR)
-		{
-			break;
-		}
-		
-		InvokeListenerCallback(lpListener);
-		RemoveListenerByPtr(lpListener);
-	}
-
-	m_State = STATE_STOPPED;
-	// Todo signal state change to scripts window
+	// refresh scripts window
+	// todo mutex might be needed here
+	m_Debugger->Debug_RefreshScriptsWindow();
 }
 
 bool CScriptInstance::HaveEvents()
@@ -580,7 +596,7 @@ duk_ret_t CScriptInstance::js_AddCallback(duk_context* ctx)
 	
 	int callbackId = -1;
 
-	CScriptHook* hook = _this->ScriptSystem()->GetHook(hookId);
+	CScriptHook* hook = _this->m_ScriptSystem->GetHook(hookId);
 	if (hook != NULL)
 	{
 		callbackId = hook->Add(_this, heapptr, tag, bOnce);

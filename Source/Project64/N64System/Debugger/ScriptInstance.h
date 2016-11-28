@@ -55,7 +55,7 @@ public:
 		STATE_INVALID
 	} INSTANCE_STATE;
 
-	CScriptInstance(CScriptSystem* scriptSystem);
+	CScriptInstance(CDebuggerUI* debugger);
 	~CScriptInstance();
 
 	void Start(char* path);
@@ -75,11 +75,14 @@ private:
 	vector<IOLISTENER*> m_Listeners;
 	UINT                m_NextListenerId;
 	
+	CDebuggerUI*        m_Debugger;
+
 	CScriptSystem*      m_ScriptSystem;
-	CScriptSystem*      ScriptSystem();
 
 	INSTANCE_STATE      m_State;
 	
+	void StateChanged();
+
 	static DWORD CALLBACK StartScriptProc(CScriptInstance* _this);
 	void StartEventLoop();
 	bool HaveEvents();

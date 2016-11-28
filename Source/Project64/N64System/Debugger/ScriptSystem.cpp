@@ -51,10 +51,12 @@ const char* CScriptSystem::APIScript()
 
 void CScriptSystem::RunScript(char* path)
 {
-	CScriptInstance* scriptInstance = new CScriptInstance(this);
+	MessageBox(NULL, "Creating instance", "", MB_OK);
+	CScriptInstance* scriptInstance = new CScriptInstance(m_Debugger);
 	char* pathSaved = (char*)malloc(strlen(path)); // freed via DeleteStoppedInstances
 	strcpy(pathSaved, path);
 	m_RunningInstances.push_back({ pathSaved, scriptInstance });
+	MessageBox(NULL, "starting instance", "", MB_OK);
 	scriptInstance->Start(pathSaved);
 }
 
