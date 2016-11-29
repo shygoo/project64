@@ -40,7 +40,7 @@ CScriptInstance::CScriptInstance(CDebuggerUI* debugger)
 {
 	m_Debugger = debugger;
 	m_Ctx = duk_create_heap_default();
-	m_ScriptSystem = debugger->ScriptSystem();
+	m_ScriptSystem = m_Debugger->ScriptSystem();
 	m_NextListenerId = 0;
 	m_hIOCompletionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	InitializeCriticalSection(&m_CriticalSection);
@@ -50,8 +50,8 @@ CScriptInstance::CScriptInstance(CDebuggerUI* debugger)
 CScriptInstance::~CScriptInstance()
 {
 	UncacheInstance(this);
-	TerminateThread(m_hThread, 0);
-	CloseHandle(m_hThread);
+	//TerminateThread(m_hThread, 0);
+	//CloseHandle(m_hThread);
 	DeleteCriticalSection(&m_CriticalSection);
 	duk_destroy_heap(m_Ctx);
 	// todo clear callbacks/listeners
@@ -60,14 +60,8 @@ CScriptInstance::~CScriptInstance()
 void CScriptInstance::Start(char* path)
 {
 	m_TempPath = path;
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartScriptProc, this, 0, NULL);
+	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartThread, this, 0, NULL);
 }
-
-/*
-CScriptSystem* CScriptInstance::ScriptSystem()
-{
-	return m_ScriptSystem;
-}*/
 
 duk_context* CScriptInstance::DukContext()
 {
@@ -79,13 +73,31 @@ CScriptInstance::INSTANCE_STATE CScriptInstance::GetState()
 	return m_State;
 }
 
-DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
+void CScriptInstance::SetState(CScriptInstance::INSTANCE_STATE state)
 {
-	_this->m_hThread = GetCurrentThread();
-	_this->m_State = STATE_STARTED;
-	//_this->StateChanged();
+	m_State = state;
+	StateChanged();
+}
 
-	duk_context* ctx = _this->m_Ctx;
+void CScriptInstance::StateChanged()
+{
+	// todo mutex might be needed here
+	m_Debugger->Debug_RefreshScriptsWindow();
+	m_ScriptSystem->DeleteStoppedInstances();
+}
+
+DWORD CALLBACK CScriptInstance::StartThread(CScriptInstance* _this)
+{
+	_this->StartScriptProc();
+	return 0;
+}
+
+void CScriptInstance::StartScriptProc()
+{
+	m_hThread = GetCurrentThread();
+	SetState(STATE_STARTED);
+	
+	duk_context* ctx = m_Ctx;
 
 	duk_push_object(ctx);
 	duk_put_global_string(ctx, "_native");
@@ -93,42 +105,42 @@ DWORD CALLBACK CScriptInstance::StartScriptProc(CScriptInstance* _this)
 	duk_put_function_list(ctx, -1, NativeFunctions);
 	duk_pop(ctx);
 	
-	MessageBox(NULL, "Fetching api script (broken?)", "", MB_OK);
-	const char* apiScript = _this->m_ScriptSystem->APIScript();
-	
+	const char* apiScript = m_ScriptSystem->APIScript();
+
 	duk_int_t apiresult = duk_peval_string(ctx, apiScript);
 
 	if (apiresult != 0)
 	{
 		MessageBox(NULL, duk_safe_to_string(ctx, -1), "API Script Error", MB_OK | MB_ICONERROR);
-		return 0;
+		return;
 	}
 
-	if (_this->m_TempPath)
+	if (m_TempPath)
 	{
-		stdstr fullPath = stdstr_f("Scripts/%s", _this->m_TempPath);
+		stdstr fullPath = stdstr_f("Scripts/%s", m_TempPath);
 		duk_int_t scriptresult = duk_peval_file(ctx, fullPath.c_str());
-		_this->m_TempPath = NULL;
+		m_TempPath = NULL;
 
 		if (scriptresult != 0)
 		{
 			MessageBox(NULL, duk_safe_to_string(ctx, -1), "Script error", MB_OK | MB_ICONWARNING);
-			return 0;
+			return;
 		}
 	}
-	
-	if (_this->HaveEvents())
+
+	if (HaveEvents())
 	{
-		_this->StartEventLoop();
+		StartEventLoop();
 	}
-	
-	return 0;
+	else
+	{
+		SetState(STATE_STOPPED);
+	}
 }
 
 void CScriptInstance::StartEventLoop()
 {
-	m_State = STATE_RUNNING;
-	//StateChanged();
+	SetState(STATE_RUNNING);
 
 	// Todo interrupt with an apc when an event is removed and event count is 0
 	while (HaveEvents())
@@ -147,11 +159,10 @@ void CScriptInstance::StartEventLoop()
 		}
 
 		InvokeListenerCallback(lpListener);
-		RemoveListenerByPtr(lpListener);
+		RemoveListener(lpListener);
 	}
 
-	m_State = STATE_STOPPED;
-	//StateChanged();
+	SetState(STATE_STOPPED);
 }
 
 CScriptInstance::EVENT_STATUS
@@ -186,13 +197,6 @@ CScriptInstance::WaitForEvent(IOLISTENER** lpListener)
 	(*lpListener)->dataLen = usedOvlEntry.dwNumberOfBytesTransferred;
 
 	return EVENT_STATUS_OK;
-}
-
-void CScriptInstance::StateChanged()
-{
-	// refresh scripts window
-	// todo mutex might be needed here
-	m_Debugger->Debug_RefreshScriptsWindow();
 }
 
 bool CScriptInstance::HaveEvents()
@@ -296,7 +300,7 @@ void CScriptInstance::RemoveListenerByIndex(UINT index)
 }
 
 // Free listener & its buffer, remove from list
-void CScriptInstance::RemoveListenerByPtr(IOLISTENER* lpListener)
+void CScriptInstance::RemoveListener(IOLISTENER* lpListener)
 {
 	for (UINT i = 0; i < m_Listeners.size(); i++)
 	{

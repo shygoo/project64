@@ -22,6 +22,8 @@ CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
+	m_Debugger = debugger;
+
 	m_HookCPUExec = new CScriptHook();
 	m_HookCPURead = new CScriptHook();
 	m_HookCPUWrite = new CScriptHook();
@@ -32,6 +34,7 @@ CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
 
 	HMODULE hInst = GetModuleHandle(NULL);
 	HRSRC hRes = FindResource(hInst, MAKEINTRESOURCE(IDR_JSAPI_TEXT), "TEXT");
+	
 	HGLOBAL hGlob = LoadResource(hInst, hRes);
 	m_APIScript = reinterpret_cast<const char*>(LockResource(hGlob));
 }
@@ -51,12 +54,10 @@ const char* CScriptSystem::APIScript()
 
 void CScriptSystem::RunScript(char* path)
 {
-	MessageBox(NULL, "Creating instance", "", MB_OK);
 	CScriptInstance* scriptInstance = new CScriptInstance(m_Debugger);
 	char* pathSaved = (char*)malloc(strlen(path)); // freed via DeleteStoppedInstances
 	strcpy(pathSaved, path);
 	m_RunningInstances.push_back({ pathSaved, scriptInstance });
-	MessageBox(NULL, "starting instance", "", MB_OK);
 	scriptInstance->Start(pathSaved);
 }
 
@@ -67,8 +68,10 @@ void CScriptSystem::DeleteStoppedInstances()
 		if (m_RunningInstances[i].scriptInstance->GetState() == CScriptInstance::STATE_STOPPED)
 		{
 			free(m_RunningInstances[i].path);
-			delete m_RunningInstances[i].scriptInstance;
+			CScriptInstance* instance = m_RunningInstances[i].scriptInstance;
+			delete instance;
 			m_RunningInstances.erase(m_RunningInstances.begin() + i);
+			i--;
 		}
 	}
 }

@@ -81,12 +81,14 @@ private:
 
 	INSTANCE_STATE      m_State;
 	
-	void StateChanged();
-
-	static DWORD CALLBACK StartScriptProc(CScriptInstance* _this);
+	static DWORD CALLBACK StartThread(CScriptInstance* _this);
+	void StartScriptProc();
 	void StartEventLoop();
 	bool HaveEvents();
 	EVENT_STATUS WaitForEvent(IOLISTENER** lpListener);
+
+	void SetState(INSTANCE_STATE state);
+	void StateChanged();
 
 	void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 
@@ -96,8 +98,8 @@ private:
 	HANDLE CreateSocket();
 	
 	IOLISTENER* AddListener(HANDLE fd, IOEVENTTYPE evt, void* jsCallback, void* data = NULL, int dataLen = 0);
+	void RemoveListener(IOLISTENER* lpListener);
 	void RemoveListenerByIndex(UINT index);
-	void RemoveListenerByPtr(IOLISTENER* lpListener);
 	void RemoveListenersByFd(HANDLE fd);
 	void InvokeListenerCallback(IOLISTENER* lpListener);
 	

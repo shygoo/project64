@@ -204,8 +204,7 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 
 void CDebuggerUI::Debug_RefreshScriptsWindow()
 {
-	//m_Scripts->RefreshList();
-	//m_Scripts->Invalidate(true); // repaint (updates script list colors)
+	m_Scripts->RefreshList();
 }
 
 void CDebuggerUI::Debug_ShowSymbolsWindow()

@@ -80,6 +80,8 @@ void CDebugScripts::ConsoleClear()
 
 void CDebugScripts::RefreshList()
 {
+	m_ScriptList.SetRedraw(false);
+	m_ScriptList.DeleteAllItems();
 	CPath SearchPath("Scripts", "*");
 
 	if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
@@ -92,6 +94,8 @@ void CDebugScripts::RefreshList()
 		stdstr scriptFileName = SearchPath.GetNameExtension();
 		m_ScriptList.AddItem(0, 0, scriptFileName.c_str());
 	} while (SearchPath.FindNext());
+	m_ScriptList.SetRedraw(true);
+	m_ScriptList.Invalidate();
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
