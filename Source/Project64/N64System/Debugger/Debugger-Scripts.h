@@ -27,84 +27,23 @@ private:
 	static const int HISTORY_MAX_ENTRIES = 20;
 	vector<char*> m_History;
 	int m_HistoryIdx;
+	CDebugScripts* m_ScriptWindow;
 
 public:
-	static void CALLBACK EvalAsync(ULONG_PTR lpJsCode)
-	{
-		//const char* jsCode = (const char*)lpJsCode;
-		//int result = duk_peval_string(CScriptSystem::m_Ctx, jsCode);
-		//const char* msg = duk_safe_to_string(CScriptSystem::m_Ctx, -1);
-		//CScriptSystem::ConsolePrint(msg);
-		//CScriptSystem::ConsolePrint("\r\n");
-		//duk_pop(CScriptSystem::m_Ctx);
-	}
-
-	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-	{
-		if (wParam == VK_UP)
-		{
-			if (m_HistoryIdx > 0)
-			{
-				char* code = m_History[--m_HistoryIdx];
-				SetWindowTextA(code);
-				int selEnd = strlen(code);
-				SetSel(selEnd, selEnd);
-			}
-		}
-		else if (wParam == VK_DOWN)
-		{
-			int size = m_History.size();
-			if (m_HistoryIdx < size - 1)
-			{
-				char* code = m_History[++m_HistoryIdx];
-				SetWindowTextA(code);
-				int selEnd = strlen(code);
-				SetSel(selEnd, selEnd);
-			}
-			else if(m_HistoryIdx < size)
-			{
-				SetWindowTextA("");
-				m_HistoryIdx++;
-			}
-		}
-		else if (wParam == VK_RETURN)
-		{
-			size_t codeLength = GetWindowTextLength() + 1;
-			char* code = (char*)malloc(codeLength);
-			GetWindowTextA(code, codeLength);
-			//CScriptSystem::QueueAPC(EvalAsync, (ULONG_PTR)code); // code mem freed here
-			SetWindowTextA("");
-			int historySize = m_History.size();
-			
-			// remove duplicate
-			for (int i = 0; i < historySize; i++)
-			{
-				if (strcmp(code, m_History[i]) == 0)
-				{
-					free(m_History[i]);
-					m_History.erase(m_History.begin() + i);
-					historySize--;
-					break;
-				}
-			}
-
-			// remove oldest if maxed
-			if (historySize >= HISTORY_MAX_ENTRIES)
-			{
-				m_History.erase(m_History.begin() + 0);
-				historySize--;
-			}
-			
-			m_History.push_back(code);
-			m_HistoryIdx = ++historySize;
-		}
-		bHandled = FALSE;
-		return 0;
-	}
-
-	BOOL Attach(HWND hWndNew)
+	CEditEval()
 	{
 		m_HistoryIdx = 0;
+	}
+	
+	void SetScriptWindow(CDebugScripts* scriptWindow)
+	{
+		m_ScriptWindow = scriptWindow;
+	}
+
+	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	
+	BOOL Attach(HWND hWndNew)
+	{
 		return SubclassWindow(hWndNew);
 	}
 
@@ -120,6 +59,7 @@ private:
 	CEditEval m_EvalEdit;
 	CEdit m_ConsoleEdit;
 	CScriptList m_ScriptList;
+	char* m_SelectedScriptName;
 
 public:
 	enum { IDD = IDD_Debugger_Scripts };
@@ -132,6 +72,8 @@ public:
 
 	void RefreshList();
 	void RefreshConsole();
+
+	void EvaluateInSelectedInstance(char* code);
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void)

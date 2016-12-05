@@ -79,7 +79,7 @@ public:
 	CScriptHook* GetHook(const char* hookId);
 	
 	void DeleteStoppedInstances();
-	CScriptInstance::INSTANCE_STATE GetInstanceState(char* path);
+	INSTANCE_STATE GetInstanceState(char* path);
 
 	CScriptHook* HookCPUExec()
 	{

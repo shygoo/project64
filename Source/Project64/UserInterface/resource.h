@@ -464,6 +464,7 @@
 #define IDC_OPCODE_BOX                  1295
 #define IDC_NAME_EDIT                   1296
 #define IDC_SCRIPT_LIST                 1297
+#define IDC_EDIT1                       1298
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -497,7 +498,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        182
 #define _APS_NEXT_COMMAND_VALUE         40023
-#define _APS_NEXT_CONTROL_VALUE         1298
+#define _APS_NEXT_CONTROL_VALUE         1299
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

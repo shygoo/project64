@@ -68,12 +68,12 @@ duk_context* CScriptInstance::DukContext()
 	return m_Ctx;
 }
 
-CScriptInstance::INSTANCE_STATE CScriptInstance::GetState()
+INSTANCE_STATE CScriptInstance::GetState()
 {
 	return m_State;
 }
 
-void CScriptInstance::SetState(CScriptInstance::INSTANCE_STATE state)
+void CScriptInstance::SetState(INSTANCE_STATE state)
 {
 	m_State = state;
 	StateChanged();

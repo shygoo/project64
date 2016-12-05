@@ -36,6 +36,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_ScriptList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 
 	m_EvalEdit.Attach(GetDlgItem(IDC_EVAL_EDIT));
+	m_EvalEdit.SetScriptWindow(this);
+
 	m_ConsoleEdit.Attach(GetDlgItem(IDC_CONSOLE_EDIT));
 
 	m_EvalEdit.SetFont(monoFont);
@@ -111,15 +113,24 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 
 LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 {
-	// Set PC breakpoint (right click, double click)
+	// Run script on double click
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
 
 	char scriptName[MAX_PATH];
 	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
 	
-	m_Debugger->ScriptSystem()->RunScript(scriptName);
+	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
 
+	if (state == STATE_INVALID || state == STATE_STOPPED)
+	{
+		m_Debugger->ScriptSystem()->RunScript(scriptName);
+	}
+	else
+	{
+		MessageBox("Script is already running", "Error", MB_OK | MB_ICONWARNING);
+	}
+	
 	return CDRF_DODEFAULT;
 }
 
@@ -145,16 +156,100 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
 	char scriptName[MAX_PATH];
 	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
 
-	CScriptInstance::INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
+	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
 
-	if (state == CScriptInstance::STATE_STARTED)
+	if (state == STATE_STARTED)
 	{
 		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
 	}
-	else if (state == CScriptInstance::STATE_RUNNING)
+	else if (state == STATE_RUNNING)
 	{
 		pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
 	}
 	
 	return CDRF_DODEFAULT;
+}
+
+void CDebugScripts::EvaluateInSelectedInstance(char* code)
+{
+	int textLength = m_ScriptList.GetWindowTextLengthA();
+	char* text = (char*)malloc(textLength + 1);
+
+	m_ScriptList.GetWindowTextA(text, textLength);
+
+	MessageBox(text, text, MB_OK);
+
+	free(text);
+}
+
+// Console input
+LRESULT CEditEval::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (wParam == VK_UP)
+	{
+		if (m_HistoryIdx > 0)
+		{
+			char* code = m_History[--m_HistoryIdx];
+			SetWindowTextA(code);
+			int selEnd = strlen(code);
+			SetSel(selEnd, selEnd);
+		}
+	}
+	else if (wParam == VK_DOWN)
+	{
+		int size = m_History.size();
+		if (m_HistoryIdx < size - 1)
+		{
+			char* code = m_History[++m_HistoryIdx];
+			SetWindowTextA(code);
+			int selEnd = strlen(code);
+			SetSel(selEnd, selEnd);
+		}
+		else if (m_HistoryIdx < size)
+		{
+			SetWindowTextA("");
+			m_HistoryIdx++;
+		}
+	}
+	else if (wParam == VK_RETURN)
+	{
+		if (m_ScriptWindow == NULL)
+		{
+			bHandled = FALSE;
+			return 0;
+		}
+
+		size_t codeLength = GetWindowTextLength() + 1;
+		char* code = (char*)malloc(codeLength);
+		GetWindowTextA(code, codeLength);
+		
+		m_ScriptWindow->EvaluateInSelectedInstance(code);
+		
+		SetWindowTextA("");
+		int historySize = m_History.size();
+
+		// remove duplicate
+		for (int i = 0; i < historySize; i++)
+		{
+			if (strcmp(code, m_History[i]) == 0)
+			{
+				free(m_History[i]);
+				m_History.erase(m_History.begin() + i);
+				historySize--;
+				break;
+			}
+		}
+
+		// remove oldest if maxed
+		if (historySize >= HISTORY_MAX_ENTRIES)
+		{
+			m_History.erase(m_History.begin() + 0);
+			historySize--;
+		}
+
+		m_History.push_back(code);
+		m_HistoryIdx = ++historySize;
+	}
+	bHandled = FALSE;
+	return 0;
 }

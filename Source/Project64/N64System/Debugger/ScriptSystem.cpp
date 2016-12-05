@@ -65,7 +65,7 @@ void CScriptSystem::DeleteStoppedInstances()
 {
 	for (int i = 0; i < m_RunningInstances.size(); i++)
 	{
-		if (m_RunningInstances[i].scriptInstance->GetState() == CScriptInstance::STATE_STOPPED)
+		if (m_RunningInstances[i].scriptInstance->GetState() == STATE_STOPPED)
 		{
 			free(m_RunningInstances[i].path);
 			CScriptInstance* instance = m_RunningInstances[i].scriptInstance;
@@ -76,8 +76,7 @@ void CScriptSystem::DeleteStoppedInstances()
 	}
 }
 
-CScriptInstance::INSTANCE_STATE
-CScriptSystem::GetInstanceState(char* path)
+INSTANCE_STATE CScriptSystem::GetInstanceState(char* path)
 {
 	for (int i = 0; i < m_RunningInstances.size(); i++)
 	{
@@ -87,7 +86,7 @@ CScriptSystem::GetInstanceState(char* path)
 			return m_RunningInstances[i].scriptInstance->GetState();
 		}
 	}
-	return CScriptInstance::STATE_INVALID;
+	return STATE_INVALID;
 }
 
 void CScriptSystem::StopScript(char* path)

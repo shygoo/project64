@@ -12,6 +12,13 @@
 
 class CScriptSystem;
 
+typedef enum {
+	STATE_STARTED, // initial evaluation & execution
+	STATE_RUNNING, // event loop running with pending events
+	STATE_STOPPED,  // no pending events
+	STATE_INVALID
+} INSTANCE_STATE;
+
 class CScriptInstance
 {
 	typedef enum {
@@ -47,14 +54,7 @@ class CScriptInstance
 	} EVENT_STATUS;
 
 public:
-
-	typedef enum {
-		STATE_STARTED, // initial evaluation & execution
-		STATE_RUNNING, // event loop running with pending events
-		STATE_STOPPED,  // no pending events
-		STATE_INVALID
-	} INSTANCE_STATE;
-
+	
 	CScriptInstance(CDebuggerUI* debugger);
 	~CScriptInstance();
 
