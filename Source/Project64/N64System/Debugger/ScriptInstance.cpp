@@ -391,6 +391,41 @@ const char* CScriptInstance::Eval(const char* jsCode)
 	return msg;
 }
 
+class PendingEval {
+	char* m_CodeCopy;
+	CScriptInstance* m_ScriptInstance;
+public:
+	PendingEval(CScriptInstance* instance, const char* jsCode)
+	{
+		m_CodeCopy = (char*)malloc(strlen(jsCode));
+		m_ScriptInstance = instance;
+		MessageBox(NULL, "pending eval created", "", MB_OK);
+	}
+	~PendingEval()
+	{
+		MessageBox(NULL, "pending eval deleted", "", MB_OK);
+		free(m_CodeCopy);
+	}
+	void Run()
+	{
+		MessageBox(NULL, "pending eval invoked", "", MB_OK);
+		m_ScriptInstance->Eval(m_CodeCopy);
+	}
+};
+
+void CScriptInstance::EvalAsync(const char* jsCode)
+{
+	PendingEval* pendingEval = new PendingEval(this, jsCode);
+	QueueAPC(EvalAsyncCallback, (ULONG_PTR)pendingEval);
+}
+
+void CALLBACK CScriptInstance::EvalAsyncCallback(ULONG_PTR _pendingEval)
+{
+	PendingEval* evalWait = (PendingEval*)_pendingEval;
+	evalWait->Run();
+	delete evalWait;
+}
+
 const char* CScriptInstance::EvalFile(const char* jsPath)
 {
 	int result = duk_peval_file(m_Ctx, jsPath);
@@ -424,6 +459,7 @@ void CScriptInstance::QueueAPC(PAPCFUNC userProc, ULONG_PTR param)
 {
 	if (m_hThread != NULL)
 	{
+		MessageBox(NULL, "apc queued", "", MB_OK);
 		QueueUserAPC(userProc, m_hThread, param);
 	}
 }

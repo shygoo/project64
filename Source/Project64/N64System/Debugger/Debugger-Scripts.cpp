@@ -18,7 +18,13 @@
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
 CDebugDialog<CDebugScripts>(debugger)
 {
+	m_SelectedScriptName = (char*)malloc(MAX_PATH);
 	//CScriptSystem::SetScriptsWindow(this);
+}
+
+CDebugScripts::~CDebugScripts(void)
+{
+	free(m_SelectedScriptName);
 }
 
 LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -29,6 +35,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 		CLEARTYPE_QUALITY, FF_DONTCARE, "Consolas"
 	);
 	
+	m_InstanceInfoEdit.Attach(GetDlgItem(IDC_CTX_INFO_EDIT));
+
 	m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
 	m_ScriptList.AddColumn("Script", 0, 0);
 	m_ScriptList.SetColumnWidth(0, 100);
@@ -111,7 +119,7 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	return FALSE;
 }
 
-LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 {
 	// Run script on double click
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
@@ -131,6 +139,41 @@ LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 		MessageBox("Script is already running", "Error", MB_OK | MB_ICONWARNING);
 	}
 	
+	return CDRF_DODEFAULT;
+}
+
+LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+{
+	// Select instance for console input
+	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	int nItem = pIA->iItem;
+	
+	m_ScriptList.GetItemText(nItem, 0, m_SelectedScriptName, MAX_PATH);
+	
+	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
+
+	char* szState;
+	switch (state)
+	{
+	case STATE_RUNNING:	szState = "Running"; break;
+	case STATE_STARTED: szState = "Started"; break;
+	case STATE_STOPPED: szState = "Stopped"; break;
+	case STATE_INVALID: szState = "Not running"; break;
+	}
+
+	stdstr instanceInfo = stdstr_f("%s (%s)", m_SelectedScriptName, szState);
+
+	m_InstanceInfoEdit.SetWindowTextA(instanceInfo.c_str());
+
+	if (state == STATE_STOPPED || state == STATE_INVALID)
+	{
+		m_EvalEdit.EnableWindow(FALSE);
+	}
+	else
+	{
+		m_EvalEdit.EnableWindow(TRUE);
+	}
+
 	return CDRF_DODEFAULT;
 }
 
@@ -172,14 +215,14 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
 
 void CDebugScripts::EvaluateInSelectedInstance(char* code)
 {
-	int textLength = m_ScriptList.GetWindowTextLengthA();
-	char* text = (char*)malloc(textLength + 1);
+	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
 
-	m_ScriptList.GetWindowTextA(text, textLength);
-
-	MessageBox(text, text, MB_OK);
-
-	free(text);
+	if (state == STATE_RUNNING || state == STATE_STARTED)
+	{
+		CScriptInstance* instance = m_Debugger->ScriptSystem()->GetInstance(m_SelectedScriptName);
+		//instance->EvalAsync(code);
+		instance->Eval(code);
+	}
 }
 
 // Console input

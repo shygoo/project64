@@ -80,7 +80,6 @@ INSTANCE_STATE CScriptSystem::GetInstanceState(char* path)
 {
 	for (int i = 0; i < m_RunningInstances.size(); i++)
 	{
-		//MessageBox(NULL, m_RunningInstances[i].path, path, MB_OK);
 		if (strcmp(m_RunningInstances[i].path, path) == 0)
 		{
 			return m_RunningInstances[i].scriptInstance->GetState();
@@ -88,6 +87,19 @@ INSTANCE_STATE CScriptSystem::GetInstanceState(char* path)
 	}
 	return STATE_INVALID;
 }
+
+CScriptInstance* CScriptSystem::GetInstance(char* path)
+{
+	for (int i = 0; i < m_RunningInstances.size(); i++)
+	{
+		if (strcmp(m_RunningInstances[i].path, path) == 0)
+		{
+			return m_RunningInstances[i].scriptInstance;
+		}
+	}
+	return NULL;
+}
+
 
 void CScriptSystem::StopScript(char* path)
 {

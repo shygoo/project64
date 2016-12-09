@@ -62,6 +62,10 @@ public:
 	void Invoke(void* heapptr);
 	INSTANCE_STATE GetState();
 
+	friend class PendingEval;
+	void EvalAsync(const char* jsCode);
+	const char* Eval(const char* jsCode);
+
 private:
 	duk_context*        m_Ctx;
 	duk_context*        DukContext();
@@ -103,7 +107,10 @@ private:
 	void RemoveListenersByFd(HANDLE fd);
 	void InvokeListenerCallback(IOLISTENER* lpListener);
 	
-	const char* Eval(const char* jsCode);
+
+	
+	static void CALLBACK EvalAsyncCallback(ULONG_PTR evalWait);
+
 	const char* EvalFile(const char* jsPath);
 	
 	// Lookup list of CScriptInstance instances for static js_* functions
