@@ -136,6 +136,7 @@ LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 	}
 	else
 	{
+		// Todo change to console log
 		MessageBox("Script is already running", "Error", MB_OK | MB_ICONWARNING);
 	}
 	
@@ -165,13 +166,13 @@ LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 
 	m_InstanceInfoEdit.SetWindowTextA(instanceInfo.c_str());
 
-	if (state == STATE_STOPPED || state == STATE_INVALID)
+	if (state == STATE_RUNNING)
 	{
-		m_EvalEdit.EnableWindow(FALSE);
+		m_EvalEdit.EnableWindow(TRUE);
 	}
 	else
 	{
-		m_EvalEdit.EnableWindow(TRUE);
+		m_EvalEdit.EnableWindow(FALSE);
 	}
 
 	return CDRF_DODEFAULT;

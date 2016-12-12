@@ -1,0 +1,1 @@
+alert(not_defined);

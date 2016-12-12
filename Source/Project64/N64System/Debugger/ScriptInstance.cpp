@@ -123,7 +123,11 @@ void CScriptInstance::StartScriptProc()
 
 		if (scriptresult != 0)
 		{
-			MessageBox(NULL, duk_safe_to_string(ctx, -1), "Script error", MB_OK | MB_ICONWARNING);
+			const char* errorText = duk_safe_to_string(ctx, -1);
+			//MessageBox(NULL, duk_safe_to_string(ctx, -1), "Script error", MB_OK | MB_ICONWARNING);
+			m_Debugger->Debug_LogScriptsWindow(errorText);
+			m_Debugger->Debug_LogScriptsWindow("\r\n");
+			SetState(STATE_STOPPED);
 			return;
 		}
 	}
@@ -447,8 +451,9 @@ void CScriptInstance::Invoke(void* heapptr)
 
 	if (status != DUK_EXEC_SUCCESS)
 	{
-		const char* msg = duk_safe_to_string(m_Ctx, -1);
-		MessageBox(NULL, msg, "Script error", MB_OK | MB_ICONWARNING);
+		const char* errorText = duk_safe_to_string(m_Ctx, -1);
+		m_Debugger->Debug_LogScriptsWindow(errorText);
+		m_Debugger->Debug_LogScriptsWindow("\r\n");
 	}
 
 	duk_pop(m_Ctx);
@@ -947,18 +952,18 @@ duk_ret_t CScriptInstance::js_ConsolePrint(duk_context* ctx)
 {
 	CScriptInstance* _this = FetchInstance(ctx);
 	const char* text = duk_to_string(ctx, 0);
-	//_this->ScriptSystem()->LogText(text);
-	//_this->ScriptSystem()->Debugger()->ScriptConsole();
-	//ConsolePrint(text);
+	
+	_this->m_Debugger->Debug_LogScriptsWindow(text);
+
+	duk_pop_n(ctx, 1);
+
 	return 1;
 }
 
 duk_ret_t CScriptInstance::js_ConsoleClear(duk_context* ctx)
 {
-	//if (m_ScriptsWindow != NULL)
-	//{
-	//	m_ScriptsWindow->ConsoleClear();
-	//}
+	CScriptInstance* _this = FetchInstance(ctx);
+	_this->m_Debugger->Debug_ClearScriptsWindow();
 	return 1;
 }
 

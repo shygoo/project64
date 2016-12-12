@@ -68,6 +68,9 @@ public:
     void Debug_ShowSymbolsWindow    ( void );
 	void Debug_ShowModalAddBreakpoint ( void );
 	
+	void Debug_LogScriptsWindow(const char* text);
+	void Debug_ClearScriptsWindow(void);
+
 	void Debug_RefreshScriptsWindow(void);
 
 	CBreakpoints* Breakpoints();

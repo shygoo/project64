@@ -207,6 +207,16 @@ void CDebuggerUI::Debug_RefreshScriptsWindow()
 	m_Scripts->RefreshList();
 }
 
+void CDebuggerUI::Debug_LogScriptsWindow(const char* text)
+{
+	m_Scripts->ConsolePrint(text);
+}
+
+void CDebuggerUI::Debug_ClearScriptsWindow()
+{
+	m_Scripts->ConsoleClear();
+}
+
 void CDebuggerUI::Debug_ShowSymbolsWindow()
 {
 	if (m_Symbols == NULL)
