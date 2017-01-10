@@ -921,6 +921,15 @@ BEGIN
     LTEXT           "Description",IDC_STATIC,6,30,42,8
 END
 
+IDD_Debugger_DMALog DIALOGEX 0, 0, 317, 178
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "DMA Log"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_DMA_LIST,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,2,1,295,172
+    PUSHBUTTON      "x",IDC_CLEAR_BTN,298,1,17,12
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1238,6 +1247,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 67
     END
+
+    IDD_Debugger_DMALog, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 171
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1424,6 +1441,11 @@ BEGIN
 END
 
 IDD_Debugger_AddSymbol AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_Debugger_DMALog AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

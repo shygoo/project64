@@ -26,10 +26,13 @@ CDebuggerUI::CDebuggerUI () :
 	m_Scripts(NULL),
 	m_Symbols(NULL),
 	m_Breakpoints(NULL),
-	m_ScriptSystem(NULL)
+	m_ScriptSystem(NULL),
+	m_DMALogView(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
+
+	m_DMALog = new vector<DMALogEntry>;
 
 	m_Breakpoints = new CBreakpoints();
 	m_ScriptSystem = new CScriptSystem(this);
@@ -45,6 +48,7 @@ CDebuggerUI::~CDebuggerUI (void)
 	delete m_ScriptSystem;
 	delete m_Breakpoints;
 	delete m_Symbols;
+	delete m_DMALogView;
 }
 
 void CDebuggerUI::GameReset ( CDebuggerUI * _this )
@@ -235,6 +239,15 @@ void CDebuggerUI::Debug_ShowModalAddBreakpoint(void)
 	m_AddBreakpoint->ShowWindow();
 }
 
+void CDebuggerUI::Debug_ShowDMALogWindow(void)
+{
+	if (m_DMALogView == NULL)
+	{
+		m_DMALogView = new CDebugDMALogView(this);
+	}
+	m_DMALogView->ShowWindow();
+}
+
 CBreakpoints* CDebuggerUI::Breakpoints()
 {
 	return m_Breakpoints;
@@ -250,10 +263,55 @@ CDebugScripts* CDebuggerUI::ScriptConsole()
 	return m_Scripts;
 }
 
+vector<DMALogEntry> * CDebuggerUI::DMALog()
+{
+	return m_DMALog;
+}
+
 void CDebuggerUI::BreakpointHit()
 {
 	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
 	m_Breakpoints->Pause();
+}
+
+void CDebuggerUI::Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t length)
+{
+	DMALogEntry newEntry;
+
+	newEntry.romAddr = romAddr;
+	newEntry.ramAddr = ramAddr;
+	newEntry.length = length;
+	newEntry.count = 0;
+
+	bool bRepeat = false;
+
+	for (int i = 0; i < m_DMALog->size(); i++)
+	{
+		DMALogEntry entry = m_DMALog->at(i);
+		if (newEntry.romAddr != entry.ramAddr)
+		{
+			continue;
+		}
+		if (newEntry.ramAddr != entry.ramAddr)
+		{
+			continue;
+		}
+		if (newEntry.length != entry.length)
+		{
+			continue;
+		}
+		bRepeat = true;
+
+		m_DMALog->at(i).count++;
+
+		break;
+	}
+
+	if(!bRepeat)
+	{
+		m_DMALog->push_back(newEntry);
+	}
+	
 }
 
 // CDebugger implementation
@@ -312,14 +370,17 @@ bool CDebuggerUI::CPUStepStarted()
 			// Catch cart -> rdram dma
 			if (memoryAddress == 0xA460000C) // PI_WR_LEN_REG
 			{
-				uint32_t dmaAddr = g_Reg->PI_DRAM_ADDR_REG | 0x80000000;
-				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0] + 1; // Assume u32 for now
-				uint32_t endAddr = dmaAddr + dmaLen;
+				uint32_t dmaRomAddr = g_Reg->PI_CART_ADDR_REG & 0x0FFFFFFF;
+				uint32_t dmaRamAddr = g_Reg->PI_DRAM_ADDR_REG | 0x80000000;
+				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0] + 1;
+				uint32_t endAddr = dmaRamAddr + dmaLen;
+				
+				Debug_LogDMA(dmaRomAddr, dmaRamAddr, dmaLen);
 
 				for (int i = 0; i < m_Breakpoints->m_nWBP; i++)
 				{
 					uint32_t wbpAddr = m_Breakpoints->m_WBP[i];
-					if (wbpAddr >= dmaAddr && wbpAddr < endAddr)
+					if (wbpAddr >= dmaRamAddr && wbpAddr < endAddr)
 					{
 						BreakpointHit();
 						//m_CommandsView->ShowWindow();

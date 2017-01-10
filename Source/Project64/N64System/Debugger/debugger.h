@@ -18,9 +18,17 @@ class CDebugCommandsView;
 class CDebugScripts;
 class CDebugSymbols;
 class CDebugAddBreakpoint;
+class CDebugDMALogView;
 
 class CBreakpoints;
 class CScriptSystem;
+
+typedef struct {
+	uint32_t romAddr;
+	uint32_t ramAddr;
+	uint32_t length;
+	uint32_t count;
+} DMALogEntry;
 
 __interface CDebugger
 {
@@ -39,13 +47,13 @@ class CDebuggerUI :
 	CDebugScripts       * m_Scripts;
 	CDebugSymbols       * m_Symbols;
 	CDebugAddBreakpoint * m_AddBreakpoint;
+	CDebugDMALogView    * m_DMALogView;
 
 	CBreakpoints        * m_Breakpoints;
 	CScriptSystem       * m_ScriptSystem;
+	vector<DMALogEntry> * m_DMALog;
 
 	void BreakpointHit(void);
-
-	//friend class CDebugCommandsView; // need m_Symbols
 
 protected:
     CDebuggerUI();
@@ -73,10 +81,14 @@ public:
 
 	void Debug_RefreshScriptsWindow(void);
 
+	void Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t length);
+	void Debug_ShowDMALogWindow();
+
 	CBreakpoints* Breakpoints();
 	CDebugSymbols* Symbols();
 	CScriptSystem* ScriptSystem();
 	CDebugScripts* ScriptConsole();
+	vector<DMALogEntry> * DMALog();
 
     static void GameReset ( CDebuggerUI * _this );
 };
