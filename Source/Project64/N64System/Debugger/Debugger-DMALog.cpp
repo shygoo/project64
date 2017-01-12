@@ -24,6 +24,7 @@ CDebugDMALogView::~CDebugDMALogView()
 
 void CDebugDMALogView::RefreshList()
 {
+	m_DMAList.SetRedraw(FALSE);
 	m_DMAList.DeleteAllItems();
 
 	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
@@ -34,6 +35,7 @@ void CDebugDMALogView::RefreshList()
 		m_DMAList.AddItem(i, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
 		m_DMAList.AddItem(i, 3, stdstr_f("%d", entry.count).c_str());
 	}
+	m_DMAList.SetRedraw(TRUE);
 }
 
 LRESULT CDebugDMALogView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -54,7 +56,11 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	m_DMAList.SetColumnWidth(0, 70);
 	m_DMAList.SetColumnWidth(1, 70);
 	m_DMAList.SetColumnWidth(2, 120);
-	m_DMAList.SetColumnWidth(3, 40);
+	m_DMAList.SetColumnWidth(3, 60);
+
+	m_DMARamEdit.Attach(GetDlgItem(IDC_DMA_RAM_EDIT));
+
+	m_DMARomStatic.Attach(GetDlgItem(IDC_DMA_ROM_STATIC));
 
 	RefreshList();
 
@@ -78,4 +84,30 @@ LRESULT CDebugDMALogView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
 		break;
 	}
 	return FALSE;
+}
+
+LRESULT CDebugDMALogView::OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+{
+	char szRamAddr[9];
+	char szRomAddr[9];
+	m_DMARamEdit.GetWindowTextA(szRamAddr, 9);
+	uint32_t ramAddr = strtoul(szRamAddr, NULL, 16);
+	uint32_t romAddr = ConvertRamRom(ramAddr);
+	sprintf(szRomAddr, "%08X", romAddr);
+	m_DMARomStatic.SetWindowTextA(szRomAddr);
+	return FALSE;
+}
+
+// todo move to a class for a dma log object
+uint32_t CDebugDMALogView::ConvertRamRom(uint32_t ramAddr)
+{
+	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
+	{
+		DMALogEntry entry = m_Debugger->DMALog()->at(i);
+		if (ramAddr >= entry.ramAddr && ramAddr < entry.ramAddr + entry.length)
+		{
+			return entry.romAddr + (ramAddr - entry.ramAddr);
+		}
+	}
+	return 0x00000000;
 }
