@@ -281,14 +281,13 @@ void CDebuggerUI::Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t leng
 	newEntry.romAddr = romAddr;
 	newEntry.ramAddr = ramAddr;
 	newEntry.length = length;
-	newEntry.count = 0;
-
-	bool bRepeat = false;
-
+	newEntry.count = 1;
+	
 	for (int i = 0; i < m_DMALog->size(); i++)
 	{
 		DMALogEntry entry = m_DMALog->at(i);
-		if (newEntry.romAddr != entry.ramAddr)
+		
+		if (newEntry.romAddr != entry.romAddr)
 		{
 			continue;
 		}
@@ -300,18 +299,11 @@ void CDebuggerUI::Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t leng
 		{
 			continue;
 		}
-		bRepeat = true;
-
 		m_DMALog->at(i).count++;
-
-		break;
-	}
-
-	if(!bRepeat)
-	{
-		m_DMALog->push_back(newEntry);
+		return;
 	}
 	
+	m_DMALog->push_back(newEntry);
 }
 
 // CDebugger implementation

@@ -468,8 +468,11 @@
 #define IDC_DMA_LIST                    1300
 #define IDC_CLEAR_BTN                   1302
 #define IDC_DMA_RAM_EDIT                1303
-#define IDC_DMAROM_STATIC               1304
-#define IDC_DMA_ROM_STATIC              1304
+#define IDC_BUTTON1                     1305
+#define IDC_DMA_ROM_EDIT                1306
+#define IDC_TRACE_STATIC                1307
+#define IDC_RAM_STATIC                  1308
+#define IDC_ROM_STATIC                  1309
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -503,7 +506,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        184
 #define _APS_NEXT_COMMAND_VALUE         40023
-#define _APS_NEXT_CONTROL_VALUE         1305
+#define _APS_NEXT_CONTROL_VALUE         1310
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
