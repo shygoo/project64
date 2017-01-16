@@ -49,6 +49,7 @@ CDebuggerUI::~CDebuggerUI (void)
 	delete m_Breakpoints;
 	delete m_Symbols;
 	delete m_DMALogView;
+	delete m_MemorySearch;
 }
 
 void CDebuggerUI::GameReset ( CDebuggerUI * _this )
@@ -57,7 +58,7 @@ void CDebuggerUI::GameReset ( CDebuggerUI * _this )
 	{
 		return;
 	}
-	_this->Debug_Reset();
+	// _this->Debug_Reset();
 }
 
 void CDebuggerUI::Debug_Reset ( void )
@@ -80,8 +81,6 @@ void CDebuggerUI::Debug_Reset ( void )
         delete m_DebugTLB;
         m_DebugTLB = NULL;
     }
-
-	/*
 	if (m_MemoryView)
 	{
 		m_MemoryView->HideWindow();
@@ -99,7 +98,19 @@ void CDebuggerUI::Debug_Reset ( void )
 		m_Scripts->HideWindow();
 		delete m_Scripts;
 		m_Scripts = NULL;
-	}*/
+	}
+	if (m_Symbols)
+	{
+		m_Symbols->HideWindow();
+		delete m_Symbols;
+		m_Symbols = NULL;
+	}
+	if (m_DMALogView)
+	{
+		m_DMALogView->HideWindow();
+		delete m_DMALogView;
+		m_DMALogView = NULL;
+	}
 }
 
 void CDebuggerUI::Debug_ShowMemoryDump()
