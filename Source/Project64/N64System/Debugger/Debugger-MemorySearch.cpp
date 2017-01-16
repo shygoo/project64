@@ -261,6 +261,8 @@ void CDebugMemorySearch::SearchForValue(void)
         DisplayStr = "0x%04X";
     }
 
+	m_SearchResults.SetRedraw(FALSE);
+
     if (!m_HaveResults)
     {
         m_HaveResults = true;
@@ -268,7 +270,7 @@ void CDebugMemorySearch::SearchForValue(void)
         FixUnknownOptions(false);
         m_SearchResults.DeleteAllItems();
         DWORD ItemsAdded = 0;
-
+		
         while (SearchForValue(Value, Size, StartAddress, Len))
         {
             SearchResultItem Result;
@@ -294,6 +296,7 @@ void CDebugMemorySearch::SearchForValue(void)
                 break;
             }
         }
+		
         ::SetWindowText(GetDlgItem(IDC_BTN_SEARCH), "Search Results");
         ::ShowWindow(GetDlgItem(IDC_RESET_BUTTON), SW_SHOW);
         ::EnableWindow(GetDlgItem(IDC_VALUE_ALIGN), false);
@@ -347,6 +350,9 @@ void CDebugMemorySearch::SearchForValue(void)
             }
         }
     }
+
+	m_SearchResults.SetRedraw(TRUE);
+
     ::SetWindowText(GetDlgItem(IDC_BORDER_RESULTS), stdstr_f("Results (%d)", m_SearchResults.GetItemCount()).c_str());
 }
 

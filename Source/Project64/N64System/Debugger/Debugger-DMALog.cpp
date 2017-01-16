@@ -40,8 +40,8 @@ void CDebugDMALogView::RefreshList()
 		uint8_t* rom = g_Rom->GetRomAddress();
 		
 		char sig[5];
-		*(uint32_t*) sig = _byteswap_ulong(*(uint32_t*)&rom[entry.romAddr]);
-		sig[4] = 0;
+		sprintf(sig, "%.4s", &rom[entry.romAddr]);
+		*(uint32_t*) sig = _byteswap_ulong(*(uint32_t*) sig);
 
 		// Todo checkbox to display all in hex
 		if (isalnum(sig[0]) && isalnum(sig[1]) && isalnum(sig[2]) && isalnum(sig[3]))
