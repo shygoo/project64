@@ -188,6 +188,20 @@ LRESULT CDebugMemorySearch::OnResultRClick(LPNMHDR /*lpnmh*/)
     return true;
 }
 
+LRESULT CDebugMemorySearch::OnResultDblClick(LPNMHDR)
+{
+	LONG iItem = m_SearchResults.GetNextItem(-1, LVNI_SELECTED);
+	if (iItem == -1)
+	{
+		return true;
+	}
+
+	// view in memory
+	int ItemId = m_SearchResults.GetItemData(iItem);
+	SearchResultItem & Result = m_SearchResult[ItemId];
+	m_Debugger->Debug_ShowMemoryLocation(Result.PAddr, false);
+}
+
 void CDebugMemorySearch::EnableValueOptions(bool Enable)
 {
     if (Enable)
