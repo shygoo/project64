@@ -35,16 +35,15 @@ void CDebugDMALogView::RefreshList()
 		m_DMAList.AddItem(i, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
 		m_DMAList.AddItem(i, 3, stdstr_f("%d", entry.count).c_str());
 
-		// four character string at rom address
+		// Get four character string at rom address
 
-		uint32_t sig_val;
-		g_MMU->LW_VAddr(0xB0000000 | entry.romAddr, sig_val);
+		uint8_t* rom = g_Rom->GetRomAddress();
 		
-		char sig[10];
-		*(uint32_t*) sig = _byteswap_ulong(sig_val);
+		char sig[5];
+		*(uint32_t*) sig = _byteswap_ulong(*(uint32_t*)&rom[entry.romAddr]);
 		sig[4] = 0;
 
-		// todo checkbox to display all
+		// Todo checkbox to display all in hex
 		if (isalnum(sig[0]) && isalnum(sig[1]) && isalnum(sig[2]) && isalnum(sig[3]))
 		{
 			m_DMAList.AddItem(i, 5, sig);
@@ -76,10 +75,12 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 	m_DMAList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
-	m_DMAList.SetColumnWidth(0, 70);
-	m_DMAList.SetColumnWidth(1, 70);
+	m_DMAList.SetColumnWidth(0, 65);
+	m_DMAList.SetColumnWidth(1, 65);
 	m_DMAList.SetColumnWidth(2, 120);
-	m_DMAList.SetColumnWidth(3, 60);
+	m_DMAList.SetColumnWidth(3, 50);
+	//m_DMAList.SetColumnWidth(4, 50);
+	//m_DMAList.SetColumnWidth(5, 50);
 
 	m_DMARamEdit.Attach(GetDlgItem(IDC_DMA_RAM_EDIT));
 	m_DMARamEdit.SetLimitText(8);
