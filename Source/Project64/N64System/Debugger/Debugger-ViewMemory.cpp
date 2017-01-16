@@ -198,7 +198,7 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 
 	uint32_t offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
 
-	m_CtxMenuAddr = m_DataStartLoc + offset;
+	m_CtxMenuAddr = 0x80000000 | (m_DataStartLoc + offset);
 
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
@@ -365,8 +365,10 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
             m_MemoryList->SetItemFormat(LineNumber, col, ITEM_FORMAT_EDIT, ITEM_FLAGS_EDIT_HEX);
             m_MemoryList->SetItemMaxEditLen(LineNumber, col, 2);
 
-			bool bHaveReadBP = m_Breakpoints->RBPExists(m_DataStartLoc + Pos);
-			bool bHaveWriteBP = m_Breakpoints->WBPExists(m_DataStartLoc + Pos);
+			uint32_t vaddr = 0x80000000 | (m_DataStartLoc + Pos);
+
+			bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
+			bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
 
 			COLORREF bgColor, fgColor, fgHiColor;
 
