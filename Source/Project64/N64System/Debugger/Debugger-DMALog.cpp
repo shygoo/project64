@@ -24,23 +24,39 @@ CDebugDMALogView::~CDebugDMALogView()
 
 void CDebugDMALogView::RefreshList()
 {
-	m_DMAList.SetRedraw(FALSE);
-	m_DMAList.DeleteAllItems();
-
-	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
+	if (g_Rom == NULL)
 	{
-		DMALogEntry entry = (*m_Debugger->DMALog())[i];
+		return;
+	}
+	
+	int startIndex;
+	int dmaLogSize = m_Debugger->DMALog()->size();
+	
+	if (dmaLogSize == 0 || m_nListItems > dmaLogSize)
+	{
+		// Reset
+		m_DMAList.DeleteAllItems();
+		startIndex = 0;
+	}
+	else
+	{
+		// Continue from last index
+		startIndex = m_nListItems;
+	}
+	
+	m_DMAList.SetRedraw(FALSE);
+
+	for (int i = startIndex; i < dmaLogSize; i++)
+	{
+		DMALogEntry entry = m_Debugger->DMALog()->at(i);
 		m_DMAList.AddItem(i, 0, stdstr_f("%08X", entry.romAddr).c_str());
 		m_DMAList.AddItem(i, 1, stdstr_f("%08X", entry.ramAddr).c_str());
 		m_DMAList.AddItem(i, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
 		m_DMAList.AddItem(i, 3, stdstr_f("%d", entry.count).c_str());
 
 		// Get four character string at rom address
-
 		uint8_t* rom = g_Rom->GetRomAddress();
-		
-		char sig[5];
-		sprintf(sig, "%.4s", &rom[entry.romAddr]);
+		char sig[5]; sprintf(sig, "%.4s", &rom[entry.romAddr]);
 		*(uint32_t*) sig = _byteswap_ulong(*(uint32_t*) sig);
 
 		// Todo checkbox to display all in hex
@@ -49,7 +65,20 @@ void CDebugDMALogView::RefreshList()
 			m_DMAList.AddItem(i, 5, sig);
 		}
 	}
+	
 	m_DMAList.SetRedraw(TRUE);
+
+	m_nListItems = dmaLogSize;
+}
+
+DWORD WINAPI CDebugDMALogView::AutoRefreshProc(void* _this)
+{
+	CDebugDMALogView* self = (CDebugDMALogView*)_this;
+	while (true)
+	{
+		self->RefreshList();
+		Sleep(100);
+	}
 }
 
 LRESULT CDebugDMALogView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
@@ -91,7 +120,20 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	RefreshList();
 
 	WindowCreated();
+
+	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
+
 	return TRUE;
+}
+
+LRESULT CDebugDMALogView::OnDestroy(void)
+{
+	if (m_AutoRefreshThread != NULL)
+	{
+		TerminateThread(m_AutoRefreshThread, 0);
+		CloseHandle(m_AutoRefreshThread);
+	}
+	return 0;
 }
 
 LRESULT CDebugDMALogView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& /*bHandled*/)

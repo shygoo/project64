@@ -26,24 +26,24 @@ public:
 	void RefreshList();
 
 private:
-	
+
+	int m_nListItems;
 	bool m_bConvertingAddress;
+	
+	HANDLE m_AutoRefreshThread;
+	static DWORD WINAPI AutoRefreshProc(void* _this);
 
 	CListViewCtrl m_DMAList;
 	CEdit         m_DMARamEdit;
 	CEdit         m_DMARomEdit;
-
+	
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
 	LRESULT OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-
-	LRESULT OnDestroy(void)
-	{
-		return 0;
-	}
-
+	LRESULT OnDestroy(void);
+	
 	uint32_t ConvertRamRom(uint32_t ramAddr);
 	uint32_t ConvertRomRam(uint32_t romAddr);
 
