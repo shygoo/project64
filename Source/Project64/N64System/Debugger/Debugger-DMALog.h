@@ -27,11 +27,17 @@ public:
 
 private:
 
-	int m_nListItems;
+	int m_nLastStartIndex;
 	bool m_bConvertingAddress;
+
+	bool m_bUniqueRomAddresses;
+	bool m_bFilterChanged;
 	
 	HANDLE m_AutoRefreshThread;
 	static DWORD WINAPI AutoRefreshProc(void* _this);
+
+	// Return true if entry meets requirements
+	bool FilterEntry(int dmaLogIndex);
 
 	CListViewCtrl m_DMAList;
 	CEdit         m_DMARamEdit;

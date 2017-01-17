@@ -27,7 +27,6 @@ typedef struct {
 	uint32_t romAddr;
 	uint32_t ramAddr;
 	uint32_t length;
-	uint32_t count;
 } DMALogEntry;
 
 __interface CDebugger

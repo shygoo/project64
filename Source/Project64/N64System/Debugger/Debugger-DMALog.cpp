@@ -16,10 +16,30 @@
 CDebugDMALogView::CDebugDMALogView(CDebuggerUI* debugger) :
 CDebugDialog<CDebugDMALogView>(debugger)
 {
+	m_bFilterChanged = false;
+	m_bUniqueRomAddresses = true;
 }
 
 CDebugDMALogView::~CDebugDMALogView()
 {
+}
+
+bool CDebugDMALogView::FilterEntry(int dmaLogIndex)
+{
+	DMALogEntry entry = m_Debugger->DMALog()->at(dmaLogIndex);
+
+	for (int i = 0; i < dmaLogIndex; i++)
+	{
+		DMALogEntry testEntry = m_Debugger->DMALog()->at(i);
+
+		// Don't show if another entry has the same ROM address
+		if (entry.romAddr == testEntry.romAddr)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void CDebugDMALogView::RefreshList()
@@ -32,43 +52,53 @@ void CDebugDMALogView::RefreshList()
 	int startIndex;
 	int dmaLogSize = m_Debugger->DMALog()->size();
 	
-	if (dmaLogSize == 0 || m_nListItems > dmaLogSize)
+	if (dmaLogSize == 0)
 	{
 		// Reset
 		m_DMAList.DeleteAllItems();
 		startIndex = 0;
+		m_bFilterChanged = false;
 	}
 	else
 	{
 		// Continue from last index
-		startIndex = m_nListItems;
+		startIndex = m_nLastStartIndex;
 	}
 	
 	m_DMAList.SetRedraw(FALSE);
 
+	int itemIndex = m_DMAList.GetItemCount();
+	
 	for (int i = startIndex; i < dmaLogSize; i++)
 	{
 		DMALogEntry entry = m_Debugger->DMALog()->at(i);
-		m_DMAList.AddItem(i, 0, stdstr_f("%08X", entry.romAddr).c_str());
-		m_DMAList.AddItem(i, 1, stdstr_f("%08X", entry.ramAddr).c_str());
-		m_DMAList.AddItem(i, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
-		m_DMAList.AddItem(i, 3, stdstr_f("%d", entry.count).c_str());
+		
+		if (!FilterEntry(i))
+		{
+			continue;
+		}
+		
+		m_DMAList.AddItem(itemIndex, 0, stdstr_f("%08X", entry.romAddr).c_str());
+		m_DMAList.AddItem(itemIndex, 1, stdstr_f("%08X", entry.ramAddr).c_str());
+		m_DMAList.AddItem(itemIndex, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
 
 		// Get four character string at rom address
 		uint8_t* rom = g_Rom->GetRomAddress();
 		char sig[5]; sprintf(sig, "%.4s", &rom[entry.romAddr]);
-		*(uint32_t*) sig = _byteswap_ulong(*(uint32_t*) sig);
+		*(uint32_t*)sig = _byteswap_ulong(*(uint32_t*)sig);
 
 		// Todo checkbox to display all in hex
 		if (isalnum(sig[0]) && isalnum(sig[1]) && isalnum(sig[2]) && isalnum(sig[3]))
 		{
-			m_DMAList.AddItem(i, 5, sig);
+			m_DMAList.AddItem(itemIndex, 4, sig);
 		}
+
+		itemIndex++;
 	}
 	
 	m_DMAList.SetRedraw(TRUE);
 
-	m_nListItems = dmaLogSize;
+	m_nLastStartIndex = dmaLogSize;
 }
 
 DWORD WINAPI CDebugDMALogView::AutoRefreshProc(void* _this)
@@ -83,7 +113,7 @@ DWORD WINAPI CDebugDMALogView::AutoRefreshProc(void* _this)
 
 LRESULT CDebugDMALogView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	RefreshList();
+	//RefreshList();
 	return FALSE;
 }
 
@@ -98,16 +128,15 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	m_DMAList.AddColumn("ROM", 0);
 	m_DMAList.AddColumn("RAM", 1);
 	m_DMAList.AddColumn("Length", 2);
-	m_DMAList.AddColumn("Count", 3);
-	m_DMAList.AddColumn("Symbol (RAM)", 4);
-	m_DMAList.AddColumn("Signature", 5);
+	m_DMAList.AddColumn("Symbol (RAM)", 3);
+	m_DMAList.AddColumn("Signature", 4);
 
 	m_DMAList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
 	m_DMAList.SetColumnWidth(0, 65);
 	m_DMAList.SetColumnWidth(1, 65);
 	m_DMAList.SetColumnWidth(2, 120);
-	m_DMAList.SetColumnWidth(3, 50);
+	//m_DMAList.SetColumnWidth(3, 50);
 	//m_DMAList.SetColumnWidth(4, 50);
 	//m_DMAList.SetColumnWidth(5, 50);
 

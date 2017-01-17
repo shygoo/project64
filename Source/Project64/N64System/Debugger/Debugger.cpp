@@ -292,27 +292,6 @@ void CDebuggerUI::Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t leng
 	newEntry.romAddr = romAddr;
 	newEntry.ramAddr = ramAddr;
 	newEntry.length = length;
-	newEntry.count = 1;
-	
-	for (int i = 0; i < m_DMALog->size(); i++)
-	{
-		DMALogEntry entry = m_DMALog->at(i);
-		
-		if (newEntry.romAddr != entry.romAddr)
-		{
-			continue;
-		}
-		if (newEntry.ramAddr != entry.ramAddr)
-		{
-			continue;
-		}
-		if (newEntry.length != entry.length)
-		{
-			continue;
-		}
-		m_DMALog->at(i).count++;
-		return;
-	}
 	
 	m_DMALog->push_back(newEntry);
 }
@@ -349,7 +328,7 @@ bool CDebuggerUI::CPUStepStarted()
 	if (op >= R4300i_LDL && op <= R4300i_SD && op != R4300i_CACHE) // Read and write instructions
 	{
 		uint32_t memoryAddress = g_Reg->m_GPR[Opcode.base].UW[0] + (int16_t)Opcode.offset;
-
+		
 		if ((op <= R4300i_LWU || (op >= R4300i_LL && op <= R4300i_LD))) // Read instructions
 		{
 			m_ScriptSystem->HookCPURead()->InvokeByParam(memoryAddress);
