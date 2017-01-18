@@ -59,11 +59,13 @@ private:
 	static char* m_SymFileBuffer;
 	
 public:
+	static CPath GetSymFilePath();
 	static void Load();
 	static void Save();
 	static void ParseErrorAlert(char* message, int lineNumber);
 	
 	static void Add(int type, uint32_t address, char* name, char* description = NULL);
+	static void RemoveEntryById(int id);
 	
 	static const char* GetTypeName(int typeNumber);
 	static int GetTypeNumber(char* typeName);

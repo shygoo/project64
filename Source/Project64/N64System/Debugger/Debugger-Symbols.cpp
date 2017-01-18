@@ -65,8 +65,17 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		break;
 	case IDC_ADDSYMBOL_BTN:
 		m_AddSymbolDlg.DoModal();
+		CSymbols::Save();
 		Refresh();
 		break;
+	case IDC_REMOVESYMBOL_BTN:
+		{
+			int id = m_SymbolsListView.GetItemData(m_SymbolsListView.GetSelectedIndex());
+			CSymbols::RemoveEntryById(id);
+			CSymbols::Save();
+			Refresh();
+			break;
+		}
 	}
 	return FALSE;
 }
@@ -94,6 +103,7 @@ LRESULT	CDebugSymbols::OnListClicked(NMHDR* pNMHDR)
 
 void CDebugSymbols::Refresh()
 {
+	m_SymbolsListView.SetRedraw(FALSE);
 	m_SymbolsListView.DeleteAllItems();
 	int count = CSymbols::GetCount();
 	for (int i = 0; i < count; i++)
@@ -104,7 +114,7 @@ void CDebugSymbols::Refresh()
 		char* desc = CSymbols::GetDescriptionByIndex(i);
 
 		int id = CSymbols::GetIdByIndex(i);
-		
+
 		m_SymbolsListView.AddItem(i, 0, addrStr.c_str());
 		m_SymbolsListView.AddItem(i, 1, type);
 		m_SymbolsListView.AddItem(i, 2, name);
@@ -112,6 +122,7 @@ void CDebugSymbols::Refresh()
 
 		m_SymbolsListView.SetItemData(i, id);
 	}
+	m_SymbolsListView.SetRedraw(TRUE);
 }
 
 // Add Symbol dialog

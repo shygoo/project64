@@ -32,14 +32,8 @@ const char* CSymbols::GetTypeName(int typeNumber)
 
 // Open symbols file for game and parse into list
 
-void CSymbols::Load()
+CPath CSymbols::GetSymFilePath()
 {
-	if (g_Settings->LoadStringVal(Game_GameName).length() == 0)
-	{
-		// no game is loaded
-		return;
-	}
-
 	stdstr symFileName;
 	symFileName.Format("%s.sym", g_Settings->LoadStringVal(Game_GameName).c_str());
 
@@ -53,6 +47,20 @@ void CSymbols::Load()
 	{
 		symFilePath.DirectoryCreate();
 	}
+
+	return symFilePath;
+}
+
+void CSymbols::Load()
+{
+	if (g_Settings->LoadStringVal(Game_GameName).length() == 0)
+	{
+		// no game is loaded
+		MessageBox(NULL, "Game must be loaded", "Symbols", MB_ICONWARNING | MB_OK);
+		return;
+	}
+	
+	CPath symFilePath = GetSymFilePath();
 
 	m_SymFileHandle.Open(symFilePath, CFileBase::modeReadWrite);
 	m_SymFileHandle.SeekToBegin();
@@ -182,6 +190,58 @@ error_check:
 	}
 }
 
+void CSymbols::Save()
+{
+	int nSymbols = m_Symbols.size();
+	
+	char* symfile;
+	int symfile_size = 0;
+	int symfile_idx = 0;
+
+	// Determine file size
+	for (int i = 0; i < nSymbols; i++)
+	{
+		SYMBOLENTRY symbol = m_Symbols[i];
+
+		symfile_size += 11; // address 8, required commas 2, newline 1
+		symfile_size += strlen(symbol.name);
+		symfile_size += strlen(SymbolTypes[symbol.type]);
+
+		if (symbol.description != NULL)
+		{
+			symfile_size += 1; // comma
+			symfile_size += strlen(symbol.description);
+		}
+	}
+
+	if (symfile_size == 0)
+	{
+		return;
+	}
+
+	symfile = (char*) malloc(symfile_size + 1);
+	symfile[symfile_size] = '\0';
+
+	// Write out
+	for (int i = 0; i < nSymbols; i++)
+	{
+		SYMBOLENTRY symbol = m_Symbols[i];
+		symfile_idx += sprintf(&symfile[symfile_idx], "%08X,%s,%s", symbol.address, SymbolTypes[symbol.type], symbol.name);
+		if (symbol.description != NULL)
+		{
+			symfile_idx += sprintf(&symfile[symfile_idx], ",%s", symbol.description);
+		}
+		symfile_idx += sprintf(&symfile[symfile_idx], "\n");
+	}
+	
+	m_SymFileHandle.Open(GetSymFilePath(), CFileBase::modeReadWrite);
+	m_SymFileHandle.Write(symfile, symfile_size);
+	m_SymFileHandle.SetEndOfFile();
+	m_SymFileHandle.Close();
+
+	free(symfile);
+}
+
 void CSymbols::GetValueString(char* dest, int type, uint32_t address)
 {
 	uint8_t val8;
@@ -281,6 +341,20 @@ void CSymbols::Add(int type, uint32_t address, char* name, char* description)
 	m_Symbols.push_back(symbol);
 }
 
+void CSymbols::RemoveEntryById(int id)
+{
+	for (int i = 0; i < m_Symbols.size(); i++)
+	{
+		if (m_Symbols[i].id == id)
+		{
+			free(m_Symbols[i].description);
+			free(m_Symbols[i].name);
+			m_Symbols.erase(m_Symbols.begin() + i);
+			break;
+		}
+	}
+}
+
 int CSymbols::GetCount()
 {
 	return m_Symbols.size();
@@ -288,7 +362,7 @@ int CSymbols::GetCount()
 
 SYMBOLENTRY* CSymbols::GetEntryByIndex(int index)
 {
-	if (index < 0 || index > GetCount())
+	if (index < 0 || index >= GetCount())
 	{
 		return NULL;
 	}
