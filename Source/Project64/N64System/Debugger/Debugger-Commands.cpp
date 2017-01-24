@@ -130,21 +130,34 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_FPRTab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
 	m_PITab  = m_RegisterTabs.AddTab("PI",  IDD_Debugger_PI,  TabProcPI);
 
+	HFONT monoFont = CreateFont(-11, 0, 0, 0,
+		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		CLEARTYPE_QUALITY, FF_DONTCARE, "Consolas"
+	);
+
 	for (int i = 0; i < 32; i++)
 	{
 		m_GPREdits[i].Attach(m_GPRTab.GetDlgItem(GPREditIds[i]));
+		m_GPREdits[i].SetFont(monoFont, FALSE);
+
 		m_FPREdits[i].Attach(m_FPRTab.GetDlgItem(FPREditIds[i]));
 		m_FPREdits[i].SetDisplayType(CEditNumber::DisplayHex);
+		m_FPREdits[i].SetFont(monoFont, FALSE);
 	}
 
 	for (int i = 0; i < 13; i++)
 	{
 		m_PIEdits[i].Attach(m_PITab.GetDlgItem(PIEditIds[i]));
 		m_PIEdits[i].SetDisplayType(CEditNumber::DisplayHex);
+		m_PIEdits[i].SetFont(monoFont, FALSE);
 	}
 
 	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
+	m_HIEdit.SetFont(monoFont, FALSE);
+
 	m_LOEdit.Attach(m_GPRTab.GetDlgItem(IDC_LO_EDIT));
+	m_LOEdit.SetFont(monoFont, FALSE);
 
 	RefreshRegisterEdits();
 
@@ -808,7 +821,7 @@ static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 	{
 		return TRUE;
 	}
-	
+
 	/*
 	if (msg == WM_CTLCOLOREDIT)
 	{
