@@ -653,6 +653,21 @@ duk_ret_t CScriptInstance::js_AddCallback(duk_context* ctx)
 	return 1;
 }
 
+duk_ret_t CScriptInstance::js_GetPCVal(duk_context* ctx)
+{
+	duk_push_uint(ctx, g_Reg->m_PROGRAM_COUNTER);
+	return 1;
+}
+
+duk_ret_t CScriptInstance::js_SetPCVal(duk_context* ctx)
+{
+	uint32_t val = duk_to_uint32(ctx, 1);
+	g_Reg->m_PROGRAM_COUNTER = val;
+	duk_pop_n(ctx, 1);
+	duk_push_uint(ctx, val);
+	return 1;
+}
+
 duk_ret_t CScriptInstance::js_GetGPRVal(duk_context* ctx)
 {
 	int regnum = duk_to_int(ctx, 0);
@@ -666,7 +681,7 @@ duk_ret_t CScriptInstance::js_SetGPRVal(duk_context* ctx)
 	int regnum = duk_to_int(ctx, 0);
 	uint32_t val = duk_to_uint32(ctx, 1);
 	g_Reg->m_GPR[regnum].UW[0] = val;
-	duk_pop_n(ctx, 1);
+	duk_pop_n(ctx, 2);
 	duk_push_uint(ctx, val);
 	return 1;
 }

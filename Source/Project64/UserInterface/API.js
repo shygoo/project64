@@ -1,7 +1,9 @@
 Number.prototype.hex = function(len)
 {
-	var str = (this >>> 0).toString(16)
-	while(str.length < len){
+    len = (len || 8);
+    var str = (this >>> 0).toString(16)
+	while (str.length < len)
+	{
 		str = "0" + str
 	}
 	return str
@@ -100,12 +102,20 @@ const gpr = new Proxy({}, // todo dgpr for 64 bit
 		{
 			return _native.getGPRVal(_regNums[prop])
 		}
+		if(prop == 'pc')
+		{
+		    return _native.getPCVal()
+		}
 	},
 	set: function(obj, prop, val)
 	{
 		if (prop in _regNums)
 		{
 			_native.setGPRVal(_regNums[prop], val)
+		}
+		if(prop == 'pc')
+		{
+		    _native.setPCVal(val)
 		}
 	}
 })
