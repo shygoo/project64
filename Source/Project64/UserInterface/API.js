@@ -30,6 +30,65 @@ const _regNums = {
 	gp: 28, sp: 29, fp: 30, ra: 31
 }
 
+const system = {
+    pause: function()
+    {
+        _native.pause()
+    },
+    resume: function()
+    {
+
+    },
+    reset: function()
+    {
+
+    },
+    hardreset: function()
+    {
+
+    },
+    savestate: function()
+    {
+
+    },
+    loadstate: function()
+    {
+
+    },
+    setsaveslot: function(slot)
+    {
+
+    },
+    getsaveslot: function()
+    {
+
+    },
+    generatebitmap: function()
+    {
+
+    }
+}
+
+const debug = {
+    showmemory: function(address)
+    {
+        
+    },
+    showcommands: function(address)
+    {
+        _native.showCommands(address)
+    },
+    breakhere: function()
+    {
+        debug.showcommands(gpr.pc)
+        system.pause()
+    },
+    disasm: function()
+    {
+
+    }
+}
+
 const console = {
 	print: function(data)
 	{
@@ -51,11 +110,6 @@ const console = {
 	{
 		_native.consoleClear();
 	}
-}
-
-const system = {
-	pause: function(){},
-	resume: function(){}
 }
 
 const events = (function()

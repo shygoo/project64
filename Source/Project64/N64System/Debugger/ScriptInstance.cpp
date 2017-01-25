@@ -3,6 +3,7 @@
 #include "ScriptInstance.h"
 #include "ScriptSystem.h"
 #include "ScriptHook.h"
+#include "Breakpoints.h"
 
 static BOOL ConnectEx(SOCKET s, const SOCKADDR* name, int namelen, PVOID lpSendBuffer,
 	DWORD dwSendDataLength, LPDWORD lpdwBytesSent, LPOVERLAPPED lpOverlapped);
@@ -979,6 +980,33 @@ duk_ret_t CScriptInstance::js_ConsoleClear(duk_context* ctx)
 {
 	CScriptInstance* _this = FetchInstance(ctx);
 	_this->m_Debugger->Debug_ClearScriptsWindow();
+	return 1;
+}
+
+duk_ret_t CScriptInstance::js_Pause(duk_context* ctx)
+{
+	CScriptInstance* _this = FetchInstance(ctx);
+	CBreakpoints* breakpoints = _this->m_Debugger->Breakpoints();
+	breakpoints->Pause();
+	return 1;
+}
+
+duk_ret_t CScriptInstance::js_ShowCommands(duk_context* ctx)
+{
+	CScriptInstance* _this = FetchInstance(ctx);
+
+	int nargs = duk_get_top(ctx);
+
+	uint32_t address = 0x80000000;
+
+	if (nargs == 1)
+	{
+		address = duk_get_uint(ctx, 0);
+	}
+
+	duk_pop_n(ctx, nargs);
+
+	_this->m_Debugger->Debug_ShowCommandsLocation(address, false);
 	return 1;
 }
 

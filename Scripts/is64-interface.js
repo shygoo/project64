@@ -13,6 +13,7 @@ var buffer = '';
 
 events.onwrite(is64_r0, function(){
 	console.log('WRITE R0' + gpr.pc.hex() + ' ' + gpr.t4.hex() + ' ' + gpr.a2.hex())
+	debug.breakhere();
 })
 
 events.onwrite(is64_r1, function(){
@@ -36,7 +37,7 @@ events.onexec(0x80006684, function(){
 	if(gpr.t4 == is64_r0)
 	{
 		console.log('sending back is64')
-		gpr.t5 = 0x49533634; // send 'IS64' back to the game
+		//gpr.t5 = 0x49533634; // send 'IS64' back to the game
 	}
 })
 

@@ -140,6 +140,9 @@ private:
 	static duk_ret_t js_ConsolePrint   (duk_context*);
 	static duk_ret_t js_ConsoleClear   (duk_context*);
 
+	static duk_ret_t js_Pause(duk_context*); // () ; pauses emulation
+	static duk_ret_t js_ShowCommands(duk_context*); // ([address]) ; shows commands window
+
 	static constexpr duk_function_list_entry NativeFunctions[] =
 	{
 		{ "addCallback",    js_AddCallback,    DUK_VARARGS },
@@ -163,6 +166,8 @@ private:
 		{ "msgBox",         js_MsgBox,         DUK_VARARGS },
 		{ "consolePrint",   js_ConsolePrint,   DUK_VARARGS },
 		{ "consoleClear",   js_ConsoleClear,   DUK_VARARGS },
+		{ "pause",          js_Pause,          DUK_VARARGS },
+		{ "showCommands",   js_ShowCommands,   DUK_VARARGS },
 		{ NULL, NULL, 0 }
 	};
 };
