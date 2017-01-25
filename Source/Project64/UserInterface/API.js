@@ -152,6 +152,10 @@ const gpr = new Proxy({}, // todo dgpr for 64 bit
 {
 	get: function(obj, prop)
 	{
+	    if (typeof prop == 'number')
+	    {
+	        return _native.getGPRVal(prop)
+	    }
 		if (prop in _regNums)
 		{
 			return _native.getGPRVal(_regNums[prop])
