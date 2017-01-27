@@ -96,6 +96,9 @@ void CDebugScripts::RefreshList()
 {
 	m_ScriptList.SetRedraw(false);
 	m_ScriptList.DeleteAllItems();
+
+	int nIndex = m_ScriptList.GetSelectedIndex();
+	
 	CPath SearchPath("Scripts", "*");
 
 	if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
@@ -108,8 +111,11 @@ void CDebugScripts::RefreshList()
 		stdstr scriptFileName = SearchPath.GetNameExtension();
 		m_ScriptList.AddItem(0, 0, scriptFileName.c_str());
 	} while (SearchPath.FindNext());
+
 	m_ScriptList.SetRedraw(true);
 	m_ScriptList.Invalidate();
+
+	m_ScriptList.SelectItem(nIndex);
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -144,6 +150,8 @@ LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 		MessageBox("Script is already running", "Error", MB_OK | MB_ICONWARNING);
 	}
 	
+	m_ScriptList.SelectItem(nItem);
+
 	return CDRF_DODEFAULT;
 }
 

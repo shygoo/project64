@@ -57,9 +57,12 @@ class CEditConsole : public CWindowImpl<CEditEval, CEdit>
 private:
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-		if (GetKeyState(VK_CONTROL) && wParam == 'A')
+		if (GetKeyState(VK_CONTROL) < 0)
 		{
-			this->SetSelAll();
+			if (wParam == 'A')
+			{
+				this->SetSelAll();
+			}
 		}
 		return FALSE;
 	}
