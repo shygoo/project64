@@ -29,6 +29,8 @@ CDebugScripts::~CDebugScripts(void)
 
 LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
+	DlgResize_Init();
+
 	HFONT monoFont = CreateFont(-11, 0, 0, 0,
 		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -50,7 +52,9 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 
 	m_EvalEdit.SetFont(monoFont);
 	m_ConsoleEdit.SetFont(monoFont);
-	
+
+	m_EvalEdit.EnableWindow(FALSE);
+
 	RefreshList();
 
 	WindowCreated();

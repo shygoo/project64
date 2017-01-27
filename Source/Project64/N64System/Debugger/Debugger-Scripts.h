@@ -52,13 +52,36 @@ public:
 	END_MSG_MAP()
 };
 
+class CEditConsole : public CWindowImpl<CEditEval, CEdit>
+{
+private:
+	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+		if (GetKeyState(VK_CONTROL) && wParam == 'A')
+		{
+			this->SetSelAll();
+		}
+		return FALSE;
+	}
+public:
+	BOOL Attach(HWND hWndNew)
+	{
+		return SubclassWindow(hWndNew);
+	}
+
+	BEGIN_MSG_MAP_EX(CEditEval)
+		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+	END_MSG_MAP()
+};
+
 class CDebugScripts :
-	public CDebugDialog < CDebugScripts >
+	public CDebugDialog < CDebugScripts >,
+	public CDialogResize<CDebugScripts>
 {
 private:
 	CEdit m_InstanceInfoEdit;
 	CEditEval m_EvalEdit;
-	CEdit m_ConsoleEdit;
+	CEditConsole m_ConsoleEdit;
 	CScriptList m_ScriptList;
 	char* m_SelectedScriptName;
 
@@ -95,5 +118,15 @@ public:
 		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
 		CHAIN_MSG_MAP_MEMBER(m_ScriptList)
 		MSG_WM_DESTROY(OnDestroy)
+		CHAIN_MSG_MAP(CDialogResize<CDebugScripts>)
 	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(CDebugScripts)
+		DLGRESIZE_CONTROL(IDC_CTX_INFO_EDIT, DLSZ_SIZE_X)
+		DLGRESIZE_CONTROL(IDC_EVAL_EDIT, DLSZ_SIZE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_RUN_BTN, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_CONSOLE_EDIT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_SCRIPT_LIST, DLSZ_SIZE_Y)
+	END_DLGRESIZE_MAP()
+
 };
