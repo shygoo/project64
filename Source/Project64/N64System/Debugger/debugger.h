@@ -33,6 +33,7 @@ __interface CDebugger
 {
     virtual void TLBChanged ( void ) = 0;
 	virtual bool CPUStepStarted ( void ) = 0;
+	virtual void CPUStep ( void ) = 0;
 };
 
 class CDebuggerUI :
@@ -51,6 +52,7 @@ class CDebuggerUI :
 	CBreakpoints        * m_Breakpoints;
 	CScriptSystem       * m_ScriptSystem;
 	vector<DMALogEntry> * m_DMALog;
+	vector<uint32_t>    * m_StackTrace;
 
 	void BreakpointHit(void);
 
@@ -60,6 +62,7 @@ protected:
 
 	void TLBChanged ( void );
 	bool CPUStepStarted ( void );
+	void CPUStep        ( void );
 	
 public:
     void Debug_Reset                ( void );

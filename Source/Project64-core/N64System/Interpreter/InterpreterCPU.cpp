@@ -300,10 +300,12 @@ void CInterpreterCPU::ExecuteCPU()
 
 			if (!g_Debugger->CPUStepStarted())
 			{
-				//MessageBox(NULL, "skipping", "skipping", MB_OK);
+				// Skip command if instructed by the debugger
 				PROGRAM_COUNTER += 4;
 				continue;
 			}
+			
+			g_Debugger->CPUStep();
 
             /* if (PROGRAM_COUNTER > 0x80000300 && PROGRAM_COUNTER < 0x80380000)
             {
@@ -315,7 +317,7 @@ void CInterpreterCPU::ExecuteCPU()
 
             m_R4300i_Opcode[Opcode.op]();
             NextTimer -= CountPerOp;
-
+			
             PROGRAM_COUNTER += 4;
             switch (R4300iOp::m_NextInstruction)
             {

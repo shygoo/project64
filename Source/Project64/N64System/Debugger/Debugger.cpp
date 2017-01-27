@@ -33,6 +33,7 @@ CDebuggerUI::CDebuggerUI () :
 	g_Debugger = this;
 
 	m_DMALog = new vector<DMALogEntry>;
+	m_StackTrace = new vector<uint32_t>;
 
 	m_Breakpoints = new CBreakpoints();
 	m_ScriptSystem = new CScriptSystem(this);
@@ -50,6 +51,9 @@ CDebuggerUI::~CDebuggerUI (void)
 	delete m_Symbols;
 	delete m_DMALogView;
 	delete m_MemorySearch;
+
+	m_DMALog->clear();
+	m_StackTrace->clear();
 }
 
 void CDebuggerUI::GameReset ( CDebuggerUI * _this )
@@ -316,8 +320,7 @@ bool CDebuggerUI::CPUStepStarted()
 
 	if (m_Breakpoints->EBPExists(PROGRAM_COUNTER))
 	{
-		BreakpointHit();
-		return !m_Breakpoints->isSkipping();
+		goto breakpoint_hit;
 	}
 
 	// Memory breakpoints
@@ -335,8 +338,7 @@ bool CDebuggerUI::CPUStepStarted()
 			
 			if (m_Breakpoints->RBPExists(memoryAddress))
 			{
-				BreakpointHit();
-				return !m_Breakpoints->isSkipping();
+				goto breakpoint_hit;
 			}
 		}
 		else // Write instructions
@@ -345,8 +347,7 @@ bool CDebuggerUI::CPUStepStarted()
 
 			if (m_Breakpoints->WBPExists(memoryAddress))
 			{
-				BreakpointHit();
-				return !m_Breakpoints->isSkipping();
+				goto breakpoint_hit;
 			}
 			
 			// Catch cart -> rdram dma
@@ -364,11 +365,7 @@ bool CDebuggerUI::CPUStepStarted()
 					uint32_t wbpAddr = m_Breakpoints->m_WBP[i];
 					if (wbpAddr >= dmaRamAddr && wbpAddr < endAddr)
 					{
-						BreakpointHit();
-						//m_CommandsView->ShowWindow();
-						//m_CommandsView->ShowPIRegTab();
-						//CBreakpoints::Pause();
-						return !m_Breakpoints->isSkipping();
+						goto breakpoint_hit;
 					}
 				}
 			}
@@ -382,16 +379,33 @@ bool CDebuggerUI::CPUStepStarted()
 
 	if (R4300iOp::m_NextInstruction != JUMP)
 	{
-		BreakpointHit();
-		return !m_Breakpoints->isSkipping();
+		goto breakpoint_hit;
 	}
 
 	if (JumpToLocation == PROGRAM_COUNTER + 4)
 	{
 		// Only pause on delay slots when branch isn't taken
-		BreakpointHit();
-		return !m_Breakpoints->isSkipping();
+		goto breakpoint_hit;
 	}
-
+	
 	return !m_Breakpoints->isSkipping();
+
+breakpoint_hit:
+	BreakpointHit();
+	return !m_Breakpoints->isSkipping();
+}
+
+void CDebuggerUI::CPUStep()
+{
+	OPCODE Opcode = R4300iOp::m_Opcode;
+	uint32_t op = Opcode.op;
+	
+	if (op == R4300i_JAL || op == R4300i_SPECIAL_JALR) // JAL or JALR
+	{
+		m_StackTrace->push_back(R4300iOp::m_JumpToLocation);
+	}
+	else if (op == R4300i_SPECIAL_JR && Opcode.rs == 31) // JR RA
+	{
+		m_StackTrace->pop_back();
+	}
 }
