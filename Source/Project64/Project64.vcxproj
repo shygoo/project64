@@ -83,6 +83,7 @@
     <ClCompile Include="N64System\Debugger\ScriptInstance.cpp" />
     <ClCompile Include="N64System\Debugger\ScriptHook.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-DMALog.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-StackTrace.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -113,6 +114,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="N64System\Debugger\Debugger-DMALog.h" />
     <ClInclude Include="N64System\Debugger\ScriptHook.h" />
     <ClInclude Include="N64System\Debugger\ScriptInstance.h" />

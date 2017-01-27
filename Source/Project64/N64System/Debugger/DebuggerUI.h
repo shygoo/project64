@@ -12,3 +12,4 @@
 #include "Debugger-Symbols.h"
 #include "Debugger-AddBreakpoint.h"
 #include "Debugger-DMALog.h"
+#include "Debugger-StackTrace.h"

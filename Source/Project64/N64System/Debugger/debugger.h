@@ -19,6 +19,7 @@ class CDebugScripts;
 class CDebugSymbols;
 class CDebugAddBreakpoint;
 class CDebugDMALogView;
+class CDebugStackTrace;
 
 class CBreakpoints;
 class CScriptSystem;
@@ -48,6 +49,7 @@ class CDebuggerUI :
 	CDebugSymbols       * m_Symbols;
 	CDebugAddBreakpoint * m_AddBreakpoint;
 	CDebugDMALogView    * m_DMALogView;
+	CDebugStackTrace    * m_StackTraceView;
 
 	CBreakpoints        * m_Breakpoints;
 	CScriptSystem       * m_ScriptSystem;
@@ -78,6 +80,8 @@ public:
     void Debug_ShowSymbolsWindow    ( void );
 	void Debug_ShowModalAddBreakpoint ( void );
 	
+	void Debug_ShowStackTrace(void);
+
 	void Debug_LogScriptsWindow(const char* text);
 	void Debug_ClearScriptsWindow(void);
 
@@ -91,6 +95,7 @@ public:
 	CScriptSystem* ScriptSystem();
 	CDebugScripts* ScriptConsole();
 	vector<DMALogEntry> * DMALog();
+	vector<uint32_t> * StackTrace();
 
     static void GameReset ( CDebuggerUI * _this );
 };

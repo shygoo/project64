@@ -62,6 +62,7 @@
 #define IDR_MEM_BP_POPUP                177
 #define IDR_JSAPI_TEXT                  181
 #define IDD_Debugger_DMALog             182
+#define IDD_Debugger_StackTrace         184
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -473,6 +474,8 @@
 #define IDC_TRACE_STATIC                1307
 #define IDC_RAM_STATIC                  1308
 #define IDC_ROM_STATIC                  1309
+#define IDC_LIST4                       1312
+#define IDC_STACKTRACE_LIST             1313
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -505,9 +508,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        184
+#define _APS_NEXT_RESOURCE_VALUE        186
 #define _APS_NEXT_COMMAND_VALUE         40024
-#define _APS_NEXT_CONTROL_VALUE         1310
+#define _APS_NEXT_CONTROL_VALUE         1314
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

@@ -27,7 +27,8 @@ CDebuggerUI::CDebuggerUI () :
 	m_Symbols(NULL),
 	m_Breakpoints(NULL),
 	m_ScriptSystem(NULL),
-	m_DMALogView(NULL)
+	m_DMALogView(NULL),
+	m_StackTraceView(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
@@ -114,6 +115,12 @@ void CDebuggerUI::Debug_Reset ( void )
 		m_DMALogView->HideWindow();
 		delete m_DMALogView;
 		m_DMALogView = NULL;
+	}
+	if (m_StackTraceView)
+	{
+		m_StackTraceView->HideWindow();
+		delete m_StackTraceView;
+		m_StackTraceView = NULL;
 	}
 }
 
@@ -263,6 +270,16 @@ void CDebuggerUI::Debug_ShowDMALogWindow(void)
 	m_DMALogView->ShowWindow();
 }
 
+void CDebuggerUI::Debug_ShowStackTrace(void)
+{
+	if (m_StackTraceView == NULL)
+	{
+		m_StackTraceView = new CDebugStackTrace(this);
+	}
+	m_StackTraceView->ShowWindow();
+}
+
+
 CBreakpoints* CDebuggerUI::Breakpoints()
 {
 	return m_Breakpoints;
@@ -282,6 +299,12 @@ vector<DMALogEntry> * CDebuggerUI::DMALog()
 {
 	return m_DMALog;
 }
+
+vector<uint32_t> * CDebuggerUI::StackTrace()
+{
+	return m_StackTrace;
+}
+
 
 void CDebuggerUI::BreakpointHit()
 {

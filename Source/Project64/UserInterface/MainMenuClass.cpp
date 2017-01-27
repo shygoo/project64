@@ -548,6 +548,7 @@ bool CMainMenu::ProcessMessage(HWND hWnd, DWORD /*FromAccelerator*/, DWORD MenuI
 	case ID_DEBUGGER_SCRIPTS: m_Gui->Debug_ShowScriptsWindow(); break;
 	case ID_DEBUGGER_SYMBOLS: m_Gui->Debug_ShowSymbolsWindow(); break;
 	case ID_DEBUGGER_DMALOG: m_Gui->Debug_ShowDMALogWindow(); break;
+	case ID_DEBUGGER_STACKTRACE: m_Gui->Debug_ShowStackTrace(); break;
 	case ID_CURRENT_SAVE_DEFAULT:
         g_Notify->DisplayMessage(3, stdstr_f(GS(MENU_SLOT_SAVE), GetSaveSlotString(MenuID - ID_CURRENT_SAVE_DEFAULT).c_str()).c_str());
         g_Settings->SaveDword(Game_CurrentSaveState, (DWORD)(MenuID - ID_CURRENT_SAVE_DEFAULT));
@@ -1178,6 +1179,12 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 		/* Debug - DMA Log
 		*******************/
 		Item.Reset(ID_DEBUGGER_DMALOG, EMPTY_STRING, EMPTY_STDSTR, NULL, L"DMA Log...");
+		//Item.SetItemEnabled(CPURunning);
+		DebugMenu.push_back(Item);
+
+		/* Debug - Stack Trace
+		*******************/
+		Item.Reset(ID_DEBUGGER_STACKTRACE, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Stack Trace...");
 		//Item.SetItemEnabled(CPURunning);
 		DebugMenu.push_back(Item);
 
