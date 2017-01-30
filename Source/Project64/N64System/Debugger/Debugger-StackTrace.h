@@ -34,11 +34,14 @@ private:
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnListDblClicked(NMHDR* pNMHDR);
 	LRESULT OnDestroy(void);
 
 	BEGIN_MSG_MAP_EX(CDebugStackTrace)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
+		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+		NOTIFY_HANDLER_EX(IDC_STACKTRACE_LIST, NM_DBLCLK, OnListDblClicked)
 		CHAIN_MSG_MAP(CDialogResize<CDebugStackTrace>)
 	END_MSG_MAP()
 
