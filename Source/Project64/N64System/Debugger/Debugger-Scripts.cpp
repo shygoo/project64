@@ -64,13 +64,24 @@ LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 void CDebugScripts::ConsolePrint(const char* text)
 {
 	::ShowWindow(*this, SW_SHOWNOACTIVATE);
-	int curLength = m_ConsoleEdit.GetWindowTextLengthA();
-	int textLength = strlen(text);
-	int newLength = curLength + textLength + 1;
-	char* newText = (char*) malloc(newLength);
-	m_ConsoleEdit.GetWindowTextA(newText, curLength + 1);
-	strcpy(newText + curLength, text);
-	m_ConsoleEdit.SetWindowTextA(newText);
+	int textPos = m_ConsoleEdit.GetWindowTextLengthA();
+	
+	// Get scrollbar state
+	SCROLLINFO scroll;
+	scroll.cbSize = sizeof(SCROLLINFO);
+	scroll.fMask = SIF_ALL;
+	m_ConsoleEdit.GetScrollInfo(SB_VERT, &scroll);
+	
+	m_ConsoleEdit.SetRedraw(FALSE);
+
+	m_ConsoleEdit.AppendText(text);
+
+	m_ConsoleEdit.SetRedraw(TRUE);
+
+	if ((scroll.nPage + scroll.nPos) - 1 == scroll.nMax)
+	{
+		m_ConsoleEdit.ScrollCaret();
+	}
 }
 
 void CDebugScripts::RefreshConsole()
