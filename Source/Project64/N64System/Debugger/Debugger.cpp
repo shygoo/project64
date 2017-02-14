@@ -425,10 +425,10 @@ void CDebuggerUI::CPUStep()
 	
 	if (op == R4300i_JAL || op == R4300i_SPECIAL_JALR) // JAL or JALR
 	{
-		m_StackTrace->push_back(R4300iOp::m_JumpToLocation);
+		//m_StackTrace->push_back(R4300iOp::m_JumpToLocation);
 	}
 	else if (op == R4300i_SPECIAL_JR && Opcode.rs == 31) // JR RA
 	{
-		m_StackTrace->pop_back();
+		//m_StackTrace->pop_back();
 	}
 }
