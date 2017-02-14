@@ -347,7 +347,7 @@ bool CDebuggerUI::CPUStepStarted()
 	}
 
 	// Memory breakpoints
-
+	
 	OPCODE Opcode = R4300iOp::m_Opcode;
 	uint32_t op = Opcode.op;
 
