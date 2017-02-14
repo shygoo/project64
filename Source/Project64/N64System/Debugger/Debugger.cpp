@@ -422,12 +422,13 @@ void CDebuggerUI::CPUStep()
 {
 	OPCODE Opcode = R4300iOp::m_Opcode;
 	uint32_t op = Opcode.op;
+	uint32_t funct = Opcode.funct;
 	
-	if (op == R4300i_JAL || op == R4300i_SPECIAL_JALR) // JAL or JALR
+	if (op == R4300i_JAL || funct == R4300i_SPECIAL_JALR) // JAL or JALR
 	{
 		//m_StackTrace->push_back(R4300iOp::m_JumpToLocation);
 	}
-	else if (op == R4300i_SPECIAL_JR && Opcode.rs == 31) // JR RA
+	else if (funct == R4300i_SPECIAL_JR && Opcode.rs == 31) // JR RA
 	{
 		//m_StackTrace->pop_back();
 	}
