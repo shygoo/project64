@@ -61,6 +61,22 @@ void CScriptSystem::RunScript(char* path)
 	scriptInstance->Start(pathSaved);
 }
 
+void CScriptSystem::StopScript(char* path)
+{
+	int nInstances = m_RunningInstances.size();
+
+	CScriptInstance* scriptInstance = GetInstance(path);
+
+	if (scriptInstance == NULL)
+	{
+		return;
+	}
+
+	m_Debugger->Debug_LogScriptsWindow("Force stopping instance...");
+
+	scriptInstance->ForceStop();
+}
+
 void CScriptSystem::DeleteStoppedInstances()
 {
 	for (int i = 0; i < m_RunningInstances.size(); i++)
@@ -100,32 +116,19 @@ CScriptInstance* CScriptSystem::GetInstance(char* path)
 	return NULL;
 }
 
-
-void CScriptSystem::StopScript(char* path)
-{
-	//int nContexts = m_Contexts.size();
-	//for (int i = 0; i < nContexts; i++)
-	//{
-	//	if (strcmp(m_Contexts[i]->path, path) == 0)
-	//	{
-	//		JSCONTEXT* jsContext = m_Contexts[i];
-	//		CloseHandle(jsContext->hThread);
-	//		DeleteCriticalSection(&jsContext->criticalSection);
-	//		duk_destroy_heap(jsContext->ctx);
-	//		// todo clear callbacks
-	//		free(jsContext);
-	//		m_Contexts.erase(m_Contexts.begin() + i);
-	//		return;
-	//	}
-	//}
-}
-
-bool CScriptSystem::HasCallbacksForContext(CScriptInstance* scriptInstance)
+bool CScriptSystem::HasCallbacksForInstance(CScriptInstance* scriptInstance)
 {
 	return
 		m_HookCPUExec->HasContext(scriptInstance) ||
 		m_HookCPURead->HasContext(scriptInstance) ||
 		m_HookCPUWrite->HasContext(scriptInstance);
+}
+
+void CScriptSystem::ClearCallbacksForInstance(CScriptInstance* scriptInstance)
+{
+	m_HookCPUExec->RemoveByInstance(scriptInstance);
+	m_HookCPURead->RemoveByInstance(scriptInstance);
+	m_HookCPUWrite->RemoveByInstance(scriptInstance);
 }
 
 void CScriptSystem::RegisterHook(const char* hookId, CScriptHook* cbList)

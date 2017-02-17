@@ -63,6 +63,8 @@
 #define IDR_JSAPI_TEXT                  181
 #define IDD_Debugger_DMALog             182
 #define IDD_Debugger_StackTrace         184
+#define IDR_MENU1                       186
+#define IDR_SCRIPT_POPUP                186
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -494,6 +496,8 @@
 #define ID_POPUPMENU_TOGGLEWBP          40021
 #define ID_POPUPMENU_REMOVEBREAKPOINTS  40022
 #define ID_POPUPMENU_COPYADDRESSTOCLIPBOARD 40023
+#define ID_POPUP_RUN                    40024
+#define ID_POPUP_STOP                   40025
 #define ID_POPUPMENU_ROMDIRECTORY       40137
 #define ID_POPUPMENU_REFRESHROMLIST     40138
 #define ID_POPUPMENU_PLAYGAME           40152
@@ -508,8 +512,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        186
-#define _APS_NEXT_COMMAND_VALUE         40024
+#define _APS_NEXT_RESOURCE_VALUE        187
+#define _APS_NEXT_COMMAND_VALUE         40026
 #define _APS_NEXT_CONTROL_VALUE         1314
 #define _APS_NEXT_SYMED_VALUE           102
 #endif

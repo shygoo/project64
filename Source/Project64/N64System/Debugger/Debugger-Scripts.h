@@ -101,6 +101,8 @@ public:
 	void RefreshConsole();
 
 	void EvaluateInSelectedInstance(char* code);
+	void RunSelected();
+	void StopSelected();
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDestroy(void)
@@ -111,6 +113,7 @@ public:
 	LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnScriptListDblClicked(NMHDR* pNMHDR);
 	LRESULT OnScriptListClicked(NMHDR* pNMHDR);
+	LRESULT OnScriptListRClicked(NMHDR* pNMHDR);
 	LRESULT OnScriptListCustomDraw(NMHDR* pNMHDR);
 
 	BEGIN_MSG_MAP_EX(CDebugScripts)
@@ -118,6 +121,7 @@ public:
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_DBLCLK, OnScriptListDblClicked)
 		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CLICK, OnScriptListClicked)
+		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_RCLICK, OnScriptListRClicked)
 		NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
 		CHAIN_MSG_MAP_MEMBER(m_ScriptList)
 		MSG_WM_DESTROY(OnDestroy)

@@ -105,9 +105,6 @@ void CDebugScripts::ConsoleClear()
 
 void CDebugScripts::RefreshList()
 {
-	m_ScriptList.SetRedraw(false);
-	m_ScriptList.DeleteAllItems();
-
 	int nIndex = m_ScriptList.GetSelectedIndex();
 	
 	CPath SearchPath("Scripts", "*");
@@ -116,6 +113,9 @@ void CDebugScripts::RefreshList()
 	{
 		return;
 	}
+
+	m_ScriptList.SetRedraw(false);
+	m_ScriptList.DeleteAllItems();
 
 	do
 	{
@@ -136,6 +136,12 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	case IDCANCEL:
 		EndDialog(0);
 		break;
+	case ID_POPUP_RUN:
+		RunSelected();
+		break;
+	case ID_POPUP_STOP:
+		StopSelected();
+		break;
 	}
 	return FALSE;
 }
@@ -146,23 +152,10 @@ LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
 
-	char scriptName[MAX_PATH];
-	m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
-	
-	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
-
-	if (state == STATE_INVALID || state == STATE_STOPPED)
-	{
-		m_Debugger->ScriptSystem()->RunScript(scriptName);
-	}
-	else
-	{
-		// Todo change to console log
-		MessageBox("Script is already running", "Error", MB_OK | MB_ICONWARNING);
-	}
-	
 	m_ScriptList.SelectItem(nItem);
 
+	RunSelected();
+	
 	return CDRF_DODEFAULT;
 }
 
@@ -197,6 +190,30 @@ LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 	{
 		m_EvalEdit.EnableWindow(FALSE);
 	}
+
+	return CDRF_DODEFAULT;
+}
+
+LRESULT	CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
+{
+	OnScriptListClicked(pNMHDR);
+
+	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_SCRIPT_POPUP));
+	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
+	
+	/*
+	if (m_Breakpoints->m_RBP.size() == 0 && m_Breakpoints->m_WBP.size() == 0)
+	{
+		EnableMenuItem(hPopupMenu, ID_POPUPMENU_CLEARALLBPS, MF_DISABLED | MF_GRAYED);
+	}
+	*/
+
+	POINT mouse;
+	GetCursorPos(&mouse);
+
+	TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, NULL);
+
+	DestroyMenu(hMenu);
 
 	return CDRF_DODEFAULT;
 }
@@ -319,4 +336,24 @@ LRESULT CEditEval::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHan
 	}
 	bHandled = FALSE;
 	return 0;
+}
+
+
+void CDebugScripts::RunSelected()
+{
+	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
+
+	if (state == STATE_INVALID || state == STATE_STOPPED)
+	{
+		m_Debugger->ScriptSystem()->RunScript(m_SelectedScriptName);
+	}
+	else
+	{
+		m_Debugger->Debug_LogScriptsWindow("[Error: Script is already running]\n");
+	}
+}
+
+void CDebugScripts::StopSelected()
+{
+	m_Debugger->ScriptSystem()->StopScript(m_SelectedScriptName);
 }

@@ -55,13 +55,20 @@ CScriptInstance::~CScriptInstance()
 	//CloseHandle(m_hThread);
 	DeleteCriticalSection(&m_CriticalSection);
 	duk_destroy_heap(m_Ctx);
-	// todo clear callbacks/listeners
 }
 
 void CScriptInstance::Start(char* path)
 {
 	m_TempPath = path;
 	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StartThread, this, 0, NULL);
+}
+
+void CScriptInstance::ForceStop()
+{
+	// Close all files and delete all hooked callbacks
+	m_ScriptSystem->ClearCallbacksForInstance(this);
+	CloseAllFiles();
+	SetState(STATE_STOPPED);
 }
 
 duk_context* CScriptInstance::DukContext()
@@ -208,7 +215,7 @@ bool CScriptInstance::HaveEvents()
 {
 	return
 		(m_Listeners.size() > 0) ||
-		m_ScriptSystem->HasCallbacksForContext(this);
+		m_ScriptSystem->HasCallbacksForInstance(this);
 }
 
 void CScriptInstance::AddFile(HANDLE fd, bool bSocket)
@@ -243,6 +250,27 @@ void CScriptInstance::CloseFile(HANDLE fd)
 			CloseHandle(iofd.fd);
 		}
 		break;
+	}
+}
+
+void CScriptInstance::CloseAllFiles()
+{
+	// Causes EVT_READ with length 0
+	// Not safe to remove listeners until then
+
+	for (uint32_t i = 0; i < m_Files.size(); i++)
+	{
+		IOFD iofd = m_Files[i];
+
+		// Close file handle
+		if (iofd.bSocket)
+		{
+			closesocket((SOCKET)iofd.fd);
+		}
+		else
+		{
+			CloseHandle(iofd.fd);
+		}
 	}
 }
 

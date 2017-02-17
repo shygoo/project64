@@ -1347,6 +1347,15 @@ BEGIN
     END
 END
 
+IDR_SCRIPT_POPUP MENU
+BEGIN
+    POPUP "Popup"
+    BEGIN
+        MENUITEM "Run",                         ID_POPUP_RUN
+        MENUITEM "Stop",                        ID_POPUP_STOP
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

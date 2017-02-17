@@ -74,7 +74,10 @@ public:
 		m_Debugger->Debug_RefreshScriptsWindow();
 	}
 	
-	bool HasCallbacksForContext(CScriptInstance* scriptInstance);
+	bool HasCallbacksForInstance(CScriptInstance* scriptInstance);
+
+	// Remove all hooked callbacks for an instance
+	void ClearCallbacksForInstance(CScriptInstance* scriptInstance);
 
 	CScriptHook* GetHook(const char* hookId);
 	

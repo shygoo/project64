@@ -59,6 +59,7 @@ public:
 	~CScriptInstance();
 
 	void Start(char* path);
+	void ForceStop();
 	void Invoke(void* heapptr);
 	INSTANCE_STATE GetState();
 
@@ -98,6 +99,7 @@ private:
 
 	void AddFile(HANDLE fd, bool bSocket = false);
 	void CloseFile(HANDLE fd);
+	void CloseAllFiles();
 	void RemoveFile(HANDLE fd);
 	HANDLE CreateSocket();
 	

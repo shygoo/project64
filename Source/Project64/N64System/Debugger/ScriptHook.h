@@ -27,7 +27,7 @@ public:
 	void InvokeByParam(uint32_t tag);
 	void RemoveById(int callbackId);
 	void RemoveByParam(uint32_t tag);
-	void RemoveByContext(CScriptInstance* scriptInstance);
+	void RemoveByInstance(CScriptInstance* scriptInstance);
 	bool HasContext(CScriptInstance* scriptInstance);
 	//bool HasTag(uint32_t tag);
 };
