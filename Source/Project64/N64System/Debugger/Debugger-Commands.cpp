@@ -917,7 +917,8 @@ static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lP
 		}
 
 		int nReg = CDebugCommandsView::MapFPREdit(controlID);
-		g_Reg->m_FPR[nReg].UDW = value;
+
+		*(uint32_t*)g_Reg->m_FPR_S[nReg] = value;
 	}
 
 	return FALSE;
