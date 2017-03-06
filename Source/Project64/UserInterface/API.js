@@ -1,7 +1,7 @@
 Number.prototype.hex = function(len)
 {
     len = (len || 8);
-    var str = (this >>> 0).toString(16)
+    var str = (this >>> 0).toString(16).toUpperCase()
 	while (str.length < len)
 	{
 		str = "0" + str
