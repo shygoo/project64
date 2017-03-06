@@ -330,7 +330,7 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		for (int i = 0; i < 32; i++)
 		{
 			m_GPREdits[i].SetValue(g_Reg->m_GPR[i].UDW);
-			m_FPREdits[i].SetValue(g_Reg->m_FPR[i].UW[0], false, true);
+			m_FPREdits[i].SetValue(*(uint32_t *)g_Reg->m_FPR_S[i], false, true);
 		}
 		m_HIEdit.SetValue(g_Reg->m_HI.UDW);
 		m_LOEdit.SetValue(g_Reg->m_LO.UDW);
