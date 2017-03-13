@@ -71,15 +71,14 @@ void CScriptSystem::StopScript(char* path)
 	{
 		return;
 	}
-
-	m_Debugger->Debug_LogScriptsWindow("Force stopping instance...");
-
+	
 	scriptInstance->ForceStop();
 }
 
 void CScriptSystem::DeleteStoppedInstances()
 {
-	for (int i = 0; i < m_RunningInstances.size(); i++)
+	int lastIndex = m_RunningInstances.size() - 1;
+	for (int i = lastIndex; i >= 0; i--)
 	{
 		if (m_RunningInstances[i].scriptInstance->GetState() == STATE_STOPPED)
 		{
@@ -87,7 +86,6 @@ void CScriptSystem::DeleteStoppedInstances()
 			CScriptInstance* instance = m_RunningInstances[i].scriptInstance;
 			delete instance;
 			m_RunningInstances.erase(m_RunningInstances.begin() + i);
-			i--;
 		}
 	}
 }

@@ -78,7 +78,8 @@ void CScriptHook::RemoveByParam(uint32_t param)
 
 void CScriptHook::RemoveByInstance(CScriptInstance* scriptInstance)
 {
-	for (int i = 0; i < m_Callbacks.size(); i++)
+	int lastIndex = m_Callbacks.size() - 1;
+	for (int i = lastIndex; i >= 0; i--)
 	{
 		if (m_Callbacks[i].scriptInstance == scriptInstance)
 		{

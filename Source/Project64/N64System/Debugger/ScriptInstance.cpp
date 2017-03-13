@@ -22,6 +22,7 @@ void CScriptInstance::UncacheInstance(CScriptInstance* _this)
 		if (Cache[i] == _this)
 		{
 			Cache.erase(Cache.begin() + i);
+			break;
 		}
 	}
 }
@@ -66,8 +67,10 @@ void CScriptInstance::Start(char* path)
 void CScriptInstance::ForceStop()
 {
 	// Close all files and delete all hooked callbacks
+	EnterCriticalSection(&m_CriticalSection);
 	m_ScriptSystem->ClearCallbacksForInstance(this);
 	CloseAllFiles();
+	LeaveCriticalSection(&m_CriticalSection);
 	SetState(STATE_STOPPED);
 }
 
