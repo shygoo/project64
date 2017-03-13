@@ -718,6 +718,69 @@ duk_ret_t CScriptInstance::js_SetGPRVal(duk_context* ctx)
 	return 1;
 }
 
+duk_ret_t CScriptInstance::js_GetROMInt(duk_context* ctx)
+{
+	uint32_t address = duk_to_uint32(ctx, 0) & 0x0FFFFFFF;
+	int bitwidth = duk_to_int(ctx, 1);
+	duk_bool_t bSigned = duk_to_boolean(ctx, 2);
+
+	duk_pop_n(ctx, 3);
+
+	if (g_Rom == NULL)
+	{
+		goto return_err;
+	}
+
+	uint8_t* rom = g_Rom->GetRomAddress(); // little endian
+	uint32_t romSize = g_Rom->GetRomSize();
+
+	if (address > romSize)
+	{
+		goto return_err;
+	}
+
+	DWORD retval;
+
+	switch (bitwidth)
+	{
+	case 8:
+	{
+		uint8_t val = rom[address ^ 0b11];
+		retval = bSigned ? (char)val : val;
+		break;
+	}
+	case 16:
+	{
+		uint16_t val = *(uint16_t*)&rom[address ^ 0b10];
+		retval = bSigned ? (short)val : val;
+		break;
+	}
+	case 32:
+	{
+		uint32_t val = *(uint32_t*)&rom[address];
+		retval = bSigned ? (int)val : val;
+		break;
+	}
+	default:
+		goto return_err;
+	}
+
+	if (bSigned)
+	{
+		duk_push_int(ctx, retval);
+	}
+	else
+	{
+		duk_push_uint(ctx, retval);
+	}
+
+	return 1;
+
+return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
 duk_ret_t CScriptInstance::js_GetRDRAMInt(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0);

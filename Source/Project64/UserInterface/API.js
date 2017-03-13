@@ -178,6 +178,45 @@ const gpr = new Proxy({}, // todo dgpr for 64 bit
 	}
 })
 
+const rom = {
+    u8: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 8, false)
+        }
+    }),
+    u16: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 16, false)
+        }
+    }),
+    u32: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 32, false)
+        }
+    }),
+    s8: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 8, true)
+        }
+    }),
+    s16: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 16, true)
+        }
+    }),
+    s32: new Proxy({},
+    {
+        get: function (obj, prop) {
+            return _native.getROMInt(prop, 32, true)
+        }
+    }),
+}
+
 const mem = {
 	u8: new Proxy({},
 	{

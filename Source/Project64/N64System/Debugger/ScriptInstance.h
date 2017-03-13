@@ -133,6 +133,7 @@ private:
 	static duk_ret_t js_SetPCVal       (duk_context*); // (value)
 	static duk_ret_t js_GetGPRVal      (duk_context*); // (regNum)
 	static duk_ret_t js_SetGPRVal      (duk_context*); // (regNum, value)
+	static duk_ret_t js_GetROMInt      (duk_context*); // (address, bitwidth, signed)
 	static duk_ret_t js_GetRDRAMInt    (duk_context*); // (address, bitwidth, signed)
 	static duk_ret_t js_SetRDRAMInt    (duk_context*); // (address, bitwidth, signed, newValue)
 	static duk_ret_t js_GetRDRAMFloat  (duk_context*); // (address, bDouble)
@@ -152,6 +153,7 @@ private:
 		{ "getPCVal",       js_GetPCVal,       DUK_VARARGS },
 		{ "setGPRVal",      js_SetGPRVal,      DUK_VARARGS },
 		{ "getGPRVal",      js_GetGPRVal,      DUK_VARARGS },
+		{ "getROMInt",      js_GetROMInt,      DUK_VARARGS },
 		{ "getRDRAMInt",    js_GetRDRAMInt,    DUK_VARARGS },
 		{ "setRDRAMInt",    js_SetRDRAMInt,    DUK_VARARGS },
 		{ "getRDRAMFloat",  js_GetRDRAMFloat,  DUK_VARARGS },
