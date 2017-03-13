@@ -1356,6 +1356,16 @@ BEGIN
     END
 END
 
+IDR_OP_POPUP MENU
+BEGIN
+    POPUP "PopupMenu"
+    BEGIN
+        MENUITEM "Insert NOP",                  ID_POPUPMENU_INSERTNOP
+        MENUITEM "Restore",                     ID_POPUPMENU_RESTORE
+        MENUITEM "Restore All",                 ID_POPUPMENU_RESTOREALL
+    END
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

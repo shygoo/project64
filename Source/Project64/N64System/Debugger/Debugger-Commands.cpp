@@ -533,6 +533,12 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
 		pLVCD->clrText = RGB(0x22, 0x22, 0);
 	}
+	else if (IsOpEdited(address))
+	{
+		// red
+		pLVCD->clrTextBk = RGB(0xFF, 0xEE, 0xFF);
+		pLVCD->clrText = RGB(0xFF, 0x00, 0xFF);
+	}
 	else if (Opcode.op == R4300i_ADDIU && Opcode.rt == 29) // stack shift
 	{
 		if ((short)Opcode.immediate < 0) // alloc
@@ -658,6 +664,19 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 	case IDCANCEL:
 		EndDialog(0);
 		break;
+	//popup
+	case ID_POPUPMENU_INSERTNOP:
+		EditOp(m_PopupMenuAddress, 0x00000000);
+		ShowAddress(m_StartAddress, TRUE);
+		break;
+	case ID_POPUPMENU_RESTORE:
+		RestoreOp(m_PopupMenuAddress);
+		ShowAddress(m_StartAddress, TRUE);
+		break;
+	case ID_POPUPMENU_RESTOREALL:
+		RestoreAllOps();
+		ShowAddress(m_StartAddress, TRUE);
+		break;
 	}
 	return FALSE;
 }
@@ -697,7 +716,7 @@ LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 	return 0;
 }
 
-LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
+LRESULT	CDebugCommandsView::OnCommandListDblClicked(NMHDR* pNMHDR)
 {
 	// Set PC breakpoint (right click, double click)
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
@@ -718,6 +737,28 @@ LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
 
 	return CDRF_DODEFAULT;
 }
+
+LRESULT	CDebugCommandsView::OnCommandListRightClicked(NMHDR* pNMHDR)
+{
+	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	int nItem = pIA->iItem;
+
+	uint32_t address = m_StartAddress + nItem * 4;
+	m_PopupMenuAddress = address;
+
+	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_OP_POPUP));
+	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
+
+	POINT mouse;
+	GetCursorPos(&mouse);
+
+	TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, NULL);
+
+	DestroyMenu(hMenu);
+	
+	return CDRF_DODEFAULT;
+}
+
 
 LRESULT CDebugCommandsView::OnListBoxClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
 {
@@ -802,6 +843,65 @@ LRESULT CDebugCommandsView::OnScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	}
 
 	return FALSE;
+}
+
+void CDebugCommandsView::Reset()
+{
+	ClearEditedOps();
+}
+
+void CDebugCommandsView::ClearEditedOps()
+{
+	m_EditedOps.clear();
+}
+
+BOOL CDebugCommandsView::IsOpEdited(uint32_t address)
+{
+	for (int i = 0; i < m_EditedOps.size(); i++)
+	{
+		if (m_EditedOps[i].address == address)
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void CDebugCommandsView::EditOp(uint32_t address, uint32_t op)
+{
+	if (IsOpEdited(address) == TRUE)
+	{
+		return;
+	}
+
+	uint32_t originalOp;
+
+	g_MMU->LW_VAddr(address, originalOp);
+	g_MMU->SW_VAddr(address, 0x00000000);
+	m_EditedOps.push_back({ address, originalOp });
+}
+
+void CDebugCommandsView::RestoreOp(uint32_t address)
+{
+	for (int i = 0; i < m_EditedOps.size(); i++)
+	{
+		if (m_EditedOps[i].address == address)
+		{
+			g_MMU->SW_VAddr(m_EditedOps[i].address, m_EditedOps[i].originalOp);
+			m_EditedOps.erase(m_EditedOps.begin() + i);
+			break;
+		}
+	}
+}
+
+void CDebugCommandsView::RestoreAllOps()
+{
+	int lastIndex = m_EditedOps.size() - 1;
+	for (int i = lastIndex; i >= 0; i--)
+	{
+		g_MMU->SW_VAddr(m_EditedOps[i].address, m_EditedOps[i].originalOp);
+		m_EditedOps.erase(m_EditedOps.begin() + i);
+	}
 }
 
 // Add breakpoint dialog

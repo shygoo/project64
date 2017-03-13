@@ -84,6 +84,8 @@ public:
 	static int MapFPREdit(DWORD controlId);
 	static int MapPIEdit(DWORD controlId);
 
+	void Reset();
+
 private:
 
 	CBreakpoints* m_Breakpoints;
@@ -115,6 +117,20 @@ private:
 	CWindow m_FPRTab;
 	CEditNumber m_FPREdits[32];
 	
+	uint32_t m_PopupMenuAddress;
+
+	typedef struct {
+		uint32_t address;
+		uint32_t originalOp;
+	} EditedOp;
+
+	vector<EditedOp> m_EditedOps;
+	void ClearEditedOps();
+	void EditOp(uint32_t address, uint32_t op);
+	void RestoreOp(uint32_t address);
+	void RestoreAllOps();
+	BOOL IsOpEdited(uint32_t address);
+
 	void GotoEnteredAddress();
 	void CheckCPUType();
 	void RefreshBreakpointList();
@@ -132,7 +148,8 @@ private:
 	LRESULT OnAddrChanged        (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnListBoxClicked     (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT	OnClicked            (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-	LRESULT	OnCommandListClicked (NMHDR* pNMHDR);
+	LRESULT	OnCommandListDblClicked(NMHDR* pNMHDR);
+	LRESULT	OnCommandListRightClicked (NMHDR* pNMHDR);
 	LRESULT OnRegisterTabChange  (NMHDR* pNMHDR);
 	LRESULT OnCustomDrawList     (NMHDR* pNMHDR);
 	LRESULT OnDestroy            (void);
@@ -152,8 +169,8 @@ private:
 		COMMAND_HANDLER(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
 		COMMAND_CODE_HANDLER(LBN_DBLCLK, OnListBoxClicked)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnCommandListClicked)
-		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListClicked)
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnCommandListDblClicked)
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListRightClicked)
 		NOTIFY_HANDLER_EX(IDC_REG_TABS, TCN_SELCHANGE, OnRegisterTabChange)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
 		CHAIN_MSG_MAP_MEMBER(m_CommandList)

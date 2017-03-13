@@ -64,6 +64,10 @@ void CDebuggerUI::GameReset ( CDebuggerUI * _this )
 		return;
 	}
 	// _this->Debug_Reset();
+	if (_this->m_CommandsView)
+	{
+		_this->m_CommandsView->Reset();
+	}
 }
 
 void CDebuggerUI::Debug_Reset ( void )
