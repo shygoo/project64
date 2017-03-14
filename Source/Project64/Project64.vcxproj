@@ -62,6 +62,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Assembler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Multilanguage\LanguageSelector.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-MemoryDump.cpp" />
@@ -114,6 +115,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assembler.h" />
     <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="N64System\Debugger\Debugger-DMALog.h" />
     <ClInclude Include="N64System\Debugger\ScriptHook.h" />

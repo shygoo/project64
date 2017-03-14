@@ -14,6 +14,7 @@
 
 #include "Symbols.h"
 #include "Breakpoints.h"
+#include "Assembler.h"
 
 #include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
@@ -187,6 +188,11 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_CommandList.SetColumnWidth(1, 60);
 	m_CommandList.SetColumnWidth(2, 120);
 	m_CommandList.SetColumnWidth(3, 120);
+
+	// Op editor
+	m_OpEdit.Attach(GetDlgItem(IDC_OP_EDIT));
+	m_OpEdit.SetCommandsWindow(this);
+	//m_OpEdit.
 	
 	// Setup stack list
 	m_StackList.Attach(GetDlgItem(IDC_STACK_LIST));
@@ -213,6 +219,31 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 LRESULT CDebugCommandsView::OnDestroy(void)
 {
+	return 0;
+}
+
+LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (wParam == VK_UP)
+	{
+	}
+	else if (wParam == VK_DOWN)
+	{
+	}
+	else if (wParam == VK_RETURN)
+	{
+		int textLen = m_OpEdit.GetWindowTextLengthA();
+		char text[256];
+		m_OpEdit.GetWindowTextA(text, 255);
+		m_OpEdit.SetWindowTextA("");
+		uint32_t op;
+		CAssembler::AssembleLine(text, &op);
+		EditOp(m_SelectedAddress, op);
+		m_SelectedAddress += 4;
+		BeginOpEdit(m_SelectedAddress);
+		//MessageBox("ayy");
+	}
+	bHandled = FALSE;
 	return 0;
 }
 
@@ -665,12 +696,15 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		EndDialog(0);
 		break;
 	//popup
+	case ID_POPUPMENU_EDIT:
+		BeginOpEdit(m_SelectedAddress);
+		break;
 	case ID_POPUPMENU_INSERTNOP:
-		EditOp(m_PopupMenuAddress, 0x00000000);
+		EditOp(m_SelectedAddress, 0x00000000);
 		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case ID_POPUPMENU_RESTORE:
-		RestoreOp(m_PopupMenuAddress);
+		RestoreOp(m_SelectedAddress);
 		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case ID_POPUPMENU_RESTOREALL:
@@ -710,6 +744,28 @@ void CDebugCommandsView::GotoEnteredAddress()
 	ShowAddress(address, TRUE);
 }
 
+void CDebugCommandsView::BeginOpEdit(uint32_t address)
+{
+	ShowAddress(address, FALSE);
+	int nItem = (address - m_StartAddress) / 4;
+	CRect itemRect;
+	m_CommandList.GetSubItemRect(nItem, 1, 0, &itemRect);
+	itemRect.bottom += 4;
+	itemRect.right += 80;
+	m_OpEdit.ShowWindow(SW_SHOW);
+	m_OpEdit.MoveWindow(&itemRect);
+	m_OpEdit.BringWindowToTop();
+	m_CommandList.RedrawWindow();
+	m_OpEdit.RedrawWindow();
+	m_OpEdit.SetFocus();
+}
+
+void CDebugCommandsView::EndOpEdit()
+{
+	m_OpEdit.SetWindowTextA("");
+	m_OpEdit.ShowWindow(SW_HIDE);
+}
+
 LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	GotoEnteredAddress();
@@ -740,11 +796,13 @@ LRESULT	CDebugCommandsView::OnCommandListDblClicked(NMHDR* pNMHDR)
 
 LRESULT	CDebugCommandsView::OnCommandListRightClicked(NMHDR* pNMHDR)
 {
+	EndOpEdit();
+
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
 
 	uint32_t address = m_StartAddress + nItem * 4;
-	m_PopupMenuAddress = address;
+	m_SelectedAddress = address;
 
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_OP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
@@ -877,7 +935,7 @@ void CDebugCommandsView::EditOp(uint32_t address, uint32_t op)
 	uint32_t originalOp;
 
 	g_MMU->LW_VAddr(address, originalOp);
-	g_MMU->SW_VAddr(address, 0x00000000);
+	g_MMU->SW_VAddr(address, op);
 	m_EditedOps.push_back({ address, originalOp });
 }
 
@@ -904,9 +962,8 @@ void CDebugCommandsView::RestoreAllOps()
 	}
 }
 
+
 // Add breakpoint dialog
-
-
 
 void CRegisterTabs::ResetTabs()
 {
@@ -1272,4 +1329,24 @@ void CEditReg64::SetValue(uint64_t value)
 	uint32_t h = (value & 0xFFFFFFFF00000000LL) >> 32;
 	uint32_t l = (value & 0x00000000FFFFFFFFLL);
 	SetValue(h, l);
+}
+
+
+LRESULT CEditOp::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (m_CommandsWindow == NULL)
+	{
+		return FALSE;
+	}
+	return m_CommandsWindow->OnOpKeyDown(uMsg, wParam, lParam, bHandled);
+}
+
+void CEditOp::SetCommandsWindow(CDebugCommandsView* commandsWindow)
+{
+	m_CommandsWindow = commandsWindow;
+}
+
+BOOL CEditOp::Attach(HWND hWndNew)
+{
+	return SubclassWindow(hWndNew);
 }

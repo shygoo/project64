@@ -62,11 +62,31 @@ public:
 	END_MSG_MAP()
 };
 
+class CEditOp;
+class CDebugCommandsView;
+
+class CEditOp : public CWindowImpl<CEditOp, CEdit>
+{
+private:
+	CDebugCommandsView* m_CommandsWindow;
+
+	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	
+	BEGIN_MSG_MAP_EX(CEditOp)
+		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+	END_MSG_MAP()
+
+public:
+	void SetCommandsWindow(CDebugCommandsView* commandsWindow);
+	BOOL Attach(HWND hWndNew);
+};
 
 class CDebugCommandsView :
 	public CDebugDialog<CDebugCommandsView>,
 	public CDialogResize<CDebugCommandsView>
 {
+	friend class CEditOp;
+
 public:
 	enum { IDD = IDD_Debugger_Commands };
 
@@ -117,7 +137,8 @@ private:
 	CWindow m_FPRTab;
 	CEditNumber m_FPREdits[32];
 	
-	uint32_t m_PopupMenuAddress;
+	CEditOp m_OpEdit;
+	uint32_t m_SelectedAddress;
 
 	typedef struct {
 		uint32_t address;
@@ -130,6 +151,8 @@ private:
 	void RestoreOp(uint32_t address);
 	void RestoreAllOps();
 	BOOL IsOpEdited(uint32_t address);
+	void BeginOpEdit(uint32_t address);
+	void EndOpEdit();
 
 	void GotoEnteredAddress();
 	void CheckCPUType();
@@ -148,6 +171,9 @@ private:
 	LRESULT OnAddrChanged        (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnListBoxClicked     (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT	OnClicked            (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	
+	LRESULT	OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	
 	LRESULT	OnCommandListDblClicked(NMHDR* pNMHDR);
 	LRESULT	OnCommandListRightClicked (NMHDR* pNMHDR);
 	LRESULT OnRegisterTabChange  (NMHDR* pNMHDR);
@@ -167,8 +193,12 @@ private:
 		MESSAGE_HANDLER(WM_VSCROLL, OnScroll)
 		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
 		COMMAND_HANDLER(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
+		//COMMAND_HANDLER(IDC_OP_EDIT, EN_CHANGE, OnOpChanged)
 		COMMAND_CODE_HANDLER(LBN_DBLCLK, OnListBoxClicked)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+
+		//MESSAGE_HANDLER(IDC_OP_EDIT, NM_KEYDOWN, OnOpKeyDown)
+
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnCommandListDblClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListRightClicked)
 		NOTIFY_HANDLER_EX(IDC_REG_TABS, TCN_SELCHANGE, OnRegisterTabChange)
@@ -195,4 +225,6 @@ private:
 		DLGRESIZE_CONTROL(IDC_SCRL_BAR, DLSZ_MOVE_X | DLSZ_SIZE_Y)
 	END_DLGRESIZE_MAP()
 };
+
+//
 

@@ -479,6 +479,7 @@
 #define IDC_ROM_STATIC                  1309
 #define IDC_LIST4                       1312
 #define IDC_STACKTRACE_LIST             1313
+#define IDC_OP_EDIT                     1314
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -503,6 +504,7 @@
 #define ID_POPUPMENU_RESTORE            40027
 #define ID_OP_POPUP_INSERTNOP           40028
 #define ID_POPUPMENU_RESTOREALL         40029
+#define ID_POPUPMENU_EDIT               40030
 #define ID_POPUPMENU_ROMDIRECTORY       40137
 #define ID_POPUPMENU_REFRESHROMLIST     40138
 #define ID_POPUPMENU_PLAYGAME           40152
@@ -518,8 +520,8 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        188
-#define _APS_NEXT_COMMAND_VALUE         40030
-#define _APS_NEXT_CONTROL_VALUE         1314
+#define _APS_NEXT_COMMAND_VALUE         40031
+#define _APS_NEXT_CONTROL_VALUE         1315
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif
