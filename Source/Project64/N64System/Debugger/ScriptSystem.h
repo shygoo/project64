@@ -44,7 +44,7 @@ private:
 
 	CDebuggerUI* m_Debugger;
 
-	const char* m_APIScript;
+	char* m_APIScript;
 
 	vector<HOOKENTRY> m_Hooks;
 	vector<INSTANCE_ENTRY> m_RunningInstances;

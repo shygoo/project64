@@ -36,7 +36,13 @@ CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
 	HRSRC hRes = FindResource(hInst, MAKEINTRESOURCE(IDR_JSAPI_TEXT), "TEXT");
 	
 	HGLOBAL hGlob = LoadResource(hInst, hRes);
-	m_APIScript = reinterpret_cast<const char*>(LockResource(hGlob));
+	DWORD resSize = SizeofResource(hInst, hRes);
+	m_APIScript = (char*) malloc(resSize + 1);
+	
+	void* resData = LockResource(hGlob);
+	memcpy(m_APIScript, resData, resSize);
+	m_APIScript[resSize] = '\0';
+	FreeResource(hGlob);
 }
 
 CScriptSystem::~CScriptSystem()
@@ -45,6 +51,7 @@ CScriptSystem::~CScriptSystem()
 	delete m_HookCPURead;
 	delete m_HookCPUWrite;
 	UnregisterHooks();
+	free(m_APIScript);
 }
 
 const char* CScriptSystem::APIScript()
