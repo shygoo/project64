@@ -98,7 +98,7 @@ LRESULT	CDumpMemory::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/,
         }
         if (SendDlgItemMessage(IDC_USE_ALT_PC, BM_GETSTATE, 0, 0) != BST_CHECKED)
         {
-            DumpPC = g_Reg->m_PROGRAM_COUNTER;
+            DumpPC = StartPC;
         }
         //disable buttons
         ::EnableWindow(GetDlgItem(IDC_E_START_ADDR), FALSE);
@@ -125,7 +125,7 @@ LRESULT	CDumpMemory::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/,
     return FALSE;
 }
 
-bool CDumpMemory::DumpMemory(LPCSTR FileName, DumpFormat Format, DWORD StartPC, DWORD EndPC, DWORD /*DumpPC*/)
+bool CDumpMemory::DumpMemory(LPCSTR FileName, DumpFormat Format, DWORD StartPC, DWORD EndPC, DWORD DumpPC)
 {
     switch (Format)
     {
@@ -140,18 +140,18 @@ bool CDumpMemory::DumpMemory(LPCSTR FileName, DumpFormat Format, DWORD StartPC, 
         LogFile.SetFlush(false);
         LogFile.SetTruncateFile(false);
 		
-        for (uint32_t pc = StartPC;  pc < EndPC; pc += 4)
+        for (uint32_t pc = StartPC;  pc < EndPC; pc += 4, DumpPC += 4)
         {
 			OPCODE opcode;
 			g_MMU->LW_VAddr(pc, opcode.Hex);
 
-			const char* command = R4300iOpcodeName(opcode.Hex, pc);
+			const char* command = R4300iOpcodeName(opcode.Hex, DumpPC);
 
 			char* cmdName = strtok((char*)command, "\t");
 			char* cmdArgs = strtok(NULL, "\t");
 			cmdArgs = cmdArgs ? cmdArgs : "";
 
-            LogFile.LogF("%X: %-15s%s\r\n", pc, cmdName, cmdArgs);
+            LogFile.LogF("%X: %-15s%s\r\n", DumpPC, cmdName, cmdArgs);
         }
 
         m_StartAddress.SetValue(StartPC, true, true);
