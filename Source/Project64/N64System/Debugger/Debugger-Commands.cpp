@@ -93,6 +93,7 @@ CDebugDialog<CDebugCommandsView>(debugger)
 {
 	m_StartAddress = 0x80000000;
 	m_Breakpoints = m_Debugger->Breakpoints();
+	m_bEditing = false;
 }
 
 CDebugCommandsView::~CDebugCommandsView(void)
@@ -192,7 +193,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	// Op editor
 	m_OpEdit.Attach(GetDlgItem(IDC_OP_EDIT));
 	m_OpEdit.SetCommandsWindow(this);
-	//m_OpEdit.
+	m_OpEdit.ShowWindow(SW_HIDE);
 	
 	// Setup stack list
 	m_StackList.Attach(GetDlgItem(IDC_STACK_LIST));
@@ -226,9 +227,15 @@ LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam,
 {
 	if (wParam == VK_UP)
 	{
+		m_SelectedAddress -= 4;
+		BeginOpEdit(m_SelectedAddress);
+		bHandled = TRUE;
 	}
 	else if (wParam == VK_DOWN)
 	{
+		m_SelectedAddress += 4;
+		BeginOpEdit(m_SelectedAddress);
+		bHandled = TRUE;
 	}
 	else if (wParam == VK_RETURN)
 	{
@@ -237,14 +244,21 @@ LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam,
 		m_OpEdit.GetWindowTextA(text, 255);
 		m_OpEdit.SetWindowTextA("");
 		uint32_t op;
-		CAssembler::AssembleLine(text, &op);
-		EditOp(m_SelectedAddress, op);
-		m_SelectedAddress += 4;
-		BeginOpEdit(m_SelectedAddress);
-		//MessageBox("ayy");
+		bool bValid = CAssembler::AssembleLine(text, &op);
+		if (bValid)
+		{
+			EditOp(m_SelectedAddress, op);
+			m_SelectedAddress += 4;
+			BeginOpEdit(m_SelectedAddress);
+		}
+		bHandled = TRUE;
 	}
-	bHandled = FALSE;
-	return 0;
+	else if (wParam == VK_ESCAPE)
+	{
+		EndOpEdit();
+		bHandled = TRUE;
+	}
+	return 1;
 }
 
 /*
@@ -746,22 +760,33 @@ void CDebugCommandsView::GotoEnteredAddress()
 
 void CDebugCommandsView::BeginOpEdit(uint32_t address)
 {
+	m_bEditing = true;
 	ShowAddress(address, FALSE);
 	int nItem = (address - m_StartAddress) / 4;
 	CRect itemRect;
 	m_CommandList.GetSubItemRect(nItem, 1, 0, &itemRect);
-	itemRect.bottom += 4;
-	itemRect.right += 80;
+	//itemRect.bottom += 0;
+	itemRect.left += 3;
+	itemRect.right += 100;
+	
+	uint32_t opcode;
+	g_MMU->LW_VAddr(address, opcode);
+	char* command = (char*)R4300iOpcodeName(opcode, address);
+
 	m_OpEdit.ShowWindow(SW_SHOW);
 	m_OpEdit.MoveWindow(&itemRect);
 	m_OpEdit.BringWindowToTop();
+	m_OpEdit.SetWindowTextA(command);
+	m_OpEdit.SetFocus();
+	m_OpEdit.SetSelAll();
+
 	m_CommandList.RedrawWindow();
 	m_OpEdit.RedrawWindow();
-	m_OpEdit.SetFocus();
 }
 
 void CDebugCommandsView::EndOpEdit()
 {
+	m_bEditing = false;
 	m_OpEdit.SetWindowTextA("");
 	m_OpEdit.ShowWindow(SW_HIDE);
 }
@@ -769,6 +794,12 @@ void CDebugCommandsView::EndOpEdit()
 LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	GotoEnteredAddress();
+	return 0;
+}
+
+LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
+{
+	EndOpEdit();
 	return 0;
 }
 
@@ -927,16 +958,20 @@ BOOL CDebugCommandsView::IsOpEdited(uint32_t address)
 
 void CDebugCommandsView::EditOp(uint32_t address, uint32_t op)
 {
-	if (IsOpEdited(address) == TRUE)
+	uint32_t currentOp;
+	g_MMU->LW_VAddr(address, currentOp);
+
+	if (currentOp == op)
 	{
 		return;
 	}
 
-	uint32_t originalOp;
-
-	g_MMU->LW_VAddr(address, originalOp);
 	g_MMU->SW_VAddr(address, op);
-	m_EditedOps.push_back({ address, originalOp });
+
+	if (!IsOpEdited(address))
+	{
+		m_EditedOps.push_back({ address, currentOp });
+	}
 }
 
 void CDebugCommandsView::RestoreOp(uint32_t address)

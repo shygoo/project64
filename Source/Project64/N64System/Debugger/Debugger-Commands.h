@@ -71,9 +71,21 @@ private:
 	CDebugCommandsView* m_CommandsWindow;
 
 	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT OnKeyUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+		if (wParam == VK_RETURN || wParam == VK_ESCAPE)
+		{
+			bHandled = TRUE;
+			return 0;
+		}
+		bHandled = FALSE;
+		return 0;
+	}
 	
 	BEGIN_MSG_MAP_EX(CEditOp)
 		MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+		MESSAGE_HANDLER(WM_KEYUP, OnKeyUp)
+		MESSAGE_HANDLER(WM_CHAR, OnKeyUp)
 	END_MSG_MAP()
 
 public:
@@ -137,6 +149,7 @@ private:
 	CWindow m_FPRTab;
 	CEditNumber m_FPREdits[32];
 	
+	bool m_bEditing;
 	CEditOp m_OpEdit;
 	uint32_t m_SelectedAddress;
 
@@ -174,6 +187,7 @@ private:
 	
 	LRESULT	OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	
+	LRESULT	OnCommandListClicked(NMHDR* pNMHDR);
 	LRESULT	OnCommandListDblClicked(NMHDR* pNMHDR);
 	LRESULT	OnCommandListRightClicked (NMHDR* pNMHDR);
 	LRESULT OnRegisterTabChange  (NMHDR* pNMHDR);
@@ -193,12 +207,9 @@ private:
 		MESSAGE_HANDLER(WM_VSCROLL, OnScroll)
 		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
 		COMMAND_HANDLER(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
-		//COMMAND_HANDLER(IDC_OP_EDIT, EN_CHANGE, OnOpChanged)
 		COMMAND_CODE_HANDLER(LBN_DBLCLK, OnListBoxClicked)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-
-		//MESSAGE_HANDLER(IDC_OP_EDIT, NM_KEYDOWN, OnOpKeyDown)
-
+		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CLICK, OnCommandListClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_DBLCLK, OnCommandListDblClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListRightClicked)
 		NOTIFY_HANDLER_EX(IDC_REG_TABS, TCN_SELCHANGE, OnRegisterTabChange)

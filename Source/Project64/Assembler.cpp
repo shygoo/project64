@@ -17,7 +17,7 @@ void to_lower(char* str)
 {
 	while (*str)
 	{
-		if (isalpha(*str))
+		if (*str >= 'A' && *str <= 'Z')
 		{
 			*str |= 0x20;
 		}
@@ -66,7 +66,7 @@ uint32_t pop_val()
 
 	char* endptr;
 
-	uint32_t val = strtol(v, &endptr, base);
+	uint32_t val = strtoul(v, &endptr, base);
 
 	if (*endptr != '\0')
 	{
@@ -104,7 +104,7 @@ void arg_reg_d(uint32_t* opcode)
 
 void arg_jump(uint32_t* opcode)
 {
-	*opcode |= (pop_val() & 0x3FFFFF) / 4;
+	*opcode |= (pop_val() / 4) & 0x3FFFFFF;
 }
 
 void arg_imm16(uint32_t* opcode)
@@ -253,6 +253,14 @@ bool CAssembler::AssembleLine(char* line, uint32_t* opcode)
 {
 	char line_c[128];
 	strncpy(line_c, line, 128);
+
+	to_lower(line_c);
+
+	if (line_c[0] == '\0')
+	{
+		*opcode = 0;
+		return true;
+	}
 
 	char* name = strtok(line_c, " \t");
 
