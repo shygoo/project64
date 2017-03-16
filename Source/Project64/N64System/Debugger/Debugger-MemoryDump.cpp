@@ -12,6 +12,8 @@
 
 #include "DebuggerUI.h"
 
+#include <Project64-core/N64System/Mips/OpCodeName.h>
+
 CDumpMemory::CDumpMemory(CDebuggerUI * debugger) :
 CDebugDialog<CDumpMemory>(debugger)
 {
@@ -137,16 +139,21 @@ bool CDumpMemory::DumpMemory(LPCSTR FileName, DumpFormat Format, DWORD StartPC, 
         }
         LogFile.SetFlush(false);
         LogFile.SetTruncateFile(false);
-        g_Notify->BreakPoint(__FILE__, __LINE__);
-#ifdef legacycode
-        char Command[200];
-        for (COpcode OpCode(StartPC);  OpCode.PC() < EndPC; OpCode.Next())
+		
+        for (uint32_t pc = StartPC;  pc < EndPC; pc += 4)
         {
-            const char * szOpName = OpCode.OpcodeName();
-            OpCode.OpcodeParam(Command);
-            LogFile.LogF("%X: %-15s%s\r\n",OpCode.PC(),szOpName,Command);
+			OPCODE opcode;
+			g_MMU->LW_VAddr(pc, opcode.Hex);
+
+			const char* command = R4300iOpcodeName(opcode.Hex, pc);
+
+			char* cmdName = strtok((char*)command, "\t");
+			char* cmdArgs = strtok(NULL, "\t");
+			cmdArgs = cmdArgs ? cmdArgs : "";
+
+            LogFile.LogF("%X: %-15s%s\r\n", pc, cmdName, cmdArgs);
         }
-#endif
+
         m_StartAddress.SetValue(StartPC, true, true);
         m_EndAddress.SetValue(EndPC, true, true);
         return true;
