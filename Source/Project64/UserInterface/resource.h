@@ -63,6 +63,7 @@
 #define IDR_JSAPI_TEXT                  181
 #define IDD_Debugger_DMALog             182
 #define IDD_Debugger_StackTrace         184
+#define IDD_Debugger_COP0               185
 #define IDR_MENU1                       186
 #define IDR_SCRIPT_POPUP                186
 #define IDR_OP_POPUP                    187
@@ -480,6 +481,26 @@
 #define IDC_LIST4                       1312
 #define IDC_STACKTRACE_LIST             1313
 #define IDC_OP_EDIT                     1314
+#define IDC_COP0_0_EDIT                 1315
+#define IDC_COP0_1_EDIT                 1316
+#define IDC_COP0_2_EDIT                 1317
+#define IDC_COP0_3_EDIT                 1318
+#define IDC_COP0_4_EDIT                 1319
+#define IDC_COP0_5_EDIT                 1320
+#define IDC_COP0_6_EDIT                 1321
+#define IDC_COP0_7_EDIT                 1322
+#define IDC_COP0_8_EDIT                 1323
+#define IDC_COP0_9_EDIT                 1324
+#define IDC_COP0_10_EDIT                1325
+#define IDC_COP0_11_EDIT                1326
+#define IDC_COP0_12_EDIT                1327
+#define IDC_COP0_13_EDIT                1328
+#define IDC_COP0_14_EDIT                1329
+#define IDC_COP0_15_EDIT                1330
+#define IDC_COP0_16_EDIT                1331
+#define IDC_COP0_17_EDIT                1332
+#define IDC_COP0_18_EDIT                1333
+#define IDC_COP0_19_EDIT                1334
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -519,9 +540,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        188
+#define _APS_NEXT_RESOURCE_VALUE        190
 #define _APS_NEXT_COMMAND_VALUE         40031
-#define _APS_NEXT_CONTROL_VALUE         1315
+#define _APS_NEXT_CONTROL_VALUE         1339
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

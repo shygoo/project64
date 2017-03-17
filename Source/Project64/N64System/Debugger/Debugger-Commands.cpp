@@ -22,6 +22,7 @@
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK TabProcCOP0(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 
 DWORD CDebugCommandsView::GPREditIds[32] = {
 	IDC_R0_EDIT,  IDC_R1_EDIT,  IDC_R2_EDIT,  IDC_R3_EDIT,
@@ -50,6 +51,14 @@ DWORD CDebugCommandsView::PIEditIds[13] = {
 	IDC_PI10_EDIT, IDC_PI14_EDIT, IDC_PI18_EDIT, IDC_PI1C_EDIT,
 	IDC_PI20_EDIT, IDC_PI24_EDIT, IDC_PI28_EDIT, IDC_PI2C_EDIT,
 	IDC_PI30_EDIT
+};
+
+DWORD CDebugCommandsView::COP0EditIds[19] = {
+	IDC_COP0_0_EDIT,  IDC_COP0_1_EDIT,  IDC_COP0_2_EDIT,  IDC_COP0_3_EDIT,
+	IDC_COP0_4_EDIT,  IDC_COP0_5_EDIT,  IDC_COP0_6_EDIT,  IDC_COP0_7_EDIT,
+	IDC_COP0_8_EDIT,  IDC_COP0_9_EDIT,  IDC_COP0_10_EDIT, IDC_COP0_11_EDIT,
+	IDC_COP0_12_EDIT, IDC_COP0_13_EDIT, IDC_COP0_14_EDIT, IDC_COP0_15_EDIT,
+	IDC_COP0_16_EDIT, IDC_COP0_17_EDIT, IDC_COP0_18_EDIT
 };
 
 int CDebugCommandsView::MapGPREdit(DWORD controlId)
@@ -81,6 +90,18 @@ int CDebugCommandsView::MapPIEdit(DWORD controlId)
 	for (int i = 0; i < 13; i++)
 	{
 		if (PIEditIds[i] == controlId)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+int CDebugCommandsView::MapCOP0Edit(DWORD controlId)
+{
+	for (int i = 0; i < 19; i++)
+	{
+		if (COP0EditIds[i] == controlId)
 		{
 			return i;
 		}
@@ -131,6 +152,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_GPRTab = m_RegisterTabs.AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
 	m_FPRTab = m_RegisterTabs.AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
 	m_PITab  = m_RegisterTabs.AddTab("PI",  IDD_Debugger_PI,  TabProcPI);
+	m_COP0Tab = m_RegisterTabs.AddTab("COP0", IDD_Debugger_COP0, TabProcCOP0);
 
 	HFONT monoFont = CreateFont(-11, 0, 0, 0,
 		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
@@ -153,6 +175,13 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 		m_PIEdits[i].Attach(m_PITab.GetDlgItem(PIEditIds[i]));
 		m_PIEdits[i].SetDisplayType(CEditNumber::DisplayHex);
 		m_PIEdits[i].SetFont(monoFont, FALSE);
+	}
+
+	for (int i = 0; i < 19; i++)
+	{
+		m_COP0Edits[i].Attach(m_COP0Tab.GetDlgItem(COP0EditIds[i]));
+		m_COP0Edits[i].SetDisplayType(CEditNumber::DisplayHex);
+		m_COP0Edits[i].SetFont(monoFont, FALSE);
 	}
 
 	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
@@ -393,6 +422,26 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		m_PIEdits[10].SetValue(g_Reg->PI_BSD_DOM2_PWD_REG, false, true);
 		m_PIEdits[11].SetValue(g_Reg->PI_BSD_DOM2_PGS_REG, false, true);
 		m_PIEdits[12].SetValue(g_Reg->PI_BSD_DOM2_RLS_REG, false, true);
+
+		m_COP0Edits[0].SetValue(g_Reg->INDEX_REGISTER, false, true);
+		m_COP0Edits[1].SetValue(g_Reg->RANDOM_REGISTER, false, true);
+		m_COP0Edits[2].SetValue(g_Reg->ENTRYLO0_REGISTER, false, true);
+		m_COP0Edits[3].SetValue(g_Reg->ENTRYLO1_REGISTER, false, true);
+		m_COP0Edits[4].SetValue(g_Reg->CONTEXT_REGISTER, false, true);
+		m_COP0Edits[5].SetValue(g_Reg->PAGE_MASK_REGISTER, false, true);
+		m_COP0Edits[6].SetValue(g_Reg->WIRED_REGISTER, false, true);
+		m_COP0Edits[7].SetValue(g_Reg->BAD_VADDR_REGISTER, false, true);
+		m_COP0Edits[8].SetValue(g_Reg->COUNT_REGISTER, false, true);
+		m_COP0Edits[9].SetValue(g_Reg->ENTRYHI_REGISTER, false, true);
+		m_COP0Edits[10].SetValue(g_Reg->COMPARE_REGISTER, false, true);
+		m_COP0Edits[11].SetValue(g_Reg->STATUS_REGISTER, false, true);
+		m_COP0Edits[12].SetValue(g_Reg->CAUSE_REGISTER, false, true);
+		m_COP0Edits[13].SetValue(g_Reg->EPC_REGISTER, false, true);
+		m_COP0Edits[14].SetValue(g_Reg->CONFIG_REGISTER, false, true);
+		m_COP0Edits[15].SetValue(g_Reg->TAGLO_REGISTER, false, true);
+		m_COP0Edits[16].SetValue(g_Reg->TAGHI_REGISTER, false, true);
+		m_COP0Edits[17].SetValue(g_Reg->ERROREPC_REGISTER, false, true);
+		m_COP0Edits[18].SetValue(g_Reg->FAKE_CAUSE_REGISTER, false, true);
 	}
 	else
 	{
@@ -400,6 +449,15 @@ void CDebugCommandsView::RefreshRegisterEdits()
 		{
 			m_GPREdits[i].SetValue(0);
 			m_FPREdits[i].SetWindowTextA("00000000");
+		}
+
+		for (int i = 0; i < 13; i++)
+		{
+			m_PIEdits[i].SetWindowTextA("00000000");
+		}
+
+		for (int i = 0; i < 19; i++)
+		{
 			m_PIEdits[i].SetWindowTextA("00000000");
 		}
 		m_HIEdit.SetValue(0);
@@ -1165,6 +1223,66 @@ static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 		case 12: g_Reg->PI_BSD_DOM2_RLS_REG = value; break;
 		}
 	}
+	return FALSE;
+}
+
+static INT_PTR CALLBACK TabProcCOP0(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_INITDIALOG)
+	{
+		return TRUE;
+	}
+	if (msg != WM_COMMAND)
+	{
+		return FALSE;
+	}
+
+	WORD notification = HIWORD(wParam);
+
+	if (notification != EN_KILLFOCUS)
+	{
+		return FALSE;
+	}
+	
+	WORD controlID = LOWORD(wParam);
+	char regText[9];
+	CWindow edit = GetDlgItem(hDlg, controlID);
+	edit.GetWindowTextA(regText, 9);
+	uint32_t value = strtoul(regText, NULL, 16);
+	sprintf(regText, "%08X", value);
+	edit.SetWindowTextA(regText);
+
+	CBreakpoints* breakpoints = ((CDebuggerUI*)g_Debugger)->Breakpoints();
+	if (g_MMU == NULL || !breakpoints->isDebugging())
+	{
+		return FALSE;
+	}
+
+	int nReg = CDebugCommandsView::MapCOP0Edit(controlID);
+
+	switch (nReg)
+	{
+	case 0:  g_Reg->INDEX_REGISTER = value; break;
+	case 1:  g_Reg->RANDOM_REGISTER = value; break;
+	case 2:  g_Reg->ENTRYLO0_REGISTER = value; break;
+	case 3:  g_Reg->ENTRYLO1_REGISTER = value; break;
+	case 4:  g_Reg->CONTEXT_REGISTER = value; break;
+	case 5:  g_Reg->PAGE_MASK_REGISTER = value; break;
+	case 6:  g_Reg->WIRED_REGISTER = value; break;
+	case 7:  g_Reg->BAD_VADDR_REGISTER = value; break;
+	case 8:  g_Reg->COUNT_REGISTER = value; break;
+	case 9:  g_Reg->ENTRYHI_REGISTER = value; break;
+	case 10: g_Reg->COMPARE_REGISTER = value; break;
+	case 11: g_Reg->STATUS_REGISTER = value; break;
+	case 12: g_Reg->CAUSE_REGISTER = value; break;
+	case 13: g_Reg->EPC_REGISTER = value; break;
+	case 14: g_Reg->CONFIG_REGISTER = value; break;
+	case 15: g_Reg->TAGLO_REGISTER = value; break;
+	case 16: g_Reg->TAGHI_REGISTER = value; break;
+	case 17: g_Reg->ERROREPC_REGISTER = value; break;
+	case 18: g_Reg->FAKE_CAUSE_REGISTER = value; break;
+	}
+
 	return FALSE;
 }
 

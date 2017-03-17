@@ -111,10 +111,12 @@ public:
 	static DWORD GPREditIds[32];
 	static DWORD FPREditIds[32];
 	static DWORD PIEditIds[13];
+	static DWORD COP0EditIds[19];
 
 	static int MapGPREdit(DWORD controlId);
 	static int MapFPREdit(DWORD controlId);
 	static int MapPIEdit(DWORD controlId);
+	static int MapCOP0Edit(DWORD controlId);
 
 	void Reset();
 
@@ -148,6 +150,9 @@ private:
 	
 	CWindow m_FPRTab;
 	CEditNumber m_FPREdits[32];
+
+	CWindow m_COP0Tab;
+	CEditNumber m_COP0Edits[24];
 	
 	bool m_bEditing;
 	CEditOp m_OpEdit;
