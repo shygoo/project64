@@ -35,7 +35,7 @@ static const char * R4300iSpecialName(uint32_t OpCode, uint32_t /*PC*/)
 	case R4300i_SPECIAL_SLL:
 		if (command.Hex != 0)
 		{
-			sprintf(CommandName, "SLL\t%s, %s, 0x%04X", CRegName::GPR[command.rd],
+			sprintf(CommandName, "SLL\t%s, %s, %d", CRegName::GPR[command.rd],
 				CRegName::GPR[command.rt], command.sa);
 		}
 		else
@@ -44,11 +44,11 @@ static const char * R4300iSpecialName(uint32_t OpCode, uint32_t /*PC*/)
 		}
 		break;
 	case R4300i_SPECIAL_SRL:
-		sprintf(CommandName, "SRL\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
+		sprintf(CommandName, "SRL\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
 			command.sa);
 		break;
 	case R4300i_SPECIAL_SRA:
-		sprintf(CommandName, "SRA\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
+		sprintf(CommandName, "SRA\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
 			command.sa);
 		break;
 	case R4300i_SPECIAL_SLLV:
@@ -70,10 +70,10 @@ static const char * R4300iSpecialName(uint32_t OpCode, uint32_t /*PC*/)
 		sprintf(CommandName, "JALR\t%s, %s", CRegName::GPR[command.rd], CRegName::GPR[command.rs]);
 		break;
 	case R4300i_SPECIAL_SYSCALL:
-		sprintf(CommandName, "SYSCALL");
+		sprintf(CommandName, "SYSCALL\t0x%05X", command.code);
 		break;
 	case R4300i_SPECIAL_BREAK:
-		sprintf(CommandName, "BREAK");
+		sprintf(CommandName, "BREAK\t0x%05X", command.code);
 		break;
 	case R4300i_SPECIAL_SYNC:
 		sprintf(CommandName, "SYNC");
@@ -201,25 +201,25 @@ static const char * R4300iSpecialName(uint32_t OpCode, uint32_t /*PC*/)
 		sprintf(CommandName, "TNE\t%s, %s", CRegName::GPR[command.rs], CRegName::GPR[command.rt]);
 		break;
 	case R4300i_SPECIAL_DSLL:
-		sprintf(CommandName, "DSLL\t%s, %s, 0x%04X", CRegName::GPR[command.rd],
+		sprintf(CommandName, "DSLL\t%s, %s, %d", CRegName::GPR[command.rd],
 			CRegName::GPR[command.rt], command.sa);
 		break;
 	case R4300i_SPECIAL_DSRL:
-		sprintf(CommandName, "DSRL\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
+		sprintf(CommandName, "DSRL\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
 			command.sa);
 		break;
 	case R4300i_SPECIAL_DSRA:
-		sprintf(CommandName, "DSRA\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
+		sprintf(CommandName, "DSRA\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt],
 			command.sa);
 		break;
 	case R4300i_SPECIAL_DSLL32:
-		sprintf(CommandName, "DSLL32\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
+		sprintf(CommandName, "DSLL32\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
 		break;
 	case R4300i_SPECIAL_DSRL32:
-		sprintf(CommandName, "DSRL32\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
+		sprintf(CommandName, "DSRL32\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
 		break;
 	case R4300i_SPECIAL_DSRA32:
-		sprintf(CommandName, "DSRA32\t%s, %s, 0x%04X", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
+		sprintf(CommandName, "DSRA32\t%s, %s, %d", CRegName::GPR[command.rd], CRegName::GPR[command.rt], command.sa);
 		break;
 	default:
 		sprintf(CommandName, "UNKNOWN\t%02X %02X %02X %02X",

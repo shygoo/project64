@@ -27,6 +27,6 @@ enum ParseError
 
 class CAssembler {
 public:
-	static bool AssembleLine(char* line, uint32_t* opcode);
+	static bool AssembleLine(char* line, uint32_t* opcode, uint32_t address = 0x00000000);
 };
 

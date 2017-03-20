@@ -12,6 +12,7 @@
 REGISTER* lookup_register(char* name);
 
 static int parse_error = 0;
+static uint32_t m_Address = 0x00000000;
 
 void to_lower(char* str)
 {
@@ -82,9 +83,14 @@ uint32_t base_op(uint32_t val)
 	return val << 26;
 }
 
-uint32_t base_fn(uint32_t val)
+uint32_t base_spec(uint32_t val)
 {
 	return val;
+}
+
+uint32_t base_regimm(uint32_t val)
+{
+	return (R4300i_REGIMM << 26) | (val << 16);
 }
 
 void arg_reg_s(uint32_t* opcode)
@@ -112,27 +118,43 @@ void arg_imm16(uint32_t* opcode)
 	*opcode |= (pop_val() & 0xFFFF);
 }
 
-SYNTAX syn_jump[] = { arg_jump, NULL };
-SYNTAX syn_loadstore[] = { arg_reg_t, arg_imm16, arg_reg_s, NULL };
-SYNTAX syn_arith[] = { arg_reg_d, arg_reg_s, arg_reg_t, NULL };
-SYNTAX syn_arith_i[] = { arg_reg_t, arg_reg_s, arg_imm16, NULL };
-SYNTAX syn_load_i[] = { arg_reg_t, arg_imm16, NULL };
+void arg_bra_target(uint32_t* opcode)
+{
+	uint16_t relTarget = (((pop_val() - m_Address) / 4) & 0xFFFF) - 1;
+	*opcode |= relTarget;
+}
 
-// todo proper address calculation
-SYNTAX syn_branch_z[] = { arg_reg_s, arg_imm16, NULL };
-SYNTAX syn_branch[] = { arg_reg_s, arg_reg_t, arg_imm16, NULL };
+void arg_shamt(uint32_t* opcode)
+{
+	*opcode |= (pop_val() & 0x1F) << 6;
+}
 
-SYNTAX syn_mf[] = { arg_reg_d, NULL };
-SYNTAX syn_jr[] = { arg_reg_s, NULL };
+SYNTAX syn_jump[]       = { arg_jump, NULL };
+SYNTAX syn_loadstore[]  = { arg_reg_t, arg_imm16, arg_reg_s, NULL };
+SYNTAX syn_arith[]      = { arg_reg_d, arg_reg_s, arg_reg_t, NULL };
+SYNTAX syn_arith_i[]    = { arg_reg_t, arg_reg_s, arg_imm16, NULL };
+SYNTAX syn_load_i[]     = { arg_reg_t, arg_imm16, NULL };
+
+SYNTAX syn_branch_z[]   = { arg_reg_s, arg_bra_target, NULL };
+SYNTAX syn_branch[]     = { arg_reg_s, arg_reg_t, arg_bra_target, NULL };
+SYNTAX syn_branch_unc[] = { arg_bra_target, NULL };
+
+SYNTAX syn_trap_i[]     = { arg_reg_s, arg_imm16, NULL };
+
+SYNTAX syn_shift[]      = { arg_reg_d, arg_reg_t, arg_shamt, NULL };
+
+SYNTAX syn_mf[]         = { arg_reg_d, NULL };
+SYNTAX syn_jr[]         = { arg_reg_s, NULL };
 
 INSTRUCTION instructions[] =
 {
-	{ "nop", R4300i_SPECIAL_SLL, base_fn, NULL },
-
 	{ "j",      R4300i_J,     base_op, syn_jump },
 	{ "jal",    R4300i_JAL,   base_op, syn_jump },
 	{ "beq",    R4300i_BEQ,   base_op, syn_branch },
+	{ "beqz",   R4300i_BEQ,   base_op, syn_branch_z },
+	{ "b",      R4300i_BEQ,   base_op, syn_branch_unc },
 	{ "bne",    R4300i_BNE,   base_op, syn_branch },
+	{ "bnez",   R4300i_BNE,   base_op, syn_branch_z },
 	{ "blez",   R4300i_BLEZ,  base_op, syn_branch_z },
 	{ "bgtz",   R4300i_BGTZ,  base_op, syn_branch_z },
 	{ "addi",   R4300i_ADDI,  base_op, syn_arith_i },
@@ -145,7 +167,9 @@ INSTRUCTION instructions[] =
 	{ "lui",    R4300i_LUI,   base_op, syn_load_i },
 	// cp0 cp1
 	{ "beql",   R4300i_BEQL,  base_op, syn_branch },
+	{ "beqzl",  R4300i_BEQL,  base_op, syn_branch_z },
 	{ "bnel",   R4300i_BNEL,  base_op, syn_branch },
+	{ "bnezl",  R4300i_BNEL,  base_op, syn_branch_z },
 	{ "blezl",  R4300i_BLEZL, base_op, syn_branch_z },
 	{ "bgtzl",  R4300i_BGTZL, base_op, syn_branch_z },
 	{ "daddi",  R4300i_DADDI, base_op, syn_arith_i },
@@ -178,28 +202,59 @@ INSTRUCTION instructions[] =
 	{ "sdc2",   R4300i_SDC2,  base_op, syn_loadstore },
 	{ "sd",     R4300i_SD,    base_op, syn_loadstore },
 
-	{ "jr",     R4300i_SPECIAL_JR,    base_fn, syn_jr },
+	{ "bltz",    R4300i_REGIMM_BLTZ,    base_regimm, syn_branch_z },
+	{ "bgez",    R4300i_REGIMM_BGEZ,    base_regimm, syn_branch_z },
+	{ "bltzl",   R4300i_REGIMM_BLTZL,   base_regimm, syn_branch_z },
+	{ "bgezl",   R4300i_REGIMM_BGEZL,   base_regimm, syn_branch_z },
+	{ "tgei",    R4300i_REGIMM_TGEI,    base_regimm, syn_trap_i },
+	{ "tgeiu",   R4300i_REGIMM_TGEIU,   base_regimm, syn_trap_i },
+	{ "tlti",    R4300i_REGIMM_TLTIU,   base_regimm, syn_trap_i },
+	{ "tltiu",   R4300i_REGIMM_TLTIU,   base_regimm, syn_trap_i },
+	{ "teqi",    R4300i_REGIMM_TEQI,    base_regimm, syn_trap_i },
+	{ "tnei",    R4300i_REGIMM_TNEI,    base_regimm, syn_trap_i },
+	{ "bltzal",  R4300i_REGIMM_BLTZAL,  base_regimm, syn_branch_z },
+	{ "bgezal",  R4300i_REGIMM_BGEZAL,  base_regimm, syn_branch_z },
+	{ "bal",     R4300i_REGIMM_BGEZAL,  base_regimm, syn_branch_unc },
+	{ "bltzall", R4300i_REGIMM_BLTZALL, base_regimm, syn_branch_z },
+	{ "bgezall", R4300i_REGIMM_BGEZALL, base_regimm, syn_branch_z },
 
-	{ "mfhi",   R4300i_SPECIAL_MFHI,  base_fn, syn_mf },
-	{ "mthi",   R4300i_SPECIAL_MTHI,  base_fn, syn_mf },
-	{ "mflo",   R4300i_SPECIAL_MFLO,  base_fn, syn_mf },
-	{ "mtlo",   R4300i_SPECIAL_MTLO,  base_fn, syn_mf },
+	{ "sll",     R4300i_SPECIAL_SLL, base_spec, syn_shift },
+	{ "nop",     R4300i_SPECIAL_SLL, base_spec, NULL },
+	{ "srl",     R4300i_SPECIAL_SRL, base_spec, syn_shift },
+	{ "sra",     R4300i_SPECIAL_SRA, base_spec, syn_shift },
 
-	{ "add",   	R4300i_SPECIAL_ADD,   base_fn, syn_arith },
-	{ "addu",  	R4300i_SPECIAL_ADDU,  base_fn, syn_arith },
-	{ "sub",   	R4300i_SPECIAL_SUB,   base_fn, syn_arith },
-	{ "subu",  	R4300i_SPECIAL_SUBU,  base_fn, syn_arith },
-	{ "and",   	R4300i_SPECIAL_AND,   base_fn, syn_arith },
-	{ "or",    	R4300i_SPECIAL_OR,    base_fn, syn_arith },
-	{ "xor",   	R4300i_SPECIAL_XOR,   base_fn, syn_arith },
-	{ "nor",   	R4300i_SPECIAL_NOR,   base_fn, syn_arith },
-	{ "slt",   	R4300i_SPECIAL_SLT,   base_fn, syn_arith },
-	{ "sltu",  	R4300i_SPECIAL_SLTU,  base_fn, syn_arith },
-	{ "dadd",  	R4300i_SPECIAL_DADD,  base_fn, syn_arith },
-	{ "daddu", 	R4300i_SPECIAL_DADDU, base_fn, syn_arith },
-	{ "dsub",  	R4300i_SPECIAL_DSUB,  base_fn, syn_arith },
-	{ "dsubu", 	R4300i_SPECIAL_DSUBU, base_fn, syn_arith },
+	{ "jr",      R4300i_SPECIAL_JR,      base_spec, syn_jr },
+	{ "syscall", R4300i_SPECIAL_SYSCALL, base_spec, NULL },
+	{ "break",   R4300i_SPECIAL_BREAK,   base_spec, NULL },
+	{ "sync",    R4300i_SPECIAL_SYNC,    base_spec, NULL },
 
+	{ "mfhi",   R4300i_SPECIAL_MFHI,  base_spec, syn_mf },
+	{ "mthi",   R4300i_SPECIAL_MTHI,  base_spec, syn_mf },
+	{ "mflo",   R4300i_SPECIAL_MFLO,  base_spec, syn_mf },
+	{ "mtlo",   R4300i_SPECIAL_MTLO,  base_spec, syn_mf },
+
+	{ "add",   	R4300i_SPECIAL_ADD,   base_spec, syn_arith },
+	{ "addu",  	R4300i_SPECIAL_ADDU,  base_spec, syn_arith },
+	{ "sub",   	R4300i_SPECIAL_SUB,   base_spec, syn_arith },
+	{ "subu",  	R4300i_SPECIAL_SUBU,  base_spec, syn_arith },
+	{ "and",   	R4300i_SPECIAL_AND,   base_spec, syn_arith },
+	{ "or",    	R4300i_SPECIAL_OR,    base_spec, syn_arith },
+	{ "xor",   	R4300i_SPECIAL_XOR,   base_spec, syn_arith },
+	{ "nor",   	R4300i_SPECIAL_NOR,   base_spec, syn_arith },
+	{ "slt",   	R4300i_SPECIAL_SLT,   base_spec, syn_arith },
+	{ "sltu",  	R4300i_SPECIAL_SLTU,  base_spec, syn_arith },
+	{ "dadd",  	R4300i_SPECIAL_DADD,  base_spec, syn_arith },
+	{ "daddu", 	R4300i_SPECIAL_DADDU, base_spec, syn_arith },
+	{ "dsub",  	R4300i_SPECIAL_DSUB,  base_spec, syn_arith },
+	{ "dsubu", 	R4300i_SPECIAL_DSUBU, base_spec, syn_arith },
+
+	{ "dsll",    R4300i_SPECIAL_DSLL, base_spec, syn_shift },
+	{ "dsrl",    R4300i_SPECIAL_DSRL, base_spec, syn_shift },
+	{ "dsra",    R4300i_SPECIAL_DSRA, base_spec, syn_shift },
+	{ "dsll32",  R4300i_SPECIAL_DSLL32, base_spec, syn_shift },
+	{ "dsrl32",  R4300i_SPECIAL_DSRL32, base_spec, syn_shift },
+	{ "dsra32",  R4300i_SPECIAL_DSRA32, base_spec, syn_shift },
+	
 	{ 0 }
 };
 
@@ -249,8 +304,9 @@ REGISTER* lookup_register(char* name)
 	return NULL;
 }
 
-bool CAssembler::AssembleLine(char* line, uint32_t* opcode)
+bool CAssembler::AssembleLine(char* line, uint32_t* opcode, uint32_t address)
 {
+	m_Address = address;
 	char line_c[128];
 	strncpy(line_c, line, 128);
 

@@ -273,7 +273,7 @@ LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam,
 		m_OpEdit.GetWindowTextA(text, 255);
 		m_OpEdit.SetWindowTextA("");
 		uint32_t op;
-		bool bValid = CAssembler::AssembleLine(text, &op);
+		bool bValid = CAssembler::AssembleLine(text, &op, m_SelectedAddress);
 		if (bValid)
 		{
 			EditOp(m_SelectedAddress, op);
