@@ -16,15 +16,40 @@ enum UISettingID
 {
     Asserts_Version,
     Screen_Orientation,
+
+    //Recent Game
+    File_RecentGameFileCount,
+    File_RecentGameFileIndex,
+
+    //Touch Screen
+    TouchScreen_ButtonScale,
+    TouchScreen_Layout,
+
+    //Controller Config
+    Controller_ConfigFile,
+    Controller_CurrentProfile,
+    Controller_Deadzone,
+    Controller_Sensitivity,
+
+    //Support Window
+    SupportWindow_FirstRun,
+    SupportWindow_AlwaysShow,
+    SupportWindow_ShowingSupportWindow,
+    SupportWindow_RunCount,
+
+    //Game Settings
+    Game_RunCount,
 };
 
 void RegisterUISettings(void);
 
 void UISettingsSaveBool(UISettingID Type, bool Value);
 void UISettingsSaveDword(UISettingID Type, uint32_t Value);
+void UISettingsSaveString(UISettingID Type, const std::string & Value);
 
 bool UISettingsLoadBool(UISettingID Type);
 uint32_t UISettingsLoadDword(UISettingID Type);
+std::string UISettingsLoadStringVal(UISettingID Type);
 
 /*
 void UISettingsSaveBoolIndex(UISettingID Type, int32_t index, bool Value);

@@ -26,6 +26,7 @@ static int fog_ext_en;
 int w_buffer_mode;
 int inverted_culling;
 int culling_mode;
+extern int fog_enabled;
 
 inline float ZCALC(const float & z, const float & q) {
     float res = z_en ? ((z) / Z_MAX) / (q) : 1.0f;
@@ -275,7 +276,7 @@ void FindBestDepthBias()
         glVertex3fv(vertices[3]);
         glEnd();
 
-        glReadPixels(x + 2, 2 + viewport_offset, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
+        glReadPixels(x + 2, 2 + g_viewport_offset, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &z);
         z -= 0.75f + 8e-6f;
         if (z < 0.0f) z = -z;
         if (z > 0.01f) continue;
@@ -353,7 +354,7 @@ grDrawTriangle(const void *a, const void *b, const void *c)
 
     if (nvidia_viewport_hack && !render_to_texture)
     {
-        glViewport(0, viewport_offset, viewport_width, viewport_height);
+        glViewport(0, g_viewport_offset, viewport_width, viewport_height);
         nvidia_viewport_hack = 0;
     }
 
@@ -466,7 +467,7 @@ grDrawPoint(const void *pt)
 
     if (nvidia_viewport_hack && !render_to_texture)
     {
-        glViewport(0, viewport_offset, viewport_width, viewport_height);
+        glViewport(0, g_viewport_offset, viewport_width, viewport_height);
         nvidia_viewport_hack = 0;
     }
 
@@ -535,7 +536,7 @@ grDrawLine(const void *a, const void *b)
 
     if (nvidia_viewport_hack && !render_to_texture)
     {
-        glViewport(0, viewport_offset, viewport_width, viewport_height);
+        glViewport(0, g_viewport_offset, viewport_width, viewport_height);
         nvidia_viewport_hack = 0;
     }
 
@@ -611,7 +612,7 @@ grDrawVertexArray(FxU32 mode, FxU32 Count, void *pointers2)
 
     if (nvidia_viewport_hack && !render_to_texture)
     {
-        glViewport(0, viewport_offset, viewport_width, viewport_height);
+        glViewport(0, g_viewport_offset, viewport_width, viewport_height);
         nvidia_viewport_hack = 0;
     }
 
@@ -683,7 +684,7 @@ grDrawVertexArrayContiguous(FxU32 mode, FxU32 Count, void *pointers, FxU32 strid
 
     if (nvidia_viewport_hack && !render_to_texture)
     {
-        glViewport(0, viewport_offset, viewport_width, viewport_height);
+        glViewport(0, g_viewport_offset, viewport_width, viewport_height);
         nvidia_viewport_hack = 0;
     }
 

@@ -120,13 +120,11 @@ uint32_t CFlashram::ReadFromFlashStatus(uint32_t PAddr)
 
 bool CFlashram::LoadFlashram()
 {
-    CPath FileName(g_Settings->LoadStringVal(Directory_NativeSave).c_str());
+    CPath FileName(g_Settings->LoadStringVal(Directory_NativeSave).c_str(), stdstr_f("%s.fla", g_Settings->LoadStringVal(Game_GameName).c_str()).c_str());
     if (g_Settings->LoadBool(Setting_UniqueSaveDir))
     {
         FileName.AppendDirectory(g_Settings->LoadStringVal(Game_UniqueSaveDir).c_str());
     }
-    FileName.SetName(g_Settings->LoadStringVal(Game_GameName).c_str());
-    FileName.SetExtension("fla");
 
     if (!FileName.DirectoryExists())
     {
@@ -165,8 +163,11 @@ void CFlashram::WriteToFlashCommand(uint32_t FlashRAM_Command)
             {
                 return;
             }
-            m_File.Seek(m_FlashRAM_Offset, CFile::begin);
-            m_File.Write(EmptyBlock, sizeof(EmptyBlock));
+            if (!m_ReadOnly)
+            {
+                m_File.Seek(m_FlashRAM_Offset, CFile::begin);
+                m_File.Write(EmptyBlock, sizeof(EmptyBlock));
+            }
             break;
         case FLASHRAM_MODE_WRITE:
             if (!m_File.IsOpen() && !LoadFlashram())
@@ -180,8 +181,11 @@ void CFlashram::WriteToFlashCommand(uint32_t FlashRAM_Command)
                 memset(FlipBuffer, 0, sizeof(FlipBuffer));
                 memcpy(&FlipBuffer[0], FlashRamPointer, sizeof(EmptyBlock));
 
-                m_File.Seek(m_FlashRAM_Offset, CFile::begin);
-                m_File.Write(FlipBuffer, sizeof(EmptyBlock));
+                if (!m_ReadOnly)
+                {
+                    m_File.Seek(m_FlashRAM_Offset, CFile::begin);
+                    m_File.Write(FlipBuffer, sizeof(EmptyBlock));
+                }
             }
             break;
         default:

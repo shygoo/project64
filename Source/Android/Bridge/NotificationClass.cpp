@@ -13,6 +13,7 @@
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/Settings/SettingsClass.h>
 #include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/N64System/Recompiler/RecompilerCodeLog.h>
 #include "NotificationClass.h"
 #include "JavaBridge.h"
 #if defined(ANDROID)
@@ -23,12 +24,12 @@ extern JavaBridge * g_JavaBridge;
 
 CNotificationImp & Notify(void)
 {
-    static CNotificationImp g_Notify;
-    return g_Notify;
+    static CNotificationImp Notify;
+    return Notify;
 }
 
 CNotificationImp::CNotificationImp() :
-m_NextMsg(0)
+    m_NextMsg(0)
 {
 }
 
@@ -81,26 +82,7 @@ void CNotificationImp::DisplayMessage(int DisplayTime, const char * Message) con
 {
 #ifdef ANDROID
     if (g_JavaBridge == NULL) { return; }
-
-    if (m_NextMsg > 0 || DisplayTime > 0)
-    {
-        time_t Now = time(NULL);
-        if (DisplayTime == 0 && Now < m_NextMsg)
-        {
-            return;
-        }
-        if (DisplayTime > 0)
-        {
-            m_NextMsg = Now + DisplayTime;
-        }
-        if (m_NextMsg == 0)
-        {
-            m_NextMsg = 0;
-        }
-    }
-    m_Message[0] = Message;
-    UpdateMessage();
-
+    g_JavaBridge->DisplayMessage(Message, DisplayTime);
 #else
     // ignore warning usage
     DisplayTime = DisplayTime;
@@ -112,9 +94,8 @@ void CNotificationImp::DisplayMessage2(const char * Message) const
 {
 #ifdef ANDROID
     if (g_JavaBridge == NULL) { return; }
-    m_Message[1] = Message;
 
-    UpdateMessage();
+    g_JavaBridge->DisplayMessage2(Message);
 #else
     // ignore warning usage
     Message = Message;
@@ -129,6 +110,8 @@ bool CNotificationImp::AskYesNoQuestion(const char * /*Question*/) const
 
 void CNotificationImp::BreakPoint(const char * FileName, int32_t LineNumber)
 {
+    Flush_Recompiler_Log();
+    TraceFlushLog();
     if (g_Settings->LoadBool(Debugger_Enabled))
     {
         FatalError(stdstr_f("Break point found at\n%s\nLine: %d", FileName, LineNumber).c_str());
@@ -150,20 +133,4 @@ bool CNotificationImp::ProcessGuiMessages(void) const
 
 void CNotificationImp::ChangeFullScreen(void) const
 {
-}
-
-void CNotificationImp::UpdateMessage(void) const
-{
-#ifdef ANDROID
-    std::string message = m_Message[0];
-    if (message.length() > 0 && m_Message[1].length())
-    {
-        message += " ";
-    }
-    message += m_Message[1];
-    if (message.length() > 0)
-    {
-        g_JavaBridge->DisplayMessage(message.c_str());
-    }
-#endif
 }

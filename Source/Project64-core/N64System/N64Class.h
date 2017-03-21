@@ -51,15 +51,16 @@ public:
     CN64System(CPlugins * Plugins, bool SavesReadOnly, bool SyncSystem);
     virtual ~CN64System(void);
 
-    CProfiling m_Profile;
     CCheats    m_Cheats;
     bool  m_EndEmulation;
     SAVE_CHIP_TYPE m_SaveUsing;
 
     //Methods
+    static bool LoadFileImage(const char * FileLoc);
     static bool RunFileImage(const char * FileLoc);
     static bool RunFileImageIPL(const char * FileLoc);
     static bool RunDiskImage(const char * FileLoc);
+    static void RunLoadedImage(void);
     static void CloseSystem(void);
 
     void   CloseCpu();
@@ -67,8 +68,10 @@ public:
     void   StartEmulation(bool NewThread);
     void   EndEmulation();
     void   SyncToAudio();
-    void   IncreaseSpeed() { m_Limiter.IncreaseSpeed(); }
-    void   DecreaseSpeed() { m_Limiter.DecreaseSpeed(); }
+    void   AlterSpeed(const CSpeedLimiter::ESpeedChange SpeedChange) { m_Limiter.AlterSpeed(SpeedChange); }
+    void   SetSpeed(int Speed) { m_Limiter.SetSpeed(Speed);  }
+    int    GetSpeed(void) const { return m_Limiter.GetSpeed(); }
+    int    GetBaseSpeed(void) const { return m_Limiter.GetBaseSpeed(); }
     void   Reset(bool bInitReg, bool ClearMenory);
     void   GameReset();
     void   PluginReset();
@@ -98,13 +101,15 @@ public:
     void   SyncSystemPC();
 private:
     //Make sure plugins can directly access this information
-    friend CGfxPlugin;
-    friend CAudioPlugin;
-    friend CRSP_Plugin;
-    friend CControl_Plugin;
+    friend class CGfxPlugin;
+    friend class CAudioPlugin;
+    friend class CRSP_Plugin;
+    friend class CControl_Plugin;
 
     //Recompiler has access to manipulate and call functions
-    friend CSystemTimer;
+    friend class CSystemTimer;
+    friend class CRecompiler;
+    friend class CMipsMemoryVM;
 
     //Used for loading and potentially executing the CPU in its own thread.
     static void StartEmulationThread(CThread * thread);

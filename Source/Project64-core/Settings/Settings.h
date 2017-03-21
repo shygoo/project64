@@ -56,6 +56,8 @@ enum SettingID
     Setting_LanguageDirDefault,
     Setting_CurrentLanguage,
     Setting_EnableDisk,
+    Setting_PreAllocSyncMem,
+    Setting_ReducedSyncMem,
 
     //RDB Settings
     Rdb_GoodName,
@@ -100,7 +102,7 @@ enum SettingID
     Game_File,
     Game_UniqueSaveDir,
     Game_GameName,
-    Game_GoodName,
+    Cfg_GoodName,
     Game_TempLoaded,
     Game_SystemType,
     Game_EditPlugin_Gfx,
@@ -213,14 +215,14 @@ enum SettingID
     Debugger_ShowUnhandledMemory,
     Debugger_ShowPifErrors,
     Debugger_ShowDivByZero,
-    Debugger_GenerateLogFiles,
-    Debugger_ProfileCode,
+    Debugger_RecordRecompilerAsm,
     Debugger_DisableGameFixes,
     Debugger_AppLogLevel,
     Debugger_AppLogFlush,
     Debugger_ShowDListAListCount,
     Debugger_ShowRecompMemSize,
     Debugger_DebugLanguage,
+    Debugger_RecordExecutionTimes,
 
     //Trace
     Debugger_TraceMD5,
@@ -258,6 +260,7 @@ enum SettingID
     Plugin_UseHleGfx,
     Plugin_UseHleAudio,
     Plugin_EnableAudio,
+    Plugin_ForceGfxReset,
 
     Logging_GenerateLog,
     Logging_LogRDRamRegisters,

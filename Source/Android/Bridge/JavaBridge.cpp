@@ -122,14 +122,26 @@ void JavaBridge::DisplayError(const char * Message)
     }
 }
 
-void JavaBridge::DisplayMessage(const char * Message)
+void JavaBridge::DisplayMessage(const char * Message, int DisplayTime)
 {
     JNIEnv *env = Android_JNI_GetEnv();
     if (env)
     {
         jstring j_Message = env->NewStringUTF(Message);
-        jmethodID midShowToast = env->GetStaticMethodID(m_NotifierClass, "showToast", "(Landroid/app/Activity;Ljava/lang/String;)V");
-        env->CallStaticVoidMethod(m_NotifierClass, midShowToast,g_Activity,j_Message);
+        jmethodID midshowMessage = env->GetStaticMethodID(m_NotifierClass, "showMessage", "(Landroid/app/Activity;Ljava/lang/String;I)V");
+        env->CallStaticVoidMethod(m_NotifierClass, midshowMessage,g_Activity,j_Message,DisplayTime);
+        env->DeleteLocalRef(j_Message);
+    }
+}
+
+void JavaBridge::DisplayMessage2(const char * Message)
+{
+    JNIEnv *env = Android_JNI_GetEnv();
+    if (env)
+    {
+        jstring j_Message = env->NewStringUTF(Message);
+        jmethodID midshowMessage2 = env->GetStaticMethodID(m_NotifierClass, "showMessage2", "(Landroid/app/Activity;Ljava/lang/String;)V");
+        env->CallStaticVoidMethod(m_NotifierClass, midshowMessage2,g_Activity,j_Message);
         env->DeleteLocalRef(j_Message);
     }
 }
@@ -141,6 +153,16 @@ void JavaBridge::EmulationStopped(void)
     {
         jmethodID midEmulationStopped = env->GetStaticMethodID(m_NotifierClass, "EmulationStopped", "(Landroid/app/Activity;)V");
         env->CallStaticVoidMethod(m_NotifierClass, midEmulationStopped, g_Activity);
+    }
+}
+
+void JavaBridge::RecentRomsUpdated(void)
+{
+    JNIEnv *env = Android_JNI_GetEnv();
+    if (env)
+    {
+        jmethodID midRRecentRomsUpdated = env->GetStaticMethodID(m_GalleryActivityClass, "RecentRomsUpdated", "()V");
+        env->CallStaticVoidMethod(m_GalleryActivityClass, midRRecentRomsUpdated);
     }
 }
 

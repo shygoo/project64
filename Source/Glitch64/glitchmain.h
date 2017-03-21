@@ -17,9 +17,6 @@ extern int dumping;
 
 typedef struct _wrapper_config
 {
-#ifndef ANDROID
-    int res;
-#endif
     int fbo;
     int anisofilter;
     int vram_size;
@@ -126,7 +123,6 @@ extern PFNGLGETINFOLOGARBPROC glGetInfoLogARB;
 extern PFNGLGETOBJECTPARAMETERIVARBPROC glGetObjectParameterivARB;
 extern PFNGLSECONDARYCOLOR3FPROC glSecondaryColor3f;
 #endif
-void check_compile(GLuint shader);
 void check_link(GLuint program);
 void vbo_enable();
 void vbo_disable();
@@ -142,8 +138,6 @@ extern int w_buffer_mode;
 extern int nbTextureUnits;
 extern int g_width, g_height, widtho, heighto;
 extern int tex0_width, tex0_height, tex1_width, tex1_height;
-extern float texture_env_color[4];
-extern int fog_enabled;
 extern float lambda;
 extern int need_lambda[2];
 extern float lambda_color[2][4];
@@ -161,7 +155,7 @@ extern int fog_coord_support;
 //extern int pbuffer_support;
 extern int glsl_support;
 extern unsigned int pBufferAddress;
-extern int viewport_width, viewport_height, viewport_offset, nvidia_viewport_hack;
+extern int viewport_width, viewport_height, g_viewport_offset, nvidia_viewport_hack;
 extern int UMAmode;
 
 void grChromaRangeExt(GrColor_t color0, GrColor_t color1, FxU32 mode);
@@ -175,19 +169,13 @@ void compile_shader();
 void set_lambda();
 void set_copy_shader();
 void disable_textureSizes();
+void ExitFullScreen();
 
 // config functions
 
-FX_ENTRY void FX_CALL grConfigWrapperExt(
-#ifndef ANDROID
-    FxI32, /* resolution parameter not supported on Android build */
-#endif
-    FxI32,
-    FxBool,
-    FxBool
-);
-FX_ENTRY GrScreenResolution_t FX_CALL grWrapperFullScreenResolutionExt(FxU32*, FxU32*);
-FX_ENTRY char ** FX_CALL grQueryResolutionsExt(int32_t*);
+void grConfigWrapperExt(FxI32,FxBool,FxBool);
+uint32_t grWrapperFullScreenResolutionExt(uint32_t * width, uint32_t * height);
+char ** grQueryResolutionsExt(int32_t*);
 FX_ENTRY FxBool FX_CALL grKeyPressedExt(FxU32 key);
 FX_ENTRY void FX_CALL grGetGammaTableExt(FxU32, FxU32*, FxU32*, FxU32*);
 

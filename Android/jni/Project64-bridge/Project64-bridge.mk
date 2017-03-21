@@ -28,5 +28,13 @@ LOCAL_CPPFLAGS := $(COMMON_CPPFLAGS)
 
 LOCAL_LDLIBS :=         \
     -llog               \
+    -latomic            \
+
+ifeq ($(TARGET_ARCH_ABI), armeabi-v7a)
+    # Use for ARM7a:
+    LOCAL_CFLAGS += -mfloat-abi=softfp
+    LOCAL_CFLAGS += -mfpu=vfp
+
+endif
 
 include $(BUILD_SHARED_LIBRARY)

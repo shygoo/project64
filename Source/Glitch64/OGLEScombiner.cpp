@@ -31,20 +31,19 @@
 #include "glitchmain.h"
 #include <Glide64/trace.h>
 #include <Glide64/Settings.h>
+#include <vector>
 
 void vbo_draw();
 
-static int fct[4], source0[4], operand0[4], source1[4], operand1[4], source2[4], operand2[4];
-static int fcta[4], sourcea0[4], operanda0[4], sourcea1[4], operanda1[4], sourcea2[4], operanda2[4];
-static int alpha_ref, alpha_func;
-bool alpha_test = 0;
+static int g_alpha_ref, g_alpha_func;
+static bool g_alpha_test = 0;
 
-float texture_env_color[4];
-float ccolor0[4];
-float ccolor1[4];
-static float chroma_color[4];
-int fog_enabled;
-static int chroma_enabled;
+static float g_texture_env_color[4];
+static float g_ccolor0[4];
+static float g_ccolor1[4];
+static float g_chroma_color[4];
+static int g_fog_enabled;
+static bool g_chroma_enabled;
 static int chroma_other_color;
 static int chroma_other_alpha;
 static int dither_enabled;
@@ -54,24 +53,13 @@ int blackandwhite1;
 float fogStart, fogEnd;
 float fogColor[4];
 
-#ifdef _WIN32
-static float farF;
-static float nearF;
-#endif // _WIN32
-
 int need_lambda[2];
 float lambda_color[2][4];
 
 // shaders variables
 int need_to_compile;
 
-static GLuint fragment_shader_object;
-static GLuint fragment_depth_shader_object;
-static GLuint vertex_shader_object;
-static GLuint program_object_default;
-static GLuint program_object_depth;
-static GLuint program_object;
-static GLuint rotation_matrix_location;
+static GLuint g_program_object_default = 0;
 static int constant_color_location;
 static int ccolor0_location;
 static int ccolor1_location;
@@ -87,16 +75,13 @@ static int a_combiner_ext = 0;
 #define GLSL_VERSION "100"
 
 #define SHADER_HEADER \
-"#version " GLSL_VERSION "          \n" \
-"#define gl_Color vFrontColor       \n" \
-"#define gl_FrontColor vFrontColor  \n" \
-"#define gl_TexCoord vTexCoord      \n"
+"#version " GLSL_VERSION "          \n"
 
 #define SHADER_VARYING \
-"varying highp vec4 gl_FrontColor;  \n" \
-"varying highp vec4 gl_TexCoord[4]; \n"
+"varying highp vec4 vFrontColor;  \n" \
+"varying highp vec4 vTexCoord[4]; \n"
 
-static const char* fragment_shader_header =
+static const char* g_fragment_shader_header =
 SHADER_HEADER
 "precision lowp float;             \n"
 "uniform sampler2D texture0;       \n"
@@ -120,59 +105,59 @@ SHADER_VARYING
 
 // using gl_FragCoord is terribly slow on ATI and varying variables don't work for some unknown
 // reason, so we use the unused components of the texture2 coordinates
-static const char* fragment_shader_dither =
-"  float dithx = (gl_TexCoord[2].b + 1.0)*0.5*1000.0; \n"
-"  float dithy = (gl_TexCoord[2].a + 1.0)*0.5*1000.0; \n"
+static const char* g_fragment_shader_dither =
+"  float dithx = (vTexCoord[2].b + 1.0)*0.5*1000.0; \n"
+"  float dithy = (vTexCoord[2].a + 1.0)*0.5*1000.0; \n"
 "  if(texture2D(ditherTex, vec2((dithx-32.0*floor(dithx/32.0))/32.0, \n"
 "                               (dithy-32.0*floor(dithy/32.0))/32.0)).a > 0.5) discard; \n"
 ;
 
-static const char* fragment_shader_default =
-"  gl_FragColor = texture2D(texture0, vec2(gl_TexCoord[0])); \n"
+static const char* g_fragment_shader_default =
+"  gl_FragColor = texture2D(texture0, vec2(vTexCoord[0])); \n"
 ;
 
-static const char* fragment_shader_readtex0color =
-"  vec4 readtex0 = texture2D(texture0, vec2(gl_TexCoord[0])); \n"
+static const char* g_fragment_shader_readtex0color =
+"  vec4 readtex0 = texture2D(texture0, vec2(vTexCoord[0])); \n"
 ;
 
-static const char* fragment_shader_readtex0bw =
-"  vec4 readtex0 = texture2D(texture0, vec2(gl_TexCoord[0])); \n"
+static const char* g_fragment_shader_readtex0bw =
+"  vec4 readtex0 = texture2D(texture0, vec2(vTexCoord[0])); \n"
 "  readtex0 = vec4(vec3(readtex0.b),                          \n"
 "                  readtex0.r + readtex0.g * 8.0 / 256.0);    \n"
 ;
-static const char* fragment_shader_readtex0bw_2 =
-"  vec4 readtex0 = vec4(dot(texture2D(texture0, vec2(gl_TexCoord[0])), vec4(1.0/3, 1.0/3, 1.0/3, 0)));                        \n"
+static const char* g_fragment_shader_readtex0bw_2 =
+"  vec4 readtex0 = vec4(dot(texture2D(texture0, vec2(vTexCoord[0])), vec4(1.0/3, 1.0/3, 1.0/3, 0)));                        \n"
 ;
 
-static const char* fragment_shader_readtex1color =
-"  vec4 readtex1 = texture2D(texture1, vec2(gl_TexCoord[1])); \n"
+static const char* g_fragment_shader_readtex1color =
+"  vec4 readtex1 = texture2D(texture1, vec2(vTexCoord[1])); \n"
 ;
 
-static const char* fragment_shader_readtex1bw =
-"  vec4 readtex1 = texture2D(texture1, vec2(gl_TexCoord[1])); \n"
+static const char* g_fragment_shader_readtex1bw =
+"  vec4 readtex1 = texture2D(texture1, vec2(vTexCoord[1])); \n"
 "  readtex1 = vec4(vec3(readtex1.b),                          \n"
 "                  readtex1.r + readtex1.g * 8.0 / 256.0);    \n"
 ;
-static const char* fragment_shader_readtex1bw_2 =
-"  vec4 readtex1 = vec4(dot(texture2D(texture1, vec2(gl_TexCoord[1])), vec4(1.0/3, 1.0/3, 1.0/3, 0)));                        \n"
+static const char* g_fragment_shader_readtex1bw_2 =
+"  vec4 readtex1 = vec4(dot(texture2D(texture1, vec2(vTexCoord[1])), vec4(1.0/3, 1.0/3, 1.0/3, 0)));                        \n"
 ;
 
-static const char* fragment_shader_fog =
+static const char* g_fragment_shader_fog =
 "  float fog;                                                                         \n"
-"  fog = gl_TexCoord[0].b;                                                            \n"
+"  fog = vTexCoord[0].b;                                                            \n"
 "  gl_FragColor.rgb = mix(fogColor, gl_FragColor.rgb, fog); \n"
 ;
 
-static const char* fragment_shader_end =
+static const char* g_fragment_shader_end =
 "if(gl_FragColor.a <= alphaRef) {discard;}   \n"
 "                                \n"
 "}                               \n"
 ;
 
-static const char* vertex_shader =
+static const char* g_vertex_shader =
 SHADER_HEADER
 "#define Z_MAX 65536.0                                          \n"
-"attribute highp vec4 aVertex;                                  \n"
+"attribute highp vec4 aPosition;                                \n"
 "attribute highp vec4 aColor;                                   \n"
 "attribute highp vec4 aMultiTexCoord0;                          \n"
 "attribute highp vec4 aMultiTexCoord1;                          \n"
@@ -185,18 +170,18 @@ SHADER_VARYING
 "                                                               \n"
 "void main()                                                    \n"
 "{                                                              \n"
-"  float q = aVertex.w;                                                     \n"
+"  float q = aPosition.w;                                                   \n"
 "  float invertY = vertexOffset.z;                                          \n" //Usually 1.0 but -1.0 when rendering to a texture (see inverted_culling grRenderBuffer)
-"  gl_Position.x = (aVertex.x - vertexOffset.x) / vertexOffset.x;           \n"
-"  gl_Position.y = invertY *-(aVertex.y - vertexOffset.y) / vertexOffset.y; \n"
-"  gl_Position.z = aVertex.z / Z_MAX;                                       \n"
+"  gl_Position.x = (aPosition.x - vertexOffset.x) / vertexOffset.x;         \n"
+"  gl_Position.y = invertY *-(aPosition.y - vertexOffset.y) / vertexOffset.y;\n"
+"  gl_Position.z = aPosition.z / Z_MAX;                                     \n"
 "  gl_Position.w = 1.0;                                                     \n"
 "  gl_Position /= q;                                                        \n"
 "  gl_Position = rotation_matrix * gl_Position;                             \n"
-"  gl_FrontColor = aColor.bgra;                                             \n"
+"  vFrontColor = aColor.bgra;                                               \n"
 "                                                                           \n"
-"  gl_TexCoord[0] = vec4(aMultiTexCoord0.xy / q / textureSizes.xy,0,1);     \n"
-"  gl_TexCoord[1] = vec4(aMultiTexCoord1.xy / q / textureSizes.zw,0,1);     \n"
+"  vTexCoord[0] = vec4(aMultiTexCoord0.xy / q / textureSizes.xy,0,1);       \n"
+"  vTexCoord[1] = vec4(aMultiTexCoord1.xy / q / textureSizes.zw,0,1);       \n"
 "                                                                           \n"
 "  float fogV = (1.0 / mix(q,aFog,fogModeEndScale[0])) / 255.0;             \n"
 "  //if(fogMode == 2) {                                                     \n"
@@ -204,10 +189,10 @@ SHADER_VARYING
 "  //}                                                                      \n"
 "                                                                           \n"
 "  float f = (fogModeEndScale[1] - fogV) * fogModeEndScale[2];              \n"
-"  f = clamp(f, 0.0, 1.0);                                      \n"
-"  gl_TexCoord[0].b = f;                                                    \n"
-"  gl_TexCoord[2].b = aVertex.x;                                            \n"
-"  gl_TexCoord[2].a = aVertex.y;                                            \n"
+"  f = clamp(f, 0.0, 1.0);                                                  \n"
+"  vTexCoord[0].b = f;                                                      \n"
+"  vTexCoord[2].b = aPosition.x;                                            \n"
+"  vTexCoord[2].a = aPosition.y;                                            \n"
 "}                                                                          \n"
 ;
 
@@ -216,18 +201,31 @@ static char fragment_shader_alpha_combiner[1024];
 static char fragment_shader_texture1[1024];
 static char fragment_shader_texture0[1024];
 static char fragment_shader_chroma[1024];
-static char shader_log[2048];
 
-void check_compile(GLuint shader)
+GLuint CompileShader(GLenum type, const std::string &source)
 {
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
+    GLuint shader = glCreateShader(type);
+
+    const char *sourceArray[1] = { source.c_str() };
+    glShaderSource(shader, 1, sourceArray, NULL);
+    glCompileShader(shader);
+
+    GLint compileResult;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compileResult);
+
+    if (compileResult == 0)
     {
-        char log[1024];
-        glGetShaderInfoLog(shader, 1024, NULL, log);
-        //LOGINFO(log);
+        GLint infoLogLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+        std::vector<GLchar> infoLog(infoLogLength);
+        glGetShaderInfoLog(shader, (GLsizei)infoLog.size(), NULL, infoLog.data());
+
+        WriteTrace(TraceGlitch, TraceError, "Shader compilation failed: %s", std::string(infoLog.begin(), infoLog.end()).c_str());
+        return 0;
     }
+
+    return shader;
 }
 
 void check_link(GLuint program)
@@ -242,7 +240,7 @@ void check_link(GLuint program)
     }
 }
 
-void set_rotation_matrix(GLuint loc, int rotate)
+void set_rotation_matrix(GLuint loc, CSettings::ScreenRotate_t rotate)
 {
     GLfloat mat[16];
 
@@ -253,13 +251,13 @@ void set_rotation_matrix(GLuint loc, int rotate)
      * (0, 0, 0, 1)
      */
 
-    //mat[0] =  cos(angle);
-    //mat[1] =  sin(angle);
+    mat[0] = 1;
+    mat[1] = 0;
     mat[2] = 0;
     mat[3] = 0;
 
-    //mat[4] = -sin(angle);
-    //mat[5] =  cos(angle);
+    mat[4] = 0;
+    mat[5] = 1;
     mat[6] = 0;
     mat[7] = 0;
 
@@ -274,35 +272,27 @@ void set_rotation_matrix(GLuint loc, int rotate)
     mat[15] = 1;
 
     /* now set the actual rotation */
-    if (1 == rotate) // 90 degree
+    if (rotate == CSettings::Rotate_90)
     {
         mat[0] = 0;
         mat[1] = 1;
         mat[4] = -1;
         mat[5] = 0;
     }
-    else if (2 == rotate) // 180 degree
+    else if (rotate == CSettings::Rotate_180)
     {
         mat[0] = -1;
         mat[1] = 0;
         mat[4] = 0;
         mat[5] = -1;
     }
-    else if (3 == rotate) // 270 degree
+    else if (rotate == CSettings::Rotate_270)
     {
         mat[0] = 0;
         mat[1] = -1;
         mat[4] = 1;
         mat[5] = 0;
     }
-    else /* 0 degree, also fallback if input is wrong) */
-    {
-        mat[0] = 1;
-        mat[1] = 0;
-        mat[4] = 0;
-        mat[5] = 1;
-    }
-
     glUniformMatrix4fv(loc, 1, GL_FALSE, mat);
 }
 
@@ -321,104 +311,44 @@ void init_combiner()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, default_texture);
 
-    int rotation_matrix_location;
     int texture0_location;
     int texture1_location;
-    char *fragment_shader;
-    int log_length;
-
-#ifndef ANDROID
-    // depth shader
-    fragment_depth_shader_object = glCreateShader(GL_FRAGMENT_SHADER);
-
-    char s[128];
-    // ZIGGY convert a 565 texture into depth component
-    sprintf(s, "gl_FragDepth = dot(texture2D(texture0, vec2(gl_TexCoord[0])), vec4(31*64*32, 63*32, 31, 0))*%g + %g; \n", zscale / 2 / 65535.0, 1 - zscale / 2);
-    fragment_shader = (char*)malloc(strlen(fragment_shader_header) +
-        strlen(s) +
-        strlen(fragment_shader_end) + 1);
-    strcpy(fragment_shader, fragment_shader_header);
-    strcat(fragment_shader, s);
-    strcat(fragment_shader, fragment_shader_end);
-    glShaderSource(fragment_depth_shader_object, 1, (const GLchar**)&fragment_shader, NULL);
-    free(fragment_shader);
-
-    glCompileShader(fragment_depth_shader_object);
-    check_compile(fragment_depth_shader_object);
-#endif
 
     // default shader
-    fragment_shader_object = glCreateShader(GL_FRAGMENT_SHADER);
+    std::string fragment_shader = g_fragment_shader_header;
+    fragment_shader += g_fragment_shader_default;
+    fragment_shader += g_fragment_shader_end;
 
-    fragment_shader = (char*)malloc(strlen(fragment_shader_header) +
-        strlen(fragment_shader_default) +
-        strlen(fragment_shader_end) + 1);
-    strcpy(fragment_shader, fragment_shader_header);
-    strcat(fragment_shader, fragment_shader_default);
-    strcat(fragment_shader, fragment_shader_end);
-    glShaderSource(fragment_shader_object, 1, (const GLchar**)&fragment_shader, NULL);
-    free(fragment_shader);
-
-    glCompileShader(fragment_shader_object);
-    check_compile(fragment_shader_object);
-
-    vertex_shader_object = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader_object, 1, &vertex_shader, NULL);
-    glCompileShader(vertex_shader_object);
-    check_compile(vertex_shader_object);
-
-    // depth program
-#ifndef ANDROID
-    program_object = glCreateProgram();
-    program_object_depth = program_object;
-    glAttachShader(program_object, fragment_depth_shader_object);
-    glAttachShader(program_object, vertex_shader_object);
-
-    glBindAttribLocation(program_object, POSITION_ATTR, "aPosition");
-    glBindAttribLocation(program_object, COLOUR_ATTR, "aColor");
-    glBindAttribLocation(program_object, TEXCOORD_0_ATTR, "aMultiTexCoord0");
-    glBindAttribLocation(program_object, TEXCOORD_1_ATTR, "aMultiTexCoord1");
-    glBindAttribLocation(program_object, FOG_ATTR, "aFog");
-
-    glLinkProgram(program_object);
-    check_link(program_object);
-    glUseProgram(program_object);
-
-    rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
-    set_rotation_matrix(rotation_matrix_location, g_settings->rotate);
-
-    texture0_location = glGetUniformLocation(program_object, "texture0");
-    texture1_location = glGetUniformLocation(program_object, "texture1");
-    glUniform1i(texture0_location, 0);
-    glUniform1i(texture1_location, 1);
-#endif
+    GLuint fragment_shader_object = CompileShader(GL_FRAGMENT_SHADER, fragment_shader);
+    GLuint vertex_shader_object = CompileShader(GL_VERTEX_SHADER, g_vertex_shader);
 
     // default program
-    program_object = glCreateProgram();
-    program_object_default = program_object;
-    glAttachShader(program_object, fragment_shader_object);
-    glAttachShader(program_object, vertex_shader_object);
+    g_program_object_default = glCreateProgram();
+    glAttachShader(g_program_object_default, fragment_shader_object);
+    glAttachShader(g_program_object_default, vertex_shader_object);
+    glDeleteShader(fragment_shader_object);
+    glDeleteShader(vertex_shader_object);
 
-    glBindAttribLocation(program_object, POSITION_ATTR, "aPosition");
-    glBindAttribLocation(program_object, COLOUR_ATTR, "aColor");
-    glBindAttribLocation(program_object, TEXCOORD_0_ATTR, "aMultiTexCoord0");
-    glBindAttribLocation(program_object, TEXCOORD_1_ATTR, "aMultiTexCoord1");
-    glBindAttribLocation(program_object, FOG_ATTR, "aFog");
+    glBindAttribLocation(g_program_object_default, POSITION_ATTR, "aPosition");
+    glBindAttribLocation(g_program_object_default, COLOUR_ATTR, "aColor");
+    glBindAttribLocation(g_program_object_default, TEXCOORD_0_ATTR, "aMultiTexCoord0");
+    glBindAttribLocation(g_program_object_default, TEXCOORD_1_ATTR, "aMultiTexCoord1");
+    glBindAttribLocation(g_program_object_default, FOG_ATTR, "aFog");
 
-    glLinkProgram(program_object);
-    check_link(program_object);
-    glUseProgram(program_object);
-    rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
-    set_rotation_matrix(rotation_matrix_location, g_settings->rotate);
+    glLinkProgram(g_program_object_default);
+    check_link(g_program_object_default);
+    glUseProgram(g_program_object_default);
+    int rotation_matrix_location = glGetUniformLocation(g_program_object_default, "rotation_matrix");
+    set_rotation_matrix(rotation_matrix_location, g_settings->rotate());
 
-    texture0_location = glGetUniformLocation(program_object, "texture0");
-    texture1_location = glGetUniformLocation(program_object, "texture1");
+    texture0_location = glGetUniformLocation(g_program_object_default, "texture0");
+    texture1_location = glGetUniformLocation(g_program_object_default, "texture1");
     glUniform1i(texture0_location, 0);
     glUniform1i(texture1_location, 1);
 
     strcpy(fragment_shader_color_combiner, "");
     strcpy(fragment_shader_alpha_combiner, "");
-    strcpy(fragment_shader_texture1, "vec4 ctexture1 = texture2D(texture0, vec2(gl_TexCoord[0])); \n");
+    strcpy(fragment_shader_texture1, "vec4 ctexture1 = texture2D(texture0, vec2(vTexCoord[0])); \n");
     strcpy(fragment_shader_texture0, "");
 
     first_color = 1;
@@ -426,8 +356,8 @@ void init_combiner()
     first_texture0 = 1;
     first_texture1 = 1;
     need_to_compile = 0;
-    fog_enabled = 0;
-    chroma_enabled = 0;
+    g_fog_enabled = 0;
+    g_chroma_enabled = false;
     dither_enabled = 0;
     blackandwhite0 = 0;
     blackandwhite1 = 0;
@@ -440,7 +370,7 @@ void compile_chroma_shader()
     switch (chroma_other_alpha)
     {
     case GR_COMBINE_OTHER_ITERATED:
-        strcat(fragment_shader_chroma, "float alpha = gl_Color.a; \n");
+        strcat(fragment_shader_chroma, "float alpha = vFrontColor.a; \n");
         break;
     case GR_COMBINE_OTHER_TEXTURE:
         strcat(fragment_shader_chroma, "float alpha = ctexture1.a; \n");
@@ -455,7 +385,7 @@ void compile_chroma_shader()
     switch (chroma_other_color)
     {
     case GR_COMBINE_OTHER_ITERATED:
-        strcat(fragment_shader_chroma, "vec4 color = vec4(vec3(gl_Color),alpha); \n");
+        strcat(fragment_shader_chroma, "vec4 color = vec4(vec3(vFrontColor),alpha); \n");
         break;
     case GR_COMBINE_OTHER_TEXTURE:
         strcat(fragment_shader_chroma, "vec4 color = vec4(vec3(ctexture1),alpha); \n");
@@ -480,13 +410,11 @@ typedef struct _shader_program_key
     int texture0_combinera;
     int texture1_combinera;
     int fog_enabled;
-    int chroma_enabled;
+    bool chroma_enabled;
     int dither_enabled;
     int blackandwhite0;
     int blackandwhite1;
-    GLuint fragment_shader_object;
     GLuint program_object;
-    int rotation_matrix_location;
     int texture0_location;
     int texture1_location;
     int vertexOffset_location;
@@ -498,8 +426,7 @@ typedef struct _shader_program_key
     int chroma_color_location;
 } shader_program_key;
 
-static shader_program_key* shader_programs = NULL;
-static int number_of_programs = 0;
+static std::vector<shader_program_key> g_shader_programs;
 static int color_combiner_key;
 static int alpha_combiner_key;
 static int texture0_combiner_key;
@@ -507,7 +434,7 @@ static int texture1_combiner_key;
 static int texture0_combinera_key;
 static int texture1_combinera_key;
 
-void update_uniforms(shader_program_key prog)
+void update_uniforms(GLuint program_object, const shader_program_key & prog)
 {
     glUniform1i(prog.texture0_location, 0);
     glUniform1i(prog.texture1_location, 1);
@@ -516,7 +443,7 @@ void update_uniforms(shader_program_key prog)
     glUniform4f(prog.textureSizes_location, tex0_width, tex0_height, tex1_width, tex1_height);
 
     glUniform3f(prog.fogModeEndScale_location,
-        fog_enabled != 2 ? 0.0f : 1.0f,
+        g_fog_enabled != 2 ? 0.0f : 1.0f,
         fogEnd,
         1.0f / (fogEnd - fogStart)
         );
@@ -526,131 +453,118 @@ void update_uniforms(shader_program_key prog)
         glUniform3f(prog.fogColor_location, fogColor[0], fogColor[1], fogColor[2]);
     }
 
-    glUniform1f(prog.alphaRef_location, alpha_test ? alpha_ref / 255.0f : -1.0f);
+    glUniform1f(prog.alphaRef_location, g_alpha_test ? g_alpha_ref / 255.0f : -1.0f);
 
     constant_color_location = glGetUniformLocation(program_object, "constant_color");
-    glUniform4f(constant_color_location, texture_env_color[0], texture_env_color[1],
-        texture_env_color[2], texture_env_color[3]);
+    glUniform4f(constant_color_location, g_texture_env_color[0], g_texture_env_color[1],
+        g_texture_env_color[2], g_texture_env_color[3]);
 
     ccolor0_location = glGetUniformLocation(program_object, "ccolor0");
-    glUniform4f(ccolor0_location, ccolor0[0], ccolor0[1], ccolor0[2], ccolor0[3]);
+    glUniform4f(ccolor0_location, g_ccolor0[0], g_ccolor0[1], g_ccolor0[2], g_ccolor0[3]);
 
     ccolor1_location = glGetUniformLocation(program_object, "ccolor1");
-    glUniform4f(ccolor1_location, ccolor1[0], ccolor1[1], ccolor1[2], ccolor1[3]);
+    glUniform4f(ccolor1_location, g_ccolor1[0], g_ccolor1[1], g_ccolor1[2], g_ccolor1[3]);
 
-    glUniform4f(prog.chroma_color_location, chroma_color[0], chroma_color[1],
-        chroma_color[2], chroma_color[3]);
+    glUniform4f(prog.chroma_color_location, g_chroma_color[0], g_chroma_color[1],
+        g_chroma_color[2], g_chroma_color[3]);
 
     if (dither_enabled)
     {
         glUniform1i(prog.ditherTex_location, 2);
     }
 
-    rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
-    set_rotation_matrix(rotation_matrix_location, g_settings->rotate);
-    rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
-    set_rotation_matrix(rotation_matrix_location, g_settings->rotate);
-
+    GLuint rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
+    set_rotation_matrix(rotation_matrix_location, g_settings->rotate());
     set_lambda();
 }
 
 void disable_textureSizes()
 {
-    int textureSizes_location = glGetUniformLocation(program_object_default, "textureSizes");
+    int textureSizes_location = glGetUniformLocation(g_program_object_default, "textureSizes");
     glUniform4f(textureSizes_location, 1, 1, 1, 1);
 }
 
 void compile_shader()
 {
-    int rotation_matrix_location;
-    int texture0_location;
-    int texture1_location;
-    int ditherTex_location;
-    int vertexOffset_location;
-    int textureSizes_location;
-    char *fragment_shader;
-    int i;
-    int chroma_color_location;
-    int log_length;
-
     need_to_compile = 0;
 
-    for (i = 0; i < number_of_programs; i++)
+    for (size_t i = 0; i < g_shader_programs.size(); i++)
     {
-        shader_program_key prog = shader_programs[i];
+        shader_program_key & prog = g_shader_programs[i];
         if (prog.color_combiner == color_combiner_key &&
             prog.alpha_combiner == alpha_combiner_key &&
             prog.texture0_combiner == texture0_combiner_key &&
             prog.texture1_combiner == texture1_combiner_key &&
             prog.texture0_combinera == texture0_combinera_key &&
             prog.texture1_combinera == texture1_combinera_key &&
-            prog.fog_enabled == fog_enabled &&
-            prog.chroma_enabled == chroma_enabled &&
+            prog.fog_enabled == g_fog_enabled &&
+            prog.chroma_enabled == g_chroma_enabled &&
             prog.dither_enabled == dither_enabled &&
             prog.blackandwhite0 == blackandwhite0 &&
             prog.blackandwhite1 == blackandwhite1)
         {
-            program_object = shader_programs[i].program_object;
-            glUseProgram(program_object);
-            update_uniforms(prog);
+            glUseProgram(prog.program_object);
+            update_uniforms(prog.program_object, prog);
             return;
         }
     }
 
-    if (shader_programs != NULL)
-        shader_programs = (shader_program_key*)realloc(shader_programs, (number_of_programs + 1)*sizeof(shader_program_key));
-    else
-        shader_programs = (shader_program_key*)malloc(sizeof(shader_program_key));
-    //printf("number of shaders %d\n", number_of_programs);
+    shader_program_key shader_program;
+    shader_program.color_combiner = color_combiner_key;
+    shader_program.alpha_combiner = alpha_combiner_key;
+    shader_program.texture0_combiner = texture0_combiner_key;
+    shader_program.texture1_combiner = texture1_combiner_key;
+    shader_program.texture0_combinera = texture0_combinera_key;
+    shader_program.texture1_combinera = texture1_combinera_key;
+    shader_program.fog_enabled = g_fog_enabled;
+    shader_program.chroma_enabled = g_chroma_enabled;
+    shader_program.dither_enabled = dither_enabled;
+    shader_program.blackandwhite0 = blackandwhite0;
+    shader_program.blackandwhite1 = blackandwhite1;
 
-    shader_programs[number_of_programs].color_combiner = color_combiner_key;
-    shader_programs[number_of_programs].alpha_combiner = alpha_combiner_key;
-    shader_programs[number_of_programs].texture0_combiner = texture0_combiner_key;
-    shader_programs[number_of_programs].texture1_combiner = texture1_combiner_key;
-    shader_programs[number_of_programs].texture0_combinera = texture0_combinera_key;
-    shader_programs[number_of_programs].texture1_combinera = texture1_combinera_key;
-    shader_programs[number_of_programs].fog_enabled = fog_enabled;
-    shader_programs[number_of_programs].chroma_enabled = chroma_enabled;
-    shader_programs[number_of_programs].dither_enabled = dither_enabled;
-    shader_programs[number_of_programs].blackandwhite0 = blackandwhite0;
-    shader_programs[number_of_programs].blackandwhite1 = blackandwhite1;
-
-    if (chroma_enabled)
+    if (g_chroma_enabled)
     {
         strcat(fragment_shader_texture1, "test_chroma(ctexture1); \n");
         compile_chroma_shader();
     }
 
-    fragment_shader = (char*)malloc(4096);
+    std::string fragment_shader = g_fragment_shader_header;
 
-    strcpy(fragment_shader, fragment_shader_header);
-    if (dither_enabled) strcat(fragment_shader, fragment_shader_dither);
-    switch (blackandwhite0) {
-    case 1: strcat(fragment_shader, fragment_shader_readtex0bw); break;
-    case 2: strcat(fragment_shader, fragment_shader_readtex0bw_2); break;
-    default: strcat(fragment_shader, fragment_shader_readtex0color);
+    if (dither_enabled)
+    {
+        fragment_shader += g_fragment_shader_dither;
     }
-    switch (blackandwhite1) {
-    case 1: strcat(fragment_shader, fragment_shader_readtex1bw); break;
-    case 2: strcat(fragment_shader, fragment_shader_readtex1bw_2); break;
-    default: strcat(fragment_shader, fragment_shader_readtex1color);
+    switch (blackandwhite0) 
+    {
+    case 1: fragment_shader += g_fragment_shader_readtex0bw; break;
+    case 2: fragment_shader += g_fragment_shader_readtex0bw_2; break;
+    default: fragment_shader += g_fragment_shader_readtex0color;
     }
-    strcat(fragment_shader, fragment_shader_texture0);
-    strcat(fragment_shader, fragment_shader_texture1);
-    strcat(fragment_shader, fragment_shader_color_combiner);
-    strcat(fragment_shader, fragment_shader_alpha_combiner);
-    if (fog_enabled) strcat(fragment_shader, fragment_shader_fog);
-    strcat(fragment_shader, fragment_shader_end);
-    if (chroma_enabled) strcat(fragment_shader, fragment_shader_chroma);
+    switch (blackandwhite1)
+    {
+    case 1: fragment_shader += g_fragment_shader_readtex1bw; break;
+    case 2: fragment_shader += g_fragment_shader_readtex1bw_2; break;
+    default: fragment_shader += g_fragment_shader_readtex1color;
+    }
+    fragment_shader += fragment_shader_texture0;
+    fragment_shader += fragment_shader_texture1;
+    fragment_shader += fragment_shader_color_combiner;
+    fragment_shader += fragment_shader_alpha_combiner;
+    if (g_fog_enabled)
+    {
+        fragment_shader += g_fragment_shader_fog;
+    }
+    fragment_shader += g_fragment_shader_end;
+    if (g_chroma_enabled)
+    {
+        fragment_shader += fragment_shader_chroma;
+    }
 
-    shader_programs[number_of_programs].fragment_shader_object = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(shader_programs[number_of_programs].fragment_shader_object, 1, (const GLchar**)&fragment_shader, NULL);
+    GLuint fragment_shader_object = CompileShader(GL_FRAGMENT_SHADER, fragment_shader);
+    GLuint vertex_shader_object = CompileShader(GL_VERTEX_SHADER, g_vertex_shader);
 
-    glCompileShader(shader_programs[number_of_programs].fragment_shader_object);
-    check_compile(shader_programs[number_of_programs].fragment_shader_object);
-
-    program_object = glCreateProgram();
-    shader_programs[number_of_programs].program_object = program_object;
+    GLuint program_object = glCreateProgram();
+    shader_program.program_object = program_object;
 
     glBindAttribLocation(program_object, POSITION_ATTR, "aPosition");
     glBindAttribLocation(program_object, COLOUR_ATTR, "aColor");
@@ -658,33 +572,87 @@ void compile_shader()
     glBindAttribLocation(program_object, TEXCOORD_1_ATTR, "aMultiTexCoord1");
     glBindAttribLocation(program_object, FOG_ATTR, "aFog");
 
-    glAttachShader(program_object, shader_programs[number_of_programs].fragment_shader_object);
-    glAttachShader(program_object, vertex_shader_object);
+    glAttachShader(shader_program.program_object, fragment_shader_object);
+    glDeleteShader(fragment_shader_object);
+
+    glAttachShader(shader_program.program_object, vertex_shader_object);
+    glDeleteShader(vertex_shader_object);
 
     glLinkProgram(program_object);
     check_link(program_object);
     glUseProgram(program_object);
 
-    shader_programs[number_of_programs].rotation_matrix_location = glGetUniformLocation(program_object, "rotation_matrix");
-    shader_programs[number_of_programs].texture0_location = glGetUniformLocation(program_object, "texture0");
-    shader_programs[number_of_programs].texture1_location = glGetUniformLocation(program_object, "texture1");
-    shader_programs[number_of_programs].vertexOffset_location = glGetUniformLocation(program_object, "vertexOffset");
-    shader_programs[number_of_programs].textureSizes_location = glGetUniformLocation(program_object, "textureSizes");
-    shader_programs[number_of_programs].fogModeEndScale_location = glGetUniformLocation(program_object, "fogModeEndScale");
-    shader_programs[number_of_programs].fogColor_location = glGetUniformLocation(program_object, "fogColor");
-    shader_programs[number_of_programs].alphaRef_location = glGetUniformLocation(program_object, "alphaRef");
-    shader_programs[number_of_programs].chroma_color_location = glGetUniformLocation(program_object, "chroma_color");
+    shader_program.texture0_location = glGetUniformLocation(program_object, "texture0");
+    shader_program.texture1_location = glGetUniformLocation(program_object, "texture1");
+    shader_program.vertexOffset_location = glGetUniformLocation(program_object, "vertexOffset");
+    shader_program.textureSizes_location = glGetUniformLocation(program_object, "textureSizes");
+    shader_program.fogModeEndScale_location = glGetUniformLocation(program_object, "fogModeEndScale");
+    shader_program.fogColor_location = glGetUniformLocation(program_object, "fogColor");
+    shader_program.alphaRef_location = glGetUniformLocation(program_object, "alphaRef");
+    shader_program.chroma_color_location = glGetUniformLocation(program_object, "chroma_color");
 
-    update_uniforms(shader_programs[number_of_programs]);
-
-    number_of_programs++;
+    update_uniforms(shader_program.program_object, shader_program);
+    g_shader_programs.push_back(shader_program);
 }
 
 void free_combiners()
 {
-    free(shader_programs);
-    shader_programs = NULL;
-    number_of_programs = 0;
+    if (g_program_object_default != 0)
+    {
+        glDeleteProgram(g_program_object_default);
+        g_program_object_default = 0;
+    }
+    for (size_t i = 0; i < g_shader_programs.size(); i++)
+    {
+        glDeleteProgram(g_shader_programs[i].program_object);
+        g_shader_programs[i].program_object = 0;
+    }
+    g_shader_programs.clear();
+
+    g_alpha_ref = 0;
+    g_alpha_func = 0;
+    g_alpha_test = 0;
+
+    memset(g_texture_env_color, 0, sizeof(g_texture_env_color));
+    memset(g_ccolor0, 0, sizeof(g_ccolor0));
+    memset(g_ccolor1, 0, sizeof(g_ccolor1));
+    memset(g_chroma_color, 0, sizeof(g_chroma_color));
+    g_fog_enabled = 0;
+    g_chroma_enabled = false;
+    chroma_other_color = 0;
+    chroma_other_alpha = 0;
+    dither_enabled = 0;
+    blackandwhite0 = 0;
+    blackandwhite1 = 0;
+
+    fogStart = 0.0f;
+    fogEnd = 0.0f;
+    for (int i = 0; i < (sizeof(fogColor) / sizeof(fogColor[0])); i++)
+    {
+        fogColor[i] = 0.0f;
+    }
+    memset(need_lambda, 0, sizeof(need_lambda));
+    for (int i = 0; i < (sizeof(lambda_color) / sizeof(lambda_color[0])); i++)
+    {
+        for (int z = 0; z < (sizeof(lambda_color[i]) / sizeof(lambda_color[i][0])); z++)
+        {
+            lambda_color[i][z] = 0.0f;
+        }
+    }
+    need_to_compile = 0;
+
+    g_program_object_default = 0;
+    constant_color_location = 0;
+    ccolor0_location = 0;
+    ccolor1_location = 0;
+    first_color = 1;
+    first_alpha = 1;
+    first_texture0 = 1;
+    first_texture1 = 1;
+    tex0_combiner_ext = 0;
+    tex1_combiner_ext = 0;
+    c_combiner_ext = 0;
+    a_combiner_ext = 0;
 }
 
 void set_copy_shader()
@@ -692,32 +660,24 @@ void set_copy_shader()
     int texture0_location;
     int alphaRef_location;
 
-    glUseProgram(program_object_default);
-    texture0_location = glGetUniformLocation(program_object_default, "texture0");
+    glUseProgram(g_program_object_default);
+    texture0_location = glGetUniformLocation(g_program_object_default, "texture0");
     glUniform1i(texture0_location, 0);
 
-    alphaRef_location = glGetUniformLocation(program_object_default, "alphaRef");
+    alphaRef_location = glGetUniformLocation(g_program_object_default, "alphaRef");
     if (alphaRef_location != -1)
-        glUniform1f(alphaRef_location, alpha_test ? alpha_ref / 255.0f : -1.0f);
+    {
+        glUniform1f(alphaRef_location, g_alpha_test ? g_alpha_ref / 255.0f : -1.0f);
+    }
 }
 
 void set_depth_shader()
 {
-    int texture0_location;
-    int alphaRef_location;
-
-    glUseProgram(program_object_depth);
-    texture0_location = glGetUniformLocation(program_object_depth, "texture0");
-    glUniform1i(texture0_location, 0);
-
-    alphaRef_location = glGetUniformLocation(program_object_depth, "alphaRef");
-    if (alphaRef_location != -1)
-        glUniform1f(alphaRef_location, alpha_test ? alpha_ref / 255.0f : -1.0f);
 }
 
 void set_lambda()
 {
-    int lambda_location = glGetUniformLocation(program_object, "lambda");
+    int lambda_location = glGetUniformLocation(g_program_object_default, "lambda");
     glUniform1f(lambda_location, lambda);
 }
 
@@ -728,16 +688,16 @@ grConstantColorValue(GrColor_t value)
     switch (lfb_color_fmt)
     {
     case GR_COLORFORMAT_ARGB:
-        texture_env_color[3] = ((value >> 24) & 0xFF) / 255.0f;
-        texture_env_color[0] = ((value >> 16) & 0xFF) / 255.0f;
-        texture_env_color[1] = ((value >> 8) & 0xFF) / 255.0f;
-        texture_env_color[2] = (value & 0xFF) / 255.0f;
+        g_texture_env_color[3] = ((value >> 24) & 0xFF) / 255.0f;
+        g_texture_env_color[0] = ((value >> 16) & 0xFF) / 255.0f;
+        g_texture_env_color[1] = ((value >> 8) & 0xFF) / 255.0f;
+        g_texture_env_color[2] = (value & 0xFF) / 255.0f;
         break;
     case GR_COLORFORMAT_RGBA:
-        texture_env_color[0] = ((value >> 24) & 0xFF) / 255.0f;
-        texture_env_color[1] = ((value >> 16) & 0xFF) / 255.0f;
-        texture_env_color[2] = ((value >> 8) & 0xFF) / 255.0f;
-        texture_env_color[3] = (value & 0xFF) / 255.0f;
+        g_texture_env_color[0] = ((value >> 24) & 0xFF) / 255.0f;
+        g_texture_env_color[1] = ((value >> 16) & 0xFF) / 255.0f;
+        g_texture_env_color[2] = ((value >> 8) & 0xFF) / 255.0f;
+        g_texture_env_color[3] = (value & 0xFF) / 255.0f;
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grConstantColorValue: unknown color format : %x", lfb_color_fmt);
@@ -745,9 +705,9 @@ grConstantColorValue(GrColor_t value)
 
     vbo_draw();
 
-    constant_color_location = glGetUniformLocation(program_object, "constant_color");
-    glUniform4f(constant_color_location, texture_env_color[0], texture_env_color[1],
-        texture_env_color[2], texture_env_color[3]);
+    constant_color_location = glGetUniformLocation(g_program_object_default, "constant_color");
+    glUniform4f(constant_color_location, g_texture_env_color[0], g_texture_env_color[1],
+        g_texture_env_color[2], g_texture_env_color[3]);
 }
 
 void writeGLSLColorOther(int other)
@@ -755,7 +715,7 @@ void writeGLSLColorOther(int other)
     switch (other)
     {
     case GR_COMBINE_OTHER_ITERATED:
-        strcat(fragment_shader_color_combiner, "vec4 color_other = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 color_other = vFrontColor; \n");
         break;
     case GR_COMBINE_OTHER_TEXTURE:
         strcat(fragment_shader_color_combiner, "vec4 color_other = ctexture1; \n");
@@ -773,7 +733,7 @@ void writeGLSLColorLocal(int local)
     switch (local)
     {
     case GR_COMBINE_LOCAL_ITERATED:
-        strcat(fragment_shader_color_combiner, "vec4 color_local = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 color_local = vFrontColor; \n");
         break;
     case GR_COMBINE_LOCAL_CONSTANT:
         strcat(fragment_shader_color_combiner, "vec4 color_local = constant_color; \n");
@@ -918,7 +878,7 @@ FxBool invert)
         strcat(fragment_shader_color_combiner, "gl_FragColor = color_factor * (-color_local) + vec4(color_local.a); \n");
         break;
     default:
-        strcpy(fragment_shader_color_combiner, fragment_shader_default);
+        strcpy(fragment_shader_color_combiner, g_fragment_shader_default);
         WriteTrace(TraceGlitch, TraceWarning, "grColorCombine : unknown function : %x", function);
     }
     //compile_shader();
@@ -967,7 +927,7 @@ void writeGLSLAlphaOther(int other)
     switch (other)
     {
     case GR_COMBINE_OTHER_ITERATED:
-        strcat(fragment_shader_alpha_combiner, "float alpha_other = gl_Color.a; \n");
+        strcat(fragment_shader_alpha_combiner, "float alpha_other = vFrontColor.a; \n");
         break;
     case GR_COMBINE_OTHER_TEXTURE:
         strcat(fragment_shader_alpha_combiner, "float alpha_other = ctexture1.a; \n");
@@ -985,7 +945,7 @@ void writeGLSLAlphaLocal(int local)
     switch (local)
     {
     case GR_COMBINE_LOCAL_ITERATED:
-        strcat(fragment_shader_alpha_combiner, "float alpha_local = gl_Color.a; \n");
+        strcat(fragment_shader_alpha_combiner, "float alpha_local = vFrontColor.a; \n");
         break;
     case GR_COMBINE_LOCAL_CONSTANT:
         strcat(fragment_shader_alpha_combiner, "float alpha_local = constant_color.a; \n");
@@ -1599,46 +1559,40 @@ GrAlphaBlendFnc_t alpha_sf, GrAlphaBlendFnc_t alpha_df
     }
     glEnable(GL_BLEND);
     glBlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha);
-    /*
-      if (blend_func_separate_support)
-      glBlendFuncSeparateEXT(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha);
-      else
-      glBlendFunc(sfactorRGB, dfactorRGB);
-      */
 }
 
 FX_ENTRY void FX_CALL
 grAlphaTestReferenceValue(GrAlpha_t value)
 {
     WriteTrace(TraceResolution, TraceDebug, "value: %d", value);
-    alpha_ref = value;
-    grAlphaTestFunction(alpha_func);
+    g_alpha_ref = value;
+    grAlphaTestFunction(g_alpha_func);
 }
 
 FX_ENTRY void FX_CALL
 grAlphaTestFunction(GrCmpFnc_t function)
 {
     WriteTrace(TraceResolution, TraceDebug, "function: %d", function);
-    alpha_func = function;
+    g_alpha_func = function;
     switch (function)
     {
     case GR_CMP_GREATER:
-        //glAlphaFunc(GL_GREATER, alpha_ref/255.0f);
+        //glAlphaFunc(GL_GREATER, g_alpha_ref/255.0f);
         break;
     case GR_CMP_GEQUAL:
-        //glAlphaFunc(GL_GEQUAL, alpha_ref/255.0f);
+        //glAlphaFunc(GL_GEQUAL, g_alpha_ref/255.0f);
         break;
     case GR_CMP_ALWAYS:
-        //glAlphaFunc(GL_ALWAYS, alpha_ref/255.0f);
+        //glAlphaFunc(GL_ALWAYS, g_alpha_ref/255.0f);
         //glDisable(GL_ALPHA_TEST);
-        alpha_test = false;
+        g_alpha_test = false;
         return;
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grAlphaTestFunction : unknown function : %x", function);
     }
     //glEnable(GL_ALPHA_TEST);
-    alpha_test = true;
+    g_alpha_test = true;
 }
 
 // fog
@@ -1651,17 +1605,17 @@ grFogMode(GrFogMode_t mode)
     {
     case GR_FOG_DISABLE:
         //glDisable(GL_FOG);
-        fog_enabled = 0;
+        g_fog_enabled = 0;
         break;
     case GR_FOG_WITH_TABLE_ON_Q:
         //glEnable(GL_FOG);
         //glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FOG_COORDINATE_EXT);
-        fog_enabled = 1;
+        g_fog_enabled = 1;
         break;
     case GR_FOG_WITH_TABLE_ON_FOGCOORD_EXT:
         //glEnable(GL_FOG);
         //glFogi(GL_FOG_COORDINATE_SOURCE_EXT, GL_FOG_COORDINATE_EXT);
-        fog_enabled = 2;
+        g_fog_enabled = 2;
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grFogMode : unknown mode : %x", mode);
@@ -1732,10 +1686,10 @@ grChromakeyMode(GrChromakeyMode_t mode)
     switch (mode)
     {
     case GR_CHROMAKEY_DISABLE:
-        chroma_enabled = 0;
+        g_chroma_enabled = false;
         break;
     case GR_CHROMAKEY_ENABLE:
-        chroma_enabled = 1;
+        g_chroma_enabled = true;
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grChromakeyMode : unknown mode : %x", mode);
@@ -1752,27 +1706,27 @@ grChromakeyValue(GrColor_t value)
     switch (lfb_color_fmt)
     {
     case GR_COLORFORMAT_ARGB:
-        chroma_color[3] = 1.0;//((value >> 24) & 0xFF) / 255.0f;
-        chroma_color[0] = ((value >> 16) & 0xFF) / 255.0f;
-        chroma_color[1] = ((value >> 8) & 0xFF) / 255.0f;
-        chroma_color[2] = (value & 0xFF) / 255.0f;
+        g_chroma_color[3] = 1.0;//((value >> 24) & 0xFF) / 255.0f;
+        g_chroma_color[0] = ((value >> 16) & 0xFF) / 255.0f;
+        g_chroma_color[1] = ((value >> 8) & 0xFF) / 255.0f;
+        g_chroma_color[2] = (value & 0xFF) / 255.0f;
         break;
     case GR_COLORFORMAT_RGBA:
-        chroma_color[0] = ((value >> 24) & 0xFF) / 255.0f;
-        chroma_color[1] = ((value >> 16) & 0xFF) / 255.0f;
-        chroma_color[2] = ((value >> 8) & 0xFF) / 255.0f;
-        chroma_color[3] = 1.0;//(value & 0xFF) / 255.0f;
+        g_chroma_color[0] = ((value >> 24) & 0xFF) / 255.0f;
+        g_chroma_color[1] = ((value >> 16) & 0xFF) / 255.0f;
+        g_chroma_color[2] = ((value >> 8) & 0xFF) / 255.0f;
+        g_chroma_color[3] = 1.0;//(value & 0xFF) / 255.0f;
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grChromakeyValue: unknown color format : %x", lfb_color_fmt);
     }
     vbo_draw();
-    chroma_color_location = glGetUniformLocation(program_object, "chroma_color");
-    glUniform4f(chroma_color_location, chroma_color[0], chroma_color[1],
-        chroma_color[2], chroma_color[3]);
+    chroma_color_location = glGetUniformLocation(g_program_object_default, "chroma_color");
+    glUniform4f(chroma_color_location, g_chroma_color[0], g_chroma_color[1],
+        g_chroma_color[2], g_chroma_color[3]);
 }
 
-static void setPattern()
+void setPattern()
 {
     int i;
     GLubyte stip[32 * 4];
@@ -1805,15 +1759,6 @@ static void setPattern()
     glTexImage2D(GL_TEXTURE_2D, 0, 4, 32, 32, 0, GL_RGBA, GL_UNSIGNED_BYTE, texture);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-}
-
-FX_ENTRY void FX_CALL
-grStipplePattern(
-GrStipplePattern_t stipple)
-{
-    WriteTrace(TraceResolution, TraceDebug, "value: %x", stipple);
-    srand(stipple);
-    setPattern();
 }
 
 FX_ENTRY void FX_CALL
@@ -1875,10 +1820,10 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_color_combiner, "vec4 cs_a = constant_color; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_color_combiner, "vec4 cs_a = vec4(gl_Color.a); \n");
+        strcat(fragment_shader_color_combiner, "vec4 cs_a = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_ITRGB:
-        strcat(fragment_shader_color_combiner, "vec4 cs_a = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 cs_a = vFrontColor; \n");
         break;
     case GR_CMBX_TEXTURE_RGB:
         strcat(fragment_shader_color_combiner, "vec4 cs_a = ctexture1; \n");
@@ -1922,10 +1867,10 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_color_combiner, "vec4 cs_b = constant_color; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_color_combiner, "vec4 cs_b = vec4(gl_Color.a); \n");
+        strcat(fragment_shader_color_combiner, "vec4 cs_b = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_ITRGB:
-        strcat(fragment_shader_color_combiner, "vec4 cs_b = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 cs_b = vFrontColor; \n");
         break;
     case GR_CMBX_TEXTURE_RGB:
         strcat(fragment_shader_color_combiner, "vec4 cs_b = ctexture1; \n");
@@ -1978,10 +1923,10 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_color_combiner, "vec4 c_c = constant_color; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_color_combiner, "vec4 c_c = vec4(gl_Color.a); \n");
+        strcat(fragment_shader_color_combiner, "vec4 c_c = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_ITRGB:
-        strcat(fragment_shader_color_combiner, "vec4 c_c = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 c_c = vFrontColor; \n");
         break;
     case GR_CMBX_TEXTURE_RGB:
         strcat(fragment_shader_color_combiner, "vec4 c_c = ctexture1; \n");
@@ -2009,7 +1954,7 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_color_combiner, "vec4 c_d = ctexture1; \n");
         break;
     case GR_CMBX_ITRGB:
-        strcat(fragment_shader_color_combiner, "vec4 c_d = gl_Color; \n");
+        strcat(fragment_shader_color_combiner, "vec4 c_d = vFrontColor; \n");
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grColorCombineExt : d = %x", d);
@@ -2054,7 +1999,7 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_alpha_combiner, "float as_a = constant_color.a; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_alpha_combiner, "float as_a = gl_Color.a; \n");
+        strcat(fragment_shader_alpha_combiner, "float as_a = vFrontColor.a; \n");
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grAlphaCombineExt : a = %x", a);
@@ -2092,7 +2037,7 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_alpha_combiner, "float as_b = constant_color.a; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_alpha_combiner, "float as_b = gl_Color.a; \n");
+        strcat(fragment_shader_alpha_combiner, "float as_b = vFrontColor.a; \n");
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grAlphaCombineExt : b = %x", b);
@@ -2139,7 +2084,7 @@ FxU32 shift, FxBool invert)
         strcat(fragment_shader_alpha_combiner, "float a_c = constant_color.a; \n");
         break;
     case GR_CMBX_ITALPHA:
-        strcat(fragment_shader_alpha_combiner, "float a_c = gl_Color.a; \n");
+        strcat(fragment_shader_alpha_combiner, "float a_c = vFrontColor.a; \n");
         break;
     default:
         WriteTrace(TraceGlitch, TraceWarning, "grAlphaCombineExt : c = %x", c);
@@ -2222,15 +2167,15 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0s_a = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0s_a = vec4(vFrontColor.a); \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1s_a = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1s_a = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_ITRGB:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0s_a = gl_Color; \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0s_a = vFrontColor; \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1s_a = gl_Color; \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1s_a = vFrontColor; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2320,15 +2265,15 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0s_b = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0s_b = vec4(vFrontColor.a); \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1s_b = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1s_b = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_ITRGB:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0s_b = gl_Color; \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0s_b = vFrontColor; \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1s_b = gl_Color; \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1s_b = vFrontColor; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2430,15 +2375,15 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITRGB:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0_c = gl_Color; \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0_c = vFrontColor; \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1_c = gl_Color; \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1_c = vFrontColor; \n");
         break;
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0_c = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0_c = vec4(vFrontColor.a); \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1_c = vec4(gl_Color.a); \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1_c = vec4(vFrontColor.a); \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2508,9 +2453,9 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITRGB:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "vec4 ctex0_d = gl_Color; \n");
+            strcat(fragment_shader_texture0, "vec4 ctex0_d = vFrontColor; \n");
         else
-            strcat(fragment_shader_texture1, "vec4 ctex1_d = gl_Color; \n");
+            strcat(fragment_shader_texture1, "vec4 ctex1_d = vFrontColor; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2577,9 +2522,9 @@ FxU32 shift, FxBool invert)
     {
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "ctex0s_a.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture0, "ctex0s_a.a = vFrontColor.a; \n");
         else
-            strcat(fragment_shader_texture1, "ctex1s_a.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture1, "ctex1s_a.a = vFrontColor.a; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2645,9 +2590,9 @@ FxU32 shift, FxBool invert)
     {
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "ctex0s_b.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture0, "ctex0s_b.a = vFrontColor.a; \n");
         else
-            strcat(fragment_shader_texture1, "ctex1s_b.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture1, "ctex1s_b.a = vFrontColor.a; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2731,9 +2676,9 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "ctex0_c.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture0, "ctex0_c.a = vFrontColor.a; \n");
         else
-            strcat(fragment_shader_texture1, "ctex1_c.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture1, "ctex1_c.a = vFrontColor.a; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2785,15 +2730,15 @@ FxU32 shift, FxBool invert)
         break;
     case GR_CMBX_ITALPHA:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "ctex0_d.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture0, "ctex0_d.a = vFrontColor.a; \n");
         else
-            strcat(fragment_shader_texture1, "ctex1_d.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture1, "ctex1_d.a = vFrontColor.a; \n");
         break;
     case GR_CMBX_ITRGB:
         if (num_tex == 0)
-            strcat(fragment_shader_texture0, "ctex0_d.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture0, "ctex0_d.a = vFrontColor.a; \n");
         else
-            strcat(fragment_shader_texture1, "ctex1_d.a = gl_Color.a; \n");
+            strcat(fragment_shader_texture1, "ctex1_d.a = vFrontColor.a; \n");
         break;
     case GR_CMBX_LOCAL_TEXTURE_ALPHA:
         if (num_tex == 0)
@@ -2825,9 +2770,7 @@ FxU32 shift, FxBool invert)
     need_to_compile = 1;
 }
 
-FX_ENTRY void FX_CALL
-grConstantColorValueExt(GrChipID_t    tmu,
-GrColor_t     value)
+FX_ENTRY void FX_CALL grConstantColorValueExt(GrChipID_t tmu, GrColor_t value)
 {
     int num_tex;
     WriteTrace(TraceResolution, TraceDebug, "tmu: %d value: %d", tmu, value);
@@ -2840,33 +2783,33 @@ GrColor_t     value)
     case GR_COLORFORMAT_ARGB:
         if (num_tex == 0)
         {
-            ccolor0[3] = ((value >> 24) & 0xFF) / 255.0f;
-            ccolor0[0] = ((value >> 16) & 0xFF) / 255.0f;
-            ccolor0[1] = ((value >> 8) & 0xFF) / 255.0f;
-            ccolor0[2] = (value & 0xFF) / 255.0f;
+            g_ccolor0[3] = ((value >> 24) & 0xFF) / 255.0f;
+            g_ccolor0[0] = ((value >> 16) & 0xFF) / 255.0f;
+            g_ccolor0[1] = ((value >> 8) & 0xFF) / 255.0f;
+            g_ccolor0[2] = (value & 0xFF) / 255.0f;
         }
         else
         {
-            ccolor1[3] = ((value >> 24) & 0xFF) / 255.0f;
-            ccolor1[0] = ((value >> 16) & 0xFF) / 255.0f;
-            ccolor1[1] = ((value >> 8) & 0xFF) / 255.0f;
-            ccolor1[2] = (value & 0xFF) / 255.0f;
+            g_ccolor1[3] = ((value >> 24) & 0xFF) / 255.0f;
+            g_ccolor1[0] = ((value >> 16) & 0xFF) / 255.0f;
+            g_ccolor1[1] = ((value >> 8) & 0xFF) / 255.0f;
+            g_ccolor1[2] = (value & 0xFF) / 255.0f;
         }
         break;
     case GR_COLORFORMAT_RGBA:
         if (num_tex == 0)
         {
-            ccolor0[0] = ((value >> 24) & 0xFF) / 255.0f;
-            ccolor0[1] = ((value >> 16) & 0xFF) / 255.0f;
-            ccolor0[2] = ((value >> 8) & 0xFF) / 255.0f;
-            ccolor0[3] = (value & 0xFF) / 255.0f;
+            g_ccolor0[0] = ((value >> 24) & 0xFF) / 255.0f;
+            g_ccolor0[1] = ((value >> 16) & 0xFF) / 255.0f;
+            g_ccolor0[2] = ((value >> 8) & 0xFF) / 255.0f;
+            g_ccolor0[3] = (value & 0xFF) / 255.0f;
         }
         else
         {
-            ccolor1[0] = ((value >> 24) & 0xFF) / 255.0f;
-            ccolor1[1] = ((value >> 16) & 0xFF) / 255.0f;
-            ccolor1[2] = ((value >> 8) & 0xFF) / 255.0f;
-            ccolor1[3] = (value & 0xFF) / 255.0f;
+            g_ccolor1[0] = ((value >> 24) & 0xFF) / 255.0f;
+            g_ccolor1[1] = ((value >> 16) & 0xFF) / 255.0f;
+            g_ccolor1[2] = ((value >> 8) & 0xFF) / 255.0f;
+            g_ccolor1[3] = (value & 0xFF) / 255.0f;
         }
         break;
     default:
@@ -2876,12 +2819,12 @@ GrColor_t     value)
     vbo_draw();
     if (num_tex == 0)
     {
-        ccolor0_location = glGetUniformLocation(program_object, "ccolor0");
-        glUniform4f(ccolor0_location, ccolor0[0], ccolor0[1], ccolor0[2], ccolor0[3]);
+        ccolor0_location = glGetUniformLocation(g_program_object_default, "ccolor0");
+        glUniform4f(ccolor0_location, g_ccolor0[0], g_ccolor0[1], g_ccolor0[2], g_ccolor0[3]);
     }
     else
     {
-        ccolor1_location = glGetUniformLocation(program_object, "ccolor1");
-        glUniform4f(ccolor1_location, ccolor1[0], ccolor1[1], ccolor1[2], ccolor1[3]);
+        ccolor1_location = glGetUniformLocation(g_program_object_default, "ccolor1");
+        glUniform4f(ccolor1_location, g_ccolor1[0], g_ccolor1[1], g_ccolor1[2], g_ccolor1[3]);
     }
 }

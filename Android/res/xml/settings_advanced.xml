@@ -3,39 +3,51 @@
     android:title="@string/preferences">
 
     <CheckBoxPreference
-        android:key="audio_Enabled"
-        android:summary="@string/audioEnabled_summary"
-        android:title="@string/audioEnabled_title" />
-    <PreferenceCategory android:title="@string/Advanced" >
-        <CheckBoxPreference
-            android:key="UserInterface_BasicMode"
-            android:summary="@string/advancedSettings_summary"
-            android:title="@string/advancedSettings_title" />
-        <CheckBoxPreference
-            android:key="Debugger_Enabled"
-            android:summary="@string/debuggerEnabled_summary"
-            android:title="@string/debuggerEnabled_title" />
-        <CheckBoxPreference
-            android:key="Debugger_GenerateLogFiles"
-            android:summary="@string/GenerateLogFiles_summary"
-            android:title="@string/GenerateLogFiles_title" />
-        <CheckBoxPreference
-            android:key="Debugger_CpuUsage"
-            android:summary="@string/CpuUsage_summary"
-            android:title="@string/CpuUsage_title" />
-        <CheckBoxPreference
-            android:key="Debugger_DisplaySpeed"
-            android:summary="@string/DisplaySpeed_summary"
-            android:title="@string/DisplaySpeed_title" />
-        <ListPreference
-            android:entries="@array/DisplaySpeed_list"
-            android:entryValues="@array/DisplaySpeed_values"
-            android:key="Debugger_DisplaySpeedType"
-            android:title="@string/DisplaySpeedDisplay" />
-    </PreferenceCategory>   
-    <PreferenceCategory android:title="@string/logging" >
-        <Preference
-            android:title="@string/project64core"
-            android:key="logging_core" />
+        android:key="UserInterface_BasicMode"
+        android:summary="@string/advancedSettings_summary"
+        android:title="@string/advancedSettings_title" />
+    <CheckBoxPreference
+        android:key="Debugger_Enabled"
+        android:summary="@string/debuggerEnabled_summary"
+        android:title="@string/debuggerEnabled_title" />
+    <CheckBoxPreference
+        android:key="Debugger_RecordRecompilerAsm"
+        android:summary="@string/RecordRecompilerAsm_summary"
+        android:title="@string/RecordRecompilerAsm_title" />
+    <CheckBoxPreference
+        android:key="Debugger_LimitFPS"
+        android:summary="@string/LimitFPS_summary"
+        android:title="@string/LimitFPS_title" />
+    <CheckBoxPreference
+        android:key="Debugger_CpuUsage"
+        android:summary="@string/CpuUsage_summary"
+        android:title="@string/CpuUsage_title" />
+    <CheckBoxPreference
+        android:key="Debugger_RecordExecutionTimes"
+        android:summary="@string/RecordExecutionTimes_summary"
+        android:title="@string/RecordExecutionTimes_title" />
+    <CheckBoxPreference
+        android:key="Plugin_ForceGfxReset"
+        android:summary="@string/ForceGfxReset_summary"
+        android:title="@string/ForceGfxReset_title" />
+    <CheckBoxPreference
+        android:key="PreAllocSyncMem"
+        android:summary="@string/PreAllocSyncMem_summary"
+        android:title="@string/PreAllocSyncMem_title" />
+  <CheckBoxPreference
+      android:key="ReducedSyncMem"
+      android:summary="@string/ReducedSyncMem_summary"
+      android:title="@string/ReducedSyncMem_title" />
+  <CheckBoxPreference
+      android:key="Debugger_DebugLanguage"
+      android:summary="@string/DebugLanguage_summary"
+      android:title="@string/DebugLanguage_title" />
+  <PreferenceCategory android:title="@string/logging" >
+      <Preference
+          android:title="@string/project64core"
+          android:key="logging_core" />
+      <Preference
+          android:title="@string/AudioPlugin"
+          android:key="logging_audio" />
     </PreferenceCategory>   
  </PreferenceScreen>

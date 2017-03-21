@@ -76,7 +76,7 @@ void calc_light(VERTEX *v)
 //*
 void calc_linear(VERTEX *v)
 {
-    if (g_settings->force_calc_sphere)
+    if (g_settings->force_calc_sphere())
     {
         calc_sphere(v);
         return;
@@ -110,8 +110,8 @@ void calc_linear(VERTEX *v)
     if (rdp.cur_cache[0])
     {
         // scale >> 6 is size to map to
-        v->ou = (acosf(x) / 3.141592654f) * (rdp.tiles[rdp.cur_tile].org_s_scale >> 6);
-        v->ov = (acosf(y) / 3.141592654f) * (rdp.tiles[rdp.cur_tile].org_t_scale >> 6);
+        v->ou = (acosf(-x) / 3.141592654f) * (rdp.tiles[rdp.cur_tile].org_s_scale >> 6);
+        v->ov = (acosf(-y) / 3.141592654f) * (rdp.tiles[rdp.cur_tile].org_t_scale >> 6);
     }
     v->uv_scaled = 1;
     WriteTrace(TraceRDP, TraceVerbose, "calc linear u: %f, v: %f", v->ou, v->ov);
@@ -122,7 +122,7 @@ void calc_sphere(VERTEX *v)
     WriteTrace(TraceRDP, TraceDebug, "calc_sphere");
     DECLAREALIGN16VAR(vec[3]);
     int s_scale, t_scale;
-    if (g_settings->hacks&hack_Chopper)
+    if (g_settings->hacks(CSettings::hack_Chopper))
     {
         s_scale = minval(rdp.tiles[rdp.cur_tile].org_s_scale >> 6, rdp.tiles[rdp.cur_tile].lr_s);
         t_scale = minval(rdp.tiles[rdp.cur_tile].org_t_scale >> 6, rdp.tiles[rdp.cur_tile].lr_t);

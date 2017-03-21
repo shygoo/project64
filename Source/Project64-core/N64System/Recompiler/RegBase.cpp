@@ -13,7 +13,8 @@
 
 CRegBase::CRegBase() :
 m_CycleCount(0),
-m_Fpu_Used(false)
+m_Fpu_Used(false),
+m_RoundingModel(RoundUnknown)
 {
     for (int32_t i = 0; i < 32; i++)
     {
@@ -42,6 +43,7 @@ bool CRegBase::operator==(const CRegBase& right) const
     }
     if (m_CycleCount != right.m_CycleCount) { return false; }
     if (m_Fpu_Used != right.m_Fpu_Used) { return false; }
+    if (GetRoundingModel() != right.GetRoundingModel()) { return false; }
     return true;
 }
 
@@ -56,6 +58,7 @@ CRegBase& CRegBase::operator=(const CRegBase& right)
     memcpy(&m_MIPS_RegVal, &right.m_MIPS_RegVal, sizeof(m_MIPS_RegVal));
     m_CycleCount = right.m_CycleCount;
     m_Fpu_Used = right.m_Fpu_Used;
+    m_RoundingModel = right.m_RoundingModel;
 #ifdef _DEBUG
     if (*this != right)
     {
@@ -63,4 +66,18 @@ CRegBase& CRegBase::operator=(const CRegBase& right)
     }
 #endif
     return *this;
+}
+
+const char * CRegBase::RoundingModelName(FPU_ROUND RoundType)
+{
+    switch (RoundType)
+    {
+    case RoundUnknown:  return "RoundUnknown";
+    case RoundDefault:  return "RoundDefault";
+    case RoundTruncate: return "RoundTruncate";
+    case RoundNearest:  return "RoundNearest";
+    case RoundDown:     return "RoundDown";
+    case RoundUp:       return "RoundUp";
+    }
+    return "** Invalid **";
 }

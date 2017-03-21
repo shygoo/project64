@@ -37,14 +37,23 @@ public class NativeExports
     public static native void LoadRomList();
     public static native void RefreshRomDir(String RomDir, boolean Recursive);
     public static native void ExternalEvent(int Type);
+    public static native void ResetApplicationSettings();
+    public static native byte[] GetString(int StringId);
 	
+    public static native void SetSpeed(int Speed);
+    public static native int GetSpeed();
+    public static native int GetBaseSpeed();
+    
     public static native void onSurfaceCreated();    
     public static native void onSurfaceChanged(int width, int height); 
     public static native void onDrawFrame();
     
     public static native void UISettingsSaveBool(int Type, boolean Value);
     public static native void UISettingsSaveDword(int Type, int Value);
+    public static native void UISettingsSaveString(int type, String value);
 
     public static native boolean UISettingsLoadBool(int Type);
     public static native int UISettingsLoadDword(int Type);
+    public static native String UISettingsLoadString(int type);
+    public static native String UISettingsLoadStringIndex(int Type, int Index);
 }

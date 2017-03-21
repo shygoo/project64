@@ -40,6 +40,8 @@
 
 #if defined(__i386__) || defined(_M_IX86)
 class CX86RecompilerOps;
+#elif defined(__arm__) || defined(_M_ARM)
+class CArmRecompilerOps;
 #endif
 
 class CMipsMemoryVM :
@@ -115,7 +117,10 @@ private:
     CMipsMemoryVM& operator=(const CMipsMemoryVM&); // Disable assignment
 
 #if defined(__i386__) || defined(_M_IX86)
-    friend CX86RecompilerOps;
+    friend class CX86RecompilerOps;
+#elif defined(__arm__) || defined(_M_ARM)
+    friend class CArmRegInfo;
+    friend class CArmRecompilerOps;
 #endif
 
     static void RdramChanged(CMipsMemoryVM * _this);
