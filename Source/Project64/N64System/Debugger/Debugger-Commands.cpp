@@ -303,8 +303,18 @@ LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lPa
 
 void CDebugCommandsView::CheckCPUType()
 {
-	uint32_t cpuType = g_System->CpuType();
-	if (cpuType != CPU_TYPE::CPU_Interpreter)
+	CPU_TYPE cpuType;
+
+	if (g_Settings->LoadBool(Setting_ForceInterpreterCPU))
+	{
+		cpuType = CPU_Interpreter;
+	}
+	else
+	{
+		cpuType = g_System->CpuType();
+	}
+	
+	if (cpuType != CPU_Interpreter)
 	{
 		MessageBox("Interpreter mode required", "Invalid CPU Type", MB_OK);
 	}

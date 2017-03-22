@@ -115,6 +115,8 @@
 #define IDC_SMM_DMA                     1013
 #define IDC_UNKNOWN_ALIGN               1013
 #define IDC_DELAY_DP                    1013
+#define IDC_DEBUGGER2                   1013
+#define IDC_INTERPRETER                 1013
 #define IDC_INFO_CRC1                   1014
 #define IDC_ASSIGNED_MENU_ITEM          1014
 #define IDC_TLB_RULES                   1014
@@ -540,7 +542,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        190
+#define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         40031
 #define _APS_NEXT_CONTROL_VALUE         1339
 #define _APS_NEXT_SYMED_VALUE           102

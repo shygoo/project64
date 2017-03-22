@@ -20,11 +20,17 @@
 /////////////////////////////////////////////////////////////////////////////
 // English (United States) resources
 
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "..\Project64.exe.manifest"
-
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RT_MANIFEST
+//
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST             "..\\Project64.exe.manifest"
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -336,15 +342,16 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,8,191,10
     CONTROL         "Automatically compress instant saves",IDC_ZIP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,23,191,10
     CONTROL         "Enable Debugger",IDC_DEBUGGER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,38,191,10
-    CONTROL         "Remember selected cheats",IDC_REMEMBER_CHEAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,53,191,10
+    CONTROL         "Remember selected cheats",IDC_REMEMBER_CHEAT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,68,191,10
     CONTROL         "Check if project64 is already running",IDC_CHECK_RUNNING,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,68,189,10
-    CONTROL         "Frame rate display",IDC_DISPLAY_FRAMERATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,98,86,10
-    COMBOBOX        IDC_FRAME_DISPLAY_TYPE,101,97,99,57,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Unique Game Save Directory",IDC_UNIQUE_SAVE_DIR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,83,189,10
-    EDITTEXT        IDC_IPL_DIR,4,125,184,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_SELECT_IPL_DIR,194,125,14,12
-    LTEXT           "64DD IPL ROM Path:",IDC_IPLDIR_TXT,6,115,145,10
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,83,189,10
+    CONTROL         "Frame rate display",IDC_DISPLAY_FRAMERATE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,113,86,10
+    COMBOBOX        IDC_FRAME_DISPLAY_TYPE,101,112,99,57,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Unique Game Save Directory",IDC_UNIQUE_SAVE_DIR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,98,189,10
+    EDITTEXT        IDC_IPL_DIR,4,140,184,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SELECT_IPL_DIR,194,140,14,12
+    LTEXT           "64DD IPL ROM Path:",IDC_IPLDIR_TXT,6,130,145,10
+    CONTROL         "Always use interpreter core",IDC_INTERPRETER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,53,191,10
 END
 
 IDD_Settings_ShellInt DIALOGEX 0, 0, 231, 206
@@ -1553,6 +1560,11 @@ BEGIN
 END
 
 IDD_Debugger_COP0 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_Settings_Advanced AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

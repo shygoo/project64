@@ -1009,7 +1009,18 @@ void CN64System::ExecuteCPU()
     _controlfp(_PC_53, _MCW_PC);
 #endif
 
-    switch ((CPU_TYPE)g_Settings->LoadDword(Game_CpuType))
+	CPU_TYPE cpuType;
+
+	if (g_Settings->LoadBool(Setting_ForceInterpreterCPU))
+	{
+		cpuType = CPU_Interpreter;
+	}
+	else
+	{
+		cpuType = (CPU_TYPE)g_Settings->LoadDword(Game_CpuType);
+	}
+
+    switch (cpuType)
     {
     case CPU_Recompiler: ExecuteRecompiler(); break;
     case CPU_SyncCores:  ExecuteSyncCPU();    break;
