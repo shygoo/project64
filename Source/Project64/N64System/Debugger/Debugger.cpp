@@ -12,9 +12,6 @@
 #include "DebuggerUI.h"
 #include "ScriptHook.h"
 
-#include <Project64-core/N64System/Interpreter/InterpreterCPU.h>
-#include <Project64-core/N64System/Interpreter/InterpreterOps.h>
-
 CPj64Module _Module;
 
 CDebuggerUI::CDebuggerUI () :
