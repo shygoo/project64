@@ -1,7 +1,7 @@
 Number.prototype.hex = function(len)
 {
-    len = (len || 8);
-    var str = (this >>> 0).toString(16).toUpperCase()
+	len = (len || 8);
+	var str = (this >>> 0).toString(16).toUpperCase()
 	while (str.length < len)
 	{
 		str = "0" + str
@@ -10,7 +10,7 @@ Number.prototype.hex = function(len)
 }
 
 const u8 = 'u8', u16 = 'u16', u32 = 'u32',
-      s8 = 's8', s16 = 's16', s32 = 's32',
+	  s8 = 's8', s16 = 's16', s32 = 's32',
 	  float = 'float',  double = 'double'
 
 const _typeSizes = {
@@ -27,66 +27,75 @@ const _regNums = {
 	s0: 16, s1: 17, s2: 18, s3: 19,
 	s4: 20, s5: 21, s6: 22, s7: 23,
 	t8: 24, t9: 25, k0: 26, k1: 27,
-	gp: 28, sp: 29, fp: 30, ra: 31
+	gp: 28, sp: 29, fp: 30, ra: 31,
+
+	f0:   0, f1:   1, f2:   2, f3:   3,
+	f4:   4, f5:   5, f6:   6, f7:   7,
+	f8:   8, f9:   9, f10: 10, f11: 11,
+	f12: 12, f13: 13, f14: 14, f15: 15,
+	f16: 16, f17: 17, f18: 18, f19: 19,
+	f20: 20, f21: 21, f22: 22, f23: 23,
+	f24: 24, f25: 25, f26: 26, f27: 27,
+	f28: 28, f29: 29, f30: 30, f31: 31
 }
 
 const system = {
-    pause: function()
-    {
-        _native.pause()
-    },
-    resume: function()
-    {
+	pause: function()
+	{
+		_native.pause()
+	},
+	resume: function()
+	{
 
-    },
-    reset: function()
-    {
+	},
+	reset: function()
+	{
 
-    },
-    hardreset: function()
-    {
+	},
+	hardreset: function()
+	{
 
-    },
-    savestate: function()
-    {
+	},
+	savestate: function()
+	{
 
-    },
-    loadstate: function()
-    {
+	},
+	loadstate: function()
+	{
 
-    },
-    setsaveslot: function(slot)
-    {
+	},
+	setsaveslot: function(slot)
+	{
 
-    },
-    getsaveslot: function()
-    {
+	},
+	getsaveslot: function()
+	{
 
-    },
-    generatebitmap: function()
-    {
+	},
+	generatebitmap: function()
+	{
 
-    }
+	}
 }
 
 const debug = {
-    showmemory: function(address)
-    {
-        
-    },
-    showcommands: function(address)
-    {
-        _native.showCommands(address)
-    },
-    breakhere: function()
-    {
-        debug.showcommands(gpr.pc)
-        system.pause()
-    },
-    disasm: function()
-    {
+	showmemory: function(address)
+	{
+		
+	},
+	showcommands: function(address)
+	{
+		_native.showCommands(address)
+	},
+	breakhere: function()
+	{
+		debug.showcommands(gpr.pc)
+		system.pause()
+	},
+	disasm: function()
+	{
 
-    }
+	}
 }
 
 const console = {
@@ -152,69 +161,124 @@ const gpr = new Proxy({}, // todo dgpr for 64 bit
 {
 	get: function(obj, prop)
 	{
-	    if (typeof prop == 'number')
-	    {
-	        return _native.getGPRVal(prop)
-	    }
+		if (typeof prop == 'number' && prop < 32)
+		{
+			return _native.getGPRVal(prop)
+		}
 		if (prop in _regNums)
 		{
 			return _native.getGPRVal(_regNums[prop])
 		}
 		if(prop == 'pc')
 		{
-		    return _native.getPCVal()
+			return _native.getPCVal()
 		}
 	},
 	set: function(obj, prop, val)
 	{
+		if (typeof prop == 'number' && prop < 32)
+		{
+			return _native.setGPRVal(prop, val)
+		}
 		if (prop in _regNums)
 		{
 			_native.setGPRVal(_regNums[prop], val)
 		}
 		if(prop == 'pc')
 		{
-		    _native.setPCVal(val)
+			_native.setPCVal(val)
+		}
+	}
+})
+
+const fpr = new Proxy({}, // todo dfpr for 64 bit
+{
+	get: function(obj, prop)
+	{
+		if (typeof prop == 'number')
+		{
+			return _native.getFPRVal(prop)
+		}
+		if (prop in _regNums)
+		{
+			return _native.getFPRVal(_regNums[prop])
+		}
+	},
+	set: function(obj, prop, val)
+	{
+		if (typeof prop == 'number' && prop < 32)
+		{
+			return _native.setFPRVal(prop, val)
+		}
+		if (prop in _regNums)
+		{
+			_native.setFPRVal(_regNums[prop], val)
 		}
 	}
 })
 
 const rom = {
-    u8: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 8, false)
-        }
-    }),
-    u16: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 16, false)
-        }
-    }),
-    u32: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 32, false)
-        }
-    }),
-    s8: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 8, true)
-        }
-    }),
-    s16: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 16, true)
-        }
-    }),
-    s32: new Proxy({},
-    {
-        get: function (obj, prop) {
-            return _native.getROMInt(prop, 32, true)
-        }
-    }),
+	u8: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 8, false)
+		}
+	}),
+	u16: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 16, false)
+		}
+	}),
+	u32: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 32, false)
+		}
+	}),
+	s8: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 8, true)
+		}
+	}),
+	s16: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 16, true)
+		}
+	}),
+	s32: new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMInt(prop, 32, true)
+		}
+	}),
+	'float': new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMFloat(prop)
+		},
+		set: function (obj, prop, val) {
+			_native.setROMFloat(prop, val)
+		}
+	}),
+	'double': new Proxy({},
+	{
+		get: function (obj, prop) {
+			return _native.getROMFloat(prop, true)
+		},
+		set: function (obj, prop, val) {
+			_native.setROMFloat(prop, val, true)
+		}
+	}),
+	getblock: function (address, size) {
+	    return _native.getROMBlock(address, size)
+	},
+	getstring: function(address)
+	{
+		return _native.getROMString(address)
+	},
 }
 
 const mem = {
@@ -309,6 +373,10 @@ const mem = {
 	getblock: function(address, size)
 	{
 		return _native.getRDRAMBlock(address, size)
+	},
+	getstring: function(address)
+	{
+		return _native.getRDRAMString(address)
 	},
 	bindvar: function(obj, baseAddr, name, type)
 	{

@@ -718,6 +718,24 @@ duk_ret_t CScriptInstance::js_SetGPRVal(duk_context* ctx)
 	return 1;
 }
 
+duk_ret_t CScriptInstance::js_GetFPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	duk_pop_n(ctx, 1);
+	duk_push_number(ctx, (duk_double_t)*g_Reg->m_FPR_S[regnum]);
+	return 1;
+}
+
+duk_ret_t CScriptInstance::js_SetFPRVal(duk_context* ctx)
+{
+	int regnum = duk_to_int(ctx, 0);
+	duk_double_t val = duk_to_number(ctx, 1);
+	*g_Reg->m_FPR_S[regnum] = (float)val;
+	duk_pop_n(ctx, 2);
+	duk_push_uint(ctx, val);
+	return 1;
+}
+
 duk_ret_t CScriptInstance::js_GetROMInt(duk_context* ctx)
 {
 	uint32_t address = duk_to_uint32(ctx, 0) & 0x0FFFFFFF;
@@ -774,6 +792,56 @@ duk_ret_t CScriptInstance::js_GetROMInt(duk_context* ctx)
 		duk_push_uint(ctx, retval);
 	}
 
+	return 1;
+
+return_err:
+	duk_push_boolean(ctx, false);
+	return 1;
+}
+
+duk_ret_t CScriptInstance::js_GetROMFloat(duk_context* ctx)
+{
+	int argc = duk_get_top(ctx);
+
+	uint32_t address = duk_to_uint32(ctx, 0);
+	duk_bool_t bDouble = false;
+
+	if (argc > 1)
+	{
+		bDouble = duk_get_boolean(ctx, 1);
+	}
+
+	duk_pop_n(ctx, argc);
+
+	if (g_Rom == NULL)
+	{
+		goto return_err;
+	}
+
+	uint8_t* rom = g_Rom->GetRomAddress(); // little endian
+	uint32_t romSize = g_Rom->GetRomSize();
+
+	if (address > romSize)
+	{
+		goto return_err;
+	}
+
+	if (!bDouble)
+	{
+		float value = *(float*)&rom[address];
+		duk_push_number(ctx, (double)value);
+		return 1;
+	}
+	
+	uint8_t raw[8];
+	
+	memcpy(&raw[0], &rom[address + 4], 4);
+	memcpy(&raw[4], &rom[address], 4);
+	
+	double value;
+	memcpy(&value, raw, 8);
+	
+	duk_push_number(ctx, value);
 	return 1;
 
 return_err:
@@ -1045,16 +1113,57 @@ duk_ret_t CScriptInstance::js_GetRDRAMString(duk_context* ctx)
 		len++;
 	}
 
-	uint8_t* str = (uint8_t*)malloc(len);
-
+	uint8_t* str = (uint8_t*)malloc(len + 1);
+	
 	for (int i = 0; i < len; i++)
 	{
-		str[i] = g_MMU->LB_VAddr(address + i, str[i]);
+		g_MMU->LB_VAddr(address + i, str[i]);
 	}
+
+	str[len] = '\0';
 
 	duk_pop(ctx);
 	duk_push_string(ctx, (char*)str);
 	free(str); // duk creates internal copy
+	return 1;
+}
+
+// Return zero-terminated string from rom
+duk_ret_t CScriptInstance::js_GetROMString(duk_context* ctx)
+{
+	// (address)
+	uint32_t address = duk_get_uint(ctx, 0);
+	
+	char* rom = (char*) g_Rom->GetRomAddress();
+
+	int len = strlen(&rom[address]);
+
+	char* str = (char*) malloc(len + 1);
+
+	for (int i = 0; i < len; i++)
+	{
+		str[i] = rom[(address + i) ^ 3];
+	}
+	str[len] = '\0';
+	
+	duk_pop(ctx);
+	duk_push_string(ctx, str);
+	free(str); // duk creates internal copy
+	return 1;
+}
+
+// Return zero-terminated string from rom
+duk_ret_t CScriptInstance::js_GetROMBlock(duk_context* ctx)
+{
+	uint32_t address = duk_get_uint(ctx, 0);
+	uint32_t size = duk_get_uint(ctx, 1);
+
+	duk_pop_n(ctx, 2);
+
+	uint8_t* block = (uint8_t*)duk_push_buffer(ctx, size, false);
+	uint8_t* rom = g_Rom->GetRomAddress();
+	memcpy(block, &rom[address], size);
+	
 	return 1;
 }
 

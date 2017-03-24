@@ -83,6 +83,7 @@ span.tag2 {
 <div  class="inline-content" style="width: 150px; min-width: 150px; margin-left: 10px;">
 	<div class="panel" id="sidebar" style="width: 120px; position: absolute;">
 		<a href="#mem">mem</a><br>
+		<a href="#rom">rom</a><br>
 		<a href="#events">events</a><br>
 		<a href="#gpr">gpr</a><br>
 		<a href="#Server">Server</a><br>
@@ -108,11 +109,22 @@ if(mem.u8[addr_power] &lt; 1)
 		</div>
 	</div>
 	<div class="property">
+		<div class="propertyname">mem.getblock(baseAddr, size)</div>
+		<div class="propertydesc">
+			Returns buffer object
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">mem.getstring(baseAddr)</div>
+		<div class="propertydesc">
+			Returns string
+		</div>
+	</div>
+	<div class="property">
 		<div class="propertyname">mem.bindvar(obj, baseAddr, name, type)</div>
 		<div class="propertydesc">
 			Adds property <span class="snip">name</span> to <span class="snip">obj</span> and "binds" it to the RDRAM address specified by <span class="snip">baseAddr</span>.
 			Valid types are: <span class="snip">u8</span>, <span class="snip">u16</span>, <span class="snip">u32</span>, <span class="snip">s8</span>, <span class="snip">s16</span>, <span class="snip">s32</span>, <span class="snip">float</span>, and <span class="snip">double</span>.
-			Note that these types are global constants defined by the API, not language keywords.
 			<pre class="example">
 mem.bindvar(this, 0x8033B21E, 'power', u8)
 
@@ -182,6 +194,35 @@ playerPos.move(100, 200, 300)
 		</div>
 	</div>
 </div>
+
+
+<div class="panel" id="rom">
+	<div class="classname">rom</div>
+	<div class="property">
+		<div class="propertyname">rom.u8|u16|u32|s8|s16|s32|float|double</div>
+		<div class="propertydesc">
+			Arrays for reading values in ROM. Indexing works in a similar manner to <b>mem</b>'s.
+			<pre class="example">
+var crc1 = rom.u32[0x00000010]
+var crc2 = rom.u32[0x00000014]
+</pre>
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">rom.getblock(baseAddr, size)</div>
+		<div class="propertydesc">
+			Returns buffer object
+		</div>
+	</div>
+	<div class="property">
+		<div class="propertyname">rom.getstring(baseAddr)</div>
+		<div class="propertydesc">
+			Returns string
+		</div>
+	</div>
+</div>
+
+
 <div class="panel" id="events">
 	<div class="classname">events</div>
 	<!--
@@ -245,10 +286,13 @@ events.onwrite(0x8033B1B0, function()
 	</div>
 	-->
 </div>
+
+
 <div class="panel">
 	<div class="classname">gpr</div>
 	<div class="property">
 		<div class="propertyname">gpr.r0|at|v0|v1|a0 ...</div>
+		<div class="propertyname">gpr[0|1|2 ...]</div>
 		<div class="propertydesc">
 			Variables representing the lower 32 bits of each general purpose register.
 			<pre class="example">
@@ -262,7 +306,36 @@ events.onexec(0x802CB1C0, function()
 </pre>
 		</div>
 	</div>
+	<div class="property">
+		<div class="propertyname">gpr.pc</div>
+		<div class="propertydesc">
+			Variable representing the CPU's program counter.
+		</div>
+	</div>
 </div>
+
+
+<div class="panel">
+	<div class="classname">fpr</div>
+	<div class="property">
+		<div class="propertyname">fpr.f0|f1|f2|f3|f4 ...</div>
+		<div class="propertyname">fpr[0|1|2 ...]</div>
+		<div class="propertydesc">
+			Variables representing the 32-bit floating point registers.
+			<pre class="example">
+events.onexec(0x802CB1C0, function()
+{
+    if(gpr.f0 == 2.0)
+    {
+        gpr.f0 = 3.0
+    }
+})
+</pre>
+		</div>
+	</div>
+</div>
+
+
 <div class="panel" id="Server">
 	<div class="classname">Server</div>
 	<div class="property">
@@ -321,6 +394,7 @@ server.on('connection', function(socket)
 		</div>
 	</div>
 </div>
+<!--
 <div class="panel">
 alert(message)<br>
 _native<br>
@@ -338,7 +412,7 @@ _native<br>
  _native.sockWrite(fd, data, callback)<br>
  _native.msgBox(message[, caption])<br>
 </div>
-
+-->
 </div>
 
 <script>

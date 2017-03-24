@@ -133,7 +133,13 @@ private:
 	static duk_ret_t js_SetPCVal       (duk_context*); // (value)
 	static duk_ret_t js_GetGPRVal      (duk_context*); // (regNum)
 	static duk_ret_t js_SetGPRVal      (duk_context*); // (regNum, value)
+	static duk_ret_t js_GetFPRVal      (duk_context*); // (regNum)
+	static duk_ret_t js_SetFPRVal      (duk_context*); // (regNum, value)
 	static duk_ret_t js_GetROMInt      (duk_context*); // (address, bitwidth, signed)
+	static duk_ret_t js_GetROMFloat    (duk_context*); // (address, bDouble)
+	static duk_ret_t js_GetROMBlock    (duk_context*); // (address, nBytes) ; returns Buffer
+	static duk_ret_t js_GetROMString   (duk_context*); // fetch zero terminated string from memory
+
 	static duk_ret_t js_GetRDRAMInt    (duk_context*); // (address, bitwidth, signed)
 	static duk_ret_t js_SetRDRAMInt    (duk_context*); // (address, bitwidth, signed, newValue)
 	static duk_ret_t js_GetRDRAMFloat  (duk_context*); // (address, bDouble)
@@ -153,13 +159,21 @@ private:
 		{ "getPCVal",       js_GetPCVal,       DUK_VARARGS },
 		{ "setGPRVal",      js_SetGPRVal,      DUK_VARARGS },
 		{ "getGPRVal",      js_GetGPRVal,      DUK_VARARGS },
+		{ "setFPRVal",      js_SetFPRVal,      DUK_VARARGS },
+		{ "getFPRVal",      js_GetFPRVal,      DUK_VARARGS },
+
 		{ "getROMInt",      js_GetROMInt,      DUK_VARARGS },
+		{ "getROMFloat",    js_GetROMFloat,    DUK_VARARGS },
+		{ "getROMString",   js_GetROMString,   DUK_VARARGS },
+		{ "getROMBlock",    js_GetROMBlock,    DUK_VARARGS },
+
 		{ "getRDRAMInt",    js_GetRDRAMInt,    DUK_VARARGS },
 		{ "setRDRAMInt",    js_SetRDRAMInt,    DUK_VARARGS },
 		{ "getRDRAMFloat",  js_GetRDRAMFloat,  DUK_VARARGS },
 		{ "setRDRAMFloat",  js_SetRDRAMFloat,  DUK_VARARGS },
 		{ "getRDRAMBlock",  js_GetRDRAMBlock,  DUK_VARARGS },
 		{ "getRDRAMString", js_GetRDRAMString, DUK_VARARGS },
+
 		{ "sockCreate",     js_ioSockCreate,   DUK_VARARGS },
 		{ "sockListen",     js_ioSockListen,   DUK_VARARGS },
 		{ "sockAccept",     js_ioSockAccept,   DUK_VARARGS },
