@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include <Project64/UserInterface/resource.h>
-#include <Project64/N64System/Debugger/Breakpoints.h>
+#include "Breakpoints.h"
+#include "Debugger-AddBreakpoint.h"
 
 class CEditReg64 : public CWindowImpl<CEditReg64, CEdit>
 {
@@ -123,6 +123,8 @@ public:
 private:
 
 	CBreakpoints* m_Breakpoints;
+	CAddBreakpointDlg m_AddBreakpointDlg;
+	CAddSymbolDlg m_AddSymbolDlg;
 
 	CEditReg64 m_TestEdit;
 
@@ -132,7 +134,6 @@ private:
 	CEditNumber m_AddressEdit;
 	CCommandsList m_CommandList;
 	int m_CommandListRows;
-	//CAddBreakpointDlg m_AddBreakpointDlg;
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
 

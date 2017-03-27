@@ -10,6 +10,8 @@
 ****************************************************************************/
 #pragma once
 
+#include "Debugger-AddSymbol.h"
+
 class CDebugMemoryView :
     public CDebugDialog < CDebugMemoryView >
 {
@@ -33,14 +35,14 @@ private:
         MSG_WM_VSCROLL(OnVScroll)
     END_MSG_MAP()
 
-    LRESULT				OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-    LRESULT				OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
-    void				OnAddrChanged(UINT Code, int id, HWND ctl);
-    void                OnVScroll(int request, short Pos, HWND ctrl);
+	LRESULT				OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT				OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+	void				OnAddrChanged(UINT Code, int id, HWND ctl);
+	void                OnVScroll(int request, short Pos, HWND ctrl);
 	LRESULT             OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-    LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
+	LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
 	LRESULT             OnMemoryRightClicked(LPNMHDR lpNMHDR);
-    LRESULT             OnDestroy(void);
+	LRESULT             OnDestroy(void);
 
     void Insert_MemoryLineDump(int LineNumber);
     void RefreshMemory(bool ResetCompare);
@@ -49,6 +51,8 @@ private:
 	static DWORD WINAPI AutoRefreshProc(void* _this);
 
     enum { MemoryToDisplay = 0x100 };
+
+	CAddSymbolDlg m_AddSymbolDlg;
 
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;

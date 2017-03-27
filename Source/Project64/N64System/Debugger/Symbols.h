@@ -46,6 +46,7 @@ public:
 	};
 
 private:
+	static bool m_bInitialized;
 	static vector<CSymbolEntry*> m_Symbols;
 	static int m_NextSymbolId;
 	

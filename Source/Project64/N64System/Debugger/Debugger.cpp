@@ -37,6 +37,8 @@ CDebuggerUI::CDebuggerUI () :
 
 	m_Breakpoints = new CBreakpoints();
 	m_ScriptSystem = new CScriptSystem(this);
+
+	CSymbols::InitializeCriticalSection();
 }
 
 CDebuggerUI::~CDebuggerUI (void)
@@ -51,6 +53,8 @@ CDebuggerUI::~CDebuggerUI (void)
 	delete m_Symbols;
 	delete m_DMALogView;
 	delete m_MemorySearch;
+
+	CSymbols::DeleteCriticalSection();
 
 	m_DMALog->clear();
 	m_StackTrace->clear();
@@ -73,10 +77,13 @@ void CDebuggerUI::GameReset ( CDebuggerUI * _this )
 		_this->m_DMALog->clear();
 	}
 
+	CSymbols::EnterCriticalSection();
+	CSymbols::Load();
+	CSymbols::LeaveCriticalSection();
+
 	if (_this->m_Symbols)
 	{
 		CSymbols::EnterCriticalSection();
-		CSymbols::Load();
 		_this->m_Symbols->Refresh();
 		CSymbols::LeaveCriticalSection();
 	}
@@ -246,17 +253,26 @@ void CDebuggerUI::Debug_ShowScriptsWindow()
 
 void CDebuggerUI::Debug_RefreshScriptsWindow()
 {
-	m_Scripts->RefreshList();
+	if (m_Scripts != NULL)
+	{
+		m_Scripts->RefreshList();
+	}
 }
 
 void CDebuggerUI::Debug_LogScriptsWindow(const char* text)
 {
-	m_Scripts->ConsolePrint(text);
+	if (m_Scripts != NULL)
+	{
+		m_Scripts->ConsolePrint(text);
+	}
 }
 
 void CDebuggerUI::Debug_ClearScriptsWindow()
 {
-	m_Scripts->ConsoleClear();
+	if (m_Scripts != NULL)
+	{
+		m_Scripts->ConsoleClear();
+	}
 }
 
 void CDebuggerUI::Debug_ShowSymbolsWindow()
@@ -268,13 +284,12 @@ void CDebuggerUI::Debug_ShowSymbolsWindow()
 	m_Symbols->ShowWindow();
 }
 
-void CDebuggerUI::Debug_ShowModalAddBreakpoint(void)
+void CDebuggerUI::Debug_RefreshSymbolsWindow()
 {
-	if (m_AddBreakpoint == NULL)
+	if (m_Symbols != NULL)
 	{
-		m_AddBreakpoint = new CDebugAddBreakpoint(this);
+		m_Symbols->Refresh();
 	}
-	m_AddBreakpoint->ShowWindow();
 }
 
 void CDebuggerUI::Debug_ShowDMALogWindow(void)

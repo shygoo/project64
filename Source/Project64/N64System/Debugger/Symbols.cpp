@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Symbols.h"
 
-
+bool CSymbols::m_bInitialized = false;
 vector<CSymbolEntry*> CSymbols::m_Symbols;
 int CSymbols::m_NextSymbolId;
 
@@ -275,61 +275,65 @@ void CSymbols::Save()
 
 void CSymbols::GetValueString(char* dest, CSymbolEntry* lpSymbol)
 {
-	union {
-		uint8_t v8;
-		uint16_t v16;
-		uint32_t v32;
-		uint64_t v64;
-		float vf;
-		double vd;
-	} val;
+	uint8_t v8;
+	uint16_t v16;
+	uint32_t v32;
+	uint64_t v64;
+	float vf;
+	double vd;
 
 	uint32_t address = lpSymbol->m_Address;
 
 	switch (lpSymbol->m_Type)
 	{
+	case TYPE_CODE:
+	case TYPE_DATA:
+		sprintf(dest, "");
+		break;
 	case TYPE_U8:
-		g_MMU->LB_VAddr(address, val.v8);
-		sprintf(dest, "%u", val.v8);
+		g_MMU->LB_VAddr(address, v8);
+		sprintf(dest, "%u", v8);
 		break;
 	case TYPE_U16:
-		g_MMU->LH_VAddr(address, val.v16);
-		sprintf(dest, "%u", val.v16);
+		g_MMU->LH_VAddr(address, v16);
+		sprintf(dest, "%u", v16);
 		break;
 	case TYPE_U32:
-		g_MMU->LW_VAddr(address, val.v32);
-		sprintf(dest, "%u", val.v32);
+		g_MMU->LW_VAddr(address, v32);
+		sprintf(dest, "%u", v32);
 		break;
 	case TYPE_U64:
-		g_MMU->LD_VAddr(address, val.v64);
-		sprintf(dest, "%ull", val.v64);
+		g_MMU->LD_VAddr(address, v64);
+		sprintf(dest, "%ull", v64);
 		break;
 	case TYPE_S8:
-		g_MMU->LB_VAddr(address, val.v8);
-		sprintf(dest, "%ihh", val.v8);
+		g_MMU->LB_VAddr(address, v8);
+		sprintf(dest, "%ihh", v8);
 		break;
 	case TYPE_S16:
-		g_MMU->LH_VAddr(address, val.v16);
-		sprintf(dest, "%i", val.v16);
+		g_MMU->LH_VAddr(address, v16);
+		sprintf(dest, "%i", v16);
 		break;
 	case TYPE_S32:
-		g_MMU->LW_VAddr(address, val.v32);
-		sprintf(dest, "%i", val.v32);
+		g_MMU->LW_VAddr(address, v32);
+		sprintf(dest, "%i", v32);
 		break;
 	case TYPE_S64:
-		g_MMU->LD_VAddr(address, val.v64);
-		sprintf(dest, "%ill", val.v64);
+		g_MMU->LD_VAddr(address, v64);
+		sprintf(dest, "%ill", v64);
 		break;
 	case TYPE_FLOAT:
-		g_MMU->LW_VAddr(address, val.v32);
-		sprintf(dest, "%f", val.vf);
+		g_MMU->LW_VAddr(address, *(uint32_t*)&vf);
+		sprintf(dest, "%f", vf);
 		break;
 	case TYPE_DOUBLE:
-		g_MMU->LD_VAddr(address, val.v64);
-		sprintf(dest, "%f", val.vd);
+		g_MMU->LD_VAddr(address, *(uint64_t*)&vd);
+		sprintf(dest, "%f", vd);
+		break;
+	default:
+		MessageBox(NULL, "unkown type", "", MB_OK);
 		break;
 	}
-
 }
 
 void CSymbols::ParseErrorAlert(char* message, int lineNumber)
@@ -429,10 +433,18 @@ void CSymbols::LeaveCriticalSection()
 
 void CSymbols::InitializeCriticalSection()
 {
-	::InitializeCriticalSection(&m_CriticalSection);
+	if (!m_bInitialized)
+	{
+		m_bInitialized = true;
+		::InitializeCriticalSection(&m_CriticalSection);
+	}
 }
 
 void CSymbols::DeleteCriticalSection()
 {
-	::DeleteCriticalSection(&m_CriticalSection);
+	if (m_bInitialized)
+	{
+		m_bInitialized = false;
+		::DeleteCriticalSection(&m_CriticalSection);
+	}
 }

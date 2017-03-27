@@ -17,7 +17,6 @@ class CDebugTlb;
 class CDebugCommandsView;
 class CDebugScripts;
 class CDebugSymbols;
-class CDebugAddBreakpoint;
 class CDebugDMALogView;
 class CDebugStackTrace;
 
@@ -47,7 +46,6 @@ class CDebuggerUI :
 	CDebugCommandsView  * m_CommandsView;
 	CDebugScripts       * m_Scripts;
 	CDebugSymbols       * m_Symbols;
-	CDebugAddBreakpoint * m_AddBreakpoint;
 	CDebugDMALogView    * m_DMALogView;
 	CDebugStackTrace    * m_StackTraceView;
 
@@ -77,8 +75,8 @@ public:
     void Debug_ShowCommandsWindow   ( void );
     void Debug_ShowCommandsLocation ( uint32_t address, bool top );
     void Debug_ShowScriptsWindow    ( void );
+	void Debug_RefreshSymbolsWindow (void);
     void Debug_ShowSymbolsWindow    ( void );
-	void Debug_ShowModalAddBreakpoint ( void );
 	
 	void Debug_ShowStackTrace(void);
 

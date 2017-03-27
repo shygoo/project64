@@ -71,6 +71,7 @@
     <ClCompile Include="N64System\Debugger\Assembler.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Multilanguage\LanguageSelector.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-AddSymbol.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-MemoryDump.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-MemorySearch.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-TLB.cpp" />
@@ -121,6 +122,7 @@
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="N64System\Debugger\Debugger-AddSymbol.h" />
     <ClInclude Include="N64System\Debugger\Assembler.h" />
     <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="N64System\Debugger\Debugger-DMALog.h" />

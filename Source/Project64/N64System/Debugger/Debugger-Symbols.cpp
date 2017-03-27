@@ -32,18 +32,15 @@ LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_SymbolsListView.AddColumn("Address", 0);
 	m_SymbolsListView.AddColumn("Type", 1);
 	m_SymbolsListView.AddColumn("Name", 2);
-	m_SymbolsListView.AddColumn("Description", 3);
-	m_SymbolsListView.AddColumn("Value", 4);
+	m_SymbolsListView.AddColumn("Value", 3);
+	m_SymbolsListView.AddColumn("Description", 4);
 
 	m_SymbolsListView.SetColumnWidth(0, 70);
 	m_SymbolsListView.SetColumnWidth(1, 40);
-	m_SymbolsListView.SetColumnWidth(2, 100);
-	m_SymbolsListView.SetColumnWidth(3, 120);
+	m_SymbolsListView.SetColumnWidth(2, 120);
+	m_SymbolsListView.SetColumnWidth(3, 100);
 	m_SymbolsListView.SetColumnWidth(4, 120);
 	
-	CSymbols::Load();
-	CSymbols::InitializeCriticalSection();
-
 	Refresh();
 
 	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
@@ -59,7 +56,6 @@ LRESULT CDebugSymbols::OnDestroy(void)
 		TerminateThread(m_AutoRefreshThread, 0);
 		CloseHandle(m_AutoRefreshThread);
 	}
-	CSymbols::DeleteCriticalSection();
 	return 0;
 }
 
@@ -81,8 +77,7 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		EndDialog(0);
 		break;
 	case IDC_ADDSYMBOL_BTN:
-		m_AddSymbolDlg.DoModal();
-		Refresh();
+		m_AddSymbolDlg.DoModal(m_Debugger);
 		break;
 	case IDC_REMOVESYMBOL_BTN:
 		{
@@ -136,7 +131,7 @@ void CDebugSymbols::Refresh()
 		m_SymbolsListView.AddItem(i, 0, addrStr.c_str());
 		m_SymbolsListView.AddItem(i, 1, lpSymbol->TypeName());
 		m_SymbolsListView.AddItem(i, 2, lpSymbol->m_Name);
-		m_SymbolsListView.AddItem(i, 3, lpSymbol->m_Description);
+		m_SymbolsListView.AddItem(i, 4, lpSymbol->m_Description);
 		
 		m_SymbolsListView.SetItemData(i, lpSymbol->m_Id);
 
@@ -144,7 +139,7 @@ void CDebugSymbols::Refresh()
 		{
 			char szValue[64];
 			CSymbols::GetValueString(szValue, lpSymbol);
-			m_SymbolsListView.AddItem(i, 4, szValue);
+			m_SymbolsListView.AddItem(i, 3, szValue);
 		}
 	}
 
@@ -172,73 +167,9 @@ void CDebugSymbols::RefreshValues()
 
 		char szValue[64];
 		CSymbols::GetValueString(szValue, lpSymbol);
-		
-		m_SymbolsListView.SetItemText(i, 4, szValue);
+
+		m_SymbolsListView.SetItemText(i, 3, szValue);
 	}
 
 	CSymbols::LeaveCriticalSection();
-}
-
-
-/////////////////////////
-// Add Symbol dialog
-
-LRESULT	CAddSymbolDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-{
-	CenterWindow();
-
-	m_AddressEdit.Attach(GetDlgItem(IDC_ADDR_EDIT));
-	m_AddressEdit.SetDisplayType(CEditNumber::DisplayHex);
-	m_TypeComboBox.Attach(GetDlgItem(IDC_TYPE_COMBOBOX));
-	m_NameEdit.Attach(GetDlgItem(IDC_NAME_EDIT));
-	m_DescriptionEdit.Attach(GetDlgItem(IDC_DESC_EDIT));
-
-	for (int i = 0;; i++)
-	{
-		char* type = CSymbols::SymbolTypes[i];
-		if (type == NULL)
-		{
-			break;
-		}
-		m_TypeComboBox.AddString(type);
-	}
-
-	m_AddressEdit.SetWindowTextA("");
-	m_AddressEdit.SetFocus();
-
-	return FALSE;
-}
-
-LRESULT CAddSymbolDlg::OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
-{
-	switch (wID)
-	{
-	case IDCANCEL:
-		EndDialog(0);
-		break;
-	case IDOK:
-		uint32_t address = m_AddressEdit.GetValue();
-		int type = m_TypeComboBox.GetCurSel();
-
-		int nameLen = m_NameEdit.GetWindowTextLengthA();
-		int descLen = m_DescriptionEdit.GetWindowTextLengthA();
-
-		//char* name = (char*)malloc(nameLen);
-		//char* description = (char*)malloc(descLen);
-
-		char name[128];
-		char description[256];
-		
-		m_NameEdit.GetWindowTextA(name, nameLen + 1);
-		m_DescriptionEdit.GetWindowTextA(description, descLen + 1);
-		
-		CSymbols::EnterCriticalSection();
-		CSymbols::Add(type, address, name, description);
-		CSymbols::Save();
-		CSymbols::LeaveCriticalSection();
-
-		EndDialog(0);
-		break;
-	}
-	return 0;
 }

@@ -10,36 +10,11 @@
 ****************************************************************************/
 
 #pragma once
-#include "DebuggerUI.h"
 
-class CAddSymbolDlg : public CDialogImpl<CAddSymbolDlg>
-{
-public:
-	enum { IDD = IDD_Debugger_AddSymbol };
-
-private:
-
-	CEditNumber m_AddressEdit;
-	CComboBox   m_TypeComboBox;
-	CEdit       m_NameEdit;
-	CEdit       m_DescriptionEdit;
-	
-	LRESULT	OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
-	LRESULT OnDestroy(void)
-	{
-		return 0;
-	}
-	LRESULT	OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-
-	BEGIN_MSG_MAP_EX(CAddSymbolDlg)
-		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-		MSG_WM_DESTROY(OnDestroy)
-	END_MSG_MAP()
-
-};
+#include "Debugger-AddSymbol.h"
 
 // todo maybe add char* ownerName and use a TreeView
+
 
 class CDebugSymbols :
 	public CDebugDialog<CDebugSymbols>,

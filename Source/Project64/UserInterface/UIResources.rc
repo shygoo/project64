@@ -1422,10 +1422,12 @@ IDR_OP_POPUP MENU
 BEGIN
     POPUP "PopupMenu"
     BEGIN
+        MENUITEM "Replace with NOP",            ID_POPUPMENU_INSERTNOP
         MENUITEM "Edit",                        ID_POPUPMENU_EDIT
-        MENUITEM "NOP",                         ID_POPUPMENU_INSERTNOP
         MENUITEM "Restore",                     ID_POPUPMENU_RESTORE
-        MENUITEM "Restore All",                 ID_POPUPMENU_RESTOREALL
+        MENUITEM "Restore all",                 ID_POPUPMENU_RESTOREALL
+        MENUITEM SEPARATOR
+        MENUITEM "Add symbol...",               ID_POPUPMENU_ADDSYMBOL
     END
 END
 

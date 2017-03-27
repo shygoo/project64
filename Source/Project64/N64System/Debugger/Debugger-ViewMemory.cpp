@@ -11,6 +11,7 @@
 #include "stdafx.h"
 
 #include "DebuggerUI.h"
+#include "Symbols.h"
 
 CDebugMemoryView::CDebugMemoryView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugMemoryView>(debugger),
@@ -178,6 +179,7 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
 		m_Debugger->Debug_ShowCommandsLocation(m_CtxMenuAddr, true);
 		break;
 	case ID_POPUPMENU_ADDSYMBOL:
+		m_AddSymbolDlg.DoModal(m_Debugger, m_CtxMenuAddr);
 		break;
     }
     return FALSE;

@@ -16,7 +16,6 @@
 #include "Breakpoints.h"
 #include "Assembler.h"
 
-#include <Project64/UserInterface/resource.h>
 #include <Project64-core/N64System/Mips/OpCodeName.h>
 
 static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -766,7 +765,7 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_ADDBP_BTN:
-		m_Debugger->Debug_ShowModalAddBreakpoint();
+		m_AddBreakpointDlg.DoModal(m_Debugger);
 		RefreshBreakpointList();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
@@ -792,6 +791,9 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 	case ID_POPUPMENU_RESTOREALL:
 		RestoreAllOps();
 		ShowAddress(m_StartAddress, TRUE);
+		break;
+	case ID_POPUPMENU_ADDSYMBOL:
+		m_AddSymbolDlg.DoModal(m_Debugger, m_SelectedAddress, CSymbols::TYPE_CODE);
 		break;
 	}
 	return FALSE;
