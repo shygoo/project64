@@ -1,13 +1,7 @@
 #pragma once
 #include "stdafx.h"
 
-typedef struct {
-	int type;
-	uint32_t address;
-	char* name;
-	char* description;
-	int id;
-} SYMBOLENTRY;
+class CSymbolEntry;
 
 class CSymbols
 {
@@ -52,11 +46,24 @@ public:
 	};
 
 private:
-	static vector<SYMBOLENTRY> m_Symbols;
+	static vector<CSymbolEntry*> m_Symbols;
 	static int m_NextSymbolId;
 	
 	static CFile m_SymFileHandle;
 	static char* m_SymFileBuffer;
+	static size_t m_SymFileSize;
+
+	static CRITICAL_SECTION m_CriticalSection;
+
+	static char* m_ParserToken;
+	static size_t m_ParserTokenLength;
+	static char m_ParserDelimeter;
+	static char* m_SymFileParseBuffer;
+	static bool m_bHaveFirstToken;
+
+	static void ParserInit();
+	static void ParserDone();
+	static void ParserFetchToken(const char* delim);
 	
 public:
 	static CPath GetSymFilePath();
@@ -67,21 +74,70 @@ public:
 	static void Add(int type, uint32_t address, char* name, char* description = NULL);
 	static void RemoveEntryById(int id);
 	
+	static void Reset();
+
 	static const char* GetTypeName(int typeNumber);
 	static int GetTypeNumber(char* typeName);
-	static void GetValueString(char* dest, int type, uint32_t address);
+	static void GetValueString(char* str, CSymbolEntry* lpSymbol);
 
 	static int GetCount();
 
-	static SYMBOLENTRY* GetEntryById(int id);
-	static SYMBOLENTRY* GetEntryByIndex(int id);
+	static CSymbolEntry* GetEntryById(int id);
+	static CSymbolEntry* GetEntryByIndex(int id);
 
 	static const char* GetNameByAddress(uint32_t address);
 
-	static int GetIdByIndex(int index);
-	static char* GetNameByIndex(int index);
-	static char* GetTypeStrByIndex(int index);
-	static char* GetDescriptionByIndex(int index);
-	static uint32_t GetAddressByIndex(int index);
+	static void InitializeCriticalSection();
+	static void DeleteCriticalSection();
+	static void EnterCriticalSection();
+	static void LeaveCriticalSection();
 
+};
+
+class CSymbolEntry {
+public:
+	int m_Id;
+	int m_Type;
+	uint32_t m_Address;
+	char* m_Name;
+	char* m_Description;
+	
+	CSymbolEntry(int id, int type, uint32_t address, char* name, char* description) :
+		m_Name(NULL),
+		m_Description(NULL),
+		m_Id(id),
+		m_Type(type),
+		m_Address(address)
+	{
+		if (name != NULL)
+		{
+			size_t nameLen = strlen(name);
+			m_Name = (char*)malloc(nameLen + 1);
+			strcpy(m_Name, name);
+		}
+
+		if (description != NULL)
+		{
+			size_t descLen = strlen(description);
+			m_Description = (char*)malloc(descLen + 1);
+			strcpy(m_Description, description);
+		}
+	}
+	
+	~CSymbolEntry()
+	{
+		if (m_Name != NULL)
+		{
+			free(m_Name);
+		}
+		if (m_Description != NULL)
+		{
+			free(m_Description);
+		}
+	}
+
+	const char* TypeName()
+	{
+		return CSymbols::SymbolTypes[m_Type];
+	}
 };

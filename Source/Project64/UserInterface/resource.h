@@ -450,6 +450,7 @@
 #define IDC_SKIP_BTN                    1268
 #define IDC_CONSOLE_EDIT                1271
 #define IDC_SEARCH_EDIT                 1271
+#define IDC_FILTER_EDIT                 1271
 #define IDC_EVAL_EDIT                   1272
 #define IDC_PI00_EDIT                   1274
 #define IDC_PI04_EDIT                   1275
@@ -503,6 +504,7 @@
 #define IDC_COP0_17_EDIT                1332
 #define IDC_COP0_18_EDIT                1333
 #define IDC_COP0_19_EDIT                1334
+#define IDC_FILTER_STATIC               1339
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -544,7 +546,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         40031
-#define _APS_NEXT_CONTROL_VALUE         1339
+#define _APS_NEXT_CONTROL_VALUE         1340
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

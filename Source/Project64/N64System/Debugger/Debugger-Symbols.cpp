@@ -19,17 +19,8 @@
 
 CDebugSymbols::CDebugSymbols(CDebuggerUI * debugger) :
 	CDebugDialog<CDebugSymbols>(debugger)
-{
-	
+{	
 }
-/*
-
-type,address,name,description
-
-u32,80370000,variable1
-code,80370000,variable1
-
-*/
 
 LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
@@ -48,12 +39,38 @@ LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 	m_SymbolsListView.SetColumnWidth(1, 40);
 	m_SymbolsListView.SetColumnWidth(2, 100);
 	m_SymbolsListView.SetColumnWidth(3, 120);
-
+	m_SymbolsListView.SetColumnWidth(4, 120);
+	
 	CSymbols::Load();
+	CSymbols::InitializeCriticalSection();
+
 	Refresh();
+
+	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
 
 	WindowCreated();
 	return 0;
+}
+
+LRESULT CDebugSymbols::OnDestroy(void)
+{
+	if (m_AutoRefreshThread != NULL)
+	{
+		TerminateThread(m_AutoRefreshThread, 0);
+		CloseHandle(m_AutoRefreshThread);
+	}
+	CSymbols::DeleteCriticalSection();
+	return 0;
+}
+
+DWORD WINAPI CDebugSymbols::AutoRefreshProc(void* _this)
+{
+	CDebugSymbols* self = (CDebugSymbols*)_this;
+	while (true)
+	{
+		self->RefreshValues();
+		Sleep(100);
+	}
 }
 
 LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -65,14 +82,15 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		break;
 	case IDC_ADDSYMBOL_BTN:
 		m_AddSymbolDlg.DoModal();
-		CSymbols::Save();
 		Refresh();
 		break;
 	case IDC_REMOVESYMBOL_BTN:
 		{
 			int id = m_SymbolsListView.GetItemData(m_SymbolsListView.GetSelectedIndex());
+			CSymbols::EnterCriticalSection();
 			CSymbols::RemoveEntryById(id);
 			CSymbols::Save();
+			CSymbols::LeaveCriticalSection();
 			Refresh();
 			break;
 		}
@@ -80,22 +98,22 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	return FALSE;
 }
 
-LRESULT	CDebugSymbols::OnListClicked(NMHDR* pNMHDR)
+LRESULT	CDebugSymbols::OnListDblClicked(NMHDR* pNMHDR)
 {
 	// Open it in memory viewer/commands viewer
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
 
 	int id = m_SymbolsListView.GetItemData(nItem);
-	SYMBOLENTRY* symbol = CSymbols::GetEntryById(id);
+	CSymbolEntry* symbol = CSymbols::GetEntryById(id);
 	
-	if (symbol->type == 0) // code
+	if (symbol->m_Type == 0) // code
 	{
-		m_Debugger->Debug_ShowCommandsLocation(symbol->address, true);
+		m_Debugger->Debug_ShowCommandsLocation(symbol->m_Address, true);
 	}
 	else // data/number
 	{
-		m_Debugger->Debug_ShowMemoryLocation(symbol->address, true);
+		m_Debugger->Debug_ShowMemoryLocation(symbol->m_Address, true);
 	}
 
 	return CDRF_DODEFAULT;
@@ -106,53 +124,64 @@ void CDebugSymbols::Refresh()
 	m_SymbolsListView.SetRedraw(FALSE);
 	m_SymbolsListView.DeleteAllItems();
 	int count = CSymbols::GetCount();
+
+	CSymbols::EnterCriticalSection();
+
 	for (int i = 0; i < count; i++)
 	{
-		stdstr addrStr = stdstr_f("%08X", CSymbols::GetAddressByIndex(i));
-		char* type = CSymbols::GetTypeStrByIndex(i);
-		char* name = CSymbols::GetNameByIndex(i);
-		char* desc = CSymbols::GetDescriptionByIndex(i);
-
-		int id = CSymbols::GetIdByIndex(i);
-
+		CSymbolEntry* lpSymbol = CSymbols::GetEntryByIndex(i);
+		
+		stdstr addrStr = stdstr_f("%08X", lpSymbol->m_Address);
+		
 		m_SymbolsListView.AddItem(i, 0, addrStr.c_str());
-		m_SymbolsListView.AddItem(i, 1, type);
-		m_SymbolsListView.AddItem(i, 2, name);
-		m_SymbolsListView.AddItem(i, 3, desc);
+		m_SymbolsListView.AddItem(i, 1, lpSymbol->TypeName());
+		m_SymbolsListView.AddItem(i, 2, lpSymbol->m_Name);
+		m_SymbolsListView.AddItem(i, 3, lpSymbol->m_Description);
+		
+		m_SymbolsListView.SetItemData(i, lpSymbol->m_Id);
 
-		m_SymbolsListView.SetItemData(i, id);
+		if (g_MMU)
+		{
+			char szValue[64];
+			CSymbols::GetValueString(szValue, lpSymbol);
+			m_SymbolsListView.AddItem(i, 4, szValue);
+		}
 	}
+
+	CSymbols::LeaveCriticalSection();
+
 	m_SymbolsListView.SetRedraw(TRUE);
 }
 
-// Add Symbol dialog
-
-LRESULT CAddSymbolDlg::OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+void CDebugSymbols::RefreshValues()
 {
-	switch (wID)
+	if (g_MMU == NULL)
 	{
-	case IDCANCEL:
-		EndDialog(0);
-		break;
-	case IDOK:
-		uint32_t address = m_AddressEdit.GetValue();
-		int type = m_TypeComboBox.GetCurSel();
-
-		int nameLen = m_NameEdit.GetWindowTextLengthA() + 1;
-		int descLen = m_DescriptionEdit.GetWindowTextLengthA() + 1;
-
-		char* name = (char*)malloc(nameLen);
-		char* description = (char*)malloc(descLen);
-
-		m_NameEdit.GetWindowTextA(name, nameLen);
-		m_DescriptionEdit.GetWindowTextA(description, descLen);
-
-		CSymbols::Add(type, address, name, description);
-		EndDialog(0);
-		break;
+		return;
 	}
-	return 0;
+
+	int count = m_SymbolsListView.GetItemCount();
+
+	CSymbols::EnterCriticalSection();
+
+	for (int i = 0; i < count; i++)
+	{
+		int symbolId = m_SymbolsListView.GetItemData(i);
+
+		CSymbolEntry* lpSymbol = CSymbols::GetEntryById(symbolId);
+
+		char szValue[64];
+		CSymbols::GetValueString(szValue, lpSymbol);
+		
+		m_SymbolsListView.SetItemText(i, 4, szValue);
+	}
+
+	CSymbols::LeaveCriticalSection();
 }
+
+
+/////////////////////////
+// Add Symbol dialog
 
 LRESULT	CAddSymbolDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
@@ -174,5 +203,42 @@ LRESULT	CAddSymbolDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 		m_TypeComboBox.AddString(type);
 	}
 
+	m_AddressEdit.SetWindowTextA("");
+	m_AddressEdit.SetFocus();
+
 	return FALSE;
+}
+
+LRESULT CAddSymbolDlg::OnClicked(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+{
+	switch (wID)
+	{
+	case IDCANCEL:
+		EndDialog(0);
+		break;
+	case IDOK:
+		uint32_t address = m_AddressEdit.GetValue();
+		int type = m_TypeComboBox.GetCurSel();
+
+		int nameLen = m_NameEdit.GetWindowTextLengthA();
+		int descLen = m_DescriptionEdit.GetWindowTextLengthA();
+
+		//char* name = (char*)malloc(nameLen);
+		//char* description = (char*)malloc(descLen);
+
+		char name[128];
+		char description[256];
+		
+		m_NameEdit.GetWindowTextA(name, nameLen + 1);
+		m_DescriptionEdit.GetWindowTextA(description, descLen + 1);
+		
+		CSymbols::EnterCriticalSection();
+		CSymbols::Add(type, address, name, description);
+		CSymbols::Save();
+		CSymbols::LeaveCriticalSection();
+
+		EndDialog(0);
+		break;
+	}
+	return 0;
 }

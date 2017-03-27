@@ -12,6 +12,8 @@
 #include "DebuggerUI.h"
 #include "ScriptHook.h"
 
+#include "Symbols.h"
+
 CPj64Module _Module;
 
 CDebuggerUI::CDebuggerUI () :
@@ -64,6 +66,19 @@ void CDebuggerUI::GameReset ( CDebuggerUI * _this )
 	if (_this->m_CommandsView)
 	{
 		_this->m_CommandsView->Reset();
+	}
+
+	if (_this->m_DMALog)
+	{
+		_this->m_DMALog->clear();
+	}
+
+	if (_this->m_Symbols)
+	{
+		CSymbols::EnterCriticalSection();
+		CSymbols::Load();
+		_this->m_Symbols->Refresh();
+		CSymbols::LeaveCriticalSection();
 	}
 }
 

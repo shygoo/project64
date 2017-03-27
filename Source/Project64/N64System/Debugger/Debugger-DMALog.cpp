@@ -84,13 +84,18 @@ void CDebugDMALogView::RefreshList()
 
 		// Get four character string at rom address
 		uint8_t* rom = g_Rom->GetRomAddress();
-		char sig[5]; sprintf(sig, "%.4s", &rom[entry.romAddr]);
-		*(uint32_t*)sig = _byteswap_ulong(*(uint32_t*)sig);
+		
+		uint32_t sig = *(uint32_t*)&rom[entry.romAddr];
+		sig = _byteswap_ulong(sig);
+
+		char sigc[5];
+		memcpy(sigc, &sig, 4);
+		sigc[4] = '\0';
 
 		// Todo checkbox to display all in hex
-		if (isalnum(sig[0]) && isalnum(sig[1]) && isalnum(sig[2]) && isalnum(sig[3]))
+		if (isalnum(sigc[0]) && isalnum(sigc[1]) && isalnum(sigc[2]) && isalnum(sigc[3]))
 		{
-			m_DMAList.AddItem(itemIndex, 4, sig);
+			m_DMAList.AddItem(itemIndex, 4, sigc);
 		}
 
 		itemIndex++;
@@ -122,6 +127,7 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	DlgResize_Init(false, false);
 
 	m_bConvertingAddress = false;
+	m_nLastStartIndex = 0;
 
 	m_DMAList.Attach(GetDlgItem(IDC_DMA_LIST));
 
