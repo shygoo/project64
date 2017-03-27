@@ -43,7 +43,7 @@ private:
 	LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
 	LRESULT             OnMemoryRightClicked(LPNMHDR lpNMHDR);
 	LRESULT             OnDestroy(void);
-
+	
     void Insert_MemoryLineDump(int LineNumber);
     void RefreshMemory(bool ResetCompare);
 

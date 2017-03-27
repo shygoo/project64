@@ -369,11 +369,11 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
 
 			uint32_t vaddr = 0x80000000 | (m_DataStartLoc + Pos);
 
+			COLORREF bgColor, fgColor, fgHiColor;
+			
 			bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
 			bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
-
-			COLORREF bgColor, fgColor, fgHiColor;
-
+			
 			if (bHaveReadBP && bHaveWriteBP)
 			{
 				bgColor = RGB(0xAA, 0xDD, 0xDD);
@@ -396,6 +396,13 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
 				fgHiColor = Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT);
 			}
 
+			const char* symbolName = CSymbols::GetNameByAddress(vaddr);
+			if (symbolName != NULL)
+			{
+				bgColor = RGB(0xFF, 0xFF, 0x00);
+				//fgColor = fgHiColor = RGB(0x22, 0x00, 0x22);
+			}
+			
 			m_MemoryList->SetItemColours(LineNumber, col, bgColor, fgColor);
             m_MemoryList->SetItemHighlightColours(LineNumber, col, fgHiColor);
             
