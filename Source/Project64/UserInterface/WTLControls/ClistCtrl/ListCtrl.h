@@ -2253,7 +2253,7 @@ public:
 
 				if (( pT->GetItemFlags( nItem, nIndex ) & ITEM_FLAGS_HIT_NOTIFY ) != 0)
 				{
-					NotifyParent( nItem, nSubItem, LCN_HITTEST );						
+					NotifyParent( nItem, nSubItem, LCN_HITTEST );	
 				}
 			}
 		}
@@ -2363,7 +2363,7 @@ public:
 		// notify parent of right-click item
 		NotifyParent( nItem, nSubItem, LCN_RIGHTCLICK );
 	}
-	
+
 	void OnMouseMove( UINT nFlags, CPoint point )
 	{
 		T* pT = static_cast<T*>(this);
@@ -2496,6 +2496,8 @@ public:
 					
 					m_nHotItem = nItem;
 					m_nHotSubItem = nSubItem;
+
+					NotifyParent(nItem, nSubItem, LCN_HOTITEMCHANGED);
 				}
 				
 				int nIndex = GetColumnIndex( m_nHotSubItem );
