@@ -396,6 +396,18 @@ CSymbolEntry* CSymbols::GetEntryByIndex(int index)
 	return m_Symbols[index];
 }
 
+CSymbolEntry* CSymbols::GetEntryByAddress(uint32_t address)
+{
+	for (int i = 0; i < GetCount(); i++)
+	{
+		if (m_Symbols[i]->m_Address == address)
+		{
+			return m_Symbols[i];
+		}
+	}
+	return NULL;
+}
+
 CSymbolEntry* CSymbols::GetEntryById(int id)
 {
 	for (int i = 0; i < GetCount(); i++)

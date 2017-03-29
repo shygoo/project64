@@ -24,12 +24,13 @@ public:
     void ShowAddress(DWORD Address, bool VAddr);
 
 private:
-    BEGIN_MSG_MAP_EX(CDebugMemoryView)
-        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-        COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
-        COMMAND_HANDLER_EX(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
-        NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_MODIFIED, OnMemoryModified)
+	BEGIN_MSG_MAP_EX(CDebugMemoryView)
+		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+		COMMAND_HANDLER_EX(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
+		NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_MODIFIED, OnMemoryModified)
 		NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_RIGHTCLICK, OnMemoryRightClicked)
+		NOTIFY_HANDLER_EX(IDC_MEM_DETAILS, LCN_HOTITEMCHANGED, OnHotItemChanged)
 		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_VSCROLL(OnVScroll)
@@ -42,17 +43,22 @@ private:
 	LRESULT             OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
 	LRESULT             OnMemoryRightClicked(LPNMHDR lpNMHDR);
+	LRESULT             OnHotItemChanged(LPNMHDR lpNMHDR);
 	LRESULT             OnDestroy(void);
-	
+
     void Insert_MemoryLineDump(int LineNumber);
     void RefreshMemory(bool ResetCompare);
 
 	HANDLE m_AutoRefreshThread;
 	static DWORD WINAPI AutoRefreshProc(void* _this);
 
+	void SelectColors(uint32_t address, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor);
+
     enum { MemoryToDisplay = 0x100 };
 
 	CAddSymbolDlg m_AddSymbolDlg;
+
+	CStatic m_InfoText;
 
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;

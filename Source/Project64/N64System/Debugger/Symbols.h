@@ -85,6 +85,7 @@ public:
 
 	static CSymbolEntry* GetEntryById(int id);
 	static CSymbolEntry* GetEntryByIndex(int id);
+	static CSymbolEntry* GetEntryByAddress(uint32_t address);
 
 	static const char* GetNameByAddress(uint32_t address);
 

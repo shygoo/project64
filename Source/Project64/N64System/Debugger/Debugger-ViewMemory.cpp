@@ -110,6 +110,9 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
         ::GetWindowRect(GetDlgItem(IDC_SCRL_BAR), &DlgItemRect);
         ::SetWindowPos(GetDlgItem(IDC_SCRL_BAR), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
     }
+
+	m_InfoText.Attach(GetDlgItem(IDC_SYM_INFO_EDIT));
+
     WindowCreated();
 
 	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
@@ -159,6 +162,9 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
     case IDC_SEARCH_MEM:
         m_Debugger->Debug_ShowMemorySearch();
         break;
+	case IDC_SYMBOLS_BTN:
+		m_Debugger->Debug_ShowSymbolsWindow();
+		break;
     case IDCANCEL:
         EndDialog(0);
         break;
@@ -216,6 +222,45 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 	TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, NULL);
 
 	DestroyMenu(hMenu);
+
+	return 0;
+}
+
+LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
+{
+	CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
+	int nRow = pListNotify->m_nItem;
+	int nCol = pListNotify->m_nSubItem - 1;
+
+	// Skip address, divider, ascii section
+	if (nCol < 0 || (nCol % 5) == 4)
+	{
+		return 0;
+	}
+
+	uint32_t offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
+	uint32_t vaddr = 0x80000000 | (m_DataStartLoc + offset);
+
+	CSymbols::EnterCriticalSection();
+
+	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(vaddr);
+
+	stdstr symbolInfo;
+
+	if (lpSymbol != NULL)
+	{
+		char* desc = lpSymbol->m_Description;
+		desc = desc ? desc : "";
+		symbolInfo = stdstr_f("%08X: %s %s // %s", vaddr, lpSymbol->TypeName(), lpSymbol->m_Name, desc);
+	}
+	else
+	{
+		symbolInfo = stdstr_f("%08X", vaddr);
+	}
+
+	m_InfoText.SetWindowTextA(symbolInfo.c_str());
+
+	CSymbols::LeaveCriticalSection();
 
 	return 0;
 }
@@ -370,38 +415,7 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
 			uint32_t vaddr = 0x80000000 | (m_DataStartLoc + Pos);
 
 			COLORREF bgColor, fgColor, fgHiColor;
-			
-			bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
-			bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
-			
-			if (bHaveReadBP && bHaveWriteBP)
-			{
-				bgColor = RGB(0xAA, 0xDD, 0xDD);
-				fgColor = fgHiColor = RGB(0x00, 0x22, 0x22);
-			}
-			else if(bHaveReadBP)
-			{
-				bgColor = RGB(0xDD, 0xDD, 0xAA);
-				fgColor = fgHiColor = RGB(0x22, 0x22, 0x00);
-			}
-			else if (bHaveWriteBP)
-			{
-				bgColor = RGB(0xAA, 0xAA, 0xDD);
-				fgColor = fgHiColor = RGB(0x00, 0x00, 0x22);
-			}
-			else
-			{
-				bgColor = GetSysColor(COLOR_WINDOW);
-				fgColor = Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT);
-				fgHiColor = Changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT);
-			}
-
-			const char* symbolName = CSymbols::GetNameByAddress(vaddr);
-			if (symbolName != NULL)
-			{
-				bgColor = RGB(0xFF, 0xFF, 0x00);
-				//fgColor = fgHiColor = RGB(0x22, 0x00, 0x22);
-			}
+			SelectColors(vaddr, Changed, bgColor, fgColor, fgHiColor);
 			
 			m_MemoryList->SetItemColours(LineNumber, col, bgColor, fgColor);
             m_MemoryList->SetItemHighlightColours(LineNumber, col, fgHiColor);
@@ -436,6 +450,38 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
     {
         m_MemoryList->SetItemText(LineNumber, 20, Ascii);
     }
+}
+
+void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor)
+{
+	const char* symbolName = CSymbols::GetNameByAddress(vaddr);
+	bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
+	bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
+
+	fgHiColor = RGB(0x00, 0x00, 0x00);
+
+	if (symbolName != NULL)
+	{
+		bgColor = RGB(0xFF, 0xFF, 0x00);
+	}
+	else if (bHaveReadBP && bHaveWriteBP)
+	{
+		bgColor = RGB(0xAA, 0xDD, 0xDD);
+	}
+	else if (bHaveReadBP)
+	{
+		bgColor = RGB(0xDD, 0xDD, 0xAA);
+	}
+	else if (bHaveWriteBP)
+	{
+		bgColor = RGB(0xAA, 0xAA, 0xDD);
+	}
+	else
+	{
+		bgColor = GetSysColor(COLOR_WINDOW);
+		fgHiColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
+		fgColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
+	}
 }
 
 void CDebugMemoryView::OnAddrChanged(UINT /*Code*/, int /*id*/, HWND /*ctl*/)
