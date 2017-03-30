@@ -61,7 +61,8 @@ private:
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;
 	CAddSymbolDlg m_AddSymbolDlg;
-	CStatic       m_InfoText;
+	CStatic       m_SymInfo;
+	CStatic       m_DMAInfo;
 
 	CBreakpoints* m_Breakpoints;
 	

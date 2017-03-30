@@ -12,6 +12,7 @@
 
 #include "DebuggerUI.h"
 #include "Symbols.h"
+#include "DMALog.h"
 
 CDebugMemoryView::CDebugMemoryView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugMemoryView>(debugger),
@@ -113,7 +114,8 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
         ::SetWindowPos(GetDlgItem(IDC_SCRL_BAR), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
     }
 
-	m_InfoText.Attach(GetDlgItem(IDC_SYM_INFO));
+	m_SymInfo.Attach(GetDlgItem(IDC_SYM_INFO));
+	m_DMAInfo.Attach(GetDlgItem(IDC_DMA_INFO));
 
     WindowCreated();
 
@@ -250,9 +252,25 @@ LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 		symbolInfo = stdstr_f("%08X", address);
 	}
 
-	m_InfoText.SetWindowTextA(symbolInfo.c_str());
+	m_SymInfo.SetWindowTextA(symbolInfo.c_str());
 
 	CSymbols::LeaveCriticalSection();
+
+	uint32_t romAddr, offset;
+	DMALOGENTRY* lpEntry = m_Debugger->DMALog()->GetEntryByRamAddress(address, &romAddr, &offset);
+
+	stdstr dmaInfo;
+
+	if (lpEntry != NULL)
+	{
+		dmaInfo = stdstr_f("Last DMA: %08X (%08X + %X) [%X]", romAddr, lpEntry->romAddr, offset, lpEntry->length);
+	}
+	else
+	{
+		dmaInfo = stdstr_f("Last DMA: ?");
+	}
+
+	m_DMAInfo.SetWindowTextA(dmaInfo.c_str());
 
 	return 0;
 }
