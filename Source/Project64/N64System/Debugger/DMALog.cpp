@@ -38,7 +38,9 @@ DMALOGENTRY* CDMALog::GetEntryByIndex(uint32_t index)
 
 DMALOGENTRY* CDMALog::GetEntryByRamAddress(uint32_t ramAddr)
 {
-	for (uint32_t i = GetNumEntries() - 1; i >= 0; i--)
+	uint32_t nEntries = GetNumEntries();
+
+	for (uint32_t i = nEntries - 1; i-- > 0;)
 	{
 		uint32_t min = m_Log[i].ramAddr;
 		uint32_t max = min + m_Log[i].length - 1;
@@ -68,7 +70,9 @@ DMALOGENTRY* CDMALog::GetEntryByRamAddress(uint32_t ramAddr, uint32_t* lpRomAddr
 
 DMALOGENTRY* CDMALog::GetEntryByRomAddress(uint32_t romAddr)
 {
-	for (uint32_t i = GetNumEntries() - 1; i >= 0; i--)
+	uint32_t nEntries = GetNumEntries();
+
+	for (uint32_t i = nEntries - 1; i-- > 0; )
 	{
 		uint32_t min = m_Log[i].romAddr;
 		uint32_t max = min + m_Log[i].length - 1;

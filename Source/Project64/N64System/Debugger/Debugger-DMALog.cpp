@@ -171,6 +171,8 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 	m_DMARomEdit.Attach(GetDlgItem(IDC_DMA_ROM_EDIT));
 	m_DMARomEdit.SetLimitText(8);
 
+	m_BlockInfo.Attach(GetDlgItem(IDC_BLOCK_INFO));
+
 	RefreshList();
 
 	WindowCreated();
@@ -227,10 +229,13 @@ LRESULT CDebugDMALogView::OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	if (lpEntry != NULL)
 	{
 		sprintf(szRomAddr, "%08X", romAddr);
+		stdstr blockInfo = stdstr_f("Block: %08X -> %08X [%X] +%X", romAddr, ramAddr, lpEntry->length, offset);
+		m_BlockInfo.SetWindowTextA(blockInfo.c_str());
 	}
 	else
 	{
 		sprintf(szRomAddr, "????????");
+		m_BlockInfo.SetWindowTextA("Block: ?");
 	}
 	
 	m_bConvertingAddress = true;
@@ -258,10 +263,13 @@ LRESULT CDebugDMALogView::OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	if (lpEntry != NULL)
 	{
 		sprintf(szRamAddr, "%08X", ramAddr);
+		stdstr blockInfo = stdstr_f("Block: %08X -> %08X [%X] +%X", romAddr, ramAddr, lpEntry->length, offset);
+		m_BlockInfo.SetWindowTextA(blockInfo.c_str());
 	}
 	else
 	{
 		sprintf(szRamAddr, "????????");
+		m_BlockInfo.SetWindowTextA("Block: ?");
 	}
 
 	m_bConvertingAddress = true;
@@ -269,31 +277,3 @@ LRESULT CDebugDMALogView::OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	m_bConvertingAddress = false;
 	return FALSE;
 }
-
-// todo move to a class for a dma log object
-//uint32_t CDebugDMALogView::ConvertRamRom(uint32_t ramAddr)
-//{
-//	for (int i = 0; i < m_DMALog->GetNumEntries(); i++)
-//	{
-//		CDMALogEntry lpEntry = m_DMALog->GetEntry
-//		if (ramAddr >= entry.ramAddr && ramAddr < entry.ramAddr + entry.length)
-//		{
-//			return entry.romAddr + (ramAddr - entry.ramAddr);
-//		}
-//	}
-//	return 0x00000000;
-//}
-
-// todo move to a class for a dma log object
-//uint32_t CDebugDMALogView::ConvertRomRam(uint32_t romAddr)
-//{
-//	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
-//	{
-//		DMALogEntry entry = m_Debugger->DMALog()->at(i);
-//		if (romAddr >= entry.romAddr && romAddr < entry.romAddr + entry.length)
-//		{
-//			return entry.ramAddr + (romAddr - entry.romAddr);
-//		}
-//	}
-//	return 0x00000000;
-//}

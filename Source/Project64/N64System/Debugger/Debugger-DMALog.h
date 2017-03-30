@@ -39,10 +39,11 @@ private:
 
 	// Return true if entry meets requirements
 	bool FilterEntry(int dmaLogIndex);
-
+	
 	CListViewCtrl m_DMAList;
 	CEdit         m_DMARamEdit;
 	CEdit         m_DMARomEdit;
+	CStatic       m_BlockInfo;
 	
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
@@ -63,6 +64,7 @@ private:
 	BEGIN_DLGRESIZE_MAP(CDebugDMALogView)
 		DLGRESIZE_CONTROL(IDC_DMA_LIST, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDC_TRACE_STATIC, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_BLOCK_INFO, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_RAM_STATIC, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_ROM_STATIC, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_DMA_ROM_EDIT, DLSZ_MOVE_Y)
