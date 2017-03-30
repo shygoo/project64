@@ -49,6 +49,19 @@ void CDebugDMALogView::RefreshList()
 		return;
 	}
 	
+	// Get scrollbar state
+	SCROLLINFO scroll;
+	scroll.cbSize = sizeof(SCROLLINFO);
+	scroll.fMask = SIF_ALL;
+	m_DMAList.GetScrollInfo(SB_VERT, &scroll);
+
+	bool bScrolledDown = false;
+
+	if ((scroll.nPage + scroll.nPos) - 1 == scroll.nMax)
+	{
+		bScrolledDown = true;
+	}
+
 	int startIndex;
 	int dmaLogSize = m_Debugger->DMALog()->size();
 	
@@ -101,8 +114,13 @@ void CDebugDMALogView::RefreshList()
 		itemIndex++;
 	}
 	
-	m_DMAList.SetRedraw(TRUE);
+	if (bScrolledDown)
+	{
+		m_DMAList.EnsureVisible(m_DMAList.GetItemCount() - 1, FALSE);
+	}
 
+	m_DMAList.SetRedraw(TRUE);
+	
 	m_nLastStartIndex = dmaLogSize;
 }
 
