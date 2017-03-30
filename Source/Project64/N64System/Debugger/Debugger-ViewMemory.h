@@ -36,15 +36,15 @@ private:
         MSG_WM_VSCROLL(OnVScroll)
     END_MSG_MAP()
 
-	LRESULT				OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-	LRESULT				OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
-	void				OnAddrChanged(UINT Code, int id, HWND ctl);
-	void                OnVScroll(int request, short Pos, HWND ctrl);
-	LRESULT             OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT             OnMemoryModified(LPNMHDR lpNMHDR);
-	LRESULT             OnMemoryRightClicked(LPNMHDR lpNMHDR);
-	LRESULT             OnHotItemChanged(LPNMHDR lpNMHDR);
-	LRESULT             OnDestroy(void);
+	LRESULT  OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT  OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+	void     OnAddrChanged(UINT Code, int id, HWND ctl);
+	void     OnVScroll(int request, short Pos, HWND ctrl);
+	LRESULT  OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT  OnMemoryModified(LPNMHDR lpNMHDR);
+	LRESULT  OnMemoryRightClicked(LPNMHDR lpNMHDR);
+	LRESULT  OnHotItemChanged(LPNMHDR lpNMHDR);
+	LRESULT  OnDestroy(void);
 
     void Insert_MemoryLineDump(int LineNumber);
     void RefreshMemory(bool ResetCompare);
@@ -53,18 +53,20 @@ private:
 	static DWORD WINAPI AutoRefreshProc(void* _this);
 
 	void SelectColors(uint32_t address, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor);
+	bool GetItemOffset(LPNMHDR lpNMHDR, uint32_t &offset);
+	bool GetItemAddress(LPNMHDR lpNMHDR, uint32_t &address);
 
     enum { MemoryToDisplay = 0x100 };
-
-	CAddSymbolDlg m_AddSymbolDlg;
-
-	CStatic m_InfoText;
-
+	
     CEditNumber   m_MemAddr;
     CListCtrl   * m_MemoryList;
+	CAddSymbolDlg m_AddSymbolDlg;
+	CStatic       m_InfoText;
 
 	CBreakpoints* m_Breakpoints;
-
+	
+	int           m_SymbolColorStride;
+	int           m_SymbolColorPhase;
 	DWORD         m_CtxMenuAddr;
 
     DWORD         m_DataStartLoc;

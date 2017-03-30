@@ -33,6 +33,8 @@ CDebugMemoryView::~CDebugMemoryView()
 
 LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+	m_SymbolColorStride = 0;
+	m_SymbolColorPhase = 0;
     m_DataStartLoc = (DWORD)-1;
     m_CompareStartLoc = (DWORD)-1;
     memset(m_CompareData, 0, sizeof(m_CompareData));
@@ -111,13 +113,23 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
         ::SetWindowPos(GetDlgItem(IDC_SCRL_BAR), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
     }
 
-	m_InfoText.Attach(GetDlgItem(IDC_SYM_INFO_EDIT));
+	m_InfoText.Attach(GetDlgItem(IDC_SYM_INFO));
 
     WindowCreated();
 
 	m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
 
     return TRUE;
+}
+
+DWORD WINAPI CDebugMemoryView::AutoRefreshProc(void* _this)
+{
+	CDebugMemoryView* self = (CDebugMemoryView*)_this;
+	while (true)
+	{
+		self->RefreshMemory(true);
+		Sleep(100);
+	}
 }
 
 LRESULT CDebugMemoryView::OnDestroy(void)
@@ -134,16 +146,6 @@ LRESULT CDebugMemoryView::OnDestroy(void)
         m_MemoryList = NULL;
     }
     return 0;
-}
-
-DWORD WINAPI CDebugMemoryView::AutoRefreshProc(void* _this)
-{
-	CDebugMemoryView* self = (CDebugMemoryView*)_this;
-	while (true)
-	{
-		self->RefreshMemory(true);
-		Sleep(100);
-	}
 }
 
 LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& /*bHandled*/)
@@ -193,20 +195,15 @@ LRESULT CDebugMemoryView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
 
 LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 {
-	CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
+	uint32_t address;
+	bool bData = GetItemAddress(lpNMHDR, address);
 
-	int nRow = pListNotify->m_nItem;
-	int nCol = pListNotify->m_nSubItem - 1;
-
-	// Skip address, divider, ascii section
-	if (nCol < 0 || (nCol % 5) == 4)
+	if (!bData)
 	{
 		return 0;
 	}
 
-	uint32_t offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
-
-	m_CtxMenuAddr = 0x80000000 | (m_DataStartLoc + offset);
+	m_CtxMenuAddr = address;
 
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_MEM_BP_POPUP));
 	HMENU hPopupMenu = GetSubMenu(hMenu, 0);
@@ -228,22 +225,17 @@ LRESULT CDebugMemoryView::OnMemoryRightClicked(LPNMHDR lpNMHDR)
 
 LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 {
-	CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
-	int nRow = pListNotify->m_nItem;
-	int nCol = pListNotify->m_nSubItem - 1;
+	uint32_t address;
+	bool bData = GetItemAddress(lpNMHDR, address);
 
-	// Skip address, divider, ascii section
-	if (nCol < 0 || (nCol % 5) == 4)
+	if (!bData)
 	{
 		return 0;
 	}
 
-	uint32_t offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
-	uint32_t vaddr = 0x80000000 | (m_DataStartLoc + offset);
-
 	CSymbols::EnterCriticalSection();
 
-	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(vaddr);
+	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(address);
 
 	stdstr symbolInfo;
 
@@ -251,11 +243,11 @@ LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 	{
 		char* desc = lpSymbol->m_Description;
 		desc = desc ? desc : "";
-		symbolInfo = stdstr_f("%08X: %s %s // %s", vaddr, lpSymbol->TypeName(), lpSymbol->m_Name, desc);
+		symbolInfo = stdstr_f("%08X: %s %s // %s", address, lpSymbol->TypeName(), lpSymbol->m_Name, desc);
 	}
 	else
 	{
-		symbolInfo = stdstr_f("%08X", vaddr);
+		symbolInfo = stdstr_f("%08X", address);
 	}
 
 	m_InfoText.SetWindowTextA(symbolInfo.c_str());
@@ -267,51 +259,27 @@ LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 
 LRESULT CDebugMemoryView::OnMemoryModified(LPNMHDR lpNMHDR)
 {
+	uint32_t Pos = 0;
+	bool bData = GetItemOffset(lpNMHDR, Pos);
+
+	if (!bData)
+	{
+		return 0;
+	}
+
     CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
     int LineNumber = pListNotify->m_nItem;
-    int Pos = ((LineNumber << 4) + (pListNotify->m_nSubItem - 1));
-    if (pListNotify->m_nSubItem >= 6 && pListNotify->m_nSubItem < 10)
-    {
-        Pos = ((LineNumber << 4) + (pListNotify->m_nSubItem - 2));
-    }
-    if (pListNotify->m_nSubItem >= 11 && pListNotify->m_nSubItem < 15)
-    {
-        Pos = ((LineNumber << 4) + (pListNotify->m_nSubItem - 3));
-    }
-    if (pListNotify->m_nSubItem >= 16 && pListNotify->m_nSubItem < 20)
-    {
-        Pos = ((LineNumber << 4) + (pListNotify->m_nSubItem - 4));
-    }
-
+	
     LPCSTR strValue = m_MemoryList->GetItemText(pListNotify->m_nItem, pListNotify->m_nSubItem);
     int Finish = strlen(strValue);
-    if (Finish > 8)
-    {
-        Finish = 8;
-    }
-    DWORD Value = 0;
-    for (int i = 0; i < Finish; i++)
-    {
-        Value = (Value << 4);
-        if (strValue[i] <= '9' && strValue[i] >= '0')
-        {
-            Value |= strValue[i] - '0';
-        }
-        else if (strValue[i] <= 'f' && strValue[i] >= 'a')
-        {
-            Value |= strValue[i] - 'a' + 10;
-        }
-        else if (strValue[i] <= 'F' && strValue[i] >= 'A')
-        {
-            Value |= strValue[i] - 'A' + 10;
-        }
-    }
-
+	
+	DWORD Value = strtoull(strValue, NULL, 16);
+	
     if (m_CurrentData[Pos] == Value)
     {
         return 0;
     }
-
+	
     if (m_CompareStartLoc != m_DataStartLoc ||
         m_CompareVAddrr != m_DataVAddrr)
     {
@@ -321,10 +289,10 @@ LRESULT CDebugMemoryView::OnMemoryModified(LPNMHDR lpNMHDR)
         memcpy(m_CompareData, m_CurrentData, sizeof(m_CurrentData));
         memcpy(m_CompareValid, m_DataValid, sizeof(m_CompareValid));
     }
-
+	
     m_CompareData[Pos] = m_CurrentData[Pos];
     m_CurrentData[Pos] = (BYTE)Value;
-
+	
     //sb
     if (m_DataVAddrr)
     {
@@ -343,6 +311,54 @@ LRESULT CDebugMemoryView::OnMemoryModified(LPNMHDR lpNMHDR)
     Insert_MemoryLineDump(LineNumber);
 
     return 0;
+}
+
+void CDebugMemoryView::OnAddrChanged(UINT /*Code*/, int /*id*/, HWND /*ctl*/)
+{
+	RefreshMemory(false);
+}
+
+void CDebugMemoryView::OnVScroll(int request, short Pos, HWND ctrl)
+{
+	if (ctrl != GetDlgItem(IDC_SCRL_BAR))
+	{
+		return;
+	}
+	DWORD Location = m_MemAddr.GetValue();
+	switch (request)
+	{
+	case SB_LINEDOWN:
+		m_MemAddr.SetValue(Location < 0xFFFFFFEF ? Location + 0x10 : 0xFFFFFFFF, false, true);
+		break;
+	case SB_LINEUP:
+		m_MemAddr.SetValue(Location > 0x10 ? Location - 0x10 : 0, false, true);
+		break;
+	case SB_PAGEDOWN:
+		m_MemAddr.SetValue(Location < 0xFFFFFEFF ? Location + 0x100 : 0xFFFFFFFF, false, true);
+		break;
+	case SB_PAGEUP:
+		m_MemAddr.SetValue(Location > 0x100 ? Location - 0x100 : 0, false, true);
+		break;
+	case SB_THUMBPOSITION:
+		m_MemAddr.SetValue((DWORD)Pos << 0x10, false, true);
+		break;
+	default:
+		break;
+	}
+}
+
+LRESULT CDebugMemoryView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	WORD type = LOWORD(wParam);
+
+	if (type == WA_INACTIVE)
+	{
+		return FALSE;
+	}
+
+	RefreshMemory(false);
+
+	return FALSE;
 }
 
 void CDebugMemoryView::ShowAddress(DWORD Address, bool VAddr)
@@ -452,88 +468,10 @@ void CDebugMemoryView::Insert_MemoryLineDump(int LineNumber)
     }
 }
 
-void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor)
-{
-	const char* symbolName = CSymbols::GetNameByAddress(vaddr);
-	bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
-	bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
-
-	fgHiColor = RGB(0x00, 0x00, 0x00);
-
-	if (symbolName != NULL)
-	{
-		bgColor = RGB(0xFF, 0xFF, 0x00);
-	}
-	else if (bHaveReadBP && bHaveWriteBP)
-	{
-		bgColor = RGB(0xAA, 0xDD, 0xDD);
-	}
-	else if (bHaveReadBP)
-	{
-		bgColor = RGB(0xDD, 0xDD, 0xAA);
-	}
-	else if (bHaveWriteBP)
-	{
-		bgColor = RGB(0xAA, 0xAA, 0xDD);
-	}
-	else
-	{
-		bgColor = GetSysColor(COLOR_WINDOW);
-		fgHiColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
-		fgColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
-	}
-}
-
-void CDebugMemoryView::OnAddrChanged(UINT /*Code*/, int /*id*/, HWND /*ctl*/)
-{
-    RefreshMemory(false);
-}
-
-void CDebugMemoryView::OnVScroll(int request, short Pos, HWND ctrl)
-{
-    if (ctrl != GetDlgItem(IDC_SCRL_BAR))
-    {
-        return;
-    }
-    DWORD Location = m_MemAddr.GetValue();
-    switch (request)
-    {
-    case SB_LINEDOWN:
-        m_MemAddr.SetValue(Location < 0xFFFFFFEF ? Location + 0x10 : 0xFFFFFFFF, false, true);
-        break;
-    case SB_LINEUP:
-        m_MemAddr.SetValue(Location > 0x10 ? Location - 0x10 : 0, false, true);
-        break;
-    case SB_PAGEDOWN:
-        m_MemAddr.SetValue(Location < 0xFFFFFEFF ? Location + 0x100 : 0xFFFFFFFF, false, true);
-        break;
-    case SB_PAGEUP:
-        m_MemAddr.SetValue(Location > 0x100 ? Location - 0x100 : 0, false, true);
-        break;
-    case SB_THUMBPOSITION:
-        m_MemAddr.SetValue((DWORD)Pos << 0x10, false, true);
-        break;
-    default:
-        break;
-    }
-}
-
-LRESULT CDebugMemoryView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-	WORD type = LOWORD(wParam);
-
-	if (type == WA_INACTIVE)
-	{
-		return FALSE;
-	}
-	
-	RefreshMemory(false);
-
-	return FALSE;
-}
-
 void CDebugMemoryView::RefreshMemory(bool ResetCompare)
 {
+	m_SymbolColorPhase = 0;
+
 	if (g_MMU == NULL)
 	{
 		return;
@@ -648,4 +586,76 @@ void CDebugMemoryView::RefreshMemory(bool ResetCompare)
     {
         Insert_MemoryLineDump(count);
     }
+}
+
+bool CDebugMemoryView::GetItemOffset(LPNMHDR lpNMHDR, uint32_t &offset)
+{
+	CListNotify *pListNotify = reinterpret_cast<CListNotify *>(lpNMHDR);
+
+	int nRow = pListNotify->m_nItem;
+	int nCol = pListNotify->m_nSubItem - 1;
+
+	if (nCol < 0 || (nCol % 5) == 4)
+	{
+		return false;
+	}
+
+	offset = (nRow * 0x10) + (nCol / 5) * 4 + (nCol % 5);
+
+	return true;
+}
+
+bool CDebugMemoryView::GetItemAddress(LPNMHDR lpNMHDR, uint32_t &address)
+{
+	uint32_t offset;
+	bool bData = GetItemOffset(lpNMHDR, offset);
+
+	if (!bData)
+	{
+		return false;
+	}
+
+	address = 0x80000000 | (m_DataStartLoc + offset);
+
+	return true;
+}
+
+void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor)
+{
+	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(vaddr);
+
+	if (lpSymbol != NULL)
+	{
+		m_SymbolColorStride = lpSymbol->TypeSize();
+		m_SymbolColorPhase = m_SymbolColorPhase ? 0 : 1;
+	}
+
+	bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
+	bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);
+
+	fgHiColor = RGB(0x00, 0x00, 0x00);
+
+	if (bHaveReadBP && bHaveWriteBP)
+	{
+		bgColor = RGB(0xAA, 0xDD, 0xDD);
+	}
+	else if (bHaveReadBP)
+	{
+		bgColor = RGB(0xDD, 0xDD, 0xAA);
+	}
+	else if (bHaveWriteBP)
+	{
+		bgColor = RGB(0xAA, 0xAA, 0xDD);
+	}
+	else if (m_SymbolColorStride > 0)
+	{
+		bgColor = m_SymbolColorPhase ? RGB(0xDD, 0xFF, 0xDD) : RGB(0xAA, 0xCC, 0xAA);
+		m_SymbolColorStride--;
+	}
+	else
+	{
+		bgColor = GetSysColor(COLOR_WINDOW);
+		fgHiColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
+		fgColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
+	}
 }

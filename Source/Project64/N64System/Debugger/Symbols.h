@@ -45,6 +45,13 @@ public:
 		NULL
 	};
 
+	static constexpr int TypeSizes[] = {
+		1, 1, // code data
+		1, 2, 4, 8, // u8 u16 u32 u64
+		1, 2, 4, 8, // s8 s16 s32 s64
+		4, 8 // float double
+	};
+
 private:
 	static bool m_bInitialized;
 	static vector<CSymbolEntry*> m_Symbols;
@@ -141,5 +148,10 @@ public:
 	const char* TypeName()
 	{
 		return CSymbols::SymbolTypes[m_Type];
+	}
+
+	int TypeSize()
+	{
+		return CSymbols::TypeSizes[m_Type];
 	}
 };
