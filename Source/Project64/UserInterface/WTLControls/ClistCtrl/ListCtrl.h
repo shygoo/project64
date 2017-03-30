@@ -98,6 +98,11 @@ public:
 	
 	~CListImpl()
 	{
+		if (m_wndItemEdit.IsWindow())
+		{
+			// patch memory window crash
+			m_wndItemEdit.UnsubclassWindow();
+		}
 	}
 
 protected:
