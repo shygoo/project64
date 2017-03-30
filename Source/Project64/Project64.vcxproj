@@ -78,6 +78,7 @@
     <ClCompile Include="N64System\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger.cpp" />
     <ClCompile Include="N64System\Debugger\Breakpoints.cpp" />
+    <ClCompile Include="N64System\Debugger\DMALog.cpp" />
     <ClCompile Include="N64System\Debugger\ScriptSystem.cpp" />
     <ClCompile Include="Plugins\PluginList.cpp" />
     <ClCompile Include="Settings\GuiSettings.cpp" />
@@ -126,6 +127,7 @@
     <ClInclude Include="N64System\Debugger\Assembler.h" />
     <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="N64System\Debugger\Debugger-DMALog.h" />
+    <ClInclude Include="N64System\Debugger\DMALog.h" />
     <ClInclude Include="N64System\Debugger\ScriptHook.h" />
     <ClInclude Include="N64System\Debugger\ScriptInstance.h" />
     <ClInclude Include="N64System\Debugger\Debugger-AddBreakpoint.h" />

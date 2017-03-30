@@ -12,6 +12,7 @@
 #include "DebuggerUI.h"
 #include "ScriptHook.h"
 
+#include "DMALog.h"
 #include "Symbols.h"
 
 CPj64Module _Module;
@@ -27,16 +28,19 @@ CDebuggerUI::CDebuggerUI () :
 	m_Breakpoints(NULL),
 	m_ScriptSystem(NULL),
 	m_DMALogView(NULL),
-	m_StackTraceView(NULL)
+	m_StackTraceView(NULL),
+	m_DMALog(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
 	g_Debugger = this;
 
-	m_DMALog = new vector<DMALogEntry>;
+	//m_DMALog = new vector<DMALogEntry>;
 	m_StackTrace = new vector<uint32_t>;
 
 	m_Breakpoints = new CBreakpoints();
 	m_ScriptSystem = new CScriptSystem(this);
+
+	m_DMALog = new CDMALog();
 
 	CSymbols::InitializeCriticalSection();
 }
@@ -53,10 +57,10 @@ CDebuggerUI::~CDebuggerUI (void)
 	delete m_Symbols;
 	delete m_DMALogView;
 	delete m_MemorySearch;
+	delete m_DMALog;
 
 	CSymbols::DeleteCriticalSection();
-
-	m_DMALog->clear();
+	
 	m_StackTrace->clear();
 }
 
@@ -74,7 +78,7 @@ void CDebuggerUI::GameReset ( CDebuggerUI * _this )
 
 	if (_this->m_DMALog)
 	{
-		_this->m_DMALog->clear();
+		_this->m_DMALog->ClearEntries();
 	}
 
 	CSymbols::EnterCriticalSection();
@@ -326,7 +330,7 @@ CDebugScripts* CDebuggerUI::ScriptConsole()
 	return m_Scripts;
 }
 
-vector<DMALogEntry> * CDebuggerUI::DMALog()
+CDMALog* CDebuggerUI::DMALog()
 {
 	return m_DMALog;
 }
@@ -343,16 +347,6 @@ void CDebuggerUI::BreakpointHit()
 	m_Breakpoints->Pause();
 }
 
-void CDebuggerUI::Debug_LogDMA(uint32_t romAddr, uint32_t ramAddr, uint32_t length)
-{
-	DMALogEntry newEntry;
-
-	newEntry.romAddr = romAddr;
-	newEntry.ramAddr = ramAddr;
-	newEntry.length = length;
-	
-	m_DMALog->push_back(newEntry);
-}
 
 // CDebugger implementation
 
@@ -412,7 +406,7 @@ bool CDebuggerUI::CPUStepStarted()
 				uint32_t dmaLen = g_Reg->m_GPR[Opcode.rt].UW[0] + 1;
 				uint32_t endAddr = dmaRamAddr + dmaLen;
 				
-				Debug_LogDMA(dmaRomAddr, dmaRamAddr, dmaLen);
+				m_DMALog->AddEntry(dmaRomAddr, dmaRamAddr, dmaLen);
 
 				for (int i = 0; i < m_Breakpoints->m_nWBP; i++)
 				{

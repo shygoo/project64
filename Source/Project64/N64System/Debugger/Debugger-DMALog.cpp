@@ -9,13 +9,14 @@
 *                                                                           *
 ****************************************************************************/
 
-
 #include "stdafx.h"
 #include "DebuggerUI.h"
+#include "DMALog.h"
 
 CDebugDMALogView::CDebugDMALogView(CDebuggerUI* debugger) :
 CDebugDialog<CDebugDMALogView>(debugger)
 {
+	m_DMALog = debugger->DMALog();
 	m_bFilterChanged = false;
 	m_bUniqueRomAddresses = true;
 }
@@ -24,6 +25,7 @@ CDebugDMALogView::~CDebugDMALogView()
 {
 }
 
+/*
 bool CDebugDMALogView::FilterEntry(int dmaLogIndex)
 {
 	DMALogEntry entry = m_Debugger->DMALog()->at(dmaLogIndex);
@@ -41,13 +43,15 @@ bool CDebugDMALogView::FilterEntry(int dmaLogIndex)
 
 	return true;
 }
-
+*/
 void CDebugDMALogView::RefreshList()
 {
 	if (g_Rom == NULL)
 	{
 		return;
 	}
+	
+	uint8_t* rom = g_Rom->GetRomAddress();
 	
 	// Get scrollbar state
 	SCROLLINFO scroll;
@@ -63,7 +67,7 @@ void CDebugDMALogView::RefreshList()
 	}
 
 	int startIndex;
-	int dmaLogSize = m_Debugger->DMALog()->size();
+	int dmaLogSize = m_Debugger->DMALog()->GetNumEntries();
 	
 	if (dmaLogSize == 0)
 	{
@@ -84,21 +88,18 @@ void CDebugDMALogView::RefreshList()
 	
 	for (int i = startIndex; i < dmaLogSize; i++)
 	{
-		DMALogEntry entry = m_Debugger->DMALog()->at(i);
-		
-		if (!FilterEntry(i))
-		{
-			continue;
-		}
-		
-		m_DMAList.AddItem(itemIndex, 0, stdstr_f("%08X", entry.romAddr).c_str());
-		m_DMAList.AddItem(itemIndex, 1, stdstr_f("%08X", entry.ramAddr).c_str());
-		m_DMAList.AddItem(itemIndex, 2, stdstr_f("%08X (%d)", entry.length, entry.length).c_str());
+		DMALOGENTRY* lpEntry = m_DMALog->GetEntryByIndex(i);
 
-		// Get four character string at rom address
-		uint8_t* rom = g_Rom->GetRomAddress();
+		//if (!FilterEntry(i))
+		//{
+		//	continue;
+		//}
 		
-		uint32_t sig = *(uint32_t*)&rom[entry.romAddr];
+		m_DMAList.AddItem(itemIndex, 0, stdstr_f("%08X", lpEntry->romAddr).c_str());
+		m_DMAList.AddItem(itemIndex, 1, stdstr_f("%08X", lpEntry->ramAddr).c_str());
+		m_DMAList.AddItem(itemIndex, 2, stdstr_f("%08X (%d)", lpEntry->length, lpEntry->length).c_str());
+		
+		uint32_t sig = *(uint32_t*)&rom[lpEntry->romAddr];
 		sig = _byteswap_ulong(sig);
 
 		char sigc[5];
@@ -200,7 +201,7 @@ LRESULT CDebugDMALogView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& 
 		EndDialog(0);
 		break;
 	case IDC_CLEAR_BTN:
-		m_Debugger->DMALog()->clear();
+		m_DMALog->ClearEntries();
 		RefreshList();
 		break;
 	}
@@ -213,12 +214,25 @@ LRESULT CDebugDMALogView::OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	{
 		return FALSE;
 	}
+
 	char szRamAddr[9];
 	char szRomAddr[9];
+
 	m_DMARamEdit.GetWindowTextA(szRamAddr, 9);
 	uint32_t ramAddr = strtoul(szRamAddr, NULL, 16);
-	uint32_t romAddr = ConvertRamRom(ramAddr);
-	sprintf(szRomAddr, "%08X", romAddr);
+	uint32_t romAddr, offset;
+
+	DMALOGENTRY* lpEntry = m_DMALog->GetEntryByRamAddress(ramAddr, &romAddr, &offset);
+
+	if (lpEntry != NULL)
+	{
+		sprintf(szRomAddr, "%08X", romAddr);
+	}
+	else
+	{
+		sprintf(szRomAddr, "????????");
+	}
+	
 	m_bConvertingAddress = true;
 	m_DMARomEdit.SetWindowTextA(szRomAddr);
 	m_bConvertingAddress = false;
@@ -231,12 +245,25 @@ LRESULT CDebugDMALogView::OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	{
 		return FALSE;
 	}
+
 	char szRamAddr[9];
 	char szRomAddr[9];
+
 	m_DMARomEdit.GetWindowTextA(szRomAddr, 9);
 	uint32_t romAddr = strtoul(szRomAddr, NULL, 16);
-	uint32_t ramAddr = ConvertRomRam(romAddr);
-	sprintf(szRamAddr, "%08X", ramAddr);
+	uint32_t ramAddr, offset;
+
+	DMALOGENTRY* lpEntry = m_DMALog->GetEntryByRomAddress(romAddr, &ramAddr, &offset);
+
+	if (lpEntry != NULL)
+	{
+		sprintf(szRamAddr, "%08X", ramAddr);
+	}
+	else
+	{
+		sprintf(szRamAddr, "????????");
+	}
+
 	m_bConvertingAddress = true;
 	m_DMARamEdit.SetWindowTextA(szRamAddr);
 	m_bConvertingAddress = false;
@@ -244,29 +271,29 @@ LRESULT CDebugDMALogView::OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 }
 
 // todo move to a class for a dma log object
-uint32_t CDebugDMALogView::ConvertRamRom(uint32_t ramAddr)
-{
-	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
-	{
-		DMALogEntry entry = m_Debugger->DMALog()->at(i);
-		if (ramAddr >= entry.ramAddr && ramAddr < entry.ramAddr + entry.length)
-		{
-			return entry.romAddr + (ramAddr - entry.ramAddr);
-		}
-	}
-	return 0x00000000;
-}
+//uint32_t CDebugDMALogView::ConvertRamRom(uint32_t ramAddr)
+//{
+//	for (int i = 0; i < m_DMALog->GetNumEntries(); i++)
+//	{
+//		CDMALogEntry lpEntry = m_DMALog->GetEntry
+//		if (ramAddr >= entry.ramAddr && ramAddr < entry.ramAddr + entry.length)
+//		{
+//			return entry.romAddr + (ramAddr - entry.ramAddr);
+//		}
+//	}
+//	return 0x00000000;
+//}
 
 // todo move to a class for a dma log object
-uint32_t CDebugDMALogView::ConvertRomRam(uint32_t romAddr)
-{
-	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
-	{
-		DMALogEntry entry = m_Debugger->DMALog()->at(i);
-		if (romAddr >= entry.romAddr && romAddr < entry.romAddr + entry.length)
-		{
-			return entry.ramAddr + (romAddr - entry.romAddr);
-		}
-	}
-	return 0x00000000;
-}
+//uint32_t CDebugDMALogView::ConvertRomRam(uint32_t romAddr)
+//{
+//	for (int i = 0; i < m_Debugger->DMALog()->size(); i++)
+//	{
+//		DMALogEntry entry = m_Debugger->DMALog()->at(i);
+//		if (romAddr >= entry.romAddr && romAddr < entry.romAddr + entry.length)
+//		{
+//			return entry.ramAddr + (romAddr - entry.romAddr);
+//		}
+//	}
+//	return 0x00000000;
+//}

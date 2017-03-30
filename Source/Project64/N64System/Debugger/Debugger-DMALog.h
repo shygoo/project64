@@ -26,6 +26,7 @@ public:
 	void RefreshList();
 
 private:
+	CDMALog* m_DMALog;
 
 	int m_nLastStartIndex;
 	bool m_bConvertingAddress;
@@ -49,9 +50,6 @@ private:
 	LRESULT OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnDestroy(void);
-	
-	uint32_t ConvertRamRom(uint32_t ramAddr);
-	uint32_t ConvertRomRam(uint32_t romAddr);
 
 	BEGIN_MSG_MAP_EX(CDebugDMALogView)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
