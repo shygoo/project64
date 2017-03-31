@@ -57,7 +57,7 @@ DWORD CDebugCommandsView::COP0EditIds[19] = {
 	IDC_COP0_4_EDIT,  IDC_COP0_5_EDIT,  IDC_COP0_6_EDIT,  IDC_COP0_7_EDIT,
 	IDC_COP0_8_EDIT,  IDC_COP0_9_EDIT,  IDC_COP0_10_EDIT, IDC_COP0_11_EDIT,
 	IDC_COP0_12_EDIT, IDC_COP0_13_EDIT, IDC_COP0_14_EDIT, IDC_COP0_15_EDIT,
-	IDC_COP0_16_EDIT, IDC_COP0_17_EDIT, IDC_COP0_18_EDIT
+	IDC_COP0_16_EDIT, IDC_COP0_17_EDIT, IDC_COP0_18_EDIT,
 };
 
 int CDebugCommandsView::MapGPREdit(DWORD controlId)
@@ -111,6 +111,7 @@ int CDebugCommandsView::MapCOP0Edit(DWORD controlId)
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
 {
+	m_bIngoreAddrChange = false;
 	m_StartAddress = 0x80000000;
 	m_Breakpoints = m_Debugger->Breakpoints();
 	m_bEditing = false;
@@ -139,8 +140,6 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_AddressEdit.Attach(GetDlgItem(IDC_ADDR_EDIT));
 	m_AddressEdit.SetDisplayType(CEditNumber::DisplayHex);
 	m_AddressEdit.SetLimitText(8);
-
-	m_AddressEdit.SetValue(m_StartAddress, false, true);
 
 	// Setup register tabs & inputs
 
@@ -239,9 +238,9 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_StackList.SetColumnWidth(4, 64);
 	
 	RefreshStackList();
-
-	ShowAddress(m_StartAddress, TRUE);
 	
+	ShowAddress(0x80000000, FALSE);
+
 	WindowCreated();
 	return TRUE;
 }
@@ -319,28 +318,37 @@ void CDebugCommandsView::CheckCPUType()
 	}
 }
 
+// Check if KSEG0 addr is out of bounds
+bool CDebugCommandsView::AddressSafe(uint32_t vaddr)
+{
+	if (g_MMU == NULL)
+	{
+		return false;
+	}
+
+	if (vaddr >= 0x80000000 && vaddr <= 0x9FFFFFFF)
+	{
+		if ((vaddr & 0x1FFFFFFF) >= g_MMU->RdramSize())
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
-	uint32_t maxRamAddr;
-
-	if (g_MMU != NULL)
-	{
-		maxRamAddr = 0x80000000 | (g_MMU->RdramSize() - 4);
-	}
-	else
-	{
-		maxRamAddr = 0x803FFFFC;
-	}
-	
-	if (address > maxRamAddr || address < 0x80000000)
-	{
-		return;
-	}
-	
-	// if top == false, change start address only if address is out of view
-	if (top == TRUE || address < m_StartAddress || address > m_StartAddress + (m_CommandListRows-1) * 4)
+	if (top == TRUE)
 	{
 		m_StartAddress = address;
+	}
+	else if (address < m_StartAddress || address > m_StartAddress + (m_CommandListRows - 1) * 4)
+	{
+		// change start address if out of view
+		m_StartAddress = address;
+		m_bIngoreAddrChange = true;
+		m_AddressEdit.SetValue(address, false, true);
 	}
 	
 	m_CommandList.SetRedraw(FALSE);
@@ -356,16 +364,20 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		
 		m_CommandList.AddItem(i, 0, addrStr);
 
-		if (g_MMU == NULL)
+		OPCODE OpCode;
+		bool bAddrOkay = false;
+
+		if (AddressSafe(opAddr))
 		{
-			m_CommandList.AddItem(i, 1, "???");
-			m_CommandList.AddItem(i, 1, "???");
+			bAddrOkay = g_MMU->LW_VAddr(opAddr, OpCode.Hex);
+		}
+
+		if(!bAddrOkay)
+		{
+			m_CommandList.AddItem(i, 1, "***");
 			continue;
 		}
 		
-		OPCODE OpCode;
-		g_MMU->LW_VAddr(opAddr, OpCode.Hex);
-
 		char* command = (char*)R4300iOpcodeName(OpCode.Hex, opAddr);
 		char* cmdName = strtok((char*)command, "\t");
 		char* cmdArgs = strtok(NULL, "\t");
@@ -539,27 +551,31 @@ void CDebugCommandsView::RefreshStackList()
 
 void CDebugCommandsView::RemoveSelectedBreakpoints()
 {
-	int selItemIndeces[256];
-	int nSelItems = m_BreakpointList.GetSelItems(256, selItemIndeces);
-	for (int i = 0; i < nSelItems; i++)
+	int nItem = m_BreakpointList.GetCurSel();
+	
+	if (nItem == LB_ERR)
 	{
-		int index = selItemIndeces[i];
-		char itemText[32];
-		m_BreakpointList.GetText(index, itemText);
-		uint32_t address = m_BreakpointList.GetItemData(index);
-		switch (itemText[0])
-		{
-		case 'E':
-			m_Breakpoints->EBPRemove(address);
-			break;
-		case 'W':
-			m_Breakpoints->WBPRemove(address);
-			break;
-		case 'R':
-			m_Breakpoints->RBPRemove(address);
-			break;
-		}
+		return;
 	}
+
+	char itemText[32];
+	m_BreakpointList.GetText(nItem, itemText);
+
+	uint32_t address = m_BreakpointList.GetItemData(nItem);
+
+	switch (itemText[0])
+	{
+	case 'E':
+		m_Breakpoints->EBPRemove(address);
+		break;
+	case 'W':
+		m_Breakpoints->WBPRemove(address);
+		break;
+	case 'R':
+		m_Breakpoints->RBPRemove(address);
+		break;
+	}
+
 	RefreshBreakpointList();
 }
 
@@ -630,16 +646,20 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 
 	// cmd & args
 	OPCODE Opcode;
-	if (g_MMU != NULL)
+	bool bAddrOkay = false;
+
+	if (AddressSafe(address))
 	{
-		g_MMU->LW_VAddr(address, Opcode.Hex);
-	}
-	else
-	{
-		Opcode.Hex = 0x00000000;
+		bAddrOkay = g_MMU->LW_VAddr(address, Opcode.Hex);
 	}
 	
-	if (pc == address)
+	if (!bAddrOkay)
+	{
+		// unmapped/invalid
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0xFF, 0x00, 0x00);
+	}
+	else if (pc == address)
 	{
 		//pc
 		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
@@ -802,12 +822,7 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 LRESULT CDebugCommandsView::OnMouseWheel(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	uint32_t newAddress = m_StartAddress - ((short)HIWORD(wParam) / WHEEL_DELTA) * 4;
-
-	if (newAddress < 0x80000000 || newAddress > 0x807FFFFC) // todo mem size check
-	{
-		return TRUE;
-	}
-
+	
 	m_StartAddress = newAddress;
 
 	m_AddressEdit.SetValue(m_StartAddress, false, true);
@@ -822,8 +837,6 @@ void CDebugCommandsView::GotoEnteredAddress()
 	m_AddressEdit.GetWindowTextA(text, 9);
 
 	DWORD address = strtoul(text, NULL, 16);
-	address &= 0x007FFFFF;
-	address |= 0x80000000;
 	address = address - address % 4;
 	ShowAddress(address, TRUE);
 }
@@ -863,6 +876,11 @@ void CDebugCommandsView::EndOpEdit()
 
 LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
+	if (m_bIngoreAddrChange)
+	{
+		m_bIngoreAddrChange = false;
+		return 0;
+	}
 	GotoEnteredAddress();
 	return 0;
 }
@@ -875,7 +893,7 @@ LRESULT	CDebugCommandsView::OnCommandListClicked(NMHDR* pNMHDR)
 
 LRESULT	CDebugCommandsView::OnCommandListDblClicked(NMHDR* pNMHDR)
 {
-	// Set PC breakpoint (right click, double click)
+	// Set PC breakpoint
 	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
 	int nItem = pIA->iItem;
 	

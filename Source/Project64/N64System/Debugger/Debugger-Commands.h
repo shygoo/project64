@@ -132,6 +132,8 @@ private:
 	CRect m_DefaultWindowRect;
 
 	CEditNumber m_AddressEdit;
+	bool        m_bIngoreAddrChange;
+
 	CCommandsList m_CommandList;
 	int m_CommandListRows;
 	CListBox m_BreakpointList;
@@ -180,6 +182,8 @@ private:
 	void RefreshRegisterEdits();
 	void RefreshStackList();
 	
+	bool AddressSafe(uint32_t vaddr);
+
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnSizing             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
