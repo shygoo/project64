@@ -537,14 +537,22 @@ void CDebugMemoryView::RefreshMemory(bool ResetCompare)
 
         if (m_DataVAddrr)
         {
-            if (!g_MMU->LW_VAddr(m_DataStartLoc & ~3, word.UW))
+			if (!AddressSafe(m_DataStartLoc & ~3))
+			{
+				ValidData = false;
+			}
+            else if (!g_MMU->LW_VAddr(m_DataStartLoc & ~3, word.UW))
             {
                 ValidData = false;
             }
         }
         else
         {
-            if (!g_MMU->LW_PAddr(m_DataStartLoc & ~3, word.UW))
+			if ((m_DataStartLoc & ~3) >= g_MMU->RdramSize())
+			{
+				ValidData = false;
+			}
+			else if (!g_MMU->LW_PAddr(m_DataStartLoc & ~3, word.UW))
             {
                 ValidData = false;
             }
@@ -573,14 +581,22 @@ void CDebugMemoryView::RefreshMemory(bool ResetCompare)
 
         if (m_DataVAddrr)
         {
-            if (!g_MMU->LW_VAddr(Pos, word.UW))
+			if (!AddressSafe(Pos))
+			{
+				ValidData = false;
+			}
+            else if (!g_MMU->LW_VAddr(Pos, word.UW))
             {
                 ValidData = false;
             }
         }
         else
         {
-            if (!g_MMU->LW_PAddr(Pos, word.UW))
+			if (Pos >= g_MMU->RdramSize())
+			{
+				ValidData = false;
+			}
+            else if (!g_MMU->LW_PAddr(Pos, word.UW))
             {
                 ValidData = false;
             }
@@ -676,4 +692,23 @@ void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgCo
 		fgHiColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
 		fgColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
 	}
+}
+
+// Check if KSEG0 addr is out of bounds
+bool CDebugMemoryView::AddressSafe(uint32_t vaddr)
+{
+	if (g_MMU == NULL)
+	{
+		return false;
+	}
+
+	if (vaddr >= 0x80000000 && vaddr <= 0x9FFFFFFF)
+	{
+		if ((vaddr & 0x1FFFFFFF) >= g_MMU->RdramSize())
+		{
+			return false;
+		}
+	}
+
+	return true;
 }

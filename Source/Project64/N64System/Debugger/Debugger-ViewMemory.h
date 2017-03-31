@@ -56,6 +56,8 @@ private:
 	bool GetItemOffset(LPNMHDR lpNMHDR, uint32_t &offset);
 	bool GetItemAddress(LPNMHDR lpNMHDR, uint32_t &address);
 
+	bool AddressSafe(uint32_t vaddr);
+
     enum { MemoryToDisplay = 0x100 };
 	
     CEditNumber   m_MemAddr;
