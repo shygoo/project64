@@ -53,6 +53,17 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_AddressEdit.SetDisplayType(CEditNumber::DisplayHex);
 	m_AddressEdit.SetLimitText(8);
 
+	// Setup PC register input
+
+	m_PCEdit.Attach(GetDlgItem(IDC_PC_EDIT));
+	m_PCEdit.SetDisplayType(CEditNumber::DisplayHex);
+	m_PCEdit.SetLimitText(8);
+	m_PCEdit.SetValue(0x80000180, false, true);
+
+	// Setup View PC button
+	m_ViewPCButton.Attach(GetDlgItem(IDC_VIEWPC_BTN));
+	m_ViewPCButton.EnableWindow(FALSE);
+
 	// Setup register tabs & inputs
 
 	m_RegisterTabs.Attach(GetDlgItem(IDC_REG_TABS));
@@ -212,6 +223,12 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	if (top == TRUE)
 	{
 		m_StartAddress = address;
+
+		if (!m_Breakpoints->isDebugging())
+		{
+			// Disable buttons
+			m_ViewPCButton.EnableWindow(FALSE);
+		}
 	}
 	else
 	{
@@ -227,10 +244,15 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 		if (m_History.size() == 0 || m_History[m_HistoryIndex] != m_StartAddress)
 		{
-			MessageBox("pushing state");
 			m_History.push_back(m_StartAddress);
 			m_HistoryIndex = m_History.size() - 1;
 		}
+		
+		m_bIgnorePCChange = true;
+		m_PCEdit.SetValue(g_Reg->m_PROGRAM_COUNTER, false, true);
+
+		// Enable buttons
+		m_ViewPCButton.EnableWindow(TRUE);
 	}
 	
 	m_CommandList.SetRedraw(FALSE);
@@ -588,6 +610,12 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 			m_AddressEdit.SetValue(m_History[m_HistoryIndex], false, true);
 		}
 		break;
+	case IDC_VIEWPC_BTN:
+		if (g_Reg != NULL && m_Breakpoints->isDebugging())
+		{
+			ShowAddress(g_Reg->m_PROGRAM_COUNTER, TRUE);
+		}
+		break;
 	case IDC_SYMBOLS_BTN:
 		m_Debugger->Debug_ShowSymbolsWindow();
 		break;
@@ -708,6 +736,20 @@ LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 		return 0;
 	}
 	GotoEnteredAddress();
+	return 0;
+}
+
+LRESULT CDebugCommandsView::OnPCChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	if (m_bIgnorePCChange)
+	{
+		m_bIgnoreAddrChange = true;
+		return 0;
+	}
+	if (g_Reg != NULL && m_Breakpoints->isDebugging())
+	{
+		g_Reg->m_PROGRAM_COUNTER = m_PCEdit.GetValue();
+	}
 	return 0;
 }
 

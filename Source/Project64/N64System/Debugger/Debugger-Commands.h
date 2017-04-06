@@ -81,6 +81,9 @@ private:
 	DWORD m_StartAddress;
 	CRect m_DefaultWindowRect;
 
+	CEditNumber m_PCEdit;
+	bool        m_bIgnorePCChange;
+
 	CEditNumber m_AddressEdit;
 	bool        m_bIgnoreAddrChange;
 
@@ -92,6 +95,8 @@ private:
 	CListViewCtrl m_StackList;
 
 	CRegisterTabs m_RegisterTabs;
+
+	CButton m_ViewPCButton;
 
 	bool m_bEditing;
 	CEditOp m_OpEdit;
@@ -127,6 +132,7 @@ private:
 	LRESULT	OnScroll             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnMeasureItem        (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnAddrChanged        (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT OnPCChanged        (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnListBoxClicked     (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT	OnClicked            (WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	
@@ -152,6 +158,7 @@ private:
 		MESSAGE_HANDLER(WM_VSCROLL, OnScroll)
 		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
 		COMMAND_HANDLER(IDC_ADDR_EDIT, EN_CHANGE, OnAddrChanged)
+		COMMAND_HANDLER(IDC_PC_EDIT, EN_CHANGE, OnPCChanged)
 		COMMAND_CODE_HANDLER(LBN_DBLCLK, OnListBoxClicked)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CLICK, OnCommandListClicked)
