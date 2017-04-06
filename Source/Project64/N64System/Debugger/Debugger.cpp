@@ -343,6 +343,7 @@ vector<uint32_t> * CDebuggerUI::StackTrace()
 
 void CDebuggerUI::BreakpointHit()
 {
+	m_Breakpoints->KeepDebugging();
 	Debug_ShowCommandsLocation(g_Reg->m_PROGRAM_COUNTER, false);
 	m_Breakpoints->Pause();
 }

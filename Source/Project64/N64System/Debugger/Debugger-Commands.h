@@ -97,6 +97,9 @@ private:
 	CRegisterTabs m_RegisterTabs;
 
 	CButton m_ViewPCButton;
+	CButton m_StepButton;
+	CButton m_SkipButton;
+	CButton m_GoButton;
 
 	bool m_bEditing;
 	CEditOp m_OpEdit;

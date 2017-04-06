@@ -61,8 +61,20 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_PCEdit.SetValue(0x80000180, false, true);
 
 	// Setup View PC button
+
 	m_ViewPCButton.Attach(GetDlgItem(IDC_VIEWPC_BTN));
 	m_ViewPCButton.EnableWindow(FALSE);
+
+	// Setup debugging buttons
+
+	m_StepButton.Attach(GetDlgItem(IDC_STEP_BTN));
+	m_StepButton.EnableWindow(FALSE);
+
+	m_SkipButton.Attach(GetDlgItem(IDC_SKIP_BTN));
+	m_SkipButton.EnableWindow(FALSE);
+
+	m_GoButton.Attach(GetDlgItem(IDC_GO_BTN));
+	m_GoButton.EnableWindow(FALSE);
 
 	// Setup register tabs & inputs
 
@@ -228,6 +240,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		{
 			// Disable buttons
 			m_ViewPCButton.EnableWindow(FALSE);
+			m_StepButton.EnableWindow(FALSE);
+			m_SkipButton.EnableWindow(FALSE);
+			m_GoButton.EnableWindow(FALSE);
 		}
 	}
 	else
@@ -253,6 +268,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 		// Enable buttons
 		m_ViewPCButton.EnableWindow(TRUE);
+		m_StepButton.EnableWindow(TRUE);
+		m_SkipButton.EnableWindow(TRUE);
+		m_GoButton.EnableWindow(TRUE);
 	}
 	
 	m_CommandList.SetRedraw(FALSE);
@@ -621,8 +639,8 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		break;
 	case IDC_GO_BTN:
 		m_Breakpoints->StopDebugging();
-		m_Breakpoints->StopDebugging();
 		m_Breakpoints->Resume();
+		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_STEP_BTN:
 		m_Breakpoints->KeepDebugging();
