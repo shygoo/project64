@@ -22,7 +22,7 @@
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
 {
-	m_HistoryIndex = 0;
+	m_HistoryIndex = -1;
 	m_bIgnoreAddrChange = false;
 	m_StartAddress = 0x80000000;
 	m_Breakpoints = m_Debugger->Breakpoints();
@@ -213,15 +213,24 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	{
 		m_StartAddress = address;
 	}
-	else if (address < m_StartAddress || address > m_StartAddress + (m_CommandListRows - 1) * 4)
+	else
 	{
-		m_History.push_back(m_StartAddress);
-		m_HistoryIndex = m_History.size();
+		bool bOutOfView = address < m_StartAddress ||
+			address > m_StartAddress + (m_CommandListRows - 1) * 4;
 
-		// change start address if out of view
-		m_StartAddress = address;
-		m_bIgnoreAddrChange = true;
-		m_AddressEdit.SetValue(address, false, true);
+		if (bOutOfView)
+		{
+			m_StartAddress = address;
+			m_bIgnoreAddrChange = true;
+			m_AddressEdit.SetValue(address, false, true);
+		}
+
+		if (m_History.size() == 0 || m_History[m_HistoryIndex] != m_StartAddress)
+		{
+			MessageBox("pushing state");
+			m_History.push_back(m_StartAddress);
+			m_HistoryIndex = m_History.size() - 1;
+		}
 	}
 	
 	m_CommandList.SetRedraw(FALSE);
@@ -661,7 +670,7 @@ void CDebugCommandsView::GotoEnteredAddress()
 void CDebugCommandsView::BeginOpEdit(uint32_t address)
 {
 	m_bEditing = true;
-	ShowAddress(address, FALSE);
+	//ShowAddress(address, FALSE);
 	int nItem = (address - m_StartAddress) / 4;
 	CRect itemRect;
 	m_CommandList.GetSubItemRect(nItem, 1, 0, &itemRect);
