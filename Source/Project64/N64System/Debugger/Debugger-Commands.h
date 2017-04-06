@@ -72,6 +72,8 @@ public:
 
 private:
 	CBreakpoints* m_Breakpoints;
+	vector<uint32_t> m_History;
+	int m_HistoryIndex;
 
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CAddSymbolDlg m_AddSymbolDlg;
@@ -80,7 +82,7 @@ private:
 	CRect m_DefaultWindowRect;
 
 	CEditNumber m_AddressEdit;
-	bool        m_bIngoreAddrChange;
+	bool        m_bIgnoreAddrChange;
 
 	CCommandsList m_CommandList;
 	int m_CommandListRows;

@@ -510,6 +510,9 @@
 #define IDC_SYM_INFO                    1348
 #define IDC_BLOCK_INFO                  1350
 #define IDC_DMA_INFO                    1351
+#define IDC_BACK_BTN                    1352
+#define IDC_BACK_BTN2                   1353
+#define IDC_FORWARD_BTN                 1353
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -552,7 +555,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        191
 #define _APS_NEXT_COMMAND_VALUE         40032
-#define _APS_NEXT_CONTROL_VALUE         1352
+#define _APS_NEXT_CONTROL_VALUE         1353
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

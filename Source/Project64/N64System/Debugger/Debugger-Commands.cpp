@@ -22,7 +22,8 @@
 CDebugCommandsView::CDebugCommandsView(CDebuggerUI * debugger) :
 CDebugDialog<CDebugCommandsView>(debugger)
 {
-	m_bIngoreAddrChange = false;
+	m_HistoryIndex = 0;
+	m_bIgnoreAddrChange = false;
 	m_StartAddress = 0x80000000;
 	m_Breakpoints = m_Debugger->Breakpoints();
 	m_bEditing = false;
@@ -106,7 +107,9 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	
 	RefreshStackList();
 	
-	ShowAddress(0x80000000, FALSE);
+	m_bIgnoreAddrChange = true;
+	m_AddressEdit.SetValue(0x80000000, false, true);
+	ShowAddress(0x80000000, TRUE);
 
 	WindowCreated();
 	return TRUE;
@@ -212,9 +215,12 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	}
 	else if (address < m_StartAddress || address > m_StartAddress + (m_CommandListRows - 1) * 4)
 	{
+		m_History.push_back(m_StartAddress);
+		m_HistoryIndex = m_History.size();
+
 		// change start address if out of view
 		m_StartAddress = address;
-		m_bIngoreAddrChange = true;
+		m_bIgnoreAddrChange = true;
 		m_AddressEdit.SetValue(address, false, true);
 	}
 	
@@ -559,6 +565,20 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 {
 	switch (wID)
 	{
+	case IDC_BACK_BTN:
+		if (m_HistoryIndex > 0)
+		{
+			m_HistoryIndex--;
+			m_AddressEdit.SetValue(m_History[m_HistoryIndex], false, true);
+		}
+		break;
+	case IDC_FORWARD_BTN:
+		if (m_History.size() > 0 && m_HistoryIndex < m_History.size() - 1)
+		{
+			m_HistoryIndex++;
+			m_AddressEdit.SetValue(m_History[m_HistoryIndex], false, true);
+		}
+		break;
 	case IDC_SYMBOLS_BTN:
 		m_Debugger->Debug_ShowSymbolsWindow();
 		break;
@@ -673,9 +693,9 @@ void CDebugCommandsView::EndOpEdit()
 
 LRESULT CDebugCommandsView::OnAddrChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if (m_bIngoreAddrChange)
+	if (m_bIgnoreAddrChange)
 	{
-		m_bIngoreAddrChange = false;
+		m_bIgnoreAddrChange = false;
 		return 0;
 	}
 	GotoEnteredAddress();
@@ -822,6 +842,7 @@ LRESULT CDebugCommandsView::OnScroll(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 void CDebugCommandsView::Reset()
 {
 	ClearEditedOps();
+	m_History.clear();
 }
 
 void CDebugCommandsView::ClearEditedOps()
