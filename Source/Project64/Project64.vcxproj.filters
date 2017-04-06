@@ -204,10 +204,13 @@
     <ClCompile Include="N64System\Debugger\Assembler.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Debugger\Debugger-AddSymbol.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="N64System\Debugger\DMALog.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="N64System\Debugger\Debugger-AddSymbol.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="N64System\Debugger\Debugger-RegTabs.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -387,6 +390,9 @@
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="N64System\Debugger\DMALog.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Debugger\Debugger-RegTabs.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>

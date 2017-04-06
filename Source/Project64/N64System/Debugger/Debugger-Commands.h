@@ -13,47 +13,7 @@
 
 #include "Breakpoints.h"
 #include "Debugger-AddBreakpoint.h"
-
-class CEditReg64 : public CWindowImpl<CEditReg64, CEdit>
-{
-
-public:
-	//uint64_t GetValue();
-	//void SetValue(uint64_t value);
-
-	static uint64_t ParseValue(char* wordPair);
-	BOOL Attach(HWND hWndNew);
-	LRESULT OnChar(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnLostFocus(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	uint64_t GetValue();
-	void SetValue(uint32_t h, uint32_t l);
-	void SetValue(uint64_t value);
-
-	BEGIN_MSG_MAP_EX(CRegEdit64)
-		MESSAGE_HANDLER(WM_CHAR, OnChar)
-		MESSAGE_HANDLER(WM_KILLFOCUS, OnLostFocus)
-	END_MSG_MAP()
-};
-
-class CRegisterTabs : public CTabCtrl
-{
-private:
-	vector<int> m_TabIds;
-	vector<CWindow> m_TabWindows;
-public:
-	CWindow AddTab(char* caption, int dialogId, DLGPROC dlgProc);
-	void ShowTab(int nPage);
-	void ResetTabs();
-	CRect GetPageRect();
-	void RedrawCurrentTab();
-	//LRESULT OnSelChange(NMHDR* lpNMHDR)
-	//
-	//BEGIN_MSG_MAP_EX(CRegisterTabs)
-	//	REFLECTED_NOTIFY_CODE_HANDLER_EX(TCN_SELCHANGE, OnSelChange)
-	//	DEFAULT_REFLECTION_HANDLER()
-	//END_MSG_MAP()
-};
-
+#include "Debugger-RegTabs.h"
 
 class CCommandsList : public CListViewCtrl
 {
@@ -107,26 +67,14 @@ public:
 
 	void ShowAddress(DWORD address, BOOL top);
 	void ShowPIRegTab();
-
-	static DWORD GPREditIds[32];
-	static DWORD FPREditIds[32];
-	static DWORD PIEditIds[13];
-	static DWORD COP0EditIds[19];
-
-	static int MapGPREdit(DWORD controlId);
-	static int MapFPREdit(DWORD controlId);
-	static int MapPIEdit(DWORD controlId);
-	static int MapCOP0Edit(DWORD controlId);
-
+	
 	void Reset();
 
 private:
-
 	CBreakpoints* m_Breakpoints;
+
 	CAddBreakpointDlg m_AddBreakpointDlg;
 	CAddSymbolDlg m_AddSymbolDlg;
-
-	CEditReg64 m_TestEdit;
 
 	DWORD m_StartAddress;
 	CRect m_DefaultWindowRect;
@@ -143,20 +91,6 @@ private:
 
 	CRegisterTabs m_RegisterTabs;
 
-	CWindow m_PITab;
-	CEditNumber m_PIEdits[13];
-
-	CWindow m_GPRTab;
-	CEditReg64 m_GPREdits[32];
-	CEditReg64 m_HIEdit;
-	CEditReg64 m_LOEdit;
-	
-	CWindow m_FPRTab;
-	CEditNumber m_FPREdits[32];
-
-	CWindow m_COP0Tab;
-	CEditNumber m_COP0Edits[24];
-	
 	bool m_bEditing;
 	CEditOp m_OpEdit;
 	uint32_t m_SelectedAddress;
@@ -179,7 +113,6 @@ private:
 	void CheckCPUType();
 	void RefreshBreakpointList();
 	void RemoveSelectedBreakpoints();
-	void RefreshRegisterEdits();
 	void RefreshStackList();
 	
 	bool AddressSafe(uint32_t vaddr);
@@ -246,6 +179,3 @@ private:
 		DLGRESIZE_CONTROL(IDC_SCRL_BAR, DLSZ_MOVE_X | DLSZ_SIZE_Y)
 	END_DLGRESIZE_MAP()
 };
-
-//
-
