@@ -278,6 +278,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 	char addrStr[9];
 
+	CSymbols::EnterCriticalSection();
+
 	for (int i = 0; i < m_CommandListRows; i++)
 	{	
 		uint32_t opAddr = m_StartAddress + i * 4;
@@ -324,8 +326,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		{
 			m_CommandList.AddItem(i, 3, targetSymbolName);
 		}
-
 	}
+
+	CSymbols::LeaveCriticalSection();
 	
 	if (!top) // update registers & stack when called via breakpoint/stepping
 	{

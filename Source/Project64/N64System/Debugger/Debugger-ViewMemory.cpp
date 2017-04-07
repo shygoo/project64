@@ -252,10 +252,10 @@ LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 		symbolInfo = stdstr_f("%08X", address);
 	}
 
-	m_SymInfo.SetWindowTextA(symbolInfo.c_str());
-
 	CSymbols::LeaveCriticalSection();
 
+	m_SymInfo.SetWindowTextA(symbolInfo.c_str());
+	
 	uint32_t romAddr, offset;
 	DMALOGENTRY* lpEntry = m_Debugger->DMALog()->GetEntryByRamAddress(address, &romAddr, &offset);
 
@@ -656,13 +656,17 @@ bool CDebugMemoryView::GetItemAddress(LPNMHDR lpNMHDR, uint32_t &address)
 
 void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgColor, COLORREF& fgColor, COLORREF& fgHiColor)
 {
+	CSymbols::EnterCriticalSection();
 	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(vaddr);
+	
 
 	if (lpSymbol != NULL)
 	{
 		m_SymbolColorStride = lpSymbol->TypeSize();
 		m_SymbolColorPhase = m_SymbolColorPhase ? 0 : 1;
 	}
+
+	CSymbols::LeaveCriticalSection();
 
 	bool bHaveReadBP = m_Breakpoints->RBPExists(vaddr);
 	bool bHaveWriteBP = m_Breakpoints->WBPExists(vaddr);

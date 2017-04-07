@@ -118,9 +118,10 @@ void CDebugSymbols::Refresh()
 {
 	m_SymbolsListView.SetRedraw(FALSE);
 	m_SymbolsListView.DeleteAllItems();
-	int count = CSymbols::GetCount();
-
+	
 	CSymbols::EnterCriticalSection();
+
+	int count = CSymbols::GetCount();
 
 	for (int i = 0; i < count; i++)
 	{
