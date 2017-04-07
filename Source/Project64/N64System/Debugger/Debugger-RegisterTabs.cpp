@@ -21,9 +21,9 @@ void CRegisterTabs::Attach(HWND hWndNew)
 
 	m_GPRTab = AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
 	m_FPRTab = AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
-	m_PITab = AddTab("PI", IDD_Debugger_PI, TabProcPI);
 	m_COP0Tab = AddTab("COP0", IDD_Debugger_COP0, TabProcCOP0);
-
+	m_PITab = AddTab("PI", IDD_Debugger_PI, TabProcPI);
+	
 	HFONT monoFont = CreateFont(-11, 0, 0, 0,
 		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
 		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -194,18 +194,18 @@ void CRegisterTabs::RefreshEdits()
 			m_GPREdits[i].SetValue(0);
 			m_FPREdits[i].SetWindowTextA("00000000");
 		}
+		m_HIEdit.SetValue(0);
+		m_LOEdit.SetValue(0);
 
 		for (int i = 0; i < 13; i++)
 		{
-			m_PIEdits[i].SetWindowTextA("00000000");
+			m_PIEdits[i].SetValue(0, false, true);
 		}
 
 		for (int i = 0; i < 19; i++)
 		{
-			m_PIEdits[i].SetWindowTextA("00000000");
+			m_COP0Edits[i].SetValue(0, false, true);
 		}
-		m_HIEdit.SetValue(0);
-		m_LOEdit.SetValue(0);
 	}
 }
 
