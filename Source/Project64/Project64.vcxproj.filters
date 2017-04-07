@@ -195,9 +195,6 @@
     <ClCompile Include="N64System\Debugger\ScriptInstance.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Debugger\Debugger-DMALog.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
-    </ClCompile>
     <ClCompile Include="N64System\Debugger\Debugger-StackTrace.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
@@ -210,7 +207,10 @@
     <ClCompile Include="N64System\Debugger\Debugger-AddSymbol.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="N64System\Debugger\Debugger-RegTabs.cpp">
+    <ClCompile Include="N64System\Debugger\Debugger-DMALogView.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="N64System\Debugger\Debugger-RegisterTabs.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
   </ItemGroup>
@@ -377,9 +377,6 @@
     <ClInclude Include="N64System\Debugger\ScriptInstance.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
-    <ClInclude Include="N64System\Debugger\Debugger-DMALog.h">
-      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
-    </ClInclude>
     <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
@@ -392,7 +389,10 @@
     <ClInclude Include="N64System\Debugger\DMALog.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
-    <ClInclude Include="N64System\Debugger\Debugger-RegTabs.h">
+    <ClInclude Include="N64System\Debugger\Debugger-DMALogView.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Debugger\Debugger-RegisterTabs.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>

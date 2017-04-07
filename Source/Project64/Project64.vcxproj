@@ -74,7 +74,7 @@
     <ClCompile Include="N64System\Debugger\Debugger-AddSymbol.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-MemoryDump.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-MemorySearch.cpp" />
-    <ClCompile Include="N64System\Debugger\Debugger-RegTabs.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-RegisterTabs.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-TLB.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger.cpp" />
@@ -92,7 +92,7 @@
     <ClCompile Include="N64System\Debugger\Debugger-AddBreakpoint.cpp" />
     <ClCompile Include="N64System\Debugger\ScriptInstance.cpp" />
     <ClCompile Include="N64System\Debugger\ScriptHook.cpp" />
-    <ClCompile Include="N64System\Debugger\Debugger-DMALog.cpp" />
+    <ClCompile Include="N64System\Debugger\Debugger-DMALogView.cpp" />
     <ClCompile Include="N64System\Debugger\Debugger-StackTrace.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -126,9 +126,9 @@
   <ItemGroup>
     <ClInclude Include="N64System\Debugger\Debugger-AddSymbol.h" />
     <ClInclude Include="N64System\Debugger\Assembler.h" />
-    <ClInclude Include="N64System\Debugger\Debugger-RegTabs.h" />
+    <ClInclude Include="N64System\Debugger\Debugger-RegisterTabs.h" />
     <ClInclude Include="N64System\Debugger\Debugger-StackTrace.h" />
-    <ClInclude Include="N64System\Debugger\Debugger-DMALog.h" />
+    <ClInclude Include="N64System\Debugger\Debugger-DMALogView.h" />
     <ClInclude Include="N64System\Debugger\DMALog.h" />
     <ClInclude Include="N64System\Debugger\ScriptHook.h" />
     <ClInclude Include="N64System\Debugger\ScriptInstance.h" />

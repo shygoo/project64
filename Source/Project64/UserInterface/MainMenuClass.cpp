@@ -1009,9 +1009,9 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 		Item.SetItemEnabled(CPURunning);
 
         DebugR4300Menu.push_back(Item);
-        Item.Reset(ID_DEBUGGER_R4300REGISTERS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Registers...");
-        Item.SetItemEnabled(true);
-        DebugR4300Menu.push_back(Item);
+        //Item.Reset(ID_DEBUGGER_R4300REGISTERS, EMPTY_STRING, EMPTY_STDSTR, NULL, L"R4300i &Registers...");
+        //Item.SetItemEnabled(true);
+       // DebugR4300Menu.push_back(Item);
         Item.Reset(ID_DEBUG_DISABLE_GAMEFIX, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Disable Game Fixes");
         if (g_Settings->LoadBool(Debugger_DisableGameFixes))
         {
@@ -1148,7 +1148,7 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 		/* Debug - Stack Trace
 		*******************/
 		Item.Reset(ID_DEBUGGER_STACKTRACE, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Stack Trace...");
-		//Item.SetItemEnabled(CPURunning);
+		Item.SetItemEnabled(false);
 		DebugMenu.push_back(Item);
 
 		DebugMenu.push_back(MENU_ITEM(SPLITER));

@@ -11,7 +11,7 @@
 
 #include "stdafx.h"
 
-#include "Debugger-RegTabs.h"
+#include "Debugger-RegisterTabs.h"
 
 void CRegisterTabs::Attach(HWND hWndNew)
 {

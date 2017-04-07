@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "Debugger-AddSymbol.h"
+#include "DebuggerUI.h"
 
 // todo maybe add char* ownerName and use a TreeView
 

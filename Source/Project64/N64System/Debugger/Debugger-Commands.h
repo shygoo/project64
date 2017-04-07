@@ -13,7 +13,7 @@
 
 #include "Breakpoints.h"
 #include "Debugger-AddBreakpoint.h"
-#include "Debugger-RegTabs.h"
+#include "Debugger-RegisterTabs.h"
 
 class CCommandsList : public CListViewCtrl
 {
