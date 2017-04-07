@@ -947,6 +947,8 @@ void CDebugCommandsView::EditOp(uint32_t address, uint32_t op)
 	{
 		m_EditedOps.push_back({ address, currentOp });
 	}
+
+	ShowAddress(m_StartAddress, TRUE);
 }
 
 void CDebugCommandsView::RestoreOp(uint32_t address)
