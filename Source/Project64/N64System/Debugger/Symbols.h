@@ -72,6 +72,8 @@ private:
 	static void ParserInit();
 	static void ParserDone();
 	static void ParserFetchToken(const char* delim);
+
+	static bool SortFunction(CSymbolEntry* a, CSymbolEntry* b);
 	
 public:
 	static CPath GetSymFilePath();

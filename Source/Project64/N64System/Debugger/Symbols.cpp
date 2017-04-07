@@ -364,6 +364,11 @@ const char* CSymbols::GetNameByAddress(uint32_t address)
 	return NULL;
 }
 
+bool CSymbols::SortFunction(CSymbolEntry* a, CSymbolEntry* b)
+{
+	return (a->m_Address < b->m_Address);
+}
+
 void CSymbols::Add(int type, uint32_t address, char* name, char* description)
 {
 	if (name == NULL || strlen(name) == 0)
@@ -380,6 +385,8 @@ void CSymbols::Add(int type, uint32_t address, char* name, char* description)
 
 	CSymbolEntry* symbol = new CSymbolEntry(id, type, address, name, description);
 	m_Symbols.push_back(symbol);
+
+	sort(m_Symbols.begin(), m_Symbols.end(), SortFunction);
 }
 
 int CSymbols::GetCount()
