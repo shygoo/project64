@@ -18,6 +18,22 @@
 class CCommandsList : public CListViewCtrl
 {
 public:
+
+	void Attach(HWND hWndNew)
+	{
+		CListViewCtrl::Attach(hWndNew);
+		ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
+		SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+		AddColumn("Address", 0);
+		AddColumn("Command", 1);
+		AddColumn("Parameters", 2);
+		AddColumn("Symbol", 3);
+		SetColumnWidth(0, 60);
+		SetColumnWidth(1, 60);
+		SetColumnWidth(2, 120);
+		SetColumnWidth(3, 120);
+	}
+
 	BEGIN_MSG_MAP_EX(CCommandsList)
 	END_MSG_MAP()
 };
@@ -92,8 +108,6 @@ private:
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
 
-	CListViewCtrl m_StackList;
-
 	CRegisterTabs m_RegisterTabs;
 
 	CButton m_ViewPCButton;
@@ -123,7 +137,6 @@ private:
 	void CheckCPUType();
 	void RefreshBreakpointList();
 	void RemoveSelectedBreakpoints();
-	//void RefreshStackList();
 	
 	bool AddressSafe(uint32_t vaddr);
 
@@ -186,7 +199,6 @@ private:
 		DLGRESIZE_CONTROL(IDC_RMBP_BTN, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_CLEARBP_BTN, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_REG_TABS, DLSZ_MOVE_X)
-		DLGRESIZE_CONTROL(IDC_STACK_LIST, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_BACK_BTN, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_FORWARD_BTN, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_PC_STATIC, DLSZ_MOVE_X)

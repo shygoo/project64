@@ -41,7 +41,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	//m_ptMinTrackSize.x = 580;
 	//m_ptMinTrackSize.y = 495;
 
-	m_CommandListRows = 30;
+	m_CommandListRows = 33;
 	
 	CheckCPUType();
 	
@@ -97,16 +97,6 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 
 	// Setup command list
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
-	m_CommandList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
-	m_CommandList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-	m_CommandList.AddColumn("Address", 0);
-	m_CommandList.AddColumn("Command", 1);
-	m_CommandList.AddColumn("Parameters", 2);
-	m_CommandList.AddColumn("Symbol", 3);
-	m_CommandList.SetColumnWidth(0, 60);
-	m_CommandList.SetColumnWidth(1, 60);
-	m_CommandList.SetColumnWidth(2, 120);
-	m_CommandList.SetColumnWidth(3, 120);
 
 	// Op editor
 	m_OpEdit.Attach(GetDlgItem(IDC_OP_EDIT));
@@ -301,10 +291,9 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 	CSymbols::LeaveCriticalSection();
 	
-	if (!top) // update registers & stack when called via breakpoint/stepping
+	if (!top) // update registers when called via breakpoint/stepping
 	{
 		m_RegisterTabs.RefreshEdits();
-		// RefreshStackList();
 	}
 
 	RefreshBreakpointList();
@@ -336,46 +325,6 @@ void CDebugCommandsView::RefreshBreakpointList()
 		m_BreakpointList.SetItemData(index, m_Breakpoints->m_EBP[i]);
 	}
 }
-
-/*
-void CDebugCommandsView::RefreshStackList()
-{
-	m_StackList.SetRedraw(FALSE);
-	m_StackList.DeleteAllItems();
-
-	uint32_t spBase;
-	
-	if (g_Reg)
-	{
-		spBase = g_Reg->m_GPR[29].UW[0];
-	}
-
-	for (int i = 0; i < 0x10; i++)
-	{
-		char t[4];
-		sprintf(t, "%02X", i * 0x10);
-		m_StackList.AddItem(i, 0, t);
-
-		for (int j = 0; j < 4; j++)
-		{
-			if (g_MMU == NULL)
-			{
-				m_StackList.AddItem(i, j + 1, "????????");
-				continue;
-			}
-
-			uint32_t val;
-			g_MMU->LW_VAddr(spBase + i * 0x10 + j * 4, val);
-
-			char valStr[9];
-			sprintf(valStr, "%08X", val);
-			m_StackList.AddItem(i, j + 1, valStr);
-		}
-	}
-
-	m_StackList.SetRedraw(TRUE);
-}
-*/
 
 void CDebugCommandsView::RemoveSelectedBreakpoints()
 {
@@ -850,7 +799,7 @@ LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 	GetClientRect(&rect);
 	int height = rect.Height();
 	
-	int rows = (height / 13) - 4; // 13 row height
+	int rows = (height / 13) - 2; // 13 row height
 
 	if (m_CommandListRows != rows)
 	{
