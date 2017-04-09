@@ -123,7 +123,7 @@ private:
 	void CheckCPUType();
 	void RefreshBreakpointList();
 	void RemoveSelectedBreakpoints();
-	void RefreshStackList();
+	//void RefreshStackList();
 	
 	bool AddressSafe(uint32_t vaddr);
 

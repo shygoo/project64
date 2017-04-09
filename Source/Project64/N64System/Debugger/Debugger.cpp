@@ -29,6 +29,7 @@ CDebuggerUI::CDebuggerUI () :
 	m_ScriptSystem(NULL),
 	m_DMALogView(NULL),
 	m_StackTraceView(NULL),
+	m_StackView(NULL),
 	m_DMALog(NULL)
 {
 	g_Settings->RegisterChangeCB(GameRunning_InReset,this,(CSettings::SettingChangedFunc)GameReset);
@@ -314,6 +315,22 @@ void CDebuggerUI::Debug_ShowStackTrace(void)
 	m_StackTraceView->ShowWindow();
 }
 
+void CDebuggerUI::Debug_ShowStackWindow(void)
+{
+	if (m_StackView == NULL)
+	{
+		m_StackView = new CDebugStackView(this);
+	}
+	m_StackView->ShowWindow();
+}
+
+void CDebuggerUI::Debug_RefreshStackWindow(void)
+{
+	if (m_StackView != NULL)
+	{
+		m_StackView->Refresh();
+	}
+}
 
 CBreakpoints* CDebuggerUI::Breakpoints()
 {

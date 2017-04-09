@@ -213,6 +213,9 @@
     <ClCompile Include="N64System\Debugger\Debugger-RegisterTabs.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
+    <ClCompile Include="N64System\Debugger\Debugger-StackView.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -393,6 +396,9 @@
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="N64System\Debugger\Debugger-RegisterTabs.h">
+      <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="N64System\Debugger\Debugger-StackView.h">
       <Filter>Header Files\N64 System Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,6 +18,7 @@ class CDebugCommandsView;
 class CDebugScripts;
 class CDebugSymbols;
 class CDebugDMALogView;
+class CDebugStackView;
 class CDebugStackTrace;
 
 class CDMALog;
@@ -43,6 +44,7 @@ class CDebuggerUI :
 	CDebugSymbols       * m_Symbols;
 	CDebugDMALogView    * m_DMALogView;
 	CDebugStackTrace    * m_StackTraceView;
+	CDebugStackView     * m_StackView;
 
 	CBreakpoints        * m_Breakpoints;
 	CScriptSystem       * m_ScriptSystem;
@@ -70,17 +72,15 @@ public:
     void Debug_ShowCommandsWindow   ( void );
     void Debug_ShowCommandsLocation ( uint32_t address, bool top );
     void Debug_ShowScriptsWindow    ( void );
-	void Debug_RefreshSymbolsWindow (void);
+	void Debug_LogScriptsWindow     ( const char* text );
+	void Debug_ClearScriptsWindow   ( void );
+	void Debug_RefreshScriptsWindow ( void );
+	void Debug_RefreshSymbolsWindow ( void );
     void Debug_ShowSymbolsWindow    ( void );
-	
-	void Debug_ShowStackTrace(void);
-
-	void Debug_LogScriptsWindow(const char* text);
-	void Debug_ClearScriptsWindow(void);
-
-	void Debug_RefreshScriptsWindow(void);
-
-	void Debug_ShowDMALogWindow();
+	void Debug_ShowStackTrace       ( void );
+	void Debug_ShowStackWindow      ( void );
+	void Debug_RefreshStackWindow   ( void );
+	void Debug_ShowDMALogWindow     ( void );
 
 	CBreakpoints* Breakpoints();
 	CDebugSymbols* Symbols();

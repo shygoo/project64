@@ -29,7 +29,7 @@ CDebugScripts::~CDebugScripts(void)
 
 LRESULT CDebugScripts::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	DlgResize_Init();
+	DlgResize_Init(false, true);
 
 	HFONT monoFont = CreateFont(-11, 0, 0, 0,
 		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,

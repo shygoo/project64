@@ -24,7 +24,7 @@ CDebugSymbols::CDebugSymbols(CDebuggerUI * debugger) :
 
 LRESULT CDebugSymbols::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	DlgResize_Init();
+	DlgResize_Init(false, true);
 
 	m_SymbolsListView.Attach(GetDlgItem(IDC_SYMBOLS_LIST));
 	m_SymbolsListView.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);

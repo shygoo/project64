@@ -36,13 +36,13 @@ CDebugCommandsView::~CDebugCommandsView(void)
 
 LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-	DlgResize_Init(false, false);
+	DlgResize_Init(false, true);
 
-	m_ptMinTrackSize.x = 580;
-	m_ptMinTrackSize.y = 490;
+	//m_ptMinTrackSize.x = 580;
+	//m_ptMinTrackSize.y = 495;
 
-	m_CommandListRows = 45;
-
+	m_CommandListRows = 30;
+	
 	CheckCPUType();
 	
 	GetWindowRect(&m_DefaultWindowRect);
@@ -111,24 +111,6 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	// Op editor
 	m_OpEdit.Attach(GetDlgItem(IDC_OP_EDIT));
 	m_OpEdit.SetCommandsWindow(this);
-	m_OpEdit.ShowWindow(SW_HIDE);
-	
-	// Setup stack list
-	m_StackList.Attach(GetDlgItem(IDC_STACK_LIST));
-	m_StackList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-	m_StackList.AddColumn("#", 0);
-	m_StackList.AddColumn("00", 1);
-	m_StackList.AddColumn("04", 2);
-	m_StackList.AddColumn("08", 3);
-	m_StackList.AddColumn("0C", 4);
-
-	m_StackList.SetColumnWidth(0, 22);
-	m_StackList.SetColumnWidth(1, 64);
-	m_StackList.SetColumnWidth(2, 64);
-	m_StackList.SetColumnWidth(3, 64);
-	m_StackList.SetColumnWidth(4, 64);
-	
-	RefreshStackList();
 	
 	m_bIgnoreAddrChange = true;
 	m_AddressEdit.SetValue(0x80000000, false, true);
@@ -180,17 +162,6 @@ LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam,
 	}
 	return 1;
 }
-
-/*
-LRESULT CDebugCommandsView::OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-	// Allow only vertical resizing
-	MINMAXINFO* minMax = (MINMAXINFO*)lParam;
-	minMax->ptMinTrackSize.x = m_DefaultWindowRect.Width();
-	minMax->ptMaxTrackSize.x = m_DefaultWindowRect.Width();
-	minMax->ptMinTrackSize.y = m_DefaultWindowRect.Height();
-	return FALSE;
-}*/
 
 void CDebugCommandsView::CheckCPUType()
 {
@@ -333,7 +304,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	if (!top) // update registers & stack when called via breakpoint/stepping
 	{
 		m_RegisterTabs.RefreshEdits();
-		RefreshStackList();
+		// RefreshStackList();
 	}
 
 	RefreshBreakpointList();
@@ -366,6 +337,7 @@ void CDebugCommandsView::RefreshBreakpointList()
 	}
 }
 
+/*
 void CDebugCommandsView::RefreshStackList()
 {
 	m_StackList.SetRedraw(FALSE);
@@ -403,6 +375,7 @@ void CDebugCommandsView::RefreshStackList()
 
 	m_StackList.SetRedraw(TRUE);
 }
+*/
 
 void CDebugCommandsView::RemoveSelectedBreakpoints()
 {
@@ -566,8 +539,8 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 
 	// color register usage
 	// todo localise to temp register context (dont look before/after jumps and frame shifts)
-	COLORREF clrUsedRegister = RGB(0xE5, 0xE0, 0xFF); // light purple
-	COLORREF clrAffectedRegister = RGB(0xFF, 0xE0, 0xFF); // light pink
+	COLORREF clrUsedRegister = RGB(0xF5, 0xF0, 0xFF); // light purple
+	COLORREF clrAffectedRegister = RGB(0xFF, 0xF0, 0xFF); // light pink
 
 	int pcUsedRegA = 0, pcUsedRegB = 0, pcChangedReg = 0;
 	int curUsedRegA = 0, curUsedRegB = 0, curChangedReg = 0;
@@ -641,11 +614,13 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		m_Debugger->Debug_ShowSymbolsWindow();
 		break;
 	case IDC_GO_BTN:
+		m_Debugger->Debug_RefreshStackWindow();
 		m_Breakpoints->StopDebugging();
 		m_Breakpoints->Resume();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_STEP_BTN:
+		m_Debugger->Debug_RefreshStackWindow();
 		m_Breakpoints->KeepDebugging();
 		m_Breakpoints->Resume();
 		break;

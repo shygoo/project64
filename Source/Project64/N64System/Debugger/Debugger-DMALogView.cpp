@@ -143,7 +143,7 @@ LRESULT CDebugDMALogView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BO
 
 LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	DlgResize_Init(false, false);
+	DlgResize_Init(false, true);
 
 	m_bConvertingAddress = false;
 	m_nLastStartIndex = 0;

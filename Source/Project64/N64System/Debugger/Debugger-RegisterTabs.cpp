@@ -115,7 +115,7 @@ void CRegisterTabs::ShowTab(int nPage)
 
 	::SetWindowPos(
 		m_TabWindows[nPage],
-		m_hWnd,
+		HWND_TOP,
 		pageRect.left,
 		pageRect.top,
 		pageRect.Width(),
@@ -131,7 +131,7 @@ void CRegisterTabs::RedrawCurrentTab()
 
 	::SetWindowPos(
 		m_TabWindows[nPage],
-		m_hWnd,
+		HWND_TOP,
 		pageRect.left,
 		pageRect.top,
 		pageRect.Width(),
