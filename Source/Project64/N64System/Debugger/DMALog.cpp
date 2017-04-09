@@ -40,6 +40,11 @@ DMALOGENTRY* CDMALog::GetEntryByRamAddress(uint32_t ramAddr)
 {
 	uint32_t nEntries = GetNumEntries();
 
+	if (nEntries == 0)
+	{
+		return NULL;
+	}
+
 	for (uint32_t i = nEntries - 1; i-- > 0;)
 	{
 		uint32_t min = m_Log[i].ramAddr;
@@ -71,6 +76,11 @@ DMALOGENTRY* CDMALog::GetEntryByRamAddress(uint32_t ramAddr, uint32_t* lpRomAddr
 DMALOGENTRY* CDMALog::GetEntryByRomAddress(uint32_t romAddr)
 {
 	uint32_t nEntries = GetNumEntries();
+
+	if (nEntries == 0)
+	{
+		return NULL;
+	}
 
 	for (uint32_t i = nEntries - 1; i-- > 0; )
 	{
