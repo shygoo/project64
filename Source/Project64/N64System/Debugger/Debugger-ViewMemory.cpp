@@ -263,7 +263,7 @@ LRESULT CDebugMemoryView::OnHotItemChanged(LPNMHDR lpNMHDR)
 
 	if (lpEntry != NULL)
 	{
-		dmaInfo = stdstr_f("Last DMA: %08X (%08X + %X) [%X]", romAddr, lpEntry->romAddr, offset, lpEntry->length);
+		dmaInfo = stdstr_f("Last DMA: %08X -> %08X [%X] (%08X, +%X) ", lpEntry->romAddr, lpEntry->ramAddr, lpEntry->length, romAddr, offset);
 	}
 	else
 	{
@@ -659,7 +659,6 @@ void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgCo
 	CSymbols::EnterCriticalSection();
 	CSymbolEntry* lpSymbol = CSymbols::GetEntryByAddress(vaddr);
 	
-
 	if (lpSymbol != NULL)
 	{
 		m_SymbolColorStride = lpSymbol->TypeSize();
@@ -687,14 +686,18 @@ void CDebugMemoryView::SelectColors(uint32_t vaddr, bool changed, COLORREF& bgCo
 	}
 	else if (m_SymbolColorStride > 0)
 	{
-		bgColor = m_SymbolColorPhase ? RGB(0xDD, 0xFF, 0xDD) : RGB(0xAA, 0xCC, 0xAA);
-		m_SymbolColorStride--;
+		bgColor = m_SymbolColorPhase ? RGB(0xD0, 0xF0, 0xD0) : RGB(0xAA, 0xCC, 0xAA);
 	}
 	else
 	{
 		bgColor = GetSysColor(COLOR_WINDOW);
 		fgHiColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_HIGHLIGHTTEXT));
 		fgColor = (changed ? RGB(255, 0, 0) : GetSysColor(COLOR_WINDOWTEXT));
+	}
+
+	if (m_SymbolColorStride > 0)
+	{
+		m_SymbolColorStride--;
 	}
 }
 
