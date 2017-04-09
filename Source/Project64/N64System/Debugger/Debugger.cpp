@@ -150,6 +150,12 @@ void CDebuggerUI::Debug_Reset ( void )
 		delete m_StackTraceView;
 		m_StackTraceView = NULL;
 	}
+	if (m_StackView)
+	{
+		m_StackView->HideWindow();
+		delete m_StackView;
+		m_StackView = NULL;
+	}
 }
 
 void CDebuggerUI::Debug_ShowMemoryDump()
