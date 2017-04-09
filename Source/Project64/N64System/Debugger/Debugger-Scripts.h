@@ -88,6 +88,8 @@ private:
 	CScriptList m_ScriptList;
 	char* m_SelectedScriptName;
 
+	void RefreshStatus();
+
 public:
 	enum { IDD = IDD_Debugger_Scripts };
 

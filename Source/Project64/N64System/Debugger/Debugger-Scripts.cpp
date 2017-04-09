@@ -126,7 +126,11 @@ void CDebugScripts::RefreshList()
 	m_ScriptList.SetRedraw(true);
 	m_ScriptList.Invalidate();
 
-	m_ScriptList.SelectItem(nIndex);
+	if (nIndex >= 0)
+	{
+		m_ScriptList.SelectItem(nIndex);
+		RefreshStatus();
+	}
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -159,14 +163,8 @@ LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 	return CDRF_DODEFAULT;
 }
 
-LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+void CDebugScripts::RefreshStatus()
 {
-	// Select instance for console input
-	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
-	int nItem = pIA->iItem;
-	
-	m_ScriptList.GetItemText(nItem, 0, m_SelectedScriptName, MAX_PATH);
-	
 	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
 
 	char* szState;
@@ -190,6 +188,17 @@ LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 	{
 		m_EvalEdit.EnableWindow(FALSE);
 	}
+}
+
+LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+{
+	// Select instance for console input
+	NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+	int nItem = pIA->iItem;
+	
+	m_ScriptList.GetItemText(nItem, 0, m_SelectedScriptName, MAX_PATH);
+	
+	RefreshStatus();
 
 	return CDRF_DODEFAULT;
 }
