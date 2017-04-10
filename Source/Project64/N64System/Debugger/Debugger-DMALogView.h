@@ -45,11 +45,14 @@ private:
 	CEdit         m_DMARomEdit;
 	CStatic       m_BlockInfo;
 	
+	bool m_bCustomDrawClrNext;
+
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
 	LRESULT OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnRamAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	LRESULT OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
+	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
 	LRESULT OnDestroy(void);
 
 	BEGIN_MSG_MAP_EX(CDebugDMALogView)
@@ -58,6 +61,7 @@ private:
 		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
 		COMMAND_HANDLER(IDC_DMA_RAM_EDIT, EN_CHANGE, OnRamAddrChanged)
 		COMMAND_HANDLER(IDC_DMA_ROM_EDIT, EN_CHANGE, OnRomAddrChanged)
+		NOTIFY_HANDLER_EX(IDC_DMA_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
 		CHAIN_MSG_MAP(CDialogResize<CDebugDMALogView>)
 	END_MSG_MAP()
 

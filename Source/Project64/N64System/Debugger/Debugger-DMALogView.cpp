@@ -19,6 +19,7 @@ CDebugDialog<CDebugDMALogView>(debugger)
 	m_DMALog = debugger->DMALog();
 	m_bFilterChanged = false;
 	m_bUniqueRomAddresses = true;
+	m_bCustomDrawClrNext = false;
 }
 
 CDebugDMALogView::~CDebugDMALogView()
@@ -150,6 +151,8 @@ LRESULT CDebugDMALogView::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 	m_DMAList.Attach(GetDlgItem(IDC_DMA_LIST));
 
+	m_DMAList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
+
 	m_DMAList.AddColumn("ROM", 0);
 	m_DMAList.AddColumn("RAM", 1);
 	m_DMAList.AddColumn("Length", 2);
@@ -276,4 +279,60 @@ LRESULT CDebugDMALogView::OnRomAddrChanged(WORD wNotifyCode, WORD wID, HWND hWnd
 	m_DMARamEdit.SetWindowTextA(szRamAddr);
 	m_bConvertingAddress = false;
 	return FALSE;
+}
+
+
+LRESULT CDebugDMALogView::OnCustomDrawList(NMHDR* pNMHDR)
+{
+	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
+	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
+
+	switch (drawStage)
+	{
+	case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW;
+	case CDDS_ITEMPREPAINT: return CDRF_NOTIFYSUBITEMDRAW;
+	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM): break;
+	default: return CDRF_DODEFAULT;
+	}
+	
+	DWORD nItem = pLVCD->nmcd.dwItemSpec;
+	DWORD nSubItem = pLVCD->iSubItem;
+
+	if (nSubItem != 0)
+	{
+		return CDRF_DODEFAULT;
+	}
+	
+	size_t nEntries = m_DMALog->GetNumEntries();
+
+	if (nEntries == 0)
+	{
+		return CDRF_DODEFAULT;
+	}
+	
+	DMALOGENTRY* lpEntry = m_DMALog->GetEntryByIndex(nItem);
+	
+	if (nItem >= 1) // continuation
+	{
+		DMALOGENTRY* lpPrevEntry = m_DMALog->GetEntryByIndex(nItem - 1);
+
+		if (lpEntry->romAddr == lpPrevEntry->romAddr + lpPrevEntry->length)
+		{
+			pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xCC);
+			return CDRF_DODEFAULT;
+		}
+	}
+
+	if (nEntries >= 2 && nItem <= nEntries - 2) // head
+	{
+		DMALOGENTRY* lpNextEntry = m_DMALog->GetEntryByIndex(nItem + 1);
+
+		if (lpNextEntry->romAddr == lpEntry->romAddr + lpEntry->length)
+		{
+			pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0x88);
+			return CDRF_DODEFAULT;
+		}
+	}
+	
+	return CDRF_DODEFAULT;
 }
