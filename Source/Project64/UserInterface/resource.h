@@ -518,8 +518,8 @@
 #define IDC_VIEWPC_BTN                  1355
 #define IDC_PC_STATIC                   1356
 #define IDC_SP_STATIC                   1358
-#define IDC_MEM_VIEW                    1359
 #define IDC_MEM_BTN                     1359
+#define IDC_ARROW_CANVAS                1360
 #define VERSION_BUILD                   9999
 #define ID_POPUP_SHOWINMEMORYVIEWER     40005
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
@@ -560,9 +560,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        193
+#define _APS_NEXT_RESOURCE_VALUE        194
 #define _APS_NEXT_COMMAND_VALUE         40032
-#define _APS_NEXT_CONTROL_VALUE         1360
+#define _APS_NEXT_CONTROL_VALUE         1361
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

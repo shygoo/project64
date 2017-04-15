@@ -115,6 +115,78 @@ LRESULT CDebugCommandsView::OnDestroy(void)
 	return 0;
 }
 
+LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+{
+	PAINTSTRUCT ps;
+	HDC hDC = BeginPaint(&ps);
+
+	COLORREF colors[] = {
+		RGB(255, 0, 0), // r
+		RGB(0, 127, 0), // g
+		RGB(0, 0, 255), // b
+		RGB(255, 140, 0), // orange
+		RGB(255, 0, 255), // m
+		RGB(0, 0, 0), // black
+		RGB(0, 127, 127), // c
+		RGB(127, 0, 0), // dr
+		RGB(0, 64, 0), // dg
+		RGB(0, 0, 127), // db
+	};
+
+	int nColors = sizeof(colors) / sizeof(COLORREF);
+
+	int baseX = 27;
+	int baseY = 30;
+
+	for (int i = 0; i < m_BranchArrows.size(); i++)
+	{
+		int colorIdx = i % nColors;
+		COLORREF color = colors[colorIdx];
+		
+		HPEN hPen = CreatePen(PS_SOLID, 1, color);
+		SelectObject(hDC, hPen);
+
+		BRANCHARROW arrow = m_BranchArrows[i];
+
+		int x = baseX;
+		int y = baseY + arrow.startPos * 13;
+		
+		// draw start pointer
+		int startPtrX = x - arrow.startMargin * 3;
+		SetPixel(hDC, startPtrX, y - 1, color);
+		SetPixel(hDC, startPtrX + 1, y - 2, color);
+		SetPixel(hDC, startPtrX, y + 1, color);
+		SetPixel(hDC, startPtrX + 1, y + 2, color);
+
+		MoveToEx(hDC, startPtrX - 1, y, NULL);
+		
+		// draw lines
+		x -= 4;
+		x -= 3 * arrow.margin;
+		LineTo(hDC, x, y);
+		y = baseY + arrow.endPos * 13;
+		LineTo(hDC, x, y);
+		x += 6;
+		x += (3 * arrow.margin) - (3 * arrow.endMargin);
+		LineTo(hDC, x, y);
+		
+		// draw end pointer
+		//int endPtrX = x - arrow.endMargin * 3;
+		SetPixel(hDC, x - 2, y - 1, color);
+		SetPixel(hDC, x - 3, y - 2, color);
+		SetPixel(hDC, x - 3, y - 1, color);
+		SetPixel(hDC, x - 2, y + 1, color);
+		SetPixel(hDC, x - 3, y + 2, color);
+		SetPixel(hDC, x - 3, y + 1, color);
+		
+		DeleteObject(hPen);
+	}
+	
+	EndPaint(&ps);
+	//MessageBox("cuick");
+	return 0;
+}
+
 LRESULT	CDebugCommandsView::OnOpKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
 	if (wParam == VK_UP)
@@ -237,6 +309,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	m_CommandList.SetRedraw(FALSE);
 	m_CommandList.DeleteAllItems();
 
+	m_BranchArrows.clear();
+
 	char addrStr[9];
 
 	CSymbols::EnterCriticalSection();
@@ -266,7 +340,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		char* command = (char*)R4300iOpcodeName(OpCode.Hex, opAddr);
 		char* cmdName = strtok((char*)command, "\t");
 		char* cmdArgs = strtok(NULL, "\t");
-
+		
+		// Show subroutine symbol name for JAL target
 		if (strcmp(cmdName, "JAL") == 0)
 		{
 			uint32_t targetAddr = (0x80000000 | (OpCode.target << 2));
@@ -277,6 +352,55 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			{
 				cmdArgs = (char*)targetSymbolName;
 			}
+		}
+
+		// Add arrow for branch instruction
+		if (cmdName[0] == 'B' && strcmp(cmdName, "BREAK") != 0)
+		{
+			int startPos = i;
+			int endPos = startPos + (int16_t)OpCode.offset + 1;
+
+			int startMargin = 0;
+			int endMargin = 0;
+			int margin = 0;
+
+			for (int j = 0; j < m_BranchArrows.size(); j++)
+			{
+				BRANCHARROW arrow = m_BranchArrows[j];
+
+				// Arrow's start or end pos within another arrow's stride
+				if ((startPos >= arrow.startPos && startPos <= arrow.endPos) ||
+					(endPos >= arrow.startPos && endPos <= arrow.endPos) ||
+					(arrow.startPos <= startPos && arrow.startPos >= endPos))
+				{
+					if (margin <= arrow.margin)
+					{
+						margin = arrow.margin + 1;
+					}
+				}
+
+				if (startPos == arrow.startPos)
+				{
+					startMargin = arrow.startMargin + 1;
+				}
+
+				if (startPos == arrow.endPos)
+				{
+					startMargin = arrow.endMargin + 1;
+				}
+
+				if (endPos == arrow.startPos)
+				{
+					endMargin = arrow.startMargin + 1;
+				}
+
+				if (endPos == arrow.endPos)
+				{
+					endMargin = arrow.endMargin + 1;
+				}
+			}
+
+			m_BranchArrows.push_back({startPos, endPos, startMargin, endMargin, margin});
 		}
 		
 		m_CommandList.AddItem(i, 1, cmdName);
@@ -299,7 +423,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	RefreshBreakpointList();
 	
 	m_CommandList.SetRedraw(TRUE);
-	m_CommandList.RedrawWindow();
+	
+	RedrawWindow();
 }
 
 void CDebugCommandsView::RefreshBreakpointList()

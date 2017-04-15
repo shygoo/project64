@@ -125,6 +125,17 @@ private:
 	} EditedOp;
 
 	vector<EditedOp> m_EditedOps;
+
+	typedef struct {
+		int startPos;
+		int endPos;
+		int startMargin;
+		int endMargin;
+		int margin;
+	} BRANCHARROW;
+
+	vector<BRANCHARROW> m_BranchArrows;
+
 	void ClearEditedOps();
 	void EditOp(uint32_t address, uint32_t op);
 	void RestoreOp(uint32_t address);
@@ -142,6 +153,7 @@ private:
 
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+	LRESULT	OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnSizing             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	//LRESULT	OnGetMinMaxInfo      (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnMouseWheel         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -166,6 +178,7 @@ private:
 	// win7 - only works while a control has keyboard focus
 
 	BEGIN_MSG_MAP_EX(CDebugCommandsView)
+		MESSAGE_HANDLER(WM_PAINT, OnPaint)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
 		MESSAGE_HANDLER(WM_SIZING, OnSizing)
