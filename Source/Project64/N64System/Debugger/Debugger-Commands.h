@@ -15,7 +15,7 @@
 #include "Debugger-AddBreakpoint.h"
 #include "Debugger-RegisterTabs.h"
 
-class CCommandsList : public CListViewCtrl
+class CCommandsList : public CWindowImpl<CCommandsList, CListViewCtrl>
 {
 public:
 
@@ -33,7 +33,7 @@ public:
 		SetColumnWidth(2, 120);
 		SetColumnWidth(3, 120);
 	}
-
+	
 	BEGIN_MSG_MAP_EX(CCommandsList)
 	END_MSG_MAP()
 };
@@ -110,6 +110,9 @@ private:
 
 	CRegisterTabs m_RegisterTabs;
 
+	CButton m_BackButton;
+	CButton m_ForwardButton;
+
 	CButton m_ViewPCButton;
 	CButton m_StepButton;
 	CButton m_SkipButton;
@@ -135,6 +138,8 @@ private:
 	} BRANCHARROW;
 
 	vector<BRANCHARROW> m_BranchArrows;
+	void AddBranchArrow(int startPos, int endPos);
+	void ClearBranchArrows();
 
 	void ClearEditedOps();
 	void EditOp(uint32_t address, uint32_t op);
@@ -150,6 +155,8 @@ private:
 	void RemoveSelectedBreakpoints();
 	
 	bool AddressSafe(uint32_t vaddr);
+
+	void ToggleHistoryButtons();
 
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -195,7 +202,7 @@ private:
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnCommandListRightClicked)
 		NOTIFY_HANDLER_EX(IDC_REG_TABS, TCN_SELCHANGE, OnRegisterTabChange)
 		NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_CUSTOMDRAW, OnCustomDrawList)
-		CHAIN_MSG_MAP_MEMBER(m_CommandList)
+		//CHAIN_MSG_MAP_MEMBER(m_CommandList)
 		MSG_WM_DESTROY(OnDestroy)
 		CHAIN_MSG_MAP(CDialogResize<CDebugCommandsView>)
 	END_MSG_MAP()

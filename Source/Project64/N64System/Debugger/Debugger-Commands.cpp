@@ -95,6 +95,11 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	//m_Scrollbar.GetScrollInfo(); // todo bigger thumb size
 	//m_Scrollbar.SetScrollInfo();
 
+	// Setup history buttons
+	m_BackButton.Attach(GetDlgItem(IDC_BACK_BTN));
+	m_ForwardButton.Attach(GetDlgItem(IDC_FORWARD_BTN));
+	ToggleHistoryButtons();
+
 	// Setup command list
 	m_CommandList.Attach(GetDlgItem(IDC_CMD_LIST));
 
@@ -105,85 +110,13 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	m_bIgnoreAddrChange = true;
 	m_AddressEdit.SetValue(0x80000000, false, true);
 	ShowAddress(0x80000000, TRUE);
-
+	
 	WindowCreated();
 	return TRUE;
 }
 
 LRESULT CDebugCommandsView::OnDestroy(void)
 {
-	return 0;
-}
-
-LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-{
-	PAINTSTRUCT ps;
-	HDC hDC = BeginPaint(&ps);
-
-	COLORREF colors[] = {
-		RGB(255, 0, 0), // r
-		RGB(0, 127, 0), // g
-		RGB(0, 0, 255), // b
-		RGB(255, 140, 0), // orange
-		RGB(255, 0, 255), // m
-		RGB(0, 0, 0), // black
-		RGB(0, 127, 127), // c
-		RGB(127, 0, 0), // dr
-		RGB(0, 64, 0), // dg
-		RGB(0, 0, 127), // db
-	};
-
-	int nColors = sizeof(colors) / sizeof(COLORREF);
-
-	int baseX = 27;
-	int baseY = 30;
-
-	for (int i = 0; i < m_BranchArrows.size(); i++)
-	{
-		int colorIdx = i % nColors;
-		COLORREF color = colors[colorIdx];
-		
-		HPEN hPen = CreatePen(PS_SOLID, 1, color);
-		SelectObject(hDC, hPen);
-
-		BRANCHARROW arrow = m_BranchArrows[i];
-
-		int x = baseX;
-		int y = baseY + arrow.startPos * 13;
-		
-		// draw start pointer
-		int startPtrX = x - arrow.startMargin * 3;
-		SetPixel(hDC, startPtrX, y - 1, color);
-		SetPixel(hDC, startPtrX + 1, y - 2, color);
-		SetPixel(hDC, startPtrX, y + 1, color);
-		SetPixel(hDC, startPtrX + 1, y + 2, color);
-
-		MoveToEx(hDC, startPtrX - 1, y, NULL);
-		
-		// draw lines
-		x -= 4;
-		x -= 3 * arrow.margin;
-		LineTo(hDC, x, y);
-		y = baseY + arrow.endPos * 13;
-		LineTo(hDC, x, y);
-		x += 6;
-		x += (3 * arrow.margin) - (3 * arrow.endMargin);
-		LineTo(hDC, x, y);
-		
-		// draw end pointer
-		//int endPtrX = x - arrow.endMargin * 3;
-		SetPixel(hDC, x - 2, y - 1, color);
-		SetPixel(hDC, x - 3, y - 2, color);
-		SetPixel(hDC, x - 3, y - 1, color);
-		SetPixel(hDC, x - 2, y + 1, color);
-		SetPixel(hDC, x - 3, y + 2, color);
-		SetPixel(hDC, x - 3, y + 1, color);
-		
-		DeleteObject(hPen);
-	}
-	
-	EndPaint(&ps);
-	//MessageBox("cuick");
 	return 0;
 }
 
@@ -263,6 +196,139 @@ bool CDebugCommandsView::AddressSafe(uint32_t vaddr)
 	return true;
 }
 
+void CDebugCommandsView::ClearBranchArrows()
+{
+	m_BranchArrows.clear();
+}
+
+void CDebugCommandsView::AddBranchArrow(int startPos, int endPos)
+{
+	int startMargin = 0;
+	int endMargin = 0;
+	int margin = 0;
+
+	for (int j = 0; j < m_BranchArrows.size(); j++)
+	{
+		BRANCHARROW arrow = m_BranchArrows[j];
+
+		// Arrow's start or end pos within another arrow's stride
+		if ((startPos >= arrow.startPos && startPos <= arrow.endPos) ||
+			(endPos >= arrow.startPos && endPos <= arrow.endPos) ||
+			(arrow.startPos <= startPos && arrow.startPos >= endPos))
+		{
+			if (margin <= arrow.margin)
+			{
+				margin = arrow.margin + 1;
+			}
+		}
+
+		if (startPos == arrow.startPos)
+		{
+			startMargin = arrow.startMargin + 1;
+		}
+
+		if (startPos == arrow.endPos)
+		{
+			startMargin = arrow.endMargin + 1;
+		}
+
+		if (endPos == arrow.startPos)
+		{
+			endMargin = arrow.startMargin + 1;
+		}
+
+		if (endPos == arrow.endPos)
+		{
+			endMargin = arrow.endMargin + 1;
+		}
+	}
+
+	m_BranchArrows.push_back({ startPos, endPos, startMargin, endMargin, margin });
+}
+
+static inline bool OpIsBranch(OPCODE opCode)
+{
+	uint32_t op = opCode.op;
+
+	if (op >= R4300i_BEQ && op <= R4300i_BGTZ)
+	{
+		return true;
+	}
+
+	if (op >= R4300i_BEQL && op <= R4300i_BGTZL)
+	{
+		return true;
+	}
+
+	if (op == R4300i_REGIMM)
+	{
+		uint32_t rt = opCode.rt;
+
+		if (rt >= R4300i_REGIMM_BLTZ && rt <= R4300i_REGIMM_BGEZL)
+		{
+			return true;
+		}
+
+		if (rt >= R4300i_REGIMM_BLTZAL && rt <= R4300i_REGIMM_BGEZALL)
+		{
+			return true;
+		}
+	}
+
+	if (op == R4300i_CP1 && opCode.fmt == R4300i_COP1_BC)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+static inline bool OpIsJump(OPCODE opCode)
+{
+	// j, jal, jr, jalr, exception
+
+	uint32_t op = opCode.op;
+	
+	if (op == R4300i_J || op == R4300i_JAL)
+	{
+		return true;
+	}
+	
+	if (op == R4300i_SPECIAL)
+	{
+		uint32_t fn = opCode.funct;
+
+		if (fn >= R4300i_SPECIAL_JR && fn <= R4300i_SPECIAL_BREAK)
+		{
+			return true;
+		}
+	}
+
+	if (op == R4300i_REGIMM)
+	{
+		uint32_t rt = opCode.rt;
+
+		if (rt >= R4300i_REGIMM_TGEI && rt <= R4300i_REGIMM_TNEI)
+		{
+			return true;
+		}
+	}
+
+	if (op == R4300i_CP0)
+	{
+		if ((opCode.rs & 0x10) != 0)
+		{
+			uint32_t fn = opCode.funct;
+			if (fn >= R4300i_COP0_CO_TLBR && fn <= R4300i_COP0_CO_ERET)
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 {
 	if (top == TRUE)
@@ -294,6 +360,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		{
 			m_History.push_back(m_StartAddress);
 			m_HistoryIndex = m_History.size() - 1;
+			ToggleHistoryButtons();
 		}
 		
 		m_bIgnorePCChange = true;
@@ -308,17 +375,16 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	
 	m_CommandList.SetRedraw(FALSE);
 	m_CommandList.DeleteAllItems();
-
-	m_BranchArrows.clear();
-
-	char addrStr[9];
-
+	
+	ClearBranchArrows();
+	
 	CSymbols::EnterCriticalSection();
 
 	for (int i = 0; i < m_CommandListRows; i++)
 	{	
 		uint32_t opAddr = m_StartAddress + i * 4;
 
+		char addrStr[9];
 		sprintf(addrStr, "%08X", opAddr);
 		
 		m_CommandList.AddItem(i, 0, addrStr);
@@ -342,7 +408,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		char* cmdArgs = strtok(NULL, "\t");
 		
 		// Show subroutine symbol name for JAL target
-		if (strcmp(cmdName, "JAL") == 0)
+		if (OpCode.op == R4300i_JAL)
 		{
 			uint32_t targetAddr = (0x80000000 | (OpCode.target << 2));
 
@@ -353,63 +419,37 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 				cmdArgs = (char*)targetSymbolName;
 			}
 		}
-
-		// Add arrow for branch instruction
-		if (cmdName[0] == 'B' && strcmp(cmdName, "BREAK") != 0)
-		{
-			int startPos = i;
-			int endPos = startPos + (int16_t)OpCode.offset + 1;
-
-			int startMargin = 0;
-			int endMargin = 0;
-			int margin = 0;
-
-			for (int j = 0; j < m_BranchArrows.size(); j++)
-			{
-				BRANCHARROW arrow = m_BranchArrows[j];
-
-				// Arrow's start or end pos within another arrow's stride
-				if ((startPos >= arrow.startPos && startPos <= arrow.endPos) ||
-					(endPos >= arrow.startPos && endPos <= arrow.endPos) ||
-					(arrow.startPos <= startPos && arrow.startPos >= endPos))
-				{
-					if (margin <= arrow.margin)
-					{
-						margin = arrow.margin + 1;
-					}
-				}
-
-				if (startPos == arrow.startPos)
-				{
-					startMargin = arrow.startMargin + 1;
-				}
-
-				if (startPos == arrow.endPos)
-				{
-					startMargin = arrow.endMargin + 1;
-				}
-
-				if (endPos == arrow.startPos)
-				{
-					endMargin = arrow.startMargin + 1;
-				}
-
-				if (endPos == arrow.endPos)
-				{
-					endMargin = arrow.endMargin + 1;
-				}
-			}
-
-			m_BranchArrows.push_back({startPos, endPos, startMargin, endMargin, margin});
-		}
 		
 		m_CommandList.AddItem(i, 1, cmdName);
 		m_CommandList.AddItem(i, 2, cmdArgs);
 
-		const char* targetSymbolName = CSymbols::GetNameByAddress(opAddr);
-		if (targetSymbolName != NULL)
+		// Show routine symbol name for this address
+		const char* routineSymbolName = CSymbols::GetNameByAddress(opAddr);
+		if (routineSymbolName != NULL)
 		{
-			m_CommandList.AddItem(i, 3, targetSymbolName);
+			m_CommandList.AddItem(i, 3, routineSymbolName);
+		}
+
+		// Add arrow for branch instruction
+		if (OpIsBranch(OpCode))
+		{
+			int startPos = i;
+			int endPos = startPos + (int16_t)OpCode.offset + 1;
+
+			AddBranchArrow(startPos, endPos);
+		}
+
+		// Branch arrow for close J
+		if (OpCode.op == R4300i_J)
+		{
+			uint32_t target = (OpCode.target << 2);
+			int dist = target - (opAddr & 0x3FFFFFF);
+			if (abs(dist) < 0x10000)
+			{
+				int startPos = i;
+				int endPos = startPos + (dist / 4);
+				AddBranchArrow(startPos, endPos);
+			}
 		}
 	}
 
@@ -424,7 +464,288 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	
 	m_CommandList.SetRedraw(TRUE);
 	
-	RedrawWindow();
+	RedrawWindow(NULL, NULL, RDW_INVALIDATE);
+}
+
+// Highlight command list items
+LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
+{
+	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
+	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
+
+	HDC hDC = pLVCD->nmcd.hdc;
+
+	// todo could draw branch arrows within a column here
+
+	switch (drawStage)
+	{
+	case CDDS_PREPAINT: 
+		return CDRF_NOTIFYITEMDRAW;
+	case CDDS_ITEMPREPAINT: return CDRF_NOTIFYSUBITEMDRAW;
+	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM): break;
+	default: return CDRF_DODEFAULT;
+	}
+
+	DWORD nItem = pLVCD->nmcd.dwItemSpec;
+	DWORD nSubItem = pLVCD->iSubItem;
+
+	uint32_t address = m_StartAddress + (nItem * 4);
+	uint32_t pc = (g_Reg != NULL) ? g_Reg->m_PROGRAM_COUNTER : 0;
+
+	OPCODE pcOpcode;
+	if (g_MMU != NULL)
+	{
+		g_MMU->LW_VAddr(pc, pcOpcode.Hex);
+	}
+
+	if (nSubItem == 0) // addr
+	{
+		if (m_Breakpoints->EBPExists(address))
+		{
+			// breakpoint
+			pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
+			pLVCD->clrText = (address == pc) ?
+				RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
+				RGB(0xFF, 0xCC, 0xCC);
+		}
+		else if (address == pc && m_Breakpoints->isDebugging())
+		{
+			// pc
+			pLVCD->clrTextBk = RGB(0x88, 0x88, 0x88);
+			pLVCD->clrText = RGB(0xFF, 0xFF, 0);
+		}
+		else
+		{
+			//default
+			pLVCD->clrTextBk = RGB(0xEE, 0xEE, 0xEE);
+			pLVCD->clrText = RGB(0x44, 0x44, 0x44);
+		}
+
+		return CDRF_DODEFAULT;
+	}
+
+	// (nSubItem == 1 || nSubItem == 2) 
+
+	// cmd & args
+	OPCODE opCode;
+	bool bAddrOkay = false;
+
+	if (AddressSafe(address))
+	{
+		bAddrOkay = g_MMU->LW_VAddr(address, opCode.Hex);
+	}
+
+	if (!bAddrOkay)
+	{
+		// unmapped/invalid
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0xFF, 0x00, 0x00);
+	}
+	else if (address == pc && m_Breakpoints->isDebugging())
+	{
+		// pc
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+		pLVCD->clrText = RGB(0x22, 0x22, 0);
+	}
+	else if (IsOpEdited(address))
+	{
+		// opcode is not original
+		pLVCD->clrTextBk = RGB(0xFF, 0xEE, 0xFF);
+		pLVCD->clrText = RGB(0xFF, 0x00, 0xFF);
+	}
+	else if (opCode.op == R4300i_ADDIU && opCode.rt == 29) // stack shift
+	{
+		if ((short)opCode.immediate < 0) // stack alloc
+		{
+			// sky blue bg, dark blue fg
+			pLVCD->clrTextBk = RGB(0xCC, 0xDD, 0xFF);
+			pLVCD->clrText = RGB(0x00, 0x11, 0x44);
+		}
+		else // stack free
+		{
+			// salmon bg, dark red fg
+			pLVCD->clrTextBk = RGB(0xFF, 0xDD, 0xDD);
+			pLVCD->clrText = RGB(0x44, 0x00, 0x00);
+		}
+	}
+	else if (opCode.Hex == 0x00000000) // nop
+	{
+		// gray fg
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0x88, 0x88, 0x88);
+	}
+	else if (OpIsJump(opCode))
+	{
+		// jumps
+		pLVCD->clrText = RGB(0x00, 0x66, 0x00);
+		pLVCD->clrTextBk = RGB(0xEE, 0xFF, 0xEE);
+	}
+	else if (OpIsBranch(opCode))
+	{
+		// branches
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0x33, 0x77, 0x00);
+	}
+	else
+	{
+		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
+		pLVCD->clrText = RGB(0x00, 0x00, 0x00);
+	}
+
+	if (!m_Breakpoints->isDebugging())
+	{
+		return CDRF_DODEFAULT;
+	}
+
+	// color register usage
+	// todo localise to temp register context (dont look before/after jumps and frame shifts)
+	COLORREF clrUsedRegister = RGB(0xF5, 0xF0, 0xFF); // light purple
+	COLORREF clrAffectedRegister = RGB(0xFF, 0xF0, 0xFF); // light pink
+
+	int pcUsedRegA = 0, pcUsedRegB = 0, pcChangedReg = 0;
+	int curUsedRegA = 0, curUsedRegB = 0, curChangedReg = 0;
+
+	if (pcOpcode.op == R4300i_SPECIAL)
+	{
+		pcUsedRegA = pcOpcode.rs;
+		pcUsedRegB = pcOpcode.rt;
+		pcChangedReg = pcOpcode.rd;
+	}
+	else
+	{
+		pcUsedRegA = pcOpcode.rs;
+		pcChangedReg = pcOpcode.rt;
+	}
+
+	if (opCode.op == R4300i_SPECIAL)
+	{
+		curUsedRegA = opCode.rs;
+		curUsedRegB = opCode.rt;
+		curChangedReg = opCode.rd;
+	}
+	else
+	{
+		curUsedRegA = opCode.rs;
+		curChangedReg = opCode.rt;
+	}
+
+	if (address < pc)
+	{
+		if (curChangedReg != 0 && (pcUsedRegA == curChangedReg || pcUsedRegB == curChangedReg))
+		{
+			pLVCD->clrTextBk = clrUsedRegister;
+		}
+	}
+	else if (address > pc)
+	{
+		if (pcChangedReg != 0 && (curUsedRegA == pcChangedReg || curUsedRegB == pcChangedReg))
+		{
+			pLVCD->clrTextBk = clrAffectedRegister;
+		}
+	}
+	return CDRF_DODEFAULT;
+}
+
+// Draw branch arrows
+LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
+{
+	PAINTSTRUCT ps;
+	HDC hDC = BeginPaint(&ps);
+
+	COLORREF colors[] = {
+		RGB(240, 240, 240), // white
+		RGB(30, 135, 255), // blue
+		RGB(255, 0, 200), // pink
+		RGB(215, 155, 0), // yellow
+		RGB(100, 180, 0), // green
+		RGB(200, 100, 255), // purple
+		RGB(120, 120, 120), // gray
+		RGB(0, 220, 160), // cyan
+		RGB(255, 100, 0), // orange
+		RGB(255, 255, 0), // yellow
+	};
+	
+	int nColors = sizeof(colors) / sizeof(COLORREF);
+	
+	CRect listRect;
+	m_CommandList.GetWindowRect(&listRect);
+	ScreenToClient(&listRect);
+	
+	CRect headRect;
+	m_CommandList.GetHeader().GetWindowRect(&headRect);
+	ScreenToClient(&headRect);
+	
+	int baseX = listRect.left - 2;
+	int baseY = headRect.bottom + 7;
+	
+	HBRUSH hBrushBg = CreateSolidBrush(RGB(30, 30, 30));
+	//SelectObject(hDC, hBrush);
+
+	CRect paneRect;
+	paneRect.top = 0;
+	paneRect.left = 0;
+	paneRect.right = listRect.left;
+	paneRect.bottom = listRect.bottom;
+	
+	FillRect(hDC, &paneRect, hBrushBg);
+	DeleteObject(hBrushBg);
+
+	for (int i = 0; i < m_BranchArrows.size(); i++)
+	{
+		int colorIdx = i % nColors;
+		COLORREF color = colors[colorIdx];
+
+		HPEN hPen = CreatePen(PS_SOLID, 1, color);
+		
+		BRANCHARROW arrow = m_BranchArrows[i];
+	
+		int begX = baseX - arrow.startMargin * 3;
+		int endX = baseX - arrow.endMargin * 3;
+
+		int begY = baseY + arrow.startPos * 13;
+		int endY = baseY + arrow.endPos * 13;
+
+		int marginX = baseX - (4 + arrow.margin * 3);
+
+		// draw start pointer
+		SetPixel(hDC, begX + 0, begY - 1, color);
+		SetPixel(hDC, begX + 1, begY - 2, color);
+		SetPixel(hDC, begX + 0, begY + 1, color);
+		SetPixel(hDC, begX + 1, begY + 2, color);
+
+		// draw outline
+		HPEN hPenOutline = CreatePen(PS_SOLID, 3, RGB(30, 30, 30));
+		SelectObject(hDC, hPenOutline);
+		MoveToEx(hDC, begX - 1, begY, NULL);
+		LineTo(hDC, marginX, begY);
+		LineTo(hDC, marginX, endY);
+		LineTo(hDC, endX + 2, endY);
+		DeleteObject(hPenOutline);
+
+		// draw fill line
+		SelectObject(hDC, hPen);
+		MoveToEx(hDC, begX - 1, begY, NULL);
+		LineTo(hDC, marginX, begY);
+		LineTo(hDC, marginX, endY);
+		LineTo(hDC, endX + 2, endY);
+		DeleteObject(hPen);
+
+		// draw end pointer
+		//int endPtrX = x - arrow.endMargin * 3;
+		SetPixel(hDC, endX - 0, endY - 1, color);
+		SetPixel(hDC, endX - 1, endY - 2, color);
+		SetPixel(hDC, endX - 1, endY - 1, color);
+		SetPixel(hDC, endX - 0, endY + 1, color);
+		SetPixel(hDC, endX - 1, endY + 2, color);
+		SetPixel(hDC, endX - 1, endY + 1, color);
+		SetPixel(hDC, endX - 1, endY + 3, RGB(30, 30, 30));
+		SetPixel(hDC, endX - 1, endY - 3, RGB(30, 30, 30));
+	}
+
+	//DeleteObject(hPenOutline);
+	
+	EndPaint(&ps);
+	return 0;
 }
 
 void CDebugCommandsView::RefreshBreakpointList()
@@ -493,172 +814,6 @@ LRESULT	CDebugCommandsView::OnMeasureItem(UINT uMsg, WPARAM wParam, LPARAM lPara
 }
 
 
-LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
-{
-	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
-	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
-	
-	switch (drawStage)
-	{
-	case CDDS_PREPAINT: return CDRF_NOTIFYITEMDRAW;
-	case CDDS_ITEMPREPAINT: return CDRF_NOTIFYSUBITEMDRAW;
-	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM): break;
-	default: return CDRF_DODEFAULT;
-	}
-
-	DWORD nItem = pLVCD->nmcd.dwItemSpec;
-	DWORD nSubItem = pLVCD->iSubItem;
-	
-	uint32_t address = m_StartAddress + (nItem * 4);
-	uint32_t pc = (g_Reg != NULL) ? g_Reg->m_PROGRAM_COUNTER : 0;
-
-	OPCODE pcOpcode;
-	if (g_MMU != NULL)
-	{
-		g_MMU->LW_VAddr(pc, pcOpcode.Hex);
-	}
-
-	if (nSubItem == 0) // addr
-	{
-		if (m_Breakpoints->EBPExists(address))
-		{
-			// breakpoint
-			pLVCD->clrTextBk = RGB(0x44, 0x00, 0x00);
-			pLVCD->clrText = (address == pc) ?
-				RGB(0xFF, 0xFF, 0x00) : // breakpoint & current pc
-				RGB(0xFF, 0xCC, 0xCC);
-		}
-		else if (address == pc)
-		{
-			// pc
-			pLVCD->clrTextBk = RGB(0x88, 0x88, 0x88);
-			pLVCD->clrText = RGB(0xFF, 0xFF, 0);
-		}
-		else
-		{
-			//default
-			pLVCD->clrTextBk = RGB(0xEE, 0xEE, 0xEE);
-			pLVCD->clrText = RGB(0x44, 0x44, 0x44);
-		}
-
-		return CDRF_DODEFAULT;
-	}
-	
-	// (nSubItem == 1 || nSubItem == 2) 
-
-	// cmd & args
-	OPCODE Opcode;
-	bool bAddrOkay = false;
-
-	if (AddressSafe(address))
-	{
-		bAddrOkay = g_MMU->LW_VAddr(address, Opcode.Hex);
-	}
-	
-	if (!bAddrOkay)
-	{
-		// unmapped/invalid
-		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-		pLVCD->clrText = RGB(0xFF, 0x00, 0x00);
-	}
-	else if (pc == address)
-	{
-		//pc
-		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
-		pLVCD->clrText = RGB(0x22, 0x22, 0);
-	}
-	else if (IsOpEdited(address))
-	{
-		// red
-		pLVCD->clrTextBk = RGB(0xFF, 0xEE, 0xFF);
-		pLVCD->clrText = RGB(0xFF, 0x00, 0xFF);
-	}
-	else if (Opcode.op == R4300i_ADDIU && Opcode.rt == 29) // stack shift
-	{
-		if ((short)Opcode.immediate < 0) // alloc
-		{
-			// sky blue bg, dark blue fg
-			pLVCD->clrTextBk = RGB(0xCC, 0xDD, 0xFF);
-			pLVCD->clrText = RGB(0x00, 0x11, 0x44);
-		}
-		else // free
-		{
-			// salmon bg, dark red fg
-			pLVCD->clrTextBk = RGB(0xFF, 0xDD, 0xDD);
-			pLVCD->clrText = RGB(0x44, 0x00, 0x00);
-		}
-	}
-	else if (Opcode.Hex == 0x00000000) // nop
-	{
-		// gray fg
-		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-		pLVCD->clrText = RGB(0x88, 0x88, 0x88);
-	}
-	else if (Opcode.op == R4300i_J || Opcode.op == R4300i_JAL || (Opcode.op == 0 && Opcode.funct == R4300i_SPECIAL_JR))
-	{
-		// jumps
-		pLVCD->clrText = RGB(0x00, 0x66, 0x00);
-		pLVCD->clrTextBk = RGB(0xF5, 0xFF, 0xF5);
-	}
-	else
-	{
-		pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xFF);
-		pLVCD->clrText = RGB(0x00, 0x00, 0x00);
-	}
-
-	if (!m_Breakpoints->isDebugging())
-	{
-		return CDRF_DODEFAULT;
-	}
-
-	// color register usage
-	// todo localise to temp register context (dont look before/after jumps and frame shifts)
-	COLORREF clrUsedRegister = RGB(0xF5, 0xF0, 0xFF); // light purple
-	COLORREF clrAffectedRegister = RGB(0xFF, 0xF0, 0xFF); // light pink
-
-	int pcUsedRegA = 0, pcUsedRegB = 0, pcChangedReg = 0;
-	int curUsedRegA = 0, curUsedRegB = 0, curChangedReg = 0;
-	
-	if (pcOpcode.op == R4300i_SPECIAL)
-	{
-		pcUsedRegA = pcOpcode.rs;
-		pcUsedRegB = pcOpcode.rt;
-		pcChangedReg = pcOpcode.rd;
-	}
-	else
-	{
-		pcUsedRegA = pcOpcode.rs;
-		pcChangedReg = pcOpcode.rt;
-	}
-
-	if (Opcode.op == R4300i_SPECIAL)
-	{
-		curUsedRegA = Opcode.rs;
-		curUsedRegB = Opcode.rt;
-		curChangedReg = Opcode.rd;
-	}
-	else
-	{
-		curUsedRegA = Opcode.rs;
-		curChangedReg = Opcode.rt;
-	}
-
-	if (address < pc)
-	{
-		if (curChangedReg != 0 && (pcUsedRegA == curChangedReg || pcUsedRegB == curChangedReg))
-		{
-			pLVCD->clrTextBk = clrUsedRegister;
-		}
-	}
-	else if (address > pc)
-	{
-		if (pcChangedReg != 0 && (curUsedRegA == pcChangedReg || curUsedRegB == pcChangedReg))
-		{
-			pLVCD->clrTextBk = clrAffectedRegister;
-		}
-	}
-	return CDRF_DODEFAULT;
-}
 
 LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
@@ -669,6 +824,7 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		{
 			m_HistoryIndex--;
 			m_AddressEdit.SetValue(m_History[m_HistoryIndex], false, true);
+			ToggleHistoryButtons();
 		}
 		break;
 	case IDC_FORWARD_BTN:
@@ -676,6 +832,7 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		{
 			m_HistoryIndex++;
 			m_AddressEdit.SetValue(m_History[m_HistoryIndex], false, true);
+			ToggleHistoryButtons();
 		}
 		break;
 	case IDC_VIEWPC_BTN:
@@ -767,13 +924,18 @@ void CDebugCommandsView::GotoEnteredAddress()
 
 void CDebugCommandsView::BeginOpEdit(uint32_t address)
 {
+	CRect listRect;
+	m_CommandList.GetWindowRect(&listRect);
+	ScreenToClient(&listRect);
+	
 	m_bEditing = true;
 	//ShowAddress(address, FALSE);
 	int nItem = (address - m_StartAddress) / 4;
+
 	CRect itemRect;
 	m_CommandList.GetSubItemRect(nItem, 1, 0, &itemRect);
 	//itemRect.bottom += 0;
-	itemRect.left += 3;
+	itemRect.left += listRect.left + 3;
 	itemRect.right += 100;
 	
 	uint32_t opcode;
@@ -964,6 +1126,7 @@ void CDebugCommandsView::Reset()
 {
 	ClearEditedOps();
 	m_History.clear();
+	ToggleHistoryButtons();
 }
 
 void CDebugCommandsView::ClearEditedOps()
@@ -1039,6 +1202,27 @@ LRESULT CDebugCommandsView::OnRegisterTabChange(NMHDR* pNMHDR)
 	m_RegisterTabs.RedrawCurrentTab();
 	m_RegisterTabs.RedrawWindow();
 	return FALSE;
+}
+
+void CDebugCommandsView::ToggleHistoryButtons()
+{
+	if (m_History.size() != 0 && m_HistoryIndex > 0)
+	{
+		m_BackButton.EnableWindow(TRUE);
+	}
+	else
+	{
+		m_BackButton.EnableWindow(FALSE);
+	}
+
+	if (m_History.size() != 0 && m_HistoryIndex < m_History.size() - 1)
+	{
+		m_ForwardButton.EnableWindow(TRUE);
+	}
+	else
+	{
+		m_ForwardButton.EnableWindow(FALSE);
+	}
 }
 
 // Opcode editor
