@@ -15,23 +15,32 @@
 #include "Debugger-AddBreakpoint.h"
 #include "Debugger-RegisterTabs.h"
 
-class CCommandsList : public CWindowImpl<CCommandsList, CListViewCtrl>
+class CCommandList : public CWindowImpl<CCommandList, CListViewCtrl>
 {
 public:
+	enum {
+		COL_ARROWS,
+		COL_ADDRESS,
+		COL_COMMAND,
+		COL_PARAMETERS,
+		COL_SYMBOL
+	};
 
 	void Attach(HWND hWndNew)
 	{
 		CListViewCtrl::Attach(hWndNew);
 		ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 		SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-		AddColumn("Address", 0);
-		AddColumn("Command", 1);
-		AddColumn("Parameters", 2);
-		AddColumn("Symbol", 3);
-		SetColumnWidth(0, 60);
-		SetColumnWidth(1, 60);
-		SetColumnWidth(2, 120);
-		SetColumnWidth(3, 120);
+		AddColumn("", COL_ARROWS);
+		AddColumn("Address", COL_ADDRESS);
+		AddColumn("Command", COL_COMMAND);
+		AddColumn("Parameters", COL_PARAMETERS);
+		AddColumn("Symbol", COL_SYMBOL);
+		SetColumnWidth(COL_ARROWS, 30);
+		SetColumnWidth(COL_ADDRESS, 65);
+		SetColumnWidth(COL_COMMAND, 60);
+		SetColumnWidth(COL_PARAMETERS, 120);
+		SetColumnWidth(COL_SYMBOL, 120);
 	}
 	
 	BEGIN_MSG_MAP_EX(CCommandsList)
@@ -103,7 +112,7 @@ private:
 	CEditNumber m_AddressEdit;
 	bool        m_bIgnoreAddrChange;
 
-	CCommandsList m_CommandList;
+	CCommandList m_CommandList;
 	int m_CommandListRows;
 	CListBox m_BreakpointList;
 	CScrollBar m_Scrollbar;
@@ -140,6 +149,7 @@ private:
 	vector<BRANCHARROW> m_BranchArrows;
 	void AddBranchArrow(int startPos, int endPos);
 	void ClearBranchArrows();
+	void DrawBranchArrows(HDC listDC);
 
 	void ClearEditedOps();
 	void EditOp(uint32_t address, uint32_t op);
@@ -160,7 +170,6 @@ private:
 
 	LRESULT	OnInitDialog         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnActivate           (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT	OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT	OnSizing             (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	//LRESULT	OnGetMinMaxInfo      (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnMouseWheel         (UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -185,7 +194,7 @@ private:
 	// win7 - only works while a control has keyboard focus
 
 	BEGIN_MSG_MAP_EX(CDebugCommandsView)
-		MESSAGE_HANDLER(WM_PAINT, OnPaint)
+		//MESSAGE_HANDLER(WM_PAINT, OnPaint)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		MESSAGE_HANDLER(WM_ACTIVATE, OnActivate)
 		MESSAGE_HANDLER(WM_SIZING, OnSizing)

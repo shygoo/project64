@@ -384,10 +384,12 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	{	
 		uint32_t opAddr = m_StartAddress + i * 4;
 
+		m_CommandList.AddItem(i, CCommandList::COL_ARROWS, " ");
+
 		char addrStr[9];
 		sprintf(addrStr, "%08X", opAddr);
 		
-		m_CommandList.AddItem(i, 0, addrStr);
+		m_CommandList.AddItem(i, CCommandList::COL_ADDRESS, addrStr);
 
 		OPCODE OpCode;
 		bool bAddrOkay = false;
@@ -399,7 +401,7 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 
 		if(!bAddrOkay)
 		{
-			m_CommandList.AddItem(i, 1, "***");
+			m_CommandList.AddItem(i, CCommandList::COL_COMMAND, "***");
 			continue;
 		}
 		
@@ -420,14 +422,14 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			}
 		}
 		
-		m_CommandList.AddItem(i, 1, cmdName);
-		m_CommandList.AddItem(i, 2, cmdArgs);
+		m_CommandList.AddItem(i, CCommandList::COL_COMMAND, cmdName);
+		m_CommandList.AddItem(i, CCommandList::COL_PARAMETERS, cmdArgs);
 
 		// Show routine symbol name for this address
 		const char* routineSymbolName = CSymbols::GetNameByAddress(opAddr);
 		if (routineSymbolName != NULL)
 		{
-			m_CommandList.AddItem(i, 3, routineSymbolName);
+			m_CommandList.AddItem(i, CCommandList::COL_SYMBOL, routineSymbolName);
 		}
 
 		// Add arrow for branch instruction
@@ -463,29 +465,31 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 	RefreshBreakpointList();
 	
 	m_CommandList.SetRedraw(TRUE);
-	
-	RedrawWindow(NULL, NULL, RDW_INVALIDATE);
 }
 
-// Highlight command list items
+// Highlight command list items & draw branch arrows
 LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 {
 	NMLVCUSTOMDRAW* pLVCD = reinterpret_cast<NMLVCUSTOMDRAW*>(pNMHDR);
 	DWORD drawStage = pLVCD->nmcd.dwDrawStage;
 
 	HDC hDC = pLVCD->nmcd.hdc;
-
-	// todo could draw branch arrows within a column here
-
+	
 	switch (drawStage)
 	{
 	case CDDS_PREPAINT: 
-		return CDRF_NOTIFYITEMDRAW;
-	case CDDS_ITEMPREPAINT: return CDRF_NOTIFYSUBITEMDRAW;
-	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM): break;
-	default: return CDRF_DODEFAULT;
+		return (CDRF_NOTIFYITEMDRAW | CDRF_NOTIFYPOSTPAINT);
+	case CDDS_POSTPAINT:
+		DrawBranchArrows(hDC);
+		return CDRF_DODEFAULT;
+	case CDDS_ITEMPREPAINT:
+		return CDRF_NOTIFYSUBITEMDRAW;
+	case (CDDS_ITEMPREPAINT | CDDS_SUBITEM):
+		break;
+	default:
+		return CDRF_DODEFAULT;
 	}
-
+	
 	DWORD nItem = pLVCD->nmcd.dwItemSpec;
 	DWORD nSubItem = pLVCD->iSubItem;
 
@@ -497,8 +501,13 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 	{
 		g_MMU->LW_VAddr(pc, pcOpcode.Hex);
 	}
+	
+	if (nSubItem == CCommandList::COL_ARROWS)
+	{
+		return CDRF_DODEFAULT;
+	}
 
-	if (nSubItem == 0) // addr
+	if (nSubItem == CCommandList::COL_ADDRESS) // addr
 	{
 		if (m_Breakpoints->EBPExists(address))
 		{
@@ -647,11 +656,8 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 }
 
 // Draw branch arrows
-LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
+void CDebugCommandsView::DrawBranchArrows(HDC listDC)
 {
-	PAINTSTRUCT ps;
-	HDC hDC = BeginPaint(&ps);
-
 	COLORREF colors[] = {
 		RGB(240, 240, 240), // white
 		RGB(30, 135, 255), // blue
@@ -675,19 +681,21 @@ LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 	m_CommandList.GetHeader().GetWindowRect(&headRect);
 	ScreenToClient(&headRect);
 	
-	int baseX = listRect.left - 2;
+	int colWidth = m_CommandList.GetColumnWidth(CCommandList::COL_ARROWS);
+
+	int baseX = colWidth - 4;
 	int baseY = headRect.bottom + 7;
 	
 	HBRUSH hBrushBg = CreateSolidBrush(RGB(30, 30, 30));
 	//SelectObject(hDC, hBrush);
 
 	CRect paneRect;
-	paneRect.top = 0;
+	paneRect.top = headRect.bottom;
 	paneRect.left = 0;
-	paneRect.right = listRect.left;
+	paneRect.right = colWidth;
 	paneRect.bottom = listRect.bottom;
 	
-	FillRect(hDC, &paneRect, hBrushBg);
+	FillRect(listDC, &paneRect, hBrushBg);
 	DeleteObject(hBrushBg);
 
 	for (int i = 0; i < m_BranchArrows.size(); i++)
@@ -708,44 +716,39 @@ LRESULT	CDebugCommandsView::OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 		int marginX = baseX - (4 + arrow.margin * 3);
 
 		// draw start pointer
-		SetPixel(hDC, begX + 0, begY - 1, color);
-		SetPixel(hDC, begX + 1, begY - 2, color);
-		SetPixel(hDC, begX + 0, begY + 1, color);
-		SetPixel(hDC, begX + 1, begY + 2, color);
+		SetPixel(listDC, begX + 0, begY - 1, color);
+		SetPixel(listDC, begX + 1, begY - 2, color);
+		SetPixel(listDC, begX + 0, begY + 1, color);
+		SetPixel(listDC, begX + 1, begY + 2, color);
 
 		// draw outline
 		HPEN hPenOutline = CreatePen(PS_SOLID, 3, RGB(30, 30, 30));
-		SelectObject(hDC, hPenOutline);
-		MoveToEx(hDC, begX - 1, begY, NULL);
-		LineTo(hDC, marginX, begY);
-		LineTo(hDC, marginX, endY);
-		LineTo(hDC, endX + 2, endY);
+		SelectObject(listDC, hPenOutline);
+		MoveToEx(listDC, begX - 1, begY, NULL);
+		LineTo(listDC, marginX, begY);
+		LineTo(listDC, marginX, endY);
+		LineTo(listDC, endX + 2, endY);
 		DeleteObject(hPenOutline);
 
 		// draw fill line
-		SelectObject(hDC, hPen);
-		MoveToEx(hDC, begX - 1, begY, NULL);
-		LineTo(hDC, marginX, begY);
-		LineTo(hDC, marginX, endY);
-		LineTo(hDC, endX + 2, endY);
+		SelectObject(listDC, hPen);
+		MoveToEx(listDC, begX - 1, begY, NULL);
+		LineTo(listDC, marginX, begY);
+		LineTo(listDC, marginX, endY);
+		LineTo(listDC, endX + 2, endY);
 		DeleteObject(hPen);
 
 		// draw end pointer
 		//int endPtrX = x - arrow.endMargin * 3;
-		SetPixel(hDC, endX - 0, endY - 1, color);
-		SetPixel(hDC, endX - 1, endY - 2, color);
-		SetPixel(hDC, endX - 1, endY - 1, color);
-		SetPixel(hDC, endX - 0, endY + 1, color);
-		SetPixel(hDC, endX - 1, endY + 2, color);
-		SetPixel(hDC, endX - 1, endY + 1, color);
-		SetPixel(hDC, endX - 1, endY + 3, RGB(30, 30, 30));
-		SetPixel(hDC, endX - 1, endY - 3, RGB(30, 30, 30));
+		SetPixel(listDC, endX - 0, endY - 1, color);
+		SetPixel(listDC, endX - 1, endY - 2, color);
+		SetPixel(listDC, endX - 1, endY - 1, color);
+		SetPixel(listDC, endX - 0, endY + 1, color);
+		SetPixel(listDC, endX - 1, endY + 2, color);
+		SetPixel(listDC, endX - 1, endY + 1, color);
+		SetPixel(listDC, endX - 1, endY + 3, RGB(30, 30, 30));
+		SetPixel(listDC, endX - 1, endY - 3, RGB(30, 30, 30));
 	}
-
-	//DeleteObject(hPenOutline);
-	
-	EndPaint(&ps);
-	return 0;
 }
 
 void CDebugCommandsView::RefreshBreakpointList()
@@ -933,7 +936,7 @@ void CDebugCommandsView::BeginOpEdit(uint32_t address)
 	int nItem = (address - m_StartAddress) / 4;
 
 	CRect itemRect;
-	m_CommandList.GetSubItemRect(nItem, 1, 0, &itemRect);
+	m_CommandList.GetSubItemRect(nItem, CCommandList::COL_COMMAND, 0, &itemRect);
 	//itemRect.bottom += 0;
 	itemRect.left += listRect.left + 3;
 	itemRect.right += 100;
@@ -1078,7 +1081,6 @@ LRESULT CDebugCommandsView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 	return FALSE;
 }
-
 
 LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
