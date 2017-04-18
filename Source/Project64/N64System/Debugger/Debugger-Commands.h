@@ -26,6 +26,10 @@ public:
 		COL_SYMBOL
 	};
 
+	enum {
+		ROW_HEIGHT = 13,
+	};
+
 	void Attach(HWND hWndNew)
 	{
 		CListViewCtrl::Attach(hWndNew);

@@ -655,6 +655,16 @@ LRESULT CDebugCommandsView::OnCustomDrawList(NMHDR* pNMHDR)
 	return CDRF_DODEFAULT;
 }
 
+LRESULT	CDebugCommandsView::OnMeasureItem(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	if (wParam == IDC_CMD_LIST)
+	{
+		MEASUREITEMSTRUCT* lpMeasureItem = (MEASUREITEMSTRUCT*)lParam;
+		lpMeasureItem->itemHeight = CCommandList::ROW_HEIGHT;
+	}
+	return FALSE;
+}
+
 // Draw branch arrows
 void CDebugCommandsView::DrawBranchArrows(HDC listDC)
 {
@@ -686,15 +696,14 @@ void CDebugCommandsView::DrawBranchArrows(HDC listDC)
 	int baseX = colWidth - 4;
 	int baseY = headRect.bottom + 7;
 	
-	HBRUSH hBrushBg = CreateSolidBrush(RGB(30, 30, 30));
-	//SelectObject(hDC, hBrush);
-
 	CRect paneRect;
 	paneRect.top = headRect.bottom;
 	paneRect.left = 0;
 	paneRect.right = colWidth;
 	paneRect.bottom = listRect.bottom;
 	
+	COLORREF bgColor = RGB(30, 30, 30);
+	HBRUSH hBrushBg = CreateSolidBrush(bgColor);
 	FillRect(listDC, &paneRect, hBrushBg);
 	DeleteObject(hBrushBg);
 
@@ -702,16 +711,27 @@ void CDebugCommandsView::DrawBranchArrows(HDC listDC)
 	{
 		int colorIdx = i % nColors;
 		COLORREF color = colors[colorIdx];
-
-		HPEN hPen = CreatePen(PS_SOLID, 1, color);
 		
 		BRANCHARROW arrow = m_BranchArrows[i];
 	
 		int begX = baseX - arrow.startMargin * 3;
 		int endX = baseX - arrow.endMargin * 3;
 
-		int begY = baseY + arrow.startPos * 13;
-		int endY = baseY + arrow.endPos * 13;
+		int begY = baseY + arrow.startPos * CCommandList::ROW_HEIGHT;
+		int endY = baseY + arrow.endPos * CCommandList::ROW_HEIGHT;
+
+		bool bEndVisible = true;
+
+		if (endY < headRect.bottom)
+		{
+			endY = headRect.bottom + 1;
+			bEndVisible = false;
+		}
+		else if (endY > listRect.bottom)
+		{
+			endY = listRect.bottom - 2;
+			bEndVisible = false;
+		}
 
 		int marginX = baseX - (4 + arrow.margin * 3);
 
@@ -722,32 +742,41 @@ void CDebugCommandsView::DrawBranchArrows(HDC listDC)
 		SetPixel(listDC, begX + 1, begY + 2, color);
 
 		// draw outline
-		HPEN hPenOutline = CreatePen(PS_SOLID, 3, RGB(30, 30, 30));
+		HPEN hPenOutline = CreatePen(PS_SOLID, 3, bgColor);
 		SelectObject(listDC, hPenOutline);
 		MoveToEx(listDC, begX - 1, begY, NULL);
 		LineTo(listDC, marginX, begY);
 		LineTo(listDC, marginX, endY);
-		LineTo(listDC, endX + 2, endY);
+		if (bEndVisible)
+		{
+			LineTo(listDC, endX + 2, endY);
+		}
 		DeleteObject(hPenOutline);
 
 		// draw fill line
+		HPEN hPen = CreatePen(PS_SOLID, 1, color);
 		SelectObject(listDC, hPen);
 		MoveToEx(listDC, begX - 1, begY, NULL);
 		LineTo(listDC, marginX, begY);
 		LineTo(listDC, marginX, endY);
-		LineTo(listDC, endX + 2, endY);
+		if (bEndVisible)
+		{
+			LineTo(listDC, endX + 2, endY);
+		}
 		DeleteObject(hPen);
 
 		// draw end pointer
-		//int endPtrX = x - arrow.endMargin * 3;
-		SetPixel(listDC, endX - 0, endY - 1, color);
-		SetPixel(listDC, endX - 1, endY - 2, color);
-		SetPixel(listDC, endX - 1, endY - 1, color);
-		SetPixel(listDC, endX - 0, endY + 1, color);
-		SetPixel(listDC, endX - 1, endY + 2, color);
-		SetPixel(listDC, endX - 1, endY + 1, color);
-		SetPixel(listDC, endX - 1, endY + 3, RGB(30, 30, 30));
-		SetPixel(listDC, endX - 1, endY - 3, RGB(30, 30, 30));
+		if (bEndVisible)
+		{
+			SetPixel(listDC, endX - 0, endY - 1, color);
+			SetPixel(listDC, endX - 1, endY - 2, color);
+			SetPixel(listDC, endX - 1, endY - 1, color);
+			SetPixel(listDC, endX - 0, endY + 1, color);
+			SetPixel(listDC, endX - 1, endY + 2, color);
+			SetPixel(listDC, endX - 1, endY + 1, color);
+			SetPixel(listDC, endX - 1, endY + 3, RGB(30, 30, 30));
+			SetPixel(listDC, endX - 1, endY - 3, RGB(30, 30, 30));
+		}
 	}
 }
 
@@ -804,19 +833,6 @@ void CDebugCommandsView::RemoveSelectedBreakpoints()
 
 	RefreshBreakpointList();
 }
-
-LRESULT	CDebugCommandsView::OnMeasureItem(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-	// Set command list row height to 13px
-	if(wParam == IDC_CMD_LIST)
-	{
-		MEASUREITEMSTRUCT* lpMeasureItem = (MEASUREITEMSTRUCT*)lParam;
-		lpMeasureItem->itemHeight = 13;
-	}
-	return FALSE;
-}
-
-
 
 LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
@@ -1084,19 +1100,27 @@ LRESULT CDebugCommandsView::OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, 
 
 LRESULT	CDebugCommandsView::OnSizing(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-	CRect rect;
-	GetClientRect(&rect);
-	int height = rect.Height();
-	
-	int rows = (height / 13) - 2; // 13 row height
+	CRect listRect;
+	m_CommandList.GetWindowRect(listRect);
 
-	if (m_CommandListRows != rows)
+	CRect headRect;
+	CHeaderCtrl listHead = m_CommandList.GetHeader();
+	listHead.GetWindowRect(&headRect);
+
+	int rowsHeight = listRect.Height() - headRect.Height();
+	
+	int nRows = (rowsHeight / CCommandList::ROW_HEIGHT);
+	
+	if (m_CommandListRows != nRows)
 	{
-		m_CommandListRows = rows;
+		m_CommandListRows = nRows;
 		ShowAddress(m_StartAddress, TRUE);
 	}
 	
 	m_RegisterTabs.RedrawCurrentTab();
+
+	// Fix cmd list header
+	listHead.ResizeClient(listRect.Width(), headRect.Height());
 
 	return FALSE;
 }
