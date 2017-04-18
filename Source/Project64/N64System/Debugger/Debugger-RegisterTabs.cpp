@@ -209,34 +209,147 @@ void CRegisterTabs::RefreshEdits()
 	}
 }
 
+static bool OpReadsGPR(OPCODE opCode, int nReg)
+{
+	uint32_t op = opCode.op;
+
+	if (op >= R4300i_LDL && op <= R4300i_LWU ||
+		op >= R4300i_ADDI && op <= R4300i_XORI ||
+		op == R4300i_LD)
+	{
+		// loads read index
+		if (opCode.rs == nReg)
+		{
+			return true;
+		}
+	}
+
+	if (op >= R4300i_SB && op <= R4300i_SWR ||
+		op >= R4300i_SC && op <= R4300i_SD)
+	{
+		// stores read value and index
+		if (opCode.rs == nReg || opCode.rt == nReg)
+		{
+			return true;
+		}
+	}
+
+	if (op == R4300i_SPECIAL)
+	{
+		uint32_t fn = opCode.funct;
+
+		if (fn == R4300i_SPECIAL_MTLO || fn == R4300i_SPECIAL_MTHI)
+		{
+			if (opCode.rs == nReg)
+			{
+				return true;
+			}
+		}
+
+		if (fn >= R4300i_SPECIAL_SLLV && fn <= R4300i_SPECIAL_SRAV ||
+			fn >= R4300i_SPECIAL_DSLLV && fn <= R4300i_SPECIAL_DSRAV ||
+			fn >= R4300i_SPECIAL_DIVU && fn <= R4300i_SPECIAL_DSUBU)
+		{
+			// two register operands
+			if (opCode.rt == nReg || opCode.rs == nReg)
+			{
+				return true;
+			}
+		}
+	}
+		
+	return false;
+}
+
+static bool OpWritesGPR(OPCODE opCode, int nReg)
+{
+	uint32_t op = opCode.op;
+
+	if (op >= R4300i_LDL && op <= R4300i_LWU ||
+		op >= R4300i_ADDI && op <= R4300i_XORI ||
+		op == R4300i_LUI || op == R4300i_LD)
+	{
+		// loads write value
+		if (opCode.rt == nReg)
+		{
+			return true;
+		}
+	}
+
+	if (op == R4300i_SPECIAL)
+	{
+		uint32_t fn = opCode.funct;
+		
+		if (fn == R4300i_SPECIAL_MFLO || fn == R4300i_SPECIAL_MFHI)
+		{
+			if (opCode.rd == nReg)
+			{
+				return true;
+			}
+		}
+
+		if (fn >= R4300i_SPECIAL_SLLV && fn <= R4300i_SPECIAL_SRAV ||
+			fn >= R4300i_SPECIAL_DSLLV && fn <= R4300i_SPECIAL_DSRAV ||
+			fn >= R4300i_SPECIAL_DIVU && fn <= R4300i_SPECIAL_DSUBU)
+		{
+			// result register
+			if (opCode.rd == nReg)
+			{
+				return true;
+			}
+		}
+	}
+	
+	return false;
+}
+
 INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-
 	if (msg == WM_INITDIALOG)
 	{
 		return TRUE;
 	}
-
-	/*
+	
 	if (msg == WM_CTLCOLOREDIT)
 	{
-	if (g_Reg == NULL)
-	{
-	return FALSE;
+		if (g_Reg == NULL || g_MMU == NULL)
+		{
+			return FALSE;
+		}
+
+		HWND hWnd = (HWND)lParam;
+		int ctrlId = ::GetWindowLong(hWnd, GWL_ID);
+		int nReg = MapEdit(ctrlId, GPREditIds);
+
+		HDC hdc = (HDC)wParam;
+		
+		OPCODE opCode;
+		g_MMU->LW_VAddr(g_Reg->m_PROGRAM_COUNTER, opCode.Hex);
+
+		bool bOpReads = OpReadsGPR(opCode, nReg);
+		bool bOpWrites = OpWritesGPR(opCode, nReg);
+
+		if (bOpReads && bOpWrites)
+		{
+			SetBkColor(hdc, RGB(255, 230, 255));
+			SetDCBrushColor(hdc, RGB(255, 230, 255));
+			return (LRESULT)GetStockObject(DC_BRUSH);
+		}
+		else if(bOpReads)
+		{
+			SetBkColor(hdc, RGB(230, 230, 255));
+			SetDCBrushColor(hdc, RGB(230, 230, 255));
+			return (LRESULT)GetStockObject(DC_BRUSH);
+		}
+		else if (bOpWrites)
+		{
+			SetBkColor(hdc, RGB(255, 230, 230));
+			SetDCBrushColor(hdc, RGB(255, 230, 230));
+			return (LRESULT)GetStockObject(DC_BRUSH);
+		}
+
+		return FALSE;
 	}
-
-	HDC hdc = (HDC)wParam;
-
-	SetTextColor(hdc, signExt ? RGB(255, 0, 0) : RGB(0, 0, 0));
-	SetBkColor(hdc, RGB(255,255,255));
-
-	return (INT_PTR)CreateSolidBrush(RGB(255,255,255));
-	}*/
-
-	/*if (registersUpdating)
-	{
-	return FALSE;
-	}*/
 
 	if (msg != WM_COMMAND)
 	{
