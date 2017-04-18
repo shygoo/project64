@@ -8,7 +8,6 @@
 #define IDAPPLY                         3
 #define VERSION_MINOR                   3
 #define IDI_PJ64_Icon                   101
-#define IDC_BORDER                      101
 #define IDD_Rom_Information             104
 #define IDD_Key_Prompt                  108
 #define IDI_RIGHT                       110
@@ -47,23 +46,23 @@
 #define IDD_Support_EnterCode           151
 #define IDD_Debugger_Commands           152
 #define IDR_POPUP                       155
-#define IDD_Debugger_GPR                158
+#define IDD_Debugger_RegGPR             158
 #define IDR_CHEAT_MENU                  160
 #define IDD_Debugger_AddBreakpoint      160
 #define IDD_Lang_Select                 161
 #define IDD_Settings_GameRecompiler     162
 #define IDD_Settings_GamePlugin         163
 #define IDD_Settings_GameStatus         164
-#define IDD_Debugger_FPR                166
+#define IDD_Debugger_RegFPR             166
 #define IDD_Debugger_Scripts            169
-#define IDD_Debugger_PI                 170
+#define IDD_Debugger_RegPI              170
 #define IDD_Debugger_Symbols            172
 #define IDD_Debugger_AddSymbol          174
 #define IDR_MEM_BP_POPUP                177
 #define IDR_JSAPI_TEXT                  181
 #define IDD_Debugger_DMALog             182
 #define IDD_Debugger_StackTrace         184
-#define IDD_Debugger_COP0               185
+#define IDD_Debugger_RegCOP0            185
 #define IDR_MENU1                       186
 #define IDR_SCRIPT_POPUP                186
 #define IDR_OP_POPUP                    187
@@ -82,7 +81,6 @@
 #define IDC_BTN_RDRAM                   1007
 #define IDC_REFRSH_MEM                  1007
 #define IDC_INFO_ROMNAME                1008
-#define IDC_BUTTON3                     1008
 #define IDC_RESET_PAGE                  1008
 #define IDC_INFO_CARTID                 1009
 #define IDC_VIRTUALKEY                  1009
@@ -116,7 +114,6 @@
 #define IDC_SMM_DMA                     1013
 #define IDC_UNKNOWN_ALIGN               1013
 #define IDC_DELAY_DP                    1013
-#define IDC_DEBUGGER2                   1013
 #define IDC_INTERPRETER                 1013
 #define IDC_INFO_CRC1                   1014
 #define IDC_ASSIGNED_MENU_ITEM          1014
@@ -382,7 +379,6 @@
 #define IDC_BP_LIST                     1185
 #define IDC_CTX_INFO_EDIT               1185
 #define IDC_ADDBP_BTN                   1186
-#define IDC_RUN_BTN                     1186
 #define IDC_REMOVESYMBOL_BTN            1186
 #define IDC_RMBP_BTN                    1187
 #define IDC_CHEATSFRAME                 1188
@@ -402,7 +398,6 @@
 #define IDC_CRC1                        1198
 #define IDC_CRC2                        1199
 #define IDC_CIC_CHIP                    1200
-#define IDC_CHECK1                      1200
 #define IDC_ROM_MD5                     1201
 #define IDC_NOTESFRAME                  1201
 #define IDC_CHK_READ                    1201
@@ -450,7 +445,6 @@
 #define IDC_F31_EDIT                    1235
 #define IDC_SKIP_BTN                    1268
 #define IDC_CONSOLE_EDIT                1271
-#define IDC_SEARCH_EDIT                 1271
 #define IDC_FILTER_EDIT                 1271
 #define IDC_EVAL_EDIT                   1272
 #define IDC_PI00_EDIT                   1274
@@ -482,7 +476,6 @@
 #define IDC_TRACE_STATIC                1307
 #define IDC_RAM_STATIC                  1308
 #define IDC_ROM_STATIC                  1309
-#define IDC_LIST4                       1312
 #define IDC_STACKTRACE_LIST             1313
 #define IDC_OP_EDIT                     1314
 #define IDC_COP0_0_EDIT                 1315
@@ -506,13 +499,10 @@
 #define IDC_COP0_18_EDIT                1333
 #define IDC_COP0_19_EDIT                1334
 #define IDC_FILTER_STATIC               1339
-#define IDC_INFO_EDIT                   1347
-#define IDC_SYM_INFO_EDIT               1347
 #define IDC_SYM_INFO                    1348
 #define IDC_BLOCK_INFO                  1350
 #define IDC_DMA_INFO                    1351
 #define IDC_BACK_BTN                    1352
-#define IDC_BACK_BTN2                   1353
 #define IDC_FORWARD_BTN                 1353
 #define IDC_PC_EDIT                     1354
 #define IDC_VIEWPC_BTN                  1355

@@ -19,10 +19,10 @@ void CRegisterTabs::Attach(HWND hWndNew)
 
 	CTabCtrl::Attach(hWndNew);
 
-	m_GPRTab = AddTab("GPR", IDD_Debugger_GPR, TabProcGPR);
-	m_FPRTab = AddTab("FPR", IDD_Debugger_FPR, TabProcFPR);
-	m_COP0Tab = AddTab("COP0", IDD_Debugger_COP0, TabProcCOP0);
-	m_PITab = AddTab("PI", IDD_Debugger_PI, TabProcPI);
+	m_GPRTab = AddTab("GPR", IDD_Debugger_RegGPR, TabProcGPR);
+	m_FPRTab = AddTab("FPR", IDD_Debugger_RegFPR, TabProcFPR);
+	m_COP0Tab = AddTab("COP0", IDD_Debugger_RegCOP0, TabProcCOP0);
+	m_PITab = AddTab("PI", IDD_Debugger_RegPI, TabProcPI);
 	
 	HFONT monoFont = CreateFont(-11, 0, 0, 0,
 		FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
