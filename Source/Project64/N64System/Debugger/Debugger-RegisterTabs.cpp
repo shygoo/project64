@@ -13,6 +13,8 @@
 
 #include "Debugger-RegisterTabs.h"
 
+bool CRegisterTabs::m_bColorsEnabled = false;
+
 void CRegisterTabs::Attach(HWND hWndNew)
 {
 	m_TabWindows.clear();
@@ -215,9 +217,10 @@ static bool OpReadsGPR(OPCODE opCode, int nReg)
 
 	if (op >= R4300i_LDL && op <= R4300i_LWU ||
 		op >= R4300i_ADDI && op <= R4300i_XORI ||
-		op == R4300i_LD)
+		op == R4300i_LD ||
+		op == R4300i_BGTZ || op == R4300i_BGTZL ||
+		op == R4300i_BLEZ || op == R4300i_BLEZL)
 	{
-		// loads read index
 		if (opCode.rs == nReg)
 		{
 			return true;
@@ -225,7 +228,9 @@ static bool OpReadsGPR(OPCODE opCode, int nReg)
 	}
 
 	if (op >= R4300i_SB && op <= R4300i_SWR ||
-		op >= R4300i_SC && op <= R4300i_SD)
+		op >= R4300i_SC && op <= R4300i_SD ||
+		op == R4300i_BEQ || op == R4300i_BEQL ||
+		op == R4300i_BNE || op == R4300i_BNEL)
 	{
 		// stores read value and index
 		if (opCode.rs == nReg || opCode.rt == nReg)
@@ -233,17 +238,30 @@ static bool OpReadsGPR(OPCODE opCode, int nReg)
 			return true;
 		}
 	}
-
+	
 	if (op == R4300i_SPECIAL)
 	{
 		uint32_t fn = opCode.funct;
 
-		if (fn == R4300i_SPECIAL_MTLO || fn == R4300i_SPECIAL_MTHI)
+		switch (fn)
 		{
+		case R4300i_SPECIAL_MTLO:
+		case R4300i_SPECIAL_MTHI:
+		case R4300i_SPECIAL_JR:
+		case R4300i_SPECIAL_JALR:
 			if (opCode.rs == nReg)
 			{
 				return true;
 			}
+			break;
+		case R4300i_SPECIAL_SLL:
+		case R4300i_SPECIAL_SRL:
+		case R4300i_SPECIAL_SRA:
+			if (opCode.rt == nReg)
+			{
+				return true;
+			}
+			break;
 		}
 
 		if (fn >= R4300i_SPECIAL_SLLV && fn <= R4300i_SPECIAL_SRAV ||
@@ -276,21 +294,36 @@ static bool OpWritesGPR(OPCODE opCode, int nReg)
 		}
 	}
 
+	if (op == R4300i_JAL)
+	{
+		if (nReg == 31) // RA
+		{
+			return true;
+		}
+	}
+
 	if (op == R4300i_SPECIAL)
 	{
 		uint32_t fn = opCode.funct;
 		
-		if (fn == R4300i_SPECIAL_MFLO || fn == R4300i_SPECIAL_MFHI)
+		switch (fn)
 		{
+		case R4300i_SPECIAL_MFLO:
+		case R4300i_SPECIAL_MFHI:
+		case R4300i_SPECIAL_SLL:
+		case R4300i_SPECIAL_SRL:
+		case R4300i_SPECIAL_SRA:
 			if (opCode.rd == nReg)
 			{
 				return true;
 			}
+			break;
 		}
 
 		if (fn >= R4300i_SPECIAL_SLLV && fn <= R4300i_SPECIAL_SRAV ||
 			fn >= R4300i_SPECIAL_DSLLV && fn <= R4300i_SPECIAL_DSRAV ||
-			fn >= R4300i_SPECIAL_DIVU && fn <= R4300i_SPECIAL_DSUBU)
+			fn >= R4300i_SPECIAL_DIVU && fn <= R4300i_SPECIAL_DSUBU ||
+			fn == R4300i_SPECIAL_JALR)
 		{
 			// result register
 			if (opCode.rd == nReg)
@@ -303,6 +336,44 @@ static bool OpWritesGPR(OPCODE opCode, int nReg)
 	return false;
 }
 
+static bool OpReadsLO(OPCODE opCode)
+{
+	if (opCode.op == R4300i_SPECIAL && opCode.funct == R4300i_SPECIAL_MFLO)
+	{
+		return true;
+	}
+	return false;
+}
+
+static bool OpWritesLO(OPCODE opCode)
+{
+	if (opCode.op == R4300i_SPECIAL && opCode.funct == R4300i_SPECIAL_MTLO)
+	{
+		return true;
+	}
+	return false;
+}
+
+// todo add mult, div etc
+
+static bool OpReadsHI(OPCODE opCode)
+{
+	if (opCode.op == R4300i_SPECIAL && opCode.funct == R4300i_SPECIAL_MFHI)
+	{
+		return true;
+	}
+	return false;
+}
+
+static bool OpWritesHI(OPCODE opCode)
+{
+	if (opCode.op == R4300i_SPECIAL && opCode.funct == R4300i_SPECIAL_MTHI)
+	{
+		return true;
+	}
+	return false;
+}
+
 INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (msg == WM_INITDIALOG)
@@ -312,43 +383,60 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
 	
 	if (msg == WM_CTLCOLOREDIT)
 	{
-		if (g_Reg == NULL || g_MMU == NULL)
+		HDC hdc = (HDC)wParam;
+		COLORREF colorBg = RGB(255, 255, 255);
+
+		COLORREF colorRead = RGB(200, 200, 255);
+		COLORREF colorWrite = RGB(255, 200, 200);
+		COLORREF colorBoth = RGB(255, 200, 255);
+
+		if (!m_bColorsEnabled || g_Reg == NULL || g_MMU == NULL)
 		{
 			return FALSE;
 		}
 
 		HWND hWnd = (HWND)lParam;
 		int ctrlId = ::GetWindowLong(hWnd, GWL_ID);
-		int nReg = MapEdit(ctrlId, GPREditIds);
-
-		HDC hdc = (HDC)wParam;
 		
 		OPCODE opCode;
 		g_MMU->LW_VAddr(g_Reg->m_PROGRAM_COUNTER, opCode.Hex);
 
-		bool bOpReads = OpReadsGPR(opCode, nReg);
-		bool bOpWrites = OpWritesGPR(opCode, nReg);
+		bool bOpReads = false;
+		bool bOpWrites = false;
 
+		if (ctrlId == IDC_LO_EDIT)
+		{
+			bOpReads = OpReadsLO(opCode);
+			bOpWrites = !bOpReads && OpWritesLO(opCode);
+		}
+		else if (ctrlId == IDC_HI_EDIT)
+		{
+			bOpReads = OpReadsHI(opCode);
+			bOpWrites = !bOpReads && OpWritesHI(opCode);
+		}
+		else
+		{
+			int nReg = MapEdit(ctrlId, GPREditIds);
+			bOpReads = OpReadsGPR(opCode, nReg);
+			bOpWrites = OpWritesGPR(opCode, nReg);
+		}
+		
 		if (bOpReads && bOpWrites)
 		{
-			SetBkColor(hdc, RGB(255, 230, 255));
-			SetDCBrushColor(hdc, RGB(255, 230, 255));
-			return (LRESULT)GetStockObject(DC_BRUSH);
+			colorBg = colorBoth;
 		}
 		else if(bOpReads)
 		{
-			SetBkColor(hdc, RGB(230, 230, 255));
-			SetDCBrushColor(hdc, RGB(230, 230, 255));
-			return (LRESULT)GetStockObject(DC_BRUSH);
+			colorBg = colorRead;
 		}
 		else if (bOpWrites)
 		{
-			SetBkColor(hdc, RGB(255, 230, 230));
-			SetDCBrushColor(hdc, RGB(255, 230, 230));
-			return (LRESULT)GetStockObject(DC_BRUSH);
+			colorBg = colorWrite;
 		}
 
-		return FALSE;
+		SetBkColor(hdc, colorBg);
+		SetDCBrushColor(hdc, colorBg);
+		return (LRESULT)GetStockObject(DC_BRUSH);
 	}
 
 	if (msg != WM_COMMAND)
@@ -542,6 +630,11 @@ INT_PTR CALLBACK CRegisterTabs::TabProcCOP0(HWND hDlg, UINT msg, WPARAM wParam, 
 	}
 
 	return FALSE;
+}
+
+void CRegisterTabs::SetColorsEnabled(bool bColorsEnabled)
+{
+	m_bColorsEnabled = bColorsEnabled;
 }
 
 // CEditReg64

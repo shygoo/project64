@@ -79,6 +79,7 @@ LRESULT	CDebugCommandsView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 	// Setup register tabs & inputs
 
 	m_RegisterTabs.Attach(GetDlgItem(IDC_REG_TABS));
+	m_RegisterTabs.SetColorsEnabled(false);
 	m_RegisterTabs.RefreshEdits();
 
 	// Setup breakpoint list
@@ -342,6 +343,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 			m_StepButton.EnableWindow(FALSE);
 			m_SkipButton.EnableWindow(FALSE);
 			m_GoButton.EnableWindow(FALSE);
+
+			m_RegisterTabs.SetColorsEnabled(false);
 		}
 	}
 	else
@@ -371,6 +374,8 @@ void CDebugCommandsView::ShowAddress(DWORD address, BOOL top)
 		m_StepButton.EnableWindow(TRUE);
 		m_SkipButton.EnableWindow(TRUE);
 		m_GoButton.EnableWindow(TRUE);
+
+		m_RegisterTabs.SetColorsEnabled(true);
 	}
 	
 	m_CommandList.SetRedraw(FALSE);
@@ -867,6 +872,8 @@ LRESULT CDebugCommandsView::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWn
 		m_Debugger->Debug_RefreshStackWindow();
 		m_Breakpoints->StopDebugging();
 		m_Breakpoints->Resume();
+		m_RegisterTabs.SetColorsEnabled(false);
+		m_RegisterTabs.RefreshEdits();
 		ShowAddress(m_StartAddress, TRUE);
 		break;
 	case IDC_STEP_BTN:

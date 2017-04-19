@@ -38,6 +38,9 @@ public:
 class CRegisterTabs : public CTabCtrl
 {
 private:
+	// for static dlgprocs, assumes single instance
+	static bool m_bColorsEnabled; 
+
 	vector<CWindow> m_TabWindows;
 	
 	static constexpr DWORD GPREditIds[] = {
@@ -116,6 +119,8 @@ public:
 
 	void RefreshEdits();
 	
+	void SetColorsEnabled(bool bColorsEnabled);
+
 	static INT_PTR CALLBACK TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 	static INT_PTR CALLBACK TabProcPI(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);

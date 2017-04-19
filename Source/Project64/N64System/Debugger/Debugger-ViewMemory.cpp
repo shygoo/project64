@@ -104,8 +104,6 @@ LRESULT	CDebugMemoryView::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM 
         SetWindowPos(NULL, 0, 0, MemoryListWindow.right - MemoryListWindow.left, (MemoryListWindow.bottom - MemoryListWindow.top) + (height - MemoryListRect.bottom), SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOZORDER);
 
         RECT DlgItemRect = { 0 };
-        ::GetWindowRect(GetDlgItem(IDC_BORDER), &DlgItemRect);
-        ::SetWindowPos(GetDlgItem(IDC_BORDER), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
 
         ::GetWindowRect(GetDlgItem(IDC_MEM_DETAILS), &DlgItemRect);
         ::SetWindowPos(GetDlgItem(IDC_MEM_DETAILS), NULL, 0, 0, DlgItemRect.right - DlgItemRect.left, (DlgItemRect.bottom - DlgItemRect.top) + (height - MemoryListRect.bottom), SWP_NOMOVE);
