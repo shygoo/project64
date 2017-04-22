@@ -35,9 +35,12 @@ LRESULT	CDumpMemory::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
     m_EndAddress.SetDisplayType(CEditNumber::DisplayHex);
     m_PC.SetDisplayType(CEditNumber::DisplayHex);
 
-    m_StartAddress.SetValue(0x80000000, true, true);
-    m_EndAddress.SetValue(0x803FFFF0, true, true);
-    m_PC.SetValue(0x80000000);
+	uint32_t startAddress = 0x80000000;
+	uint32_t endAddress = startAddress + (g_MMU ? g_MMU->RdramSize() : 0x400000);
+
+    m_StartAddress.SetValue(startAddress, true, true);
+    m_EndAddress.SetValue(endAddress, true, true);
+    m_PC.SetValue(startAddress);
 	
 	int nIndex = m_FormatList.AddString("TEXT - Disassembly + PC");
 	m_FormatList.SetItemData(nIndex, (DWORD_PTR)DisassemblyWithPC);
