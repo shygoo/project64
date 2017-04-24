@@ -42,6 +42,12 @@ void CRegisterTabs::Attach(HWND hWndNew)
 		m_FPREdits[i].SetFont(monoFont, FALSE);
 	}
 
+	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
+	m_HIEdit.SetFont(monoFont, FALSE);
+
+	m_LOEdit.Attach(m_GPRTab.GetDlgItem(IDC_LO_EDIT));
+	m_LOEdit.SetFont(monoFont, FALSE);
+
 	for (int i = 0; PIEditIds[i] != 0; i++)
 	{
 		m_PIEdits[i].Attach(m_PITab.GetDlgItem(PIEditIds[i]));
@@ -56,11 +62,7 @@ void CRegisterTabs::Attach(HWND hWndNew)
 		m_COP0Edits[i].SetFont(monoFont, FALSE);
 	}
 
-	m_HIEdit.Attach(m_GPRTab.GetDlgItem(IDC_HI_EDIT));
-	m_HIEdit.SetFont(monoFont, FALSE);
-
-	m_LOEdit.Attach(m_GPRTab.GetDlgItem(IDC_LO_EDIT));
-	m_LOEdit.SetFont(monoFont, FALSE);
+	m_CauseTip.Attach(m_COP0Tab.GetDlgItem(IDC_CAUSE_TIP));
 }
 
 CRect CRegisterTabs::GetPageRect()
@@ -188,6 +190,12 @@ void CRegisterTabs::RefreshEdits()
 		m_COP0Edits[16].SetValue(g_Reg->TAGHI_REGISTER, false, true);
 		m_COP0Edits[17].SetValue(g_Reg->ERROREPC_REGISTER, false, true);
 		m_COP0Edits[18].SetValue(g_Reg->FAKE_CAUSE_REGISTER, false, true);
+
+		CAUSE cause;
+		cause.intval = g_Reg->CAUSE_REGISTER;
+
+		const char* szExceptionCode = ExceptionCodes[cause.exceptionCode];
+		m_CauseTip.SetWindowTextA(szExceptionCode);
 	}
 	else
 	{

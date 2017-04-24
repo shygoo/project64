@@ -95,6 +95,58 @@ private:
 		}
 		return -1;
 	}
+
+	typedef union
+	{
+		uint32_t intval;
+
+		struct {
+			unsigned : 2;
+			unsigned exceptionCode : 5;
+			unsigned : 1;
+			unsigned pendingInterrupts : 8;
+			unsigned : 12;
+			unsigned coprocessor : 2;
+			unsigned : 1;
+			unsigned fromDelaySlot : 1;
+		};
+
+	} CAUSE;
+
+	static constexpr char* ExceptionCodes[] = {
+		"Interrupt",
+		"TLB mod",
+		"TLB load/fetch",
+		"TLB store",
+		"Address error (load/fetch)",
+		"Address error (store)",
+		"Bus error (instruction fetch)",
+		"Bus error (data load/store)",
+		"Syscall",
+		"Breakpoint",
+		"Reserved instruction",
+		"Coprocessor unusable",
+		"Arithmetic overflow",
+		"Trap",
+		"Virtual coherency (instruction)",
+		"Floating-point",
+		"? 16",
+		"? 17",
+		"? 18",
+		"? 19",
+		"? 20",
+		"? 21",
+		"? 22",
+		"Watch",
+		"? 24",
+		"? 25",
+		"? 26",
+		"? 27",
+		"? 28",
+		"? 29",
+		"? 30",
+		"Virtual coherency (data)"
+	};
 	
 	CWindow m_PITab;
 	CEditNumber m_PIEdits[COUNT_OF(PIEditIds) - 1];
@@ -109,6 +161,7 @@ private:
 	
 	CWindow m_COP0Tab;
 	CEditNumber m_COP0Edits[COUNT_OF(COP0EditIds) - 1];
+	CStatic m_CauseTip;
 
 public:
 	void Attach(HWND hWndNew);
