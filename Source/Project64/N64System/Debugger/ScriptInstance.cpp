@@ -183,17 +183,16 @@ void CScriptInstance::StartEventLoop()
 CScriptInstance::EVENT_STATUS
 CScriptInstance::WaitForEvent(IOLISTENER** lpListener)
 {
-	OVERLAPPED_ENTRY usedOvlEntry;
-	ULONG nUsedOverlaps;
+	DWORD nBytesTransferred;
+	ULONG_PTR completionKey;
+	OVERLAPPED* lpUsedOverlap;
 
-	// Wait for an IO completion or async proc call
-	BOOL status = GetQueuedCompletionStatusEx(
+	BOOL status = GetQueuedCompletionStatus(
 		m_hIOCompletionPort,
-		&usedOvlEntry,
-		1,
-		&nUsedOverlaps,
-		INFINITE,
-		TRUE
+		&nBytesTransferred,
+		&completionKey,
+		&lpUsedOverlap,
+		INFINITE
 	);
 
 	if (!status)
@@ -207,9 +206,9 @@ CScriptInstance::WaitForEvent(IOLISTENER** lpListener)
 		return EVENT_STATUS_ERROR;
 	}
 
-	*lpListener = (IOLISTENER*) usedOvlEntry.lpOverlapped;
+	*lpListener = (IOLISTENER*) lpUsedOverlap;
 
-	(*lpListener)->dataLen = usedOvlEntry.dwNumberOfBytesTransferred;
+	(*lpListener)->dataLen = nBytesTransferred;
 
 	return EVENT_STATUS_OK;
 }
