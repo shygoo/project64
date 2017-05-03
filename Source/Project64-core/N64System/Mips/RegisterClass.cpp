@@ -17,21 +17,21 @@
 const char * CRegName::GPR[32] = { "R0", "AT", "V0", "V1", "A0", "A1", "A2", "A3",
 "T0", "T1", "T2", "T3", "T4", "T5", "T6", "T7",
 "S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7",
-"T8", "T9", "K0", "K1", "GP", "SP", "S8", "RA" };
+"T8", "T9", "K0", "K1", "GP", "SP", "FP", "RA" };
 
 const char *CRegName::GPR_Hi[32] = { "r0.HI", "at.HI", "v0.HI", "v1.HI", "a0.HI", "a1.HI",
 "a2.HI", "a3.HI", "t0.HI", "t1.HI", "t2.HI", "t3.HI",
 "t4.HI", "t5.HI", "t6.HI", "t7.HI", "s0.HI", "s1.HI",
 "s2.HI", "s3.HI", "s4.HI", "s5.HI", "s6.HI", "s7.HI",
 "t8.HI", "t9.HI", "k0.HI", "k1.HI", "gp.HI", "sp.HI",
-"s8.HI", "ra.HI" };
+"fp.HI", "ra.HI" };
 
 const char *CRegName::GPR_Lo[32] = { "r0.LO", "at.LO", "v0.LO", "v1.LO", "a0.LO", "a1.LO",
 "a2.LO", "a3.LO", "t0.LO", "t1.LO", "t2.LO", "t3.LO",
 "t4.LO", "t5.LO", "t6.LO", "t7.LO", "s0.LO", "s1.LO",
 "s2.LO", "s3.LO", "s4.LO", "s5.LO", "s6.LO", "s7.LO",
 "t8.LO", "t9.LO", "k0.LO", "k1.LO", "gp.LO", "sp.LO",
-"s8.LO", "ra.LO" };
+"fp.LO", "ra.LO" };
 
 const char * CRegName::Cop0[32] = { "Index", "Random", "EntryLo0", "EntryLo1", "Context", "PageMask", "Wired", "",
 "BadVAddr", "Count", "EntryHi", "Compare", "Status", "Cause", "EPC", "PRId",
