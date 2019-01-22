@@ -11,6 +11,10 @@
 #pragma once
 #include "Breakpoints.h"
 
+#define REG_COLOR_READ  RGB(200, 200, 255)
+#define REG_COLOR_WRITE RGB(255, 200, 200)
+#define REG_COLOR_BOTH  RGB(220, 170, 255)
+
 class CEditReg64 : 
     public CWindowImpl<CEditReg64, CEdit>,
     private CDebugSettings

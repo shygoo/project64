@@ -184,7 +184,7 @@ public:
         return (short)m_OpCode.immediate > 0;
     }
 
-    void ReadsGPR(int* nReg1, int* nReg2)
+    inline void ReadsGPR(int* nReg1, int* nReg2)
     {
         uint32_t op = m_OpCode.op;
 
@@ -343,6 +343,165 @@ public:
             }
         }
         return false;
+    }
+
+    inline void WritesFPR(int* nReg1, int* nReg2)
+    {
+        if (m_OpCode.op == R4300i_LWC1)
+        {
+            *nReg1 = m_OpCode.ft;
+            *nReg2 = -1;
+            return;
+        }
+
+        if (m_OpCode.op == R4300i_LDC1)
+        {
+            *nReg1 = m_OpCode.ft;
+            *nReg2 = m_OpCode.ft + 1;
+            return;
+        }
+
+        if (m_OpCode.op != R4300i_CP1)
+        {
+            *nReg1 = *nReg2 = -1;
+            return;
+        }
+
+        if (m_OpCode.fmt == R4300i_COP1_MT)
+        {
+            *nReg1 = m_OpCode.fs;
+            *nReg2 = -1;
+            return;
+        }
+
+        if (m_OpCode.fmt == R4300i_COP1_DMT)
+        {
+            *nReg1 = m_OpCode.fs;
+            *nReg2 = m_OpCode.fs + 1;
+            return;
+        }   
+
+        if (m_OpCode.fmt == R4300i_COP1_S || m_OpCode.fmt == R4300i_COP1_W)
+        {
+            uint32_t fn = m_OpCode.funct;
+
+            if (fn >= R4300i_COP1_FUNCT_C_UN && fn <= R4300i_COP1_FUNCT_C_NGT)
+            {
+                // compare fn, no writes
+                *nReg1 = *nReg2 = -1;
+                return;
+            }
+
+            *nReg1 = m_OpCode.fd;
+
+            if (fn == R4300i_COP1_FUNCT_CVT_D || fn == R4300i_COP1_FUNCT_CVT_L ||
+                (fn >= R4300i_COP1_FUNCT_ROUND_L && fn <= R4300i_COP1_FUNCT_FLOOR_L))
+            {
+                // single to 64 bit
+                *nReg2 = m_OpCode.fd + 1;
+                return;
+            }
+
+            *nReg2 = -1;
+            return;
+        }
+
+        if (m_OpCode.fmt == R4300i_COP1_D || m_OpCode.fmt == R4300i_COP1_L)
+        {
+            uint32_t fn = m_OpCode.funct;
+
+            if (fn >= R4300i_COP1_FUNCT_C_UN && fn <= R4300i_COP1_FUNCT_C_NGT)
+            {
+                // compare fn, no writes
+                *nReg1 = *nReg2 = -1;
+                return;
+            }
+
+            if (fn == R4300i_COP1_FUNCT_CVT_S || fn == R4300i_COP1_FUNCT_CVT_W ||
+                (fn >= R4300i_COP1_FUNCT_ROUND_W && fn <= R4300i_COP1_FUNCT_FLOOR_W))
+            {
+                // double to 32 bit
+                *nReg1 = m_OpCode.fd;
+                return;
+            }
+
+            *nReg2 = m_OpCode.fd + 1;
+            return;
+        }
+
+        *nReg1 = *nReg2 = -1;
+        return;
+    }
+
+    inline void ReadsFPR(int* nReg1, int* nReg2, int* nReg3, int* nReg4)
+    {
+        if (m_OpCode.op == R4300i_SWC1)
+        {
+            *nReg1 = m_OpCode.ft;
+            *nReg2 = *nReg3 = *nReg4 = -1;
+            return;
+        }
+        
+        if (m_OpCode.op == R4300i_SDC1)
+        {
+            *nReg1 = m_OpCode.ft;
+            *nReg2 = m_OpCode.ft + 1;
+            *nReg3 = *nReg4 = -1;
+            return;
+        }
+
+        if (m_OpCode.op != R4300i_CP1)
+        {
+            *nReg1 = *nReg2 = *nReg3 = *nReg4 = -1;
+            return;
+        }
+
+        if (m_OpCode.fmt == R4300i_COP1_MF)
+        {
+            *nReg1 = m_OpCode.fs;
+            *nReg2 = *nReg3 = *nReg4 = -1;
+            return;
+        }
+
+        if (m_OpCode.fmt == R4300i_COP1_DMF)
+        {
+            *nReg1 = m_OpCode.fs;
+            *nReg2 = m_OpCode.fs + 1;
+            *nReg3 = *nReg4 = -1;
+            return;
+        }
+
+        ////
+        if (m_OpCode.fmt == R4300i_COP1_S || m_OpCode.fmt == R4300i_COP1_W)
+        {
+            uint32_t fn = m_OpCode.funct;
+
+            if (fn >= R4300i_COP1_FUNCT_ADD && fn <= R4300i_COP1_FUNCT_ADD ||
+                fn >= R4300i_COP1_FUNCT_C_UN && fn <= R4300i_COP1_FUNCT_C_NGT)
+            {
+                // read two 32 bit regs
+                *nReg1 = m_OpCode.fs;
+                *nReg2 = m_OpCode.ft;
+                *nReg3 = *nReg4 = -1;
+                return;
+            }
+
+            *nReg1 = m_OpCode.fd;
+
+            if (fn == R4300i_COP1_FUNCT_CVT_D || fn == R4300i_COP1_FUNCT_CVT_L ||
+                (fn >= R4300i_COP1_FUNCT_ROUND_L && fn <= R4300i_COP1_FUNCT_FLOOR_L))
+            {
+                // single to 64 bit
+                *nReg2 = m_OpCode.fd + 1;
+                return;
+            }
+
+            *nReg2 = -1;
+            return;
+        }
+
+        *nReg1 = *nReg2 = *nReg3 = *nReg4 = -1;
+        return;
     }
 
     inline uint32_t GetLoadStoreAddress()

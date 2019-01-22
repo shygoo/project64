@@ -484,10 +484,6 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
         HDC hdc = (HDC)wParam;
         COLORREF colorBg = RGB(255, 255, 255);
 
-        COLORREF colorRead = RGB(200, 200, 255);
-        COLORREF colorWrite = RGB(255, 200, 200);
-        COLORREF colorBoth = RGB(220, 170, 255);
-
         if (!m_bColorsEnabled || g_Reg == NULL || g_MMU == NULL)
         {
             return FALSE;
@@ -532,15 +528,15 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
 
         if (bOpReads && bOpWrites)
         {
-            colorBg = colorBoth;
+            colorBg = REG_COLOR_BOTH;
         }
         else if (bOpReads)
         {
-            colorBg = colorRead;
+            colorBg = REG_COLOR_READ;
         }
         else if (bOpWrites)
         {
-            colorBg = colorWrite;
+            colorBg = REG_COLOR_WRITE;
         }
 
         SetBkColor(hdc, colorBg);
@@ -628,7 +624,6 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
     {
         HWND hWnd = (HWND)lParam;
         WORD ctrlId = (WORD) ::GetWindowLong(hWnd, GWL_ID);
-        
 
         HDC hdc = (HDC)wParam;
 
@@ -701,6 +696,66 @@ INT_PTR CALLBACK CRegisterTabs::TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, L
             RegisterChanged(hDlg, TabFPR, wParam);
         }
     }
+
+    // color textboxes
+    if (msg == WM_CTLCOLOREDIT)
+    {
+        HDC hdc = (HDC)wParam;
+        COLORREF colorBg = RGB(255, 255, 255);
+
+        HWND hWnd = (HWND)lParam;
+        WORD ctrlId = (WORD) ::GetWindowLong(hWnd, GWL_ID);
+
+        if (!m_bColorsEnabled || g_Reg == NULL || g_MMU == NULL)
+        {
+            return FALSE;
+        }
+
+        int nReg = GetCtrlRegNum(ctrlId, FPREditIds);
+
+        if (nReg == -1)
+        {
+            return FALSE;
+        }
+
+        COpInfo opInfo;
+        g_MMU->LW_VAddr(g_Reg->m_PROGRAM_COUNTER, opInfo.m_OpCode.Hex);
+
+        int nRegWrite1 = 0, nRegWrite2 = 0;
+        int nRegRead1 = 0, nRegRead2 = 0, nRegRead3 = 0, nRegRead4 = 0;
+        opInfo.WritesFPR(&nRegWrite1, &nRegWrite2);
+        opInfo.ReadsFPR(&nRegRead1, &nRegRead2, &nRegRead3, &nRegRead4);
+
+        bool haveRead = false, haveWrite = false;
+
+        if (nReg == nRegWrite1 || nReg == nRegWrite2)
+        {
+            haveWrite = true;
+        }
+
+        if (nReg == nRegRead1 || nReg == nRegRead2 || nReg == nRegRead3 || nReg == nRegRead4)
+        {
+            haveRead = true;
+        }
+
+        if (haveRead && haveWrite)
+        {
+            colorBg = REG_COLOR_BOTH;
+        }
+        else if (haveRead)
+        {
+            colorBg = REG_COLOR_READ;
+        }
+        else if (haveWrite)
+        {
+            colorBg = REG_COLOR_WRITE;
+        }
+
+        SetBkColor(hdc, colorBg);
+        SetDCBrushColor(hdc, colorBg);
+        return (LRESULT)GetStockObject(DC_BRUSH);
+    }
+
     return FALSE;
 }
 
