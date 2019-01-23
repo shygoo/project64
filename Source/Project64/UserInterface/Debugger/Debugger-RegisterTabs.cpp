@@ -478,6 +478,17 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
         return TRUE;
     }
 
+    if (msg == WM_COMMAND && HIWORD(wParam) == EN_KILLFOCUS)
+    {
+        bool * attached = (bool *)GetProp(hDlg, "attached");
+        if (attached != NULL && *attached)
+        {
+            RegisterChanged(hDlg, TabGPR, wParam);
+        }
+
+        return FALSE;
+    }
+
     // color textboxes
     if (msg == WM_CTLCOLOREDIT)
     {
@@ -542,17 +553,6 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
         SetBkColor(hdc, colorBg);
         SetDCBrushColor(hdc, colorBg);
         return (LRESULT)GetStockObject(DC_BRUSH);
-    }
-
-    if (msg == WM_COMMAND && HIWORD(wParam) == EN_KILLFOCUS)
-    {
-        bool * attached = (bool *)GetProp(hDlg, "attached");
-        if (attached != NULL && *attached)
-        {
-            RegisterChanged(hDlg, TabGPR, wParam);
-        }
-
-        return FALSE;
     }
 
     // right click labels
@@ -622,14 +622,15 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
     // color labels
     if (msg == WM_CTLCOLORSTATIC)
     {
+        if (!m_bColorsEnabled || g_Reg == NULL || g_MMU == NULL)
+        {
+            return FALSE;
+        }
+
         HWND hWnd = (HWND)lParam;
         WORD ctrlId = (WORD) ::GetWindowLong(hWnd, GWL_ID);
 
         HDC hdc = (HDC)wParam;
-
-        COLORREF colorRead = RGB(200, 200, 255);
-        COLORREF colorWrite = RGB(255, 200, 200);
-        COLORREF colorBoth = RGB(220, 170, 255);
 
         CBreakpoints* breakpoints = m_Debugger->Breakpoints();
         
@@ -660,15 +661,15 @@ INT_PTR CALLBACK CRegisterTabs::TabProcGPR(HWND hDlg, UINT msg, WPARAM wParam, L
 
         if (haveRead && haveWrite)
         {
-            SetBkColor(hdc, colorBoth);
+            SetBkColor(hdc, REG_COLOR_BOTH);
         }
         else if(haveRead)
         {
-            SetBkColor(hdc, colorRead);
+            SetBkColor(hdc, REG_COLOR_READ);
         }
         else if(haveWrite)
         {
-            SetBkColor(hdc, colorWrite);
+            SetBkColor(hdc, REG_COLOR_WRITE);
         }
         else
         {
@@ -688,6 +689,7 @@ INT_PTR CALLBACK CRegisterTabs::TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, L
         SetProp(hDlg, "attached", (HANDLE)lParam);
         return TRUE;
     }
+
     if (msg == WM_COMMAND && HIWORD(wParam) == EN_KILLFOCUS)
     {
         bool * attached = (bool *)GetProp(hDlg, "attached");
@@ -711,31 +713,39 @@ INT_PTR CALLBACK CRegisterTabs::TabProcFPR(HWND hDlg, UINT msg, WPARAM wParam, L
             return FALSE;
         }
 
-        int nReg = GetCtrlRegNum(ctrlId, FPREditIds);
-
-        if (nReg == -1)
-        {
-            return FALSE;
-        }
-
         COpInfo opInfo;
         g_MMU->LW_VAddr(g_Reg->m_PROGRAM_COUNTER, opInfo.m_OpCode.Hex);
 
-        int nRegWrite1 = 0, nRegWrite2 = 0;
-        int nRegRead1 = 0, nRegRead2 = 0, nRegRead3 = 0, nRegRead4 = 0;
-        opInfo.WritesFPR(&nRegWrite1, &nRegWrite2);
-        opInfo.ReadsFPR(&nRegRead1, &nRegRead2, &nRegRead3, &nRegRead4);
-
         bool haveRead = false, haveWrite = false;
 
-        if (nReg == nRegWrite1 || nReg == nRegWrite2)
+        if (ctrlId == IDC_FCSR_EDIT)
         {
-            haveWrite = true;
+            haveRead = opInfo.ReadsFCSR();
+            haveWrite = opInfo.WritesFCSR();
         }
-
-        if (nReg == nRegRead1 || nReg == nRegRead2 || nReg == nRegRead3 || nReg == nRegRead4)
+        else
         {
-            haveRead = true;
+            int nReg = GetCtrlRegNum(ctrlId, FPREditIds);
+
+            if (nReg == -1)
+            {
+                return FALSE;
+            }
+
+            int nRegWrite1 = 0, nRegWrite2 = 0;
+            int nRegRead1 = 0, nRegRead2 = 0, nRegRead3 = 0, nRegRead4 = 0;
+            opInfo.WritesFPR(&nRegWrite1, &nRegWrite2);
+            opInfo.ReadsFPR(&nRegRead1, &nRegRead2, &nRegRead3, &nRegRead4);
+
+            if (nReg == nRegWrite1 || nReg == nRegWrite2)
+            {
+                haveWrite = true;
+            }
+
+            if (nReg == nRegRead1 || nReg == nRegRead2 || nReg == nRegRead3 || nReg == nRegRead4)
+            {
+                haveRead = true;
+            }
         }
 
         if (haveRead && haveWrite)
