@@ -14,6 +14,23 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
             CLanguageSelector().Select();
         }
 
+        // Hide console window if debugger is disabled
+        if (!g_Settings->LoadBool(Debugger_Enabled))
+        {
+            HWND consoleWnd = GetConsoleWindow();
+            DWORD consolePid;
+            GetWindowThreadProcessId(consoleWnd, &consolePid);
+
+            if (GetCurrentProcessId() == consolePid)
+            {
+                // Hide console only if it's owned by PJ64
+                ShowWindow(consoleWnd, SW_HIDE);
+            }
+        }
+
+        printf("Project64 %d.%d.%d.%d-%s\n",
+            VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION, VERSION_BUILD, GIT_VERSION);
+
         //Create the main window with Menu
         WriteTrace(TraceUserInterface, TraceDebug, "Create Main Window");
         CMainGui MainWindow(true, stdstr_f("Project64 %s", VER_FILE_VERSION_STR).c_str()), HiddenWindow(false);
@@ -91,4 +108,9 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     AppCleanup();
     CoUninitialize();
     return true;
+}
+
+int main()
+{
+    return WinMain(GetModuleHandle(NULL), NULL, GetCommandLine(), SW_SHOW);
 }
