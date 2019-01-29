@@ -37,8 +37,6 @@ bool CN64Disk::LoadDiskImage(const char * FileLoc)
     stdstr ShadowFile = FileLoc;
     ShadowFile[ShadowFile.length() - 1] = 'r';
 
-    g_Settings->SaveBool(GameRunning_LoadingInProgress, true);
-
     WriteTrace(TraceN64System, TraceDebug, "Attempt to load shadow file.");
     if (!AllocateAndLoadDiskImage(ShadowFile.c_str()))
     {
@@ -50,12 +48,47 @@ bool CN64Disk::LoadDiskImage(const char * FileLoc)
         }
     }
 
+    char RomName[5];
+    m_FileName = FileLoc;
+    if (*(uint32_t *)(&m_DiskImage[0x43670]) != 0)
+    {
+        m_DiskIdent.Format("%08X-%08X-C:%X", *(uint32_t *)(&m_DiskImage[0]), *(uint32_t *)(&m_DiskImage[0x43670]), m_DiskImage[0x43670]);
+        //Get the disk ID from the disk image
+        RomName[0] = (char)*(m_DiskImage + 0x43673);
+        RomName[1] = (char)*(m_DiskImage + 0x43672);
+        RomName[2] = (char)*(m_DiskImage + 0x43671);
+        RomName[3] = (char)*(m_DiskImage + 0x43670);
+        RomName[4] = '\0';
+    }
+    else
+    {
+        uint32_t crc = 0;
+        for (uint8_t i = 0; i < 0xE8; i += 4)
+        {
+            crc += *(uint32_t *)(m_DiskImage + i);
+        }
+        m_DiskIdent.Format("%08X-%08X-C:%X", *(uint32_t *)(&m_DiskImage[0]), crc, m_DiskImage[0x43670]);
+
+        //Get the disk ID from the disk image
+        RomName[0] = m_DiskIdent[12];
+        RomName[1] = m_DiskIdent[11];
+        RomName[2] = m_DiskIdent[10];
+        RomName[3] = m_DiskIdent[9];
+        RomName[4] = '\0';
+
+        for (uint8_t i = 0; i < 8; i++)
+        {
+            m_DiskHeader[0x20 + (i ^ 3)] = (uint8_t)m_DiskIdent[9 + i];
+        }
+    }
+    m_RomName = RomName;
+    m_Country = (Country)m_DiskImage[0x43670];
+
     if (g_Disk == this)
     {
         g_Settings->SaveBool(GameRunning_LoadingInProgress, false);
+        SaveDiskSettingID(false);
     }
-
-    m_FileName = FileLoc;
     return true;
 }
 
@@ -120,6 +153,34 @@ bool CN64Disk::IsValidDiskImage(uint8_t Test[4])
     return false;
 }
 
+//Save the settings of the loaded rom, so all loaded settings about rom will be identified with
+//this rom
+void CN64Disk::SaveDiskSettingID(bool temp)
+{
+    g_Settings->SaveBool(Game_TempLoaded, temp);
+    g_Settings->SaveString(Game_GameName, m_RomName.c_str());
+    g_Settings->SaveString(Game_IniKey, m_DiskIdent.c_str());
+    //g_Settings->SaveString(Game_UniqueSaveDir, stdstr_f("%s-%s", m_RomName.c_str(), m_MD5.c_str()).c_str());
+
+    switch (GetCountry())
+    {
+    case Germany: case french:  case Italian:
+    case Europe:  case Spanish: case Australia:
+    case X_PAL:   case Y_PAL:
+        g_Settings->SaveDword(Game_SystemType, SYSTEM_PAL);
+        break;
+    default:
+        g_Settings->SaveDword(Game_SystemType, SYSTEM_NTSC);
+        break;
+    }
+}
+
+void CN64Disk::ClearDiskSettingID()
+{
+    g_Settings->SaveString(Game_GameName, "");
+    g_Settings->SaveString(Game_IniKey, "");
+}
+
 bool CN64Disk::AllocateDiskImage(uint32_t DiskFileSize)
 {
     WriteTrace(TraceN64System, TraceDebug, "Allocating memory for disk");
@@ -137,6 +198,25 @@ bool CN64Disk::AllocateDiskImage(uint32_t DiskFileSize)
     m_DiskImageBase = ImageBase.release();
     m_DiskImage = Image;
     m_DiskFileSize = DiskFileSize;
+    return true;
+}
+
+bool CN64Disk::AllocateDiskHeader()
+{
+    WriteTrace(TraceN64System, TraceDebug, "Allocating memory for disk header forge");
+    AUTO_PTR<uint8_t> HeaderBase(new uint8_t[0x40 + 0x1000]);
+    if (HeaderBase.get() == NULL)
+    {
+        SetError(MSG_MEM_ALLOC_ERROR);
+        WriteTrace(TraceN64System, TraceError, "Failed to allocate memory for disk header forge (size: 0x40)");
+        return false;
+    }
+    uint8_t * Header = (uint8_t *)(((uint64_t)HeaderBase.get() + 0xFFF) & ~0xFFF); // start at begining of memory page
+    WriteTrace(TraceN64System, TraceDebug, "Allocated disk memory (%p)", Header);
+
+    //save information about the disk loaded
+    m_DiskHeaderBase = HeaderBase.release();
+    m_DiskHeader = Header;
     return true;
 }
 
@@ -240,6 +320,11 @@ bool CN64Disk::AllocateAndLoadDiskImage(const char * FileLoc)
     ByteSwapDisk();
 
     ProtectMemory(m_DiskImage, m_DiskFileSize, MEM_READWRITE);
+
+    AllocateDiskHeader();
+    memcpy_s(m_DiskHeader, 0x20, m_DiskImage, 0x20);
+    memcpy_s(m_DiskHeader + 0x20, 0x20, m_DiskImage + 0x43670, 0x20);
+    memcpy_s(m_DiskHeader + 0x3B, 5, m_DiskImage + 0x43670, 5);
     return true;
 }
 
@@ -291,6 +376,13 @@ void CN64Disk::SetError(LanguageStringID ErrorMsg)
 void CN64Disk::UnallocateDiskImage()
 {
     m_DiskFile.Close();
+
+    if (m_DiskHeaderBase)
+    {
+        delete[] m_DiskHeaderBase;
+        m_DiskHeaderBase = NULL;
+    }
+    m_DiskHeader = NULL;
 
     if (m_DiskImageBase)
     {
