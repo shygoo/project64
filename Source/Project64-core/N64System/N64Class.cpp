@@ -128,6 +128,15 @@ CN64System::CN64System(CPlugins * Plugins, uint32_t randomizer_seed, bool SavesR
         }
     }
 
+    // iQue
+    char *romImage = (char*) g_Rom->GetRomAddress();
+    uint32_t romSize = g_Rom->GetRomSize();
+    
+    if (*(uint32_t*)&romImage[romSize-4] == 0x43414D00)
+    {
+        memcpy(m_MMU_VM.Rdram() + 0x35C, &romImage[romSize - 0x44], 0x24);
+    }
+
     WriteTrace(TraceN64System, TraceDebug, "Done");
 }
 

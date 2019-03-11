@@ -158,6 +158,8 @@ public:
     uint32_t & MI_NOOP_REG;
     uint32_t & MI_INTR_REG;
     uint32_t & MI_INTR_MASK_REG;
+    uint32_t & MI_SK_EXCEPTION_REG; // iQue
+    uint32_t & MI_HW_INTR_MASK_REG; // iQue
 
 private:
     Mips_InterfaceReg();									// Disable default constructor
@@ -617,7 +619,7 @@ public:
     uint32_t           m_RDRAM_Registers[10];
     uint32_t           m_SigProcessor_Interface[10];
     uint32_t           m_Display_ControlReg[10];
-    uint32_t           m_Mips_Interface[4];
+    uint32_t           m_Mips_Interface[16];
     uint32_t           m_Video_Interface[14];
     uint32_t           m_Audio_Interface[6];
     uint32_t           m_Peripheral_Interface[13];

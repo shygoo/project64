@@ -1300,6 +1300,10 @@ void CMipsMemoryVM::Load32MIPSInterface(void)
     case 0x04300004: m_MemLookupValue.UW[0] = g_Reg->MI_VERSION_REG; break;
     case 0x04300008: m_MemLookupValue.UW[0] = g_Reg->MI_INTR_REG; break;
     case 0x0430000C: m_MemLookupValue.UW[0] = g_Reg->MI_INTR_MASK_REG; break;
+    case 0x04300014: // iQue
+        // todo check v0 for service code?
+        break;
+    case 0x0430003C: m_MemLookupValue.UW[0] = g_Reg->MI_HW_INTR_MASK_REG; break; // iQue
     default:
         m_MemLookupValue.UW[0] = 0;
         if (HaveDebugger())
@@ -1396,6 +1400,8 @@ void CMipsMemoryVM::Load32PeripheralInterface(void)
     case 0x04600028: m_MemLookupValue.UW[0] = g_Reg->PI_BSD_DOM2_PWD_REG; break;
     case 0x0460002C: m_MemLookupValue.UW[0] = g_Reg->PI_BSD_DOM2_PGS_REG; break;
     case 0x04600030: m_MemLookupValue.UW[0] = g_Reg->PI_BSD_DOM2_RLS_REG; break;
+    case 0x04600060: m_MemLookupValue.UW[0] = 0xC0000000; break; // iQue
+    case 0x04600064: break; // iQue
     default:
         m_MemLookupValue.UW[0] = 0;
         if (HaveDebugger())
@@ -1431,6 +1437,7 @@ void CMipsMemoryVM::Load32SerialInterface(void)
     switch (m_MemLookupAddress & 0x1FFFFFFF)
     {
     case 0x04800018: m_MemLookupValue.UW[0] = g_Reg->SI_STATUS_REG; break;
+    case 0x0480001C: break; // iQue
     default:
         m_MemLookupValue.UW[0] = 0;
         if (HaveDebugger())
@@ -1937,6 +1944,16 @@ void CMipsMemoryVM::Write32MIPSInterface(void)
             g_Reg->MI_INTR_MASK_REG |= MI_INTR_MASK_DP;
         }
         break;
+    case 0x0430003C: // iQue
+        if (m_MemLookupValue.UW[0] == 0x00022000)
+        {
+            g_Reg->MI_HW_INTR_MASK_REG |= 0x140;
+        }
+        else if (m_MemLookupValue.UW[0] == 0x00011000)
+        {
+            g_Reg->MI_HW_INTR_MASK_REG &= ~0x140;
+        }
+        break;
     default:
         if (HaveDebugger())
         {
@@ -2086,6 +2103,7 @@ void CMipsMemoryVM::Write32PeripheralInterface(void)
     case 0x04600028: g_Reg->PI_BSD_DOM2_PWD_REG = (m_MemLookupValue.UW[0] & 0xFF); break;
     case 0x0460002C: g_Reg->PI_BSD_DOM2_PGS_REG = (m_MemLookupValue.UW[0] & 0xFF); break;
     case 0x04600030: g_Reg->PI_BSD_DOM2_RLS_REG = (m_MemLookupValue.UW[0] & 0xFF); break;
+    case 0x04600064: break; // iQue
     default:
         if (HaveDebugger())
         {
@@ -2123,6 +2141,7 @@ void CMipsMemoryVM::Write32SerialInterface(void)
         g_Reg->SI_PIF_ADDR_RD64B_REG = m_MemLookupValue.UW[0];
         g_MMU->SI_DMA_READ();
         break;
+    case 0x0480000C: break; // iQue
     case 0x04800010:
         g_Reg->SI_PIF_ADDR_WR64B_REG = m_MemLookupValue.UW[0];
         g_MMU->SI_DMA_WRITE();
@@ -2132,6 +2151,7 @@ void CMipsMemoryVM::Write32SerialInterface(void)
         g_Reg->SI_STATUS_REG &= ~SI_STATUS_INTERRUPT;
         g_Reg->CheckInterrupts();
         break;
+    case 0x0480001C: break; // iQue
     default:
         if (HaveDebugger())
         {

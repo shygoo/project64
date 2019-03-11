@@ -106,7 +106,9 @@ Mips_InterfaceReg::Mips_InterfaceReg(uint32_t * _MipsInterface) :
     MI_VERSION_REG(_MipsInterface[1]),
     MI_NOOP_REG(_MipsInterface[1]),
     MI_INTR_REG(_MipsInterface[2]),
-    MI_INTR_MASK_REG(_MipsInterface[3])
+    MI_INTR_MASK_REG(_MipsInterface[3]),
+    MI_SK_EXCEPTION_REG(_MipsInterface[5]),
+    MI_HW_INTR_MASK_REG(_MipsInterface[15])
 {
 }
 
