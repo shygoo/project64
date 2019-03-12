@@ -190,6 +190,23 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Rdb_AllowROMWrites, new CSettingTypeRDBYesNo("AllowROMWrites", false));
     AddHandler(Rdb_CRC_Recalc, new CSettingTypeRDBYesNo("CRC-Recalc", false));
     AddHandler(Rdb_UnalignedDMA, new CSettingTypeRomDatabase("Unaligned DMA", Default_UnalignedDMA));
+    AddHandler(Rdb_iQue, new CSettingTypeRomDatabase("iQue", false));
+    AddHandler(Rdb_iQue_EepromAddress, new CSettingTypeRomDatabase("iQueEepromAddress", (uint32_t)0));
+    AddHandler(Rdb_iQue_EepromSize, new CSettingTypeRomDatabase("iQueEepromSize", (uint32_t)0));
+    AddHandler(Rdb_iQue_FlashAddress, new CSettingTypeRomDatabase("iQueFlashAddress", (uint32_t)0));
+    AddHandler(Rdb_iQue_FlashSize, new CSettingTypeRomDatabase("iQueFlashSize", (uint32_t)0));
+    AddHandler(Rdb_iQue_SramAddress, new CSettingTypeRomDatabase("iQueSramAddress", (uint32_t)0));
+    AddHandler(Rdb_iQue_SramSize, new CSettingTypeRomDatabase("iQueSramSize", (uint32_t)0));
+    AddHandler(Rdb_iQue_PakAddress0, new CSettingTypeRomDatabase("iQuePakAddress0", (uint32_t)0));
+    AddHandler(Rdb_iQue_PakAddress1, new CSettingTypeRomDatabase("iQuePakAddress1", (uint32_t)0));
+    AddHandler(Rdb_iQue_PakAddress2, new CSettingTypeRomDatabase("iQuePakAddress2", (uint32_t)0));
+    AddHandler(Rdb_iQue_PakAddress3, new CSettingTypeRomDatabase("iQuePakAddress3", (uint32_t)0));
+    AddHandler(Rdb_iQue_PakSize, new CSettingTypeRomDatabase("iQuePakSize", (uint32_t)0));
+    AddHandler(Rdb_iQue_RomBase, new CSettingTypeRomDatabase("iQueRomBase", (uint32_t)0));
+    AddHandler(Rdb_iQue_TvType, new CSettingTypeRomDatabase("iQueTvType", (uint32_t)0));
+    AddHandler(Rdb_iQue_MemSize, new CSettingTypeRomDatabase("iQueMemSize", (uint32_t)0));
+    AddHandler(Rdb_iQue_StashMagic, new CSettingTypeRomDatabase("iQueStashMagic", (uint32_t)0));
+    AddHandler(Rdb_iQue_AuxDataLimit, new CSettingTypeRomDatabase("iQueAuxDataLimit", (uint32_t)0));
 
     AddHandler(Game_IniKey, new CSettingTypeTempString(""));
     AddHandler(Game_File, new CSettingTypeTempString(""));
@@ -248,6 +265,23 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Game_LoadSaveAtStart, new CSettingTypeTempBool(false));
     AddHandler(Game_FullSpeed, new CSettingTypeTempBool(true, "Full Speed"));
     AddHandler(Game_UnalignedDMA, new CSettingTypeGame("Unaligned DMA", Rdb_UnalignedDMA));
+    AddHandler(Game_iQue, new CSettingTypeGame("iQue", Rdb_iQue));
+    AddHandler(Game_iQue_EepromAddress, new CSettingTypeGame("iQueEepromAddress", Rdb_iQue_EepromAddress));
+    AddHandler(Game_iQue_EepromSize, new CSettingTypeGame("iQueEepromSize", Rdb_iQue_EepromSize));
+    AddHandler(Game_iQue_FlashAddress, new CSettingTypeGame("iQueFlashAddress", Rdb_iQue_FlashAddress));
+    AddHandler(Game_iQue_FlashSize, new CSettingTypeGame("iQueFlashSize", Rdb_iQue_FlashSize));
+    AddHandler(Game_iQue_SramAddress, new CSettingTypeGame("iQueSramAddress", Rdb_iQue_SramAddress));
+    AddHandler(Game_iQue_SramSize, new CSettingTypeGame("iQueSramSize", Rdb_iQue_SramSize));
+    AddHandler(Game_iQue_PakAddress0, new CSettingTypeGame("iQuePakAddress0", Rdb_iQue_PakAddress0));
+    AddHandler(Game_iQue_PakAddress1, new CSettingTypeGame("iQuePakAddress1", Rdb_iQue_PakAddress1));
+    AddHandler(Game_iQue_PakAddress2, new CSettingTypeGame("iQuePakAddress2", Rdb_iQue_PakAddress2));
+    AddHandler(Game_iQue_PakAddress3, new CSettingTypeGame("iQuePakAddress3", Rdb_iQue_PakAddress3));
+    AddHandler(Game_iQue_PakSize, new CSettingTypeGame("iQuePakSize", Rdb_iQue_PakSize));
+    AddHandler(Game_iQue_RomBase, new CSettingTypeGame("iQueRomBase", Rdb_iQue_RomBase));
+    AddHandler(Game_iQue_TvType, new CSettingTypeGame("iQueTvType", Rdb_iQue_TvType));
+    AddHandler(Game_iQue_MemSize, new CSettingTypeGame("iQueMemSize", Rdb_iQue_MemSize));
+    AddHandler(Game_iQue_StashMagic, new CSettingTypeGame("iQueStashMagic", Rdb_iQue_StashMagic));
+    AddHandler(Game_iQue_AuxDataLimit, new CSettingTypeGame("iQueAuxDataLimit", Rdb_iQue_AuxDataLimit));
 
     //User Interface
     AddHandler(UserInterface_ShowCPUPer, new CSettingTypeApplication("Settings", "Display CPU Usage", (uint32_t)false));

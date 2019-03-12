@@ -7231,6 +7231,20 @@ Good Name=Super Mario 64 Disk Version (J) (Spaceworld 1996 Demo)
 RDRAM Size=8
 Status=Compatible
 
+//================ iQue ================
+//
+// Roms below are iQue
+
+[00000000-00000000-C:0]
+Good Name=Yàoxī Gùshì (China) (iQue)
+RDRamSize=8388608
+iQue=1
+iQueEepromAddress=2155610112
+iQueEepromSize=2048
+iQueTvType=1
+iQueRomBase=2952790016
+iQueStashMagic=1128353024
+
 
 //================  PD  ================
 //

@@ -128,13 +128,27 @@ CN64System::CN64System(CPlugins * Plugins, uint32_t randomizer_seed, bool SavesR
         }
     }
 
-    // iQue
-    char *romImage = (char*) g_Rom->GetRomAddress();
-    uint32_t romSize = g_Rom->GetRomSize();
-    
-    if (*(uint32_t*)&romImage[romSize-4] == 0x43414D00)
+    if (g_Settings->LoadBool(Game_iQue))
     {
-        memcpy(m_MMU_VM.Rdram() + 0x35C, &romImage[romSize - 0x44], 0x24);
+        MessageBox(NULL, "ique init", "", MB_OK);
+        uint8_t* ram = m_MMU_VM.Rdram();
+        
+        *(uint32_t*)&ram[0x35C] = g_Settings->LoadDword(Game_iQue_EepromAddress);
+        *(uint32_t*)&ram[0x360] = g_Settings->LoadDword(Game_iQue_EepromSize);
+        *(uint32_t*)&ram[0x364] = g_Settings->LoadDword(Game_iQue_FlashAddress);
+        *(uint32_t*)&ram[0x368] = g_Settings->LoadDword(Game_iQue_FlashSize);
+        *(uint32_t*)&ram[0x36C] = g_Settings->LoadDword(Game_iQue_SramAddress);
+        *(uint32_t*)&ram[0x370] = g_Settings->LoadDword(Game_iQue_SramSize);
+        *(uint32_t*)&ram[0x374] = g_Settings->LoadDword(Game_iQue_PakAddress0);
+        *(uint32_t*)&ram[0x378] = g_Settings->LoadDword(Game_iQue_PakAddress1);
+        *(uint32_t*)&ram[0x37C] = g_Settings->LoadDword(Game_iQue_PakAddress2);
+        *(uint32_t*)&ram[0x380] = g_Settings->LoadDword(Game_iQue_PakAddress3);
+        *(uint32_t*)&ram[0x384] = g_Settings->LoadDword(Game_iQue_PakSize);
+        *(uint32_t*)&ram[0x388] = g_Settings->LoadDword(Game_iQue_RomBase);
+        *(uint32_t*)&ram[0x300] = g_Settings->LoadDword(Game_iQue_TvType);
+        *(uint32_t*)&ram[0x318] = g_Settings->LoadDword(Game_iQue_MemSize);
+        *(uint32_t*)&ram[0x390] = g_Settings->LoadDword(Game_iQue_StashMagic);
+        *(uint32_t*)&ram[0x3B8] = g_Settings->LoadDword(Game_iQue_AuxDataLimit);
     }
 
     WriteTrace(TraceN64System, TraceDebug, "Done");
