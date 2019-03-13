@@ -548,7 +548,9 @@ bool CMainMenu::ProcessMessage(HWND hWnd, DWORD /*FromAccelerator*/, DWORD MenuI
                 FileName.length() > 0)
             {
                 if (CPath(FileName).GetExtension() != "ndd")
+                {
                     g_BaseSystem->RunFileImage(FileName.c_str());
+                }
                 else
                 {
                     if (!CPath(g_Settings->LoadStringVal(File_DiskIPLPath)).Exists() || !g_BaseSystem->RunDiskImage(FileName.c_str()))

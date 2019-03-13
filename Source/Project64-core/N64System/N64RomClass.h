@@ -25,6 +25,7 @@ public:
     bool    LoadN64ImageIPL(const char * FileLoc, bool LoadBootCodeOnly = false);
     static bool IsValidRomImage(uint8_t Test[4]);
     bool    IsLoadedRomDDIPL();
+    bool    IsLoadedRomIQue();
     void    SaveRomSettingID(bool temp);
     void    ClearRomSettingID();
     CICChip CicChipID();

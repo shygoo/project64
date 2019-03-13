@@ -291,6 +291,7 @@ CICChip CN64Rom::GetCicChipID(uint8_t * RomData, uint64_t * CRC)
     case 0x000000D2E53EF008: return CIC_NUS_8303; //64DD IPL
     case 0x000000D2E53EF39F: return CIC_NUS_8303; //64DD IPL TOOL
     case 0x000000D2E53E5DDA: return CIC_NUS_DDUS; //64DD IPL US (different CIC)
+    case 0x000000C34B2826B8: return CIC_IQUE;
     default:
         return CIC_UNKNOWN;
     }
@@ -414,6 +415,17 @@ bool CN64Rom::IsValidRomImage(uint8_t Test[4])
     if (*((uint32_t *)&Test[0]) == 0x80371240) { return true; }
     if (*((uint32_t *)&Test[0]) == 0x40072780) { return true; } //64DD IPL
     return false;
+}
+
+bool CN64Rom::IsLoadedRomIQue()
+{
+    switch (CicChipID())
+    {
+    case CIC_IQUE:
+        return true;
+    default:
+        return false;
+    }
 }
 
 bool CN64Rom::IsLoadedRomDDIPL()

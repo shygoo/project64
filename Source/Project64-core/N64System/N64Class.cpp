@@ -18,6 +18,7 @@
 #include <Project64-core/N64System/Interpreter/InterpreterCPU.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
 #include <Project64-core/N64System/N64DiskClass.h>
+#include <Project64-core/N64System/IQueCMDClass.h>
 #include <Project64-core/ExceptionHandler.h>
 #include <Project64-core/Logging.h>
 #include <Project64-core/Debugger.h>
@@ -126,29 +127,6 @@ CN64System::CN64System(CPlugins * Plugins, uint32_t randomizer_seed, bool SavesR
             LoadState();
             g_Settings->SaveBool(Game_LoadSaveAtStart, false);
         }
-    }
-
-    if (g_Settings->LoadBool(Game_iQue))
-    {
-        MessageBox(NULL, "ique init", "", MB_OK);
-        uint8_t* ram = m_MMU_VM.Rdram();
-        
-        *(uint32_t*)&ram[0x35C] = g_Settings->LoadDword(Game_iQue_EepromAddress);
-        *(uint32_t*)&ram[0x360] = g_Settings->LoadDword(Game_iQue_EepromSize);
-        *(uint32_t*)&ram[0x364] = g_Settings->LoadDword(Game_iQue_FlashAddress);
-        *(uint32_t*)&ram[0x368] = g_Settings->LoadDword(Game_iQue_FlashSize);
-        *(uint32_t*)&ram[0x36C] = g_Settings->LoadDword(Game_iQue_SramAddress);
-        *(uint32_t*)&ram[0x370] = g_Settings->LoadDword(Game_iQue_SramSize);
-        *(uint32_t*)&ram[0x374] = g_Settings->LoadDword(Game_iQue_PakAddress0);
-        *(uint32_t*)&ram[0x378] = g_Settings->LoadDword(Game_iQue_PakAddress1);
-        *(uint32_t*)&ram[0x37C] = g_Settings->LoadDword(Game_iQue_PakAddress2);
-        *(uint32_t*)&ram[0x380] = g_Settings->LoadDword(Game_iQue_PakAddress3);
-        *(uint32_t*)&ram[0x384] = g_Settings->LoadDword(Game_iQue_PakSize);
-        *(uint32_t*)&ram[0x388] = g_Settings->LoadDword(Game_iQue_RomBase);
-        *(uint32_t*)&ram[0x300] = g_Settings->LoadDword(Game_iQue_TvType);
-        *(uint32_t*)&ram[0x318] = g_Settings->LoadDword(Game_iQue_MemSize);
-        *(uint32_t*)&ram[0x390] = g_Settings->LoadDword(Game_iQue_StashMagic);
-        *(uint32_t*)&ram[0x3B8] = g_Settings->LoadDword(Game_iQue_AuxDataLimit);
     }
 
     WriteTrace(TraceN64System, TraceDebug, "Done");
@@ -351,6 +329,34 @@ bool CN64System::LoadFileImage(const char * FileLoc)
     WriteTrace(TraceN64System, TraceDebug, "Loading \"%s\"", FileLoc);
     if (g_Rom->LoadN64Image(FileLoc))
     {
+        if (g_Rom->IsLoadedRomIQue())
+        {
+            g_Settings->SaveBool(Game_iQue, true);
+
+            if (g_IQueCMD == NULL)
+            {
+                g_IQueCMD = new CIQueCMD();
+            }
+            
+            CPath romPath = CPath(FileLoc);
+            // try to load <romname>.cmd
+            g_IQueCMD->LoadCMD((romPath.GetDirectory() + "/" + romPath.GetName() + ".cmd").c_str());
+
+            if (!g_IQueCMD->HaveData())
+            {
+                g_Notify->DisplayError("Failed to load iQue CMD file.\nThe game may fail to save.");
+            }
+        }
+        else
+        {
+            g_Settings->SaveBool(Game_iQue, false);
+            if (g_IQueCMD != NULL)
+            {
+                delete g_IQueCMD;
+                g_IQueCMD = NULL;
+            }
+        }
+
         if (g_Rom->IsLoadedRomDDIPL())
         {
             //64DD IPL

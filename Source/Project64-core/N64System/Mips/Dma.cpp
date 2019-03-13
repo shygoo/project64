@@ -19,6 +19,7 @@
 #include <Project64-core/N64System/Mips/Disk.h>
 #include <Project64-core/N64System/N64DiskClass.h>
 #include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/N64System/IQueCMDClass.h>
 
 CDMA::CDMA(CFlashram & FlashRam, CSram & Sram) :
     m_FlashRam(FlashRam),
@@ -43,6 +44,12 @@ void CDMA::OnFirstDMA()
     case CIC_NUS_6103:  offset = +0x0318; break;
     case CIC_NUS_6105:  offset = +0x03F0; break;
     case CIC_NUS_6106:  offset = +0x0318; break;
+    case CIC_IQUE:
+        if (g_IQueCMD != NULL)
+        {
+            g_IQueCMD->CopyBootParamsToRDRAM(g_MMU->Rdram());
+        }
+        return;
     default:
         g_Notify->DisplayError(stdstr_f("Unhandled CicChip(%d) in first DMA", g_Rom->CicChipID()).c_str());
         return;

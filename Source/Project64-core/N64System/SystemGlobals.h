@@ -40,6 +40,9 @@ extern CN64Rom       * g_DDRom;    //64DD IPL ROM
 class CN64Disk;
 extern CN64Disk      * g_Disk;     //64DD DISK
 
+class CIQueCMD;
+extern CIQueCMD      * g_IQueCMD;  //iQue ROM metadata
+
 class CAudio;
 extern CAudio        * g_Audio;
 
