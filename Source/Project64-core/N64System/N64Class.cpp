@@ -344,7 +344,8 @@ bool CN64System::LoadFileImage(const char * FileLoc)
 
             if (!g_IQueCMD->HaveData())
             {
-                g_Notify->DisplayError("Failed to load iQue CMD file.\nThe game may fail to save.");
+                g_Notify->DisplayError(stdstr_f("Failed to load iQue CMD file.\nSaving might not work.\n%s",
+                    (romPath.GetDirectory() + "/" + romPath.GetName() + ".cmd").c_str()).c_str());
             }
         }
         else
@@ -739,6 +740,11 @@ void CN64System::Pause()
 
 void CN64System::GameReset()
 {
+    if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL)
+    {
+        g_IQueCMD->DumpSaveDataFromRDRAM(g_MMU->Rdram());
+    }
+
     m_SystemTimer.SetTimer(CSystemTimer::SoftResetTimer, 0x3000000, false);
     m_Plugins->Gfx()->ShowCFB();
     m_Reg.FAKE_CAUSE_REGISTER |= CAUSE_IP4;
@@ -788,6 +794,12 @@ void CN64System::Reset(bool bInitReg, bool ClearMenory)
 {
     WriteTrace(TraceN64System, TraceDebug, "Start (bInitReg: %s, ClearMenory: %s)", bInitReg ? "true" : "false", ClearMenory ? "true" : "false");
     g_Settings->SaveBool(GameRunning_InReset, true);
+    
+    //if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL && m_MMU_VM.Rdram() != NULL)
+    //{
+    //    g_IQueCMD->DumpSaveDataFromRDRAM(m_MMU_VM.Rdram());
+    //}
+    
     RefreshGameSettings();
     m_Audio.Reset();
     m_MMU_VM.Reset(ClearMenory);

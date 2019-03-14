@@ -21,15 +21,17 @@ class CIQueCMD
         uint32_t memSize;
         uint32_t unk38;
         uint32_t unk3C;
-        char magic[3];
-        char auxDataLimit;
+        char     magic[3];
+        uint8_t  auxDataLimit;
+        uint16_t thumbImageLength;
+        uint16_t titleImageLength;
     } params_t;
 
     uint8_t* m_Data;
     size_t m_Size;
     CFile m_File;
 
-    void ByteSwapData(void);
+    //void ByteSwapData(void);
 
 public:
     CIQueCMD();
@@ -37,6 +39,9 @@ public:
 
     void UnloadCMD(void);
     bool LoadCMD(const char* cmdPath);
-    void CopyBootParamsToRDRAM(uint8_t *ram);
     bool HaveData(void);
+
+    void CopyBootParamsToRDRAM(uint8_t* ram);
+    void DumpSaveDataFromRDRAM(uint8_t* ram);
+    void LoadSaveDataToRDRAM(uint8_t* ram);
 };
