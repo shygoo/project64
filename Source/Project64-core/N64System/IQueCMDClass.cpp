@@ -9,10 +9,10 @@
 #elif defined(__GNUC__)
 #define bswap32(word) __builtin_bswap32(word)
 #else
-#define bswap32(word) (word & 0x000000FFul) << 24 |\
-                      (word & 0x0000FF00ul) << 8  |\
-                      (word & 0x00FF0000ul) >> 8  |\
-                      (word & 0xFF000000ul) >> 24
+#define bswap32(word) ((word) & 0x000000FFul) << 24 |\
+                      ((word) & 0x0000FF00ul) << 8  |\
+                      ((word) & 0x00FF0000ul) >> 8  |\
+                      ((word) & 0xFF000000ul) >> 24
 #endif
 
 CIQueCMD::CIQueCMD() :
@@ -116,6 +116,100 @@ void CIQueCMD::CopyBootParamsToRDRAM(uint8_t *ram)
     *(uint32_t*)&ram[0x3B8] = (uint32_t)params->auxDataLimit;
 }
 
+
+
+void Swap32Buff(uint8_t* buff, size_t size)
+{
+    for (int i = 0; i < size; i += sizeof(uint32_t))
+    {
+        *(uint32_t*)&buff[i] = bswap32(*(uint32_t*)&buff[i]);
+    }
+}
+
+bool LoadData(uint32_t paddr, size_t size, const char* path)
+{
+    if ((paddr + size) > g_MMU->RdramSize())
+    {
+        return false;
+    }
+
+    FILE* fp = fopen(path, "rb");
+
+    if (fp == NULL)
+    {
+        return false;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    size_t fileSize = ftell(fp);
+    rewind(fp);
+
+    if (fileSize != size)
+    {
+        return false;
+    }
+
+    uint8_t* buff = new uint8_t[size];
+    uint8_t* dest = g_MMU->Rdram() + paddr;
+
+    fread(buff, 1, size, fp);
+    fclose(fp);
+
+    Swap32Buff(buff, size);
+
+    memcpy(dest, buff, size);
+
+    delete[] buff;
+
+    return true;
+}
+
+bool DumpData(uint32_t paddr, size_t size, const char* path)
+{
+    if ((paddr + size) > g_MMU->RdramSize())
+    {
+        return false;
+    }
+
+    uint8_t* data = g_MMU->Rdram() + paddr;
+    uint8_t* buff = new uint8_t[size];
+    memcpy(buff, data, size);
+
+    Swap32Buff(buff, size);
+
+    FILE* fp = fopen(path, "wb");
+
+    if (fp == NULL)
+    {
+        delete[] buff;
+        return false;
+    }
+
+    fwrite(buff, 1, size, fp);
+    fclose(fp);
+
+    delete[] buff;
+    return true;
+}
+
+void CIQueCMD::LoadSaveDataToRDRAM(uint8_t* ram)
+{
+    if (!HaveData())
+    {
+        return;
+    }
+
+    params_t* params = (params_t*)m_Data;
+
+    uint32_t eepromAddress = bswap32(params->eepromAddress) & 0x00FFFFFF;
+    uint32_t eepromSize = bswap32(params->eepromSize);
+
+    if (eepromAddress != 0 && (eepromSize == 0x200 || eepromSize == 0x800))
+    {
+        LoadData(eepromAddress, eepromSize, "Save/ique_test.iqeep");
+    }
+}
+
 void CIQueCMD::DumpSaveDataFromRDRAM(uint8_t* ram)
 {
     if (!HaveData())
@@ -139,55 +233,41 @@ void CIQueCMD::DumpSaveDataFromRDRAM(uint8_t* ram)
 
     // todo can save data can be in a TLB segment?
 
-    if (eepromAddress != 0)
+    if (eepromAddress != 0 && (eepromSize == 0x200 || eepromSize == 0x800))
     {
-        if ((eepromSize == 0x200 || eepromSize == 0x800) &&
-            (eepromAddress + eepromSize) <= g_MMU->RdramSize())
-        {
-            uint8_t *eepData = g_MMU->Rdram() + eepromAddress;
-
-            FILE* fp = fopen("Save/ique_test.iqeep", "wb");
-            fwrite(eepData, 1, eepromSize, fp);
-            fclose(fp);
-        }
+        DumpData(eepromAddress, eepromSize, "Save/ique_test.iqeep");
     }
 
-    if (flashAddress != 0)
+    if (flashAddress != 0 && flashSize == 0x20000)
     {
-        if (flashSize == 0x20000 &&
-            (flashAddress + flashSize) <= g_MMU->RdramSize())
-        {
-            uint8_t* flashData = g_MMU->Rdram() + flashAddress;
-
-            FILE* fp = fopen("Save/ique_test.iqfla", "wb");
-            fwrite(flashData, 1, eepromSize, fp);
-            fclose(fp);
-        }
+        DumpData(flashAddress, flashSize, "Save/ique_test.iqfla");
     }
 
-    if (sramAddress != 0)
+    if (sramAddress != 0 && sramSize == 0x8000)
     {
-        if (sramSize == 0x8000 &&
-            (sramAddress + sramSize) <= g_MMU->RdramSize())
-        {
-            uint8_t* sramData = g_MMU->Rdram() + sramAddress;
-            FILE* fp = fopen("Save/ique_test.iqsra", "wb");
-            fwrite(sramData, 1, sramSize, fp);
-            fclose(fp);
-        }
+        DumpData(sramAddress, sramSize, "Save/ique_test.iqsra");
     }
 
     if (pakSize != 0)
     {
-        if (pak0Address != 0 && (pak0Address + pakSize) <= g_MMU->RdramSize())
+        if (pak0Address != 0)
         {
-            uint8_t* pak0Data = g_MMU->Rdram() + pak0Address;
-            FILE* fp = fopen("Save/ique_test.iqpak0", "wb");
-            fwrite(pak0Data, 1, sramSize, fp);
-            fclose(fp);
+            DumpData(pak0Address, pakSize, "Save/ique_test.iqpak0");
         }
 
-        //todo
-    }
+        if (pak1Address != 0)
+        {
+            DumpData(pak1Address, pakSize, "Save/ique_test.iqpak0");
+        }
 
+        if (pak2Address != 0)
+        {
+            DumpData(pak2Address, pakSize, "Save/ique_test.iqpak0");
+        }
+
+        if (pak3Address != 0)
+        {
+            DumpData(pak3Address, pakSize, "Save/ique_test.iqpak0");
+        }
+    }
 }

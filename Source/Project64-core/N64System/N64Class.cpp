@@ -740,11 +740,6 @@ void CN64System::Pause()
 
 void CN64System::GameReset()
 {
-    if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL)
-    {
-        g_IQueCMD->DumpSaveDataFromRDRAM(g_MMU->Rdram());
-    }
-
     m_SystemTimer.SetTimer(CSystemTimer::SoftResetTimer, 0x3000000, false);
     m_Plugins->Gfx()->ShowCFB();
     m_Reg.FAKE_CAUSE_REGISTER |= CAUSE_IP4;
@@ -794,11 +789,6 @@ void CN64System::Reset(bool bInitReg, bool ClearMenory)
 {
     WriteTrace(TraceN64System, TraceDebug, "Start (bInitReg: %s, ClearMenory: %s)", bInitReg ? "true" : "false", ClearMenory ? "true" : "false");
     g_Settings->SaveBool(GameRunning_InReset, true);
-    
-    //if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL && m_MMU_VM.Rdram() != NULL)
-    //{
-    //    g_IQueCMD->DumpSaveDataFromRDRAM(m_MMU_VM.Rdram());
-    //}
     
     RefreshGameSettings();
     m_Audio.Reset();
@@ -1153,12 +1143,24 @@ void CN64System::ExecuteCPU()
         cpuType = (CPU_TYPE)g_Settings->LoadDword(Game_CpuType);
     }
 
+    if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL)
+    {
+        g_IQueCMD->LoadSaveDataToRDRAM(g_MMU->Rdram());
+        g_IQueCMD->CopyBootParamsToRDRAM(g_MMU->Rdram());
+    }
+
     switch (cpuType)
     {
     case CPU_Recompiler: ExecuteRecompiler(); break;
     case CPU_SyncCores:  ExecuteSyncCPU();    break;
     default:             ExecuteInterpret();  break;
     }
+
+    if (g_Settings->LoadBool(Game_iQue) && g_IQueCMD != NULL)
+    {
+        g_IQueCMD->DumpSaveDataFromRDRAM(g_MMU->Rdram());
+    }
+
     WriteTrace(TraceN64System, TraceDebug, "CPU finished executing");
     CpuStopped();
     WriteTrace(TraceN64System, TraceDebug, "Notifing plugins rom is done");
