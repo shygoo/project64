@@ -1,7 +1,6 @@
 // Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
-#include "../../Project64-core/Version.h"
 
 #define APSTUDIO_READONLY_SYMBOLS
 /////////////////////////////////////////////////////////////////////////////
@@ -217,17 +216,17 @@ BEGIN
     EDITTEXT        IDC_VIREFRESH,102,75,109,12,ES_AUTOHSCROLL | ES_NUMBER
     LTEXT           "AI Count Per Byte:",IDC_COUNTPERBYTE_TEXT,6,90,91,10
     EDITTEXT        IDC_COUNTPERBYTE,102,88,109,12,ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "Overclock Modifier", IDC_OVER_CLOCK_MODIFIER_TEXT, 6, 103, 91, 10
-    EDITTEXT        IDC_OVER_CLOCK_MODIFIER, 102, 101, 109, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "", IDC_STATIC, "Static", SS_BLACKFRAME | SS_SUNKEN, 3, 116, 208, 1
-    CONTROL         "32 Bit Engine", IDC_ROM_32BIT, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 6, 121, 91, 10
-    CONTROL         "Use TLB", IDC_USE_TLB, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 102, 121, 91, 10
-    CONTROL         "Fixed Audio Timing", IDC_ROM_FIXEDAUDIO, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 6, 132, 91, 10
-    CONTROL         "Sync using Audio", IDC_SYNC_AUDIO, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 102, 132, 91, 10
-    CONTROL         "Delay DP Interrupt", IDC_DELAY_DP, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 6, 143, 91, 10
-    CONTROL         "Delay SI Interrupt", IDC_DELAY_SI, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 102, 143, 91, 10
-    CONTROL         "RSP Audio Signal", IDC_AUDIO_SIGNAL, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 6, 154, 91, 10
-    CONTROL         "Unaligned DMA", IDC_UNALIGNED_DMA, "Button", BS_AUTOCHECKBOX | WS_TABSTOP, 102, 154, 91, 10
+    LTEXT           "Overclock Modifier",IDC_OVER_CLOCK_MODIFIER_TEXT,6,103,91,10
+    EDITTEXT        IDC_OVER_CLOCK_MODIFIER,102,101,109,12,ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "",IDC_STATIC,"Static",SS_BLACKFRAME | SS_SUNKEN,3,116,208,1
+    CONTROL         "32 Bit Engine",IDC_ROM_32BIT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,121,91,10
+    CONTROL         "Use TLB",IDC_USE_TLB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,121,91,10
+    CONTROL         "Fixed Audio Timing",IDC_ROM_FIXEDAUDIO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,132,91,10
+    CONTROL         "Sync using Audio",IDC_SYNC_AUDIO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,132,91,10
+    CONTROL         "Delay DP Interrupt",IDC_DELAY_DP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,143,91,10
+    CONTROL         "Delay SI Interrupt",IDC_DELAY_SI,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,143,91,10
+    CONTROL         "RSP Audio Signal",IDC_AUDIO_SIGNAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,154,91,10
+    CONTROL         "Unaligned DMA",IDC_UNALIGNED_DMA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,102,154,91,10
 END
 
 IDD_Settings_Accelerator DIALOGEX 0, 0, 218, 183
@@ -1368,6 +1367,16 @@ BEGIN
     COMBOBOX        IDC_CMB_VALUE,7,18,95,13,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
+IDD_Debugger_DisplayList DIALOGEX 0, 0, 479, 279
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Display List"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    PUSHBUTTON      "Refresh",IDC_BTN_REFRESH,339,159,51,14
+    CONTROL         "",IDC_LST_DLIST,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,7,465,147
+    EDITTEXT        IDC_EDIT1,7,159,174,113,ES_AUTOHSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1834,6 +1843,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 49
     END
+
+    IDD_Debugger_DisplayList, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 472
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 272
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -1996,25 +2013,29 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION        VER_FILE_VERSION
- PRODUCTVERSION     VER_PRODUCT_VERSION
- FILEFLAGSMASK      0x3fL
- FILEFLAGS          VER_FILEFLAGS
- FILEOS             VER_FILEOS
- FILETYPE           VER_FILETYPE
- FILESUBTYPE        0x0L
+ FILEVERSION 2,4,0,76
+ PRODUCTVERSION 2,4,0,76
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "FileDescription",  VER_FILE_DESCRIPTION_STR "\0"
-            VALUE "FileVersion",      VER_FILE_VERSION_STR "\0"
-            VALUE "InternalName",     VER_INTERNAL_NAME_STR "\0"
-            VALUE "LegalCopyright",   VER_COPYRIGHT_STR "\0"
-            VALUE "OriginalFilename", VER_ORIGINAL_FILENAME_STR "\0"
-            VALUE "ProductName",      VER_PRODUCTNAME_STR
-            VALUE "ProductVersion",   VER_PRODUCT_VERSION_STR "\0"
+            VALUE "FileDescription", "Project64"
+            VALUE "FileVersion", "2.4.0.76-gc8ab33eb-dirty"
+            VALUE "InternalName", "Project64"
+            VALUE "LegalCopyright", "Copyright (C) 2017"
+            VALUE "OriginalFilename", "Project64.exe"
+            VALUE "ProductName", "Project64"
+            VALUE "ProductVersion", "2.4.0.76-gc8ab33eb-dirty"
         END
     END
     BLOCK "VarFileInfo"
@@ -2135,6 +2156,11 @@ BEGIN
 END
 
 IDD_Debugger_Search_SetValue AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_Debugger_DisplayList AFX_DIALOG_LAYOUT
 BEGIN
     0
 END

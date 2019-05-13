@@ -2099,6 +2099,10 @@ void CN64System::RunRSP()
                     WriteTrace(TraceRSP, TraceDebug, "*** Display list ***");
                     m_DlistCount += 1;
                     m_FPS.UpdateDlCounter();
+					if (g_Debugger != NULL && HaveDebugger())
+					{
+						g_Debugger->RSPReceivedDisplayList();
+					}
                     break;
                 case 2:
                     WriteTrace(TraceRSP, TraceDebug, "*** Audio list ***");

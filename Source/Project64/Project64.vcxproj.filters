@@ -234,6 +234,12 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-ExceptionBreakpoints.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\Debugger-DisplayList.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\DisplayListParser.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -449,6 +455,12 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-ExceptionBreakpoints.h">
       <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Debugger-DisplayList.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\DisplayListParser.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="res\divider.cur">
@@ -491,6 +503,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="UserInterface\Bitmaps\AboutScreenLogo.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="UserInterface\Bitmaps\AboutScreenLogoHDPI.bmp">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

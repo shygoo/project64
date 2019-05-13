@@ -25,6 +25,7 @@ class CDebugCPULogView;
 class CDebugStackView;
 class CDebugStackTrace;
 class CDebugExcBreakpoints;
+class CDebugDisplayList;
 
 class CCPULog;
 class CDMALog;
@@ -64,6 +65,8 @@ public:
     void OpenCPULogWindow(void);
     void Debug_RefreshCPULogWindow(void);
     void OpenExcBreakpointsWindow(void);
+	void OpenDisplayListWindow(void);
+	void Debug_RefreshDisplayListWindow(void);
 
     bool ExecutionBP(uint32_t address);
     bool ReadBP8(uint32_t address);
@@ -97,6 +100,7 @@ protected:
     void CPUStep(void);
     void CPUStepEnded(void);
     void FrameDrawn(void);
+	void RSPReceivedDisplayList(void);
 
 private:
     CDebuggerUI(const CDebuggerUI&);                // Disable copy constructor
@@ -115,6 +119,7 @@ private:
     CDebugStackTrace     * m_StackTrace;
     CDebugStackView      * m_StackView;
     CDebugExcBreakpoints * m_ExcBreakpoints;
+	CDebugDisplayList    * m_DisplayList;
 
     CBreakpoints        * m_Breakpoints;
     CScriptSystem       * m_ScriptSystem;

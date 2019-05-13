@@ -74,7 +74,8 @@ enum UISettingID
     DebuggerUI_StackTracePos,
     DebuggerUI_SymbolsPos,
     DebuggerUI_TLBPos,
-    DebuggerUI_ExceptionBPPos
+    DebuggerUI_ExceptionBPPos,
+	DebuggerUI_DisplayListPos
 };
 
 float DPIScale(void);

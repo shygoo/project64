@@ -34,6 +34,7 @@ CDebuggerUI::CDebuggerUI() :
     m_DMALogView(NULL),
     m_CPULogView(NULL),
     m_ExcBreakpoints(NULL),
+	m_DisplayList(NULL),
     m_DMALog(NULL),
     m_CPULog(NULL),
     m_StepEvent(false)
@@ -73,6 +74,7 @@ CDebuggerUI::~CDebuggerUI(void)
     delete m_DMALogView;
     delete m_CPULogView;
     delete m_ExcBreakpoints;
+	delete m_DisplayList;
     delete m_DMALog;
     delete m_CPULog;
 
@@ -213,6 +215,12 @@ void CDebuggerUI::Debug_Reset(void)
         delete m_ExcBreakpoints;
         m_ExcBreakpoints = NULL;
     }
+	if (m_DisplayList)
+	{
+		m_DisplayList->HideWindow();
+		delete m_DisplayList;
+		m_DisplayList = NULL;
+	}
 }
 
 void CDebuggerUI::OpenMemoryDump()
@@ -437,6 +445,23 @@ void CDebuggerUI::Debug_RefreshCPULogWindow(void)
     }
 }
 
+void CDebuggerUI::OpenDisplayListWindow(void)
+{
+	if (m_DisplayList == NULL)
+	{
+		m_DisplayList = new CDebugDisplayList(this);
+	}
+	m_DisplayList->ShowWindow();
+}
+
+void CDebuggerUI::Debug_RefreshDisplayListWindow(void)
+{
+	if (m_DisplayList != NULL)
+	{
+		m_DisplayList->Refresh();
+	}
+}
+
 CBreakpoints* CDebuggerUI::Breakpoints()
 {
     return m_Breakpoints;
@@ -653,6 +678,11 @@ bool CDebuggerUI::DebugLW_VAddr(uint32_t vaddr, uint32_t& value)
 void CDebuggerUI::TLBChanged()
 {
     Debug_RefreshTLBWindow();
+}
+
+void CDebuggerUI::RSPReceivedDisplayList(void)
+{
+	Debug_RefreshDisplayListWindow();
 }
 
 

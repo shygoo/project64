@@ -519,6 +519,7 @@ bool CMainMenu::ProcessMessage(HWND hWnd, DWORD /*FromAccelerator*/, DWORD MenuI
     case ID_DEBUGGER_EXCBREAKPOINTS: g_Debugger->OpenExcBreakpointsWindow(); break;
     case ID_DEBUGGER_STACKTRACE: g_Debugger->OpenStackTraceWindow(); break;
     case ID_DEBUGGER_STACKVIEW: g_Debugger->OpenStackViewWindow(); break;
+	case ID_DEBUGGER_DISPLAYLIST: g_Debugger->OpenDisplayListWindow(); break;
     case ID_CURRENT_SAVE_DEFAULT:
         g_Notify->DisplayMessage(3, stdstr_f(GS(MENU_SLOT_SAVE), GetSaveSlotString(MenuID - ID_CURRENT_SAVE_DEFAULT).c_str()).c_str());
         g_Settings->SaveDword(Game_CurrentSaveState, (DWORD)(MenuID - ID_CURRENT_SAVE_DEFAULT));
@@ -1189,6 +1190,11 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
         *******************/
         Item.Reset(ID_DEBUGGER_STACKTRACE, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Stack Trace...");
         DebugMenu.push_back(Item);
+
+		/* Debug - Display list
+		*******************/
+		Item.Reset(ID_DEBUGGER_DISPLAYLIST, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Display list...");
+		DebugMenu.push_back(Item);
 
         DebugMenu.push_back(MENU_ITEM(SPLITER));
 

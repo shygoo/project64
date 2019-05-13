@@ -2,7 +2,12 @@
 // Microsoft Visual C++ generated include file.
 // Used by UIResources.rc
 //
+#define VERSION_REVISION                0
+#define VER_VER_DEBUG                   0
+#define VERSION_MAJOR                   2
 #define IDAPPLY                         3
+#define VERSION_MINOR                   4
+#define VERSION_BUILD                   76
 #define IDI_PJ64_Icon                   101
 #define IDD_Rom_Information             104
 #define IDD_Key_Prompt                  108
@@ -81,6 +86,7 @@
 #define IDD_Enhancement_GS              205
 #define IDD_Debugger_ExceptionBP        207
 #define IDD_Debugger_Search_SetValue    210
+#define IDD_Debugger_DisplayList        213
 #define IDC_MENU_ITEM_TEXT              1000
 #define IDC_CLOSE_BUTTON                1001
 #define IDC_LIST2                       1003
@@ -685,6 +691,10 @@
 #define IDC_CHK_UNSIGNED                1535
 #define IDC_CHK_IGNORECASE              1536
 #define IDC_CHK_UNKENCODING             1537
+#define IDC_BTN_REFRESH                 1538
+#define IDC_LIST1                       1539
+#define IDC_LST_DLIST                   1539
+#define IDC_EDIT1                       1540
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ADDSYMBOL          40013
 #define ID_POPUPMENU_VIEWDISASM         40017
@@ -740,9 +750,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        213
+#define _APS_NEXT_RESOURCE_VALUE        215
 #define _APS_NEXT_COMMAND_VALUE         40085
-#define _APS_NEXT_CONTROL_VALUE         1538
+#define _APS_NEXT_CONTROL_VALUE         1541
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

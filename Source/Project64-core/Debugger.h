@@ -24,6 +24,8 @@ __interface CDebugger
     virtual void OpenExcBreakpointsWindow(void) = 0;
     virtual void OpenStackTraceWindow(void) = 0;
     virtual void OpenStackViewWindow(void) = 0;
+	virtual void OpenDisplayListWindow(void) = 0;
+	virtual void RSPReceivedDisplayList(void) = 0;
     virtual void TLBChanged(void) = 0;
     virtual void FrameDrawn(void) = 0;
     virtual void WaitForStep(void) = 0;
