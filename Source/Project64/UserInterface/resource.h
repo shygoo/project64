@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by UIResources.rc
 //
+
 #define VERSION_REVISION                0
 #define VER_VER_DEBUG                   0
 #define VERSION_MAJOR                   2
@@ -695,6 +696,7 @@
 #define IDC_LIST1                       1539
 #define IDC_LST_DLIST                   1539
 #define IDC_EDIT1                       1540
+#define IDC_EDIT_STATE                  1540
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ADDSYMBOL          40013
 #define ID_POPUPMENU_VIEWDISASM         40017

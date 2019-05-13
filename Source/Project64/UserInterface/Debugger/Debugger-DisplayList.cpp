@@ -100,14 +100,14 @@ void CDebugDisplayList::Refresh(void)
 	{
 		hl_state_t *state = dlistParser.GetLogState(i);
 	
-		uint32_t physAddress = CDisplayListParser::SegmentedToPhysical(state, state->address);
+		uint32_t virtAddress = CDisplayListParser::SegmentedToVirtual(state, state->address);
 
 		const char* commandName;
 		char commandParams[512];
 
 		commandName = dlistParser.DecodeCommand(i, commandParams);
 
-		stdstr strPhysAddress = stdstr_f("%08X", physAddress);
+		stdstr strPhysAddress = stdstr_f("%08X", virtAddress);
 		stdstr strAddress = stdstr_f("%08X", state->address);
 		stdstr strRawCommand = stdstr_f("%08X %08X", state->command.w0, state->command.w1);
 		stdstr strCommandNameTabbed = stdstr_f("%*s%s", state->stackIndex, "", commandName);

@@ -127,6 +127,11 @@ uint32_t CDisplayListParser::SegmentedToPhysical(hl_state_t* state, uint32_t add
 	return state->segments[segment] + offset;
 }
 
+uint32_t CDisplayListParser::SegmentedToVirtual(hl_state_t* state, uint32_t address)
+{
+    return SegmentedToPhysical(state, address) | 0x80000000;
+}
+
 void CDisplayListParser::Step(void)
 {
 	uint32_t physAddress = SegmentedToPhysical(&m_State, m_State.address);
@@ -177,85 +182,85 @@ ucode_version_info_t CDisplayListParser::UCodeVersions[] = {
 
 // ucode-independent rdp commands
 dl_cmd_info_t CDisplayListParser::Commands_Global[] = {
-	{ 0xC0, "gDPNoop",            NULL, dec_NoParams },
-	{ 0xC8, "gDPTriFill",         NULL, NULL },
-	{ 0xC9, "gDPTriFillZ",        NULL, NULL },
-	{ 0xCA, "gDPTriTxtr",         NULL, NULL },
-	{ 0xCB, "gDPTriTxtrZ",        NULL, NULL },
-	{ 0xCC, "gDPTriShade",        NULL, NULL },
-	{ 0xCD, "gDPTriShadeZ",       NULL, NULL },
-	{ 0xCE, "gDPTriShadeTxtr",    NULL, NULL },
-	{ 0xCF, "gDPTriShadeTxtrZ",   NULL, NULL },
-	{ 0xE4, "gDPTexRect",         NULL, NULL },
-	{ 0xE5, "gDPTexRect2",        NULL, NULL },
-	{ 0xE6, "gDPLoadSync",        NULL, dec_NoParams },
-	{ 0xE7, "gDPPipeSync",        NULL, dec_NoParams },
-	{ 0xE8, "gDPTileSync",        NULL, dec_NoParams },
-	{ 0xE9, "gDPFullSync",        NULL, dec_NoParams },
-	{ 0xEA, "gDPSetKeyGB",        NULL, NULL },
-	{ 0xEB, "gDPSetKeyR",         NULL, NULL },
-	{ 0xEC, "gDPSetConvert",      NULL, NULL },
-	{ 0xED, "gDPSetScissor",      NULL, dec_gDPSetScissor },
-	{ 0xEE, "gDPSetPrimDepth",    NULL, NULL },
-	{ 0xEF, "gDPSetOtherMode",    NULL, NULL },
-	{ 0xF0, "gDPLoadTLUT",        NULL, NULL },
-	{ 0xF2, "gDPSetTileSize",     NULL, NULL },
-	{ 0xF3, "gDPLoadBlock",       NULL, NULL },
-	{ 0xF4, "gDPLoadTile",        NULL, NULL },
-	{ 0xF5, "gDPSetTile",         NULL, NULL },
-	{ 0xF6, "gDPFillRectangle",   NULL, dec_gDPFillRectangle },
-	{ 0xF7, "gDPSetFillColor",    NULL, dec_HexParam32 },
-	{ 0xF8, "gDPSetFogColor",     NULL, dec_HexParam32 },
-	{ 0xF9, "gDPSetBlendColor",   NULL, dec_HexParam32 },
-	{ 0xFA, "gDPSetPrimColor",    NULL, dec_HexParam32 },
-	{ 0xFB, "gDPSetEnvColor",     NULL, dec_HexParam32 },
-	{ 0xFC, "gDPSetCombine",      NULL, NULL },
-	{ 0xFD, "gDPSetTextureImage", NULL, NULL },
-	{ 0xFE, "gDPSetDepthImage",   NULL, NULL },
-	{ 0xFF, "gDPSetColorImage",   NULL, NULL },
+	{ 0xC0, "gsDPNoop",              NULL, dec_NoParams },
+	{ 0xC8, "gsDPTriFill",           NULL, NULL },
+	{ 0xC9, "gsDPTriFillZ",          NULL, NULL },
+	{ 0xCA, "gsDPTriTxtr",           NULL, NULL },
+	{ 0xCB, "gsDPTriTxtrZ",          NULL, NULL },
+	{ 0xCC, "gsDPTriShade",          NULL, NULL },
+	{ 0xCD, "gsDPTriShadeZ",         NULL, NULL },
+	{ 0xCE, "gsDPTriShadeTxtr",      NULL, NULL },
+	{ 0xCF, "gsDPTriShadeTxtrZ",     NULL, NULL },
+	{ 0xE4, "gsDPTextureRectangle",  NULL, NULL },
+	{ 0xE5, "gsDPTextureRectangle2", NULL, NULL },
+	{ 0xE6, "gsDPLoadSync",          NULL, dec_NoParams },
+	{ 0xE7, "gsDPPipeSync",          NULL, dec_NoParams },
+	{ 0xE8, "gsDPTileSync",          NULL, dec_NoParams },
+	{ 0xE9, "gsDPFullSync",          NULL, dec_NoParams },
+	{ 0xEA, "gsDPSetKeyGB",          NULL, NULL },
+	{ 0xEB, "gsDPSetKeyR",           NULL, NULL },
+	{ 0xEC, "gsDPSetConvert",        NULL, NULL },
+	{ 0xED, "gsDPSetScissor",        NULL, dec_gsDPSetScissor },
+	{ 0xEE, "gsDPSetPrimDepth",      NULL, NULL },
+	{ 0xEF, "gsDPSetOtherMode",      NULL, NULL },
+	{ 0xF0, "gsDPLoadTLUT",          NULL, NULL },
+	{ 0xF2, "gsDPSetTileSize",       NULL, dec_gsDPSetTileSize },
+	{ 0xF3, "gsDPLoadBlock",         NULL, dec_gsDPLoadBlock },
+	{ 0xF4, "gsDPLoadTile",          NULL, NULL },
+	{ 0xF5, "gsDPSetTile",           op_gsDPSetTile, dec_gsDPSetTile },
+	{ 0xF6, "gsDPFillRectangle",     NULL, dec_gsDPFillRectangle },
+	{ 0xF7, "gsDPSetFillColor",      NULL, dec_HexParam32 },
+	{ 0xF8, "gsDPSetFogColor",       NULL, dec_HexParam32 },
+	{ 0xF9, "gsDPSetBlendColor",     NULL, dec_HexParam32 },
+	{ 0xFA, "gsDPSetPrimColor",      NULL, dec_HexParam32 },
+	{ 0xFB, "gsDPSetEnvColor",       NULL, dec_HexParam32 },
+	{ 0xFC, "gsDPSetCombine",        NULL, NULL },
+	{ 0xFD, "gsDPSetTextureImage",   NULL, dec_gsDPSetTextureImage },
+	{ 0xFE, "gsDPSetDepthImage",     NULL, NULL },
+	{ 0xFF, "gsDPSetColorImage",     NULL, NULL },
 	{ 0, NULL, NULL, NULL }
 };
 
 dl_cmd_info_t CDisplayListParser::Commands_F3D[] = {
-	{ 0x00, "gSPNoop",              NULL, dec_NoParams },
-	{ 0x01, "gSPMatrix",            NULL, dec_gSPMatrix_f3d },
-	//{ 0x02, "gSPNoop", NULL, NULL }, ?
-	{ 0x03, "gSPMoveMem",           NULL, NULL },
-	{ 0x04, "gSPVertex",            NULL, dec_gSPVertex_f3d },
-	//{ 0x05, "gSPNoop", NULL, NULL },
-	{ 0x06, "gSPDisplayList",       op_gSPDisplayList, dec_gSPDisplayList },
-	//{ 0x07, "gSPNoop", NULL, NULL },
-	//{ 0x08, "gSPNoop", NULL, NULL },
-	//{ 0x09, "gSPSprite2D", NULL, NULL },
-	// { 0xB1, "gSPTri4", NULL, NULL },
+	{ 0x00, "gsSPNoop",              NULL, dec_NoParams },
+	{ 0x01, "gsSPMatrix",            NULL, dec_gsSPMatrix_f3d },
+	//{ 0x02, "gsSPNoop", NULL, NULL }, ?
+	{ 0x03, "gsSPMoveMem",           NULL, dec_gsSPMoveMem_f3d },
+	{ 0x04, "gsSPVertex",            NULL, dec_gsSPVertex_f3d },
+	//{ 0x05, "gsSPNoop", NULL, NULL },
+	{ 0x06, "gsSPDisplayList",       op_gsSPDisplayList, dec_gsSPDisplayList },
+	//{ 0x07, "gsSPNoop", NULL, NULL },
+	//{ 0x08, "gsSPNoop", NULL, NULL },
+	//{ 0x09, "gsSPSprite2D", NULL, NULL },
+	// { 0xB1, "gsSPTri4", NULL, NULL },
 	{ 0xB2, "rdphalf_cont",         NULL, NULL },
 	{ 0xB3, "rdphalf_2",            NULL, NULL },
 	{ 0xB4, "rdphalf_1",            NULL, NULL },
 	// { 0xB5, "line3d", NULL, NULL },
-	{ 0xB6, "gSPClearGeometryMode", NULL, NULL },
-	{ 0xB7, "gSPSetGeometryMode",   NULL, dec_gSPSetGeometryMode_f3d },
-	{ 0xB8, "gSPEndDisplayList",    op_gSPEndDisplayList, dec_NoParams },
-	{ 0xB9, "gSPSetOtherModeLow",   NULL, NULL },
-	{ 0xBA, "gSPSetOtherModeHigh",  NULL, NULL },
-	{ 0xBB, "gSPTexture",           NULL, NULL },
-	{ 0xBC, "gSPMoveWord",          op_gSPMoveWord_f3d, dec_gSPMoveWord_f3d },
-	{ 0xBD, "gSPPopMatrix",         NULL, NULL },
-	{ 0xBE, "gSPCullDisplayList",   NULL, NULL },
-	{ 0xBF, "gSP1Triangle",         NULL, dec_gSP1Triangle_f3d },
+	{ 0xB6, "gsSPClearGeometryMode", NULL, dec_gsSPSetGeometryMode_f3d },
+	{ 0xB7, "gsSPSetGeometryMode",   NULL, dec_gsSPSetGeometryMode_f3d },
+	{ 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList, dec_NoParams },
+	{ 0xB9, "gsSPSetOtherModeLow",   NULL, NULL },
+	{ 0xBA, "gsSPSetOtherModeHigh",  NULL, NULL },
+	{ 0xBB, "gsSPTexture",           NULL, dec_gsSPTexture_f3d },
+	{ 0xBC, "gsSPMoveWord",          op_gsSPMoveWord_f3d, dec_gsSPMoveWord_f3d },
+	{ 0xBD, "gsSPPopMatrix",         NULL, NULL },
+	{ 0xBE, "gsSPCullDisplayList",   NULL, NULL },
+	{ 0xBF, "gsSP1Triangle",         NULL, dec_gsSP1Triangle_f3d },
 	{ 0, NULL, NULL, NULL }
 };
 
 dl_cmd_info_t CDisplayListParser::Commands_F3DEX[] = {
-	{ 0x06, "gSPDisplayList",       op_gSPDisplayList, dec_gSPDisplayList },
-	{ 0xB8, "gSPEndDisplayList",    op_gSPEndDisplayList, dec_NoParams },
-	{ 0xBC, "gSPMoveWord",          op_gSPMoveWord_f3d, dec_gSPMoveWord_f3d },
+	{ 0x06, "gsSPDisplayList",       op_gsSPDisplayList, dec_gsSPDisplayList },
+	{ 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList, dec_NoParams },
+	{ 0xBC, "gsSPMoveWord",          op_gsSPMoveWord_f3d, dec_gsSPMoveWord_f3d },
 	{ 0, NULL, NULL, NULL }
 };
 
 dl_cmd_info_t CDisplayListParser::Commands_F3DEX2[] = {
-	{ 0xDB, "gSPMoveWord",          op_gSPMoveWord_f3dex2, dec_gSPMoveWord_f3dex2 },
-	{ 0xDE, "gSPDisplayList",       op_gSPDisplayList, dec_gSPDisplayList },
-	{ 0xDF, "gSPEndDisplayList",    op_gSPEndDisplayList, dec_NoParams },
+	{ 0xDB, "gsSPMoveWord",          op_gsSPMoveWord_f3dex2, dec_gsSPMoveWord_f3dex2 },
+	{ 0xDE, "gsSPDisplayList",       op_gsSPDisplayList, dec_gsSPDisplayList },
+	{ 0xDF, "gsSPEndDisplayList",    op_gsSPEndDisplayList, dec_NoParams },
 	{ 0, NULL, NULL, NULL }
 };
 
@@ -287,7 +292,7 @@ geo_mode_bitname_t CDisplayListParser::GeometryModeNames_F3DEX2[] = {
 	{ 0, NULL }
 };
 
-void CDisplayListParser::op_gSPDisplayList(hl_state_t* state)
+void CDisplayListParser::op_gsSPDisplayList(hl_state_t* state)
 {
 	dl_cmd_dl_t* cmd = &state->command.dl;
 
@@ -298,7 +303,7 @@ void CDisplayListParser::op_gSPDisplayList(hl_state_t* state)
 	state->address = cmd->address;
 }
 
-void CDisplayListParser::op_gSPEndDisplayList(hl_state_t* state)
+void CDisplayListParser::op_gsSPEndDisplayList(hl_state_t* state)
 {
 	if (state->stackIndex > 0)
 	{
@@ -310,7 +315,7 @@ void CDisplayListParser::op_gSPEndDisplayList(hl_state_t* state)
 	}
 }
 
-void CDisplayListParser::op_gSPMoveWord_f3d(hl_state_t* state)
+void CDisplayListParser::op_gsSPMoveWord_f3d(hl_state_t* state)
 {
 	dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;
 
@@ -322,11 +327,11 @@ void CDisplayListParser::op_gSPMoveWord_f3d(hl_state_t* state)
 	}
 }
 
-void CDisplayListParser::op_gSPMoveWord_f3dex2(hl_state_t* state)
+void CDisplayListParser::op_gsSPMoveWord_f3dex2(hl_state_t* state)
 {
 	dl_cmd_moveword_f3dex2_t* cmd = &state->command.moveword_f3dex2;
 
-	MessageBox(NULL, "moveword f3dex2", "", MB_OK);
+	//MessageBox(NULL, "moveword f3dex2", "", MB_OK);
 
 	if (cmd->index == 0x06) // MW_SEGMENT
 	{
@@ -334,6 +339,24 @@ void CDisplayListParser::op_gSPMoveWord_f3dex2(hl_state_t* state)
 		uint32_t physAddress = cmd->data;
 		state->segments[segno] = physAddress;
 	}
+}
+
+void CDisplayListParser::op_gsDPSetTile(hl_state_t* state)
+{
+    dl_cmd_settile_t* cmd = &state->command.settile;
+    hl_tile_descriptor_t *td = &state->tiles[cmd->tile];
+
+    td->tmem = cmd->tmem;
+    td->line = cmd->line;
+    td->siz = cmd->siz;
+    td->fmt = cmd->fmt;
+    td->palette = cmd->palette;
+    td->cmt = cmd->cmt;
+    td->maskt = cmd->maskt;
+    td->shiftt = cmd->shiftt;
+    td->cms = cmd->cms;
+    td->masks = cmd->masks;
+    td->shifts = cmd->shifts;
 }
 
 /////////////
@@ -344,47 +367,73 @@ const char* CDisplayListParser::dec_NoParams(hl_state_t*, char* paramsBuf)
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPMoveWord_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMoveWord_f3d(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;
 
 	if (cmd->index == 0x06) // MW_SEGMENT
 	{
 		sprintf(paramsBuf, "0x%02X, 0x%08X", cmd->offset/4, (uint32_t)cmd->data);
-		return "gSPSegment";
+		return "gsSPSegment";
 	}
 
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPMoveWord_f3dex2(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMoveMem_f3d(hl_state_t* state, char* paramsBuf)
+{
+    // gsDma2p G_MOVEMEM adrs len idx ofs 
+
+    dl_cmd_movemem_f3d_t* cmd = &state->command.movemem_f3d;
+
+    if (cmd->p == 0x80) // G_MV_VIEWPORT
+    {
+        // todo params
+        sprintf(paramsBuf, "0x%08X // 0x%08X", cmd->address,
+            SegmentedToVirtual(state, cmd->address));
+        return "gsSPViewport";
+    }
+
+    if (cmd->p >= 0x86 && cmd->p <= 0x94) // G_MV_L0:7
+    {
+        int lightNumber = (cmd->p - 0x86) / 2;
+        sprintf(paramsBuf, "0x%08X, %d // 0x%08X", cmd->address, lightNumber,
+            SegmentedToVirtual(state, cmd->address));
+        return "gsSPLight";
+    }
+
+    return NULL;
+}
+
+const char* CDisplayListParser::dec_gsSPMoveWord_f3dex2(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_moveword_f3dex2_t* cmd = &state->command.moveword_f3dex2;
 
 	if (cmd->index == 0x06) // MW_SEGMENT
 	{
 		sprintf(paramsBuf, "0x%02X, 0x%08X", cmd->offset / 4, (uint32_t)cmd->data);
-		return "gSPSegment";
+		return "gsSPSegment";
 	}
 
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSP1Triangle_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSP1Triangle_f3d(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
 	sprintf(paramsBuf, "%d, %d, %d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPVertex_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPVertex_f3d(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_vtx_f3d_t *cmd = &state->command.vtx_f3d;
-	sprintf(paramsBuf, "0x%08X, %d, %d", cmd->address, cmd->num+1, cmd->idx);
+	sprintf(paramsBuf, "0x%08X, %d, %d // 0x%08X", cmd->address, cmd->num+1, cmd->idx,
+        SegmentedToVirtual(state, cmd->address));
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPSetGeometryMode_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPSetGeometryMode_f3d(hl_state_t* state, char* paramsBuf)
 {
 	bool havePrev = false;
 
@@ -404,14 +453,15 @@ const char* CDisplayListParser::dec_gSPSetGeometryMode_f3d(hl_state_t* state, ch
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPDisplayList(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPDisplayList(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_dl_t *cmd = &state->command.dl;
-	sprintf(paramsBuf, "0x%08X", cmd->address);
+	sprintf(paramsBuf, "0x%08X // 0x%08X", cmd->address,
+        SegmentedToVirtual(state, cmd->address));
 
 	if (cmd->branch)
 	{
-		return "gSPBranchList";
+		return "gsSPBranchList";
 	}
 
 	return NULL;
@@ -423,26 +473,27 @@ const char* CDisplayListParser::dec_HexParam32(hl_state_t* state, char* paramsBu
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gSPMatrix_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMatrix_f3d(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_mtx_f3d_t* cmd = &state->command.mtx_f3d;
 
-	sprintf(paramsBuf, "0x%08X, (%s | %s | %s)", cmd->address,
+	sprintf(paramsBuf, "0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
 		(cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
 		(cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
-		(cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH");
+		(cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
+        SegmentedToVirtual(state, cmd->address));
 	
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gDPFillRectangle(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPFillRectangle(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_fillrect_t* cmd = &state->command.fillrect;
 	sprintf(paramsBuf, "%d, %d, %d, %d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gDPSetScissor(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPSetScissor(hl_state_t* state, char* paramsBuf)
 {
 	dl_cmd_setscissor_t* cmd = &state->command.setscissor;
 
@@ -455,9 +506,133 @@ const char* CDisplayListParser::dec_gDPSetScissor(hl_state_t* state, char* param
 	case 3: szMode = "G_SC_ODD_INTERLACE"; break;
 	}
 
-	// TODO check for frac bits and use gDPSetScissorFrac if set
+	// TODO check for frac bits and use gsDPSetScissorFrac if set
 
 	sprintf(paramsBuf, "%s, %d, %d, %d, %d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 	return NULL;
 }
 
+const char* CDisplayListParser::dec_gsDPSetTextureImage(hl_state_t* state, char* paramsBuf)
+{
+    dl_cmd_settimg_t* cmd = &state->command.settimg;
+
+    const char* fmtName = "?";
+    const char* sizName = "?";
+
+    switch (cmd->fmt)
+    {
+    case 0: fmtName = "G_IM_FMT_RGBA"; break;
+    case 1: fmtName = "G_IM_FMT_YUV"; break;
+    case 2: fmtName = "G_IM_FMT_CI"; break;
+    case 3: fmtName = "G_IM_FMT_IA"; break;
+    case 4: fmtName = "G_IM_FMT_I"; break;
+    }
+
+    switch (cmd->siz)
+    {
+    case 0: sizName = "G_IM_SIZ_4b"; break;
+    case 1: sizName = "G_IM_SIZ_8b"; break;
+    case 2: sizName = "G_IM_SIZ_16b"; break;
+    case 3: sizName = "G_IM_SIZ_32b"; break;
+    }
+
+    sprintf(paramsBuf, "%s, %s, %d, 0x%08X // 0x%08X", fmtName, sizName, cmd->width+1, cmd->address,
+        SegmentedToVirtual(state, cmd->address));
+
+    return NULL;
+}
+
+const char* CDisplayListParser::dec_gsDPSetTile(hl_state_t* state, char* paramsBuf)
+{
+    dl_cmd_settile_t* cmd = &state->command.settile;
+
+    const char* fmtName = "?";
+    const char* sizName = "?";
+
+    switch (cmd->fmt)
+    {
+    case 0: fmtName = "G_IM_FMT_RGBA"; break;
+    case 1: fmtName = "G_IM_FMT_YUV"; break;
+    case 2: fmtName = "G_IM_FMT_CI"; break;
+    case 3: fmtName = "G_IM_FMT_IA"; break;
+    case 4: fmtName = "G_IM_FMT_I"; break;
+    }
+
+    switch (cmd->siz)
+    {
+    case 0: sizName = "G_IM_SIZ_4b"; break;
+    case 1: sizName = "G_IM_SIZ_8b"; break;
+    case 2: sizName = "G_IM_SIZ_16b"; break;
+    case 3: sizName = "G_IM_SIZ_32b"; break;
+    }
+
+    sprintf(paramsBuf, "%s, %s, %d, 0x%03X, %d, %d, %d, %d, %d, %d, %d, %d", fmtName, sizName,
+        cmd->line, cmd->tmem, cmd->tile, cmd->palette,
+        cmd->cmt, cmd->maskt, cmd->shiftt,
+        cmd->cms, cmd->masks, cmd->shifts);
+
+    return NULL;
+}
+
+const char* CDisplayListParser::dec_gsDPLoadBlock(hl_state_t* state, char* paramsBuf)
+{
+    // counter inced every 64 bits of image
+    // (4 texels for rgba16)
+    // 8 words = 32 width
+
+    /*
+    var width = 64;
+    var bytesPerTexel = 2; // rbga16
+    var wordsPerRow = ((width * bytesPerTexel) / 8) | 0;
+    var dxt = (((1 << 11) + wordsPerRow - 1) / wordsPerRow) | 0;
+    */
+
+    dl_cmd_loadblock_t* cmd = &state->command.loadblock;
+
+    uint8_t siz = state->tiles[cmd->tile].siz;
+
+    int bytesPerTexel = 0;
+
+    switch (siz)
+    {
+    case 0: bytesPerTexel = 0; break; // G_IM_SIZ_4b
+    case 1: bytesPerTexel = 1; break; // G_IM_SIZ_8b
+    case 2: bytesPerTexel = 2; break; // G_IM_SIZ_16b
+    case 3: bytesPerTexel = 4; break; // G_IM_SIZ_32b
+    }
+
+    int bytesPerLine = (0x800 / cmd->dxt) / sizeof(uint64_t);
+    int width = bytesPerLine / bytesPerTexel;
+
+    // 16
+
+    // 0x100 0x100 0x100 0x100 0x100 0x100 0x100 0x100
+    // 8      8    8     8     8     8     8     8 = 64bytes / 2Bpp = 32 width
+
+    // dxt = amount to increment internal counter by for every 8 bytes of image data
+    // when counter reaches 0x800, roll over and start next line
+
+    // 0x800 / dxt = words per line
+    // words per line * 8 = bytes per line
+    // bytes per line / bytes per texel = image width
+
+
+    sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d // %dx%d",
+        cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt,
+        width, cmd->lrs);
+    return NULL;
+}
+
+const char* CDisplayListParser::dec_gsDPSetTileSize(hl_state_t* state, char* paramsBuf)
+{
+    dl_cmd_settilesize_t* cmd = &state->command.settilesize;
+    sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
+    return NULL;
+}
+
+const char* CDisplayListParser::dec_gsSPTexture_f3d(hl_state_t* state, char* paramsBuf)
+{
+    dl_cmd_texture_f3d_t* cmd = &state->command.texture_f3d;
+    sprintf(paramsBuf, "s:%d, t:%d, levels:%d, tile:%d, on:%d", cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
+    return NULL;
+}
