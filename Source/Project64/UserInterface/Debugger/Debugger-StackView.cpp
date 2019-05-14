@@ -11,7 +11,7 @@
 
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "Symbols.h"
+#include "Util/Symbols.h"
 
 CDebugStackView::CDebugStackView(CDebuggerUI * debugger) :
     CDebugDialog<CDebugStackView>(debugger)

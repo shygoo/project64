@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 
-#include "DisplayListParser.h"
+#include "Util/DisplayListParser.h"
 
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
 	CDebugDialog<CDebugDisplayList>(debugger),
@@ -20,6 +20,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	DlgSavePos_Init(DebuggerUI_DisplayListPos);
 
 	m_DisplayListCtrl.Attach(GetDlgItem(IDC_LST_DLIST));
+    m_StateTextbox.Attach(GetDlgItem(IDC_EDIT_STATE));
 
 	m_DisplayListCtrl.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
 
@@ -43,6 +44,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 LRESULT CDebugDisplayList::OnDestroy(void)
 {
 	m_DisplayListCtrl.Detach();
+    m_StateTextbox.Detach();
 	return 0;
 }
 
@@ -79,48 +81,122 @@ void CDebugDisplayList::Refresh(void)
 	g_MMU->LW_VAddr(0xA4000FF0, dlistAddr);
 	g_MMU->LW_VAddr(0xA4000FF4, dlistSize);
 
-	CDisplayListParser dlistParser(ucodeAddr, dlistAddr, dlistSize);
-	ucode_version_t ucodeVersion = dlistParser.GetUCodeVersion();
+    m_DisplayListParser.Reset(ucodeAddr, dlistAddr, dlistSize);
+    
+	//CDisplayListParser dlistParser(ucodeAddr, dlistAddr, dlistSize);
+	ucode_version_t ucodeVersion = m_DisplayListParser.GetUCodeVersion();
 
 	if (ucodeVersion != UCODE_UNKNOWN)
 	{
-		SetWindowText(stdstr_f("Display List - %s", dlistParser.GetUCodeName()).c_str());
+		SetWindowText(stdstr_f("Display List - %s", m_DisplayListParser.GetUCodeName()).c_str());
 	}
 	else
 	{
-		SetWindowText(stdstr_f("Display List - Unknown microcode (%08X)", dlistParser.GetUCodeChecksum()).c_str());
+		SetWindowText(stdstr_f("Display List - Unknown microcode (%08X)", m_DisplayListParser.GetUCodeChecksum()).c_str());
 	}
 
 	m_DisplayListCtrl.SetRedraw(FALSE);
 	m_DisplayListCtrl.DeleteAllItems();
 	
-	int numCommands = dlistParser.GetCommandCount();
+    int nCommand = 0;
 
-	for (int i = 0; i < numCommands; i++)
-	{
-		hle_dmem_state_t *state = dlistParser.GetLogState(i);
-	
-		uint32_t virtAddress = CDisplayListParser::SegmentedToVirtual(state, state->address);
+    while (!m_DisplayListParser.IsDone())
+    {
+        uint32_t virtAddress = m_DisplayListParser.GetCommandVirtualAddress();
+        uint32_t segAddress = m_DisplayListParser.GetCommandAddress();
+        dl_cmd_t command = m_DisplayListParser.GetRawCommand();
+        int numTabs = m_DisplayListParser.GetStackIndex();
 
-		const char* commandName;
-		char commandParams[512];
+        stdstr strVirtAddress = stdstr_f("%08X", virtAddress);
+        stdstr strAddress = stdstr_f("%08X", segAddress);
+        stdstr strRawCommand = stdstr_f("%08X %08X", command.w0, command.w1);
 
-		//commandName = dlistParser.DecodeNextCommand(i, commandParams);
+        char szParams[1024];
+        const char* szCommandName = m_DisplayListParser.StepDecode(szParams, NULL);
 
-		stdstr strPhysAddress = stdstr_f("%08X", virtAddress);
-		stdstr strAddress = stdstr_f("%08X", state->address);
-		stdstr strRawCommand = stdstr_f("%08X %08X", state->command.w0, state->command.w1);
-		stdstr strCommandNameTabbed = stdstr_f("%*s%s", state->stackIndex, "", commandName);
-	
-		m_DisplayListCtrl.AddItem(i, DisplayListCtrl_Col_PAddr, strPhysAddress.c_str());
-		m_DisplayListCtrl.AddItem(i, DisplayListCtrl_Col_SegOffset, strAddress.c_str());
-		m_DisplayListCtrl.AddItem(i, DisplayListCtrl_Col_RawCommand, strRawCommand.c_str());
-		m_DisplayListCtrl.AddItem(i, DisplayListCtrl_Col_Command, strCommandNameTabbed.c_str());
-		m_DisplayListCtrl.AddItem(i, DisplayListCtrl_Col_Parameters, commandParams);
-	}
+        stdstr strCommandNameTabbed = std::string(numTabs * 4, ' ') + szCommandName;
+        stdstr strParamsTabbed = std::string(numTabs*4, ' ') + szParams;
+
+        m_DisplayListCtrl.AddItem(nCommand, DisplayListCtrl_Col_PAddr, strVirtAddress.c_str());
+        m_DisplayListCtrl.AddItem(nCommand, DisplayListCtrl_Col_SegOffset, strAddress.c_str());
+        m_DisplayListCtrl.AddItem(nCommand, DisplayListCtrl_Col_RawCommand, strRawCommand.c_str());
+        m_DisplayListCtrl.AddItem(nCommand, DisplayListCtrl_Col_Command, strCommandNameTabbed.c_str());
+        m_DisplayListCtrl.AddItem(nCommand, DisplayListCtrl_Col_Parameters, strParamsTabbed.c_str());
+
+        nCommand++;
+    }
 
 	m_DisplayListCtrl.SetRedraw(TRUE);
 
 	m_bRefreshPending = false;
 }
 
+LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
+{
+    NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
+    int nItem = pIA->iItem;
+
+    CHleDmemState* state = m_DisplayListParser.GetLoggedState(nItem);
+
+    stdstr strGeoMode = "GeometryMode: ";
+
+    name_lut_entry_t *geoModeNames = CDisplayListParser::GeometryModeNames;
+
+    for (int i = 0; geoModeNames[i].name != NULL; i++)
+    {
+        if (state->geometryMode & geoModeNames[i].value)
+        {
+            strGeoMode += geoModeNames[i].name;
+            strGeoMode += " ";
+        }
+    }
+
+    strGeoMode += "\r\n";
+
+    stdstr strTextureImage = stdstr_f(
+        "TextureImage: 0x%08X (0x%08X)\r\n",
+        state->textureAddr,
+        state->SegmentedToVirtual(state->textureAddr)
+    );
+
+    stdstr strTileDescriptors = "";
+
+    for (int i = 0; i < 8; i++)
+    {
+        hle_tile_descriptor_t* t = &state->tiles[i];
+    
+        if (t->enabled == 0)
+        {
+            strTileDescriptors += stdstr_f("TileDescriptor %d: (disabled)\r\n", i);
+            continue;
+        }
+
+        const char* sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, t->siz);
+        const char* fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, t->fmt);
+
+        strTileDescriptors += stdstr_f(
+            "TileDescriptor %d:\r\n"
+            "tmem: 0x%03X, siz: %s, fmt: %s, line: %d, "
+            "shifts: %d, masks: %d, cms: %d, "
+            "shiftt: %d, maskt: %d, cmt: %d,\r\n"
+            "scaleS: %d, scaleT: %d, "
+            "palette: %d, "
+            "mipmapLevels: %d, enabled: %d\r\n",
+            i,
+            t->tmem, sizName, fmtName, t->line,
+            t->shifts, t->masks, t->cms,
+            t->shiftt, t->maskt, t->cmt,
+            t->scaleS, t->scaleT,
+            t->palette,
+            t->mipmapLevels, t->enabled
+        );
+    }
+
+    stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+
+    stdstr strStateSummary = strGeoMode + strTextureImage + strNumLights + strTileDescriptors;
+    
+    m_StateTextbox.SetWindowTextA(strStateSummary.c_str());
+
+    return FALSE;
+}

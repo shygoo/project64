@@ -10,7 +10,7 @@
 ****************************************************************************/
 #include <stdafx.h>
 #include "ScriptSystem.h"
-#include "Debugger-Scripts.h"
+#include "../Debugger-Scripts.h"
 
 #include "ScriptInstance.h"
 #include "ScriptHook.h"

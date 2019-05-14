@@ -10,7 +10,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "MemoryScanner.h"
+#include "Util/MemoryScanner.h"
 
 CDebugMemorySearch* CDebugMemorySearch::_this = NULL;
 HHOOK CDebugMemorySearch::hWinMessageHook = NULL;

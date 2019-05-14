@@ -10,7 +10,7 @@
 ****************************************************************************/
 #pragma once
 
-#include "MemoryScanner.h"
+#include "Util/MemoryScanner.h"
 #include "Debugger-AddSymbol.h"
 
 class CEditMixed :

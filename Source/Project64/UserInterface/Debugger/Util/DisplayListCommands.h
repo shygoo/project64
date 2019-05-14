@@ -86,6 +86,12 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t : 24; uint32_t c : 8; };
+    uint32_t mode;
+} dl_cmd_setgeometrymode_f3d_t;
+
+typedef struct
+{
 	struct { uint32_t : 16; uint32_t branch : 8; uint32_t c : 8; };
 	uint32_t address;
 } dl_cmd_dl_t;
@@ -94,23 +100,29 @@ typedef union
 {
 	struct { uint32_t w0, w1; };
 
-	dl_cmd_fillrect_t fillrect;
-	dl_cmd_setscissor_t setscissor;
-	dl_cmd_settimg_t settimg;
-	dl_cmd_settile_t settile;
-	dl_cmd_loadblock_t loadblock;
+    /* shared rdp commands */
+	dl_cmd_fillrect_t    fillrect;
+	dl_cmd_setscissor_t  setscissor;
+	dl_cmd_settimg_t     settimg;
+	dl_cmd_settile_t     settile;
+	dl_cmd_loadblock_t   loadblock;
 	dl_cmd_settilesize_t settilesize;
 
+    /* shared rsp commands */
+    dl_cmd_dl_t dl;
+
+    /* fast3d commands */
 	dl_cmd_moveword_f3d_t moveword_f3d;
-	dl_cmd_movemem_f3d_t movemem_f3d;
-	dl_cmd_tri1_f3d_t tri1_f3d;
-	dl_cmd_mtx_f3d_t mtx_f3d;
-	dl_cmd_vtx_f3d_t vtx_f3d;
-	dl_cmd_texture_f3d_t texture_f3d;
+	dl_cmd_movemem_f3d_t  movemem_f3d;
+	dl_cmd_tri1_f3d_t     tri1_f3d;
+	dl_cmd_mtx_f3d_t      mtx_f3d;
+	dl_cmd_vtx_f3d_t      vtx_f3d;
+	dl_cmd_texture_f3d_t  texture_f3d;
+    dl_cmd_setgeometrymode_f3d_t setgeometrymode_f3d;
 
-	dl_cmd_dl_t dl;
+    /* f3dex commands */
+    dl_cmd_mtx_f3dex_t mtx_f3dex;
 
-	dl_cmd_moveword_f3dex2_t moveword_f3dex2;
-	dl_cmd_mtx_f3dex_t mtx_f3dex;
-	
+    /* f3dex2 commands */
+    dl_cmd_moveword_f3dex2_t moveword_f3dex2;
 } dl_cmd_t;

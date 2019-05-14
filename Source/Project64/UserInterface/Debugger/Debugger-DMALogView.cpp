@@ -11,7 +11,7 @@
 
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "DMALog.h"
+#include "Util/DMALog.h"
 
 CDebugDMALogView::CDebugDMALogView(CDebuggerUI* debugger) :
 CDebugDialog<CDebugDMALogView>(debugger)

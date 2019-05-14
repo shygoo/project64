@@ -10,8 +10,8 @@
 ****************************************************************************/
 #pragma once
 
-#include "OpInfo.h"
-#include "Breakpoints.h"
+#include "Util/OpInfo.h"
+#include "Util/Breakpoints.h"
 #include "Debugger-AddBreakpoint.h"
 #include "Debugger-RegisterTabs.h"
 

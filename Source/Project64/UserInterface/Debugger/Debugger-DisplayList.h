@@ -2,6 +2,7 @@
 
 #include <stdafx.h>
 #include "DebuggerUI.h"
+#include "Util/DisplayListParser.h"
 
 class CDebugDisplayList :
 	public CDebugDialog<CDebugDisplayList>,
@@ -26,13 +27,16 @@ public:
 
 private:
 	CListViewCtrl m_DisplayListCtrl;
+    CDisplayListParser m_DisplayListParser;
+    CEdit m_StateTextbox;
 
 	bool m_bRefreshPending;
 
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnDestroy(void);
-
 	LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+    LRESULT OnListItemChanged(NMHDR* pNMHDR);
+
 	//LRESULT OnActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	//LRESULT OnListDblClicked(NMHDR* pNMHDR);
 	//LRESULT OnListItemChanged(NMHDR* pNMHDR);
@@ -52,6 +56,7 @@ private:
 	BEGIN_MSG_MAP_EX(CDebugDisplayList)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+        NOTIFY_HANDLER_EX(IDC_LST_DLIST, LVN_ITEMCHANGED, OnListItemChanged)
 		//NOTIFY_HANDLER_EX(IDC_CPU_LIST, NM_DBLCLK, OnListDblClicked)
 		//MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
 		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)

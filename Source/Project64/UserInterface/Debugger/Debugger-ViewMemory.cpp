@@ -13,8 +13,8 @@
 #include <Common/MemoryManagement.h>
 
 #include "DebuggerUI.h"
-#include "Symbols.h"
-#include "DMALog.h"
+#include "Util/Symbols.h"
+#include "Util/DMALog.h"
 
 CDebugMemoryView* CDebugMemoryView::_this = NULL;
 HHOOK CDebugMemoryView::hWinMessageHook = NULL;
