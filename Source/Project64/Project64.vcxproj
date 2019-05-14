@@ -168,6 +168,7 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-ViewMemory.h" />
     <ClInclude Include="UserInterface\Debugger\debugger.h" />
     <ClInclude Include="UserInterface\Debugger\DebuggerUI.h" />
+    <ClInclude Include="UserInterface\Debugger\DisplayListCommands.h" />
     <ClInclude Include="UserInterface\Debugger\DisplayListParser.h" />
     <ClInclude Include="UserInterface\Debugger\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\MemoryScanner.h" />
