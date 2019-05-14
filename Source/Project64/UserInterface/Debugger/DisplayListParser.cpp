@@ -46,10 +46,10 @@ CDisplayListParser::CDisplayListParser(uint32_t ucodeAddr, uint32_t dlistAddr, u
 
 	m_State.address = dlistAddr;
 
-	while(!m_State.bDone)
-	{
-		Step();
-	}
+	//while(!m_State.bDone)
+	//{
+	//	Step();
+	//}
 }
 
 ucode_version_t CDisplayListParser::GetUCodeVersion(void)
@@ -67,22 +67,23 @@ uint32_t CDisplayListParser::GetUCodeChecksum(void)
 	return m_UCodeChecksum;
 }
 
-int CDisplayListParser::GetCommandCount(void)
-{
-	return m_StateLog.size();
-}
+//int CDisplayListParser::GetCommandCount(void)
+//{
+//	return m_StateLog.size();
+//}
+//
+//hle_dmem_state_t *CDisplayListParser::GetLogState(size_t index)
+//{
+//	if (index < GetCommandCount())
+//	{
+//		return &m_StateLog[index];
+//	}
+//}
 
-hl_state_t *CDisplayListParser::GetLogState(size_t index)
-{
-	if (index < GetCommandCount())
-	{
-		return &m_StateLog[index];
-	}
-}
-
+/*
 const char* CDisplayListParser::DecodeCommand(size_t index, char* paramsBuf)
 {
-	hl_state_t* state = GetLogState(index);
+	hle_dmem_state_t* state = GetLogState(index);
 
 	sprintf(paramsBuf, "?");
 
@@ -118,34 +119,34 @@ const char* CDisplayListParser::DecodeCommand(size_t index, char* paramsBuf)
 	}
 
 	return "?";
-}
+}*/
 
-uint32_t CDisplayListParser::SegmentedToPhysical(hl_state_t* state, uint32_t address)
+uint32_t CDisplayListParser::SegmentedToPhysical(hle_dmem_state_t* state, uint32_t address)
 {
 	uint32_t segment = (address >> 24) & 0x0F;
 	uint32_t offset = address & 0x00FFFFFF;
 	return state->segments[segment] + offset;
 }
 
-uint32_t CDisplayListParser::SegmentedToVirtual(hl_state_t* state, uint32_t address)
+uint32_t CDisplayListParser::SegmentedToVirtual(hle_dmem_state_t* state, uint32_t address)
 {
     return SegmentedToPhysical(state, address) | 0x80000000;
 }
 
-void CDisplayListParser::Step(void)
+const char* CDisplayListParser::DecodeNextCommand(char* paramsTextBuf, uint32_t* flags)
 {
 	uint32_t physAddress = SegmentedToPhysical(&m_State, m_State.address);
 
 	g_MMU->LW_PAddr(physAddress, m_State.command.w0);
 	g_MMU->LW_PAddr(physAddress + 4, m_State.command.w1);
 
-	m_StateLog.push_back(m_State);
-
+	//m_StateLog.push_back(m_State);
 	m_State.address += 8;
 
 	uint8_t commandByte = m_State.command.w0 >> 24;
 
 	const dl_cmd_info_t *commandInfo;
+	const char* commandName = "?";
 
 	commandInfo = LookupCommand(Commands_Global, commandByte);
 
@@ -154,7 +155,18 @@ void CDisplayListParser::Step(void)
 		commandInfo = LookupCommand(m_CommandTable, commandByte);
 	}
 
-	if (commandInfo != NULL && commandInfo->opFunc != NULL)
+	if (commandInfo == NULL)
+	{
+		sprintf(paramsTextBuf, "?");
+		return commandName;
+	}
+
+	if (commandInfo->decodeFunc != NULL)
+	{
+		commandName = commandInfo->decodeFunc(&m_State, paramsTextBuf);
+	}
+
+	if (commandInfo->opFunc != NULL)
 	{
 		commandInfo->opFunc(&m_State);
 	}
@@ -292,7 +304,7 @@ geo_mode_bitname_t CDisplayListParser::GeometryModeNames_F3DEX2[] = {
 	{ 0, NULL }
 };
 
-void CDisplayListParser::op_gsSPDisplayList(hl_state_t* state)
+void CDisplayListParser::op_gsSPDisplayList(hle_dmem_state_t* state)
 {
 	dl_cmd_dl_t* cmd = &state->command.dl;
 
@@ -303,7 +315,7 @@ void CDisplayListParser::op_gsSPDisplayList(hl_state_t* state)
 	state->address = cmd->address;
 }
 
-void CDisplayListParser::op_gsSPEndDisplayList(hl_state_t* state)
+void CDisplayListParser::op_gsSPEndDisplayList(hle_dmem_state_t* state)
 {
 	if (state->stackIndex > 0)
 	{
@@ -315,7 +327,7 @@ void CDisplayListParser::op_gsSPEndDisplayList(hl_state_t* state)
 	}
 }
 
-void CDisplayListParser::op_gsSPMoveWord_f3d(hl_state_t* state)
+void CDisplayListParser::op_gsSPMoveWord_f3d(hle_dmem_state_t* state)
 {
 	dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;
 
@@ -327,7 +339,7 @@ void CDisplayListParser::op_gsSPMoveWord_f3d(hl_state_t* state)
 	}
 }
 
-void CDisplayListParser::op_gsSPMoveWord_f3dex2(hl_state_t* state)
+void CDisplayListParser::op_gsSPMoveWord_f3dex2(hle_dmem_state_t* state)
 {
 	dl_cmd_moveword_f3dex2_t* cmd = &state->command.moveword_f3dex2;
 
@@ -341,10 +353,10 @@ void CDisplayListParser::op_gsSPMoveWord_f3dex2(hl_state_t* state)
 	}
 }
 
-void CDisplayListParser::op_gsDPSetTile(hl_state_t* state)
+void CDisplayListParser::op_gsDPSetTile(hle_dmem_state_t* state)
 {
     dl_cmd_settile_t* cmd = &state->command.settile;
-    hl_tile_descriptor_t *td = &state->tiles[cmd->tile];
+    hle_tile_descriptor_t *td = &state->tiles[cmd->tile];
 
     td->tmem = cmd->tmem;
     td->line = cmd->line;
@@ -361,13 +373,13 @@ void CDisplayListParser::op_gsDPSetTile(hl_state_t* state)
 
 /////////////
 
-const char* CDisplayListParser::dec_NoParams(hl_state_t*, char* paramsBuf)
+const char* CDisplayListParser::dec_NoParams(hle_dmem_state_t*, char* paramsBuf)
 {
 	sprintf(paramsBuf, "");
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPMoveWord_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMoveWord_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;
 
@@ -380,7 +392,7 @@ const char* CDisplayListParser::dec_gsSPMoveWord_f3d(hl_state_t* state, char* pa
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPMoveMem_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMoveMem_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
     // gsDma2p G_MOVEMEM adrs len idx ofs 
 
@@ -405,7 +417,7 @@ const char* CDisplayListParser::dec_gsSPMoveMem_f3d(hl_state_t* state, char* par
     return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPMoveWord_f3dex2(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMoveWord_f3dex2(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_moveword_f3dex2_t* cmd = &state->command.moveword_f3dex2;
 
@@ -418,14 +430,14 @@ const char* CDisplayListParser::dec_gsSPMoveWord_f3dex2(hl_state_t* state, char*
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSP1Triangle_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSP1Triangle_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
 	sprintf(paramsBuf, "%d, %d, %d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPVertex_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPVertex_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_vtx_f3d_t *cmd = &state->command.vtx_f3d;
 	sprintf(paramsBuf, "0x%08X, %d, %d // 0x%08X", cmd->address, cmd->num+1, cmd->idx,
@@ -433,7 +445,7 @@ const char* CDisplayListParser::dec_gsSPVertex_f3d(hl_state_t* state, char* para
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPSetGeometryMode_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPSetGeometryMode_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
 	bool havePrev = false;
 
@@ -453,7 +465,7 @@ const char* CDisplayListParser::dec_gsSPSetGeometryMode_f3d(hl_state_t* state, c
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPDisplayList(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPDisplayList(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_dl_t *cmd = &state->command.dl;
 	sprintf(paramsBuf, "0x%08X // 0x%08X", cmd->address,
@@ -467,13 +479,13 @@ const char* CDisplayListParser::dec_gsSPDisplayList(hl_state_t* state, char* par
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_HexParam32(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_HexParam32(hle_dmem_state_t* state, char* paramsBuf)
 {
 	sprintf(paramsBuf, "0x%08X", state->command.w1);
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPMatrix_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPMatrix_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_mtx_f3d_t* cmd = &state->command.mtx_f3d;
 
@@ -486,14 +498,14 @@ const char* CDisplayListParser::dec_gsSPMatrix_f3d(hl_state_t* state, char* para
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPFillRectangle(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPFillRectangle(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_fillrect_t* cmd = &state->command.fillrect;
 	sprintf(paramsBuf, "%d, %d, %d, %d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPSetScissor(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPSetScissor(hle_dmem_state_t* state, char* paramsBuf)
 {
 	dl_cmd_setscissor_t* cmd = &state->command.setscissor;
 
@@ -512,7 +524,7 @@ const char* CDisplayListParser::dec_gsDPSetScissor(hl_state_t* state, char* para
 	return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPSetTextureImage(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPSetTextureImage(hle_dmem_state_t* state, char* paramsBuf)
 {
     dl_cmd_settimg_t* cmd = &state->command.settimg;
 
@@ -542,7 +554,7 @@ const char* CDisplayListParser::dec_gsDPSetTextureImage(hl_state_t* state, char*
     return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPSetTile(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPSetTile(hle_dmem_state_t* state, char* paramsBuf)
 {
     dl_cmd_settile_t* cmd = &state->command.settile;
 
@@ -574,7 +586,7 @@ const char* CDisplayListParser::dec_gsDPSetTile(hl_state_t* state, char* paramsB
     return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPLoadBlock(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPLoadBlock(hle_dmem_state_t* state, char* paramsBuf)
 {
     // counter inced every 64 bits of image
     // (4 texels for rgba16)
@@ -623,14 +635,14 @@ const char* CDisplayListParser::dec_gsDPLoadBlock(hl_state_t* state, char* param
     return NULL;
 }
 
-const char* CDisplayListParser::dec_gsDPSetTileSize(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsDPSetTileSize(hle_dmem_state_t* state, char* paramsBuf)
 {
     dl_cmd_settilesize_t* cmd = &state->command.settilesize;
     sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
     return NULL;
 }
 
-const char* CDisplayListParser::dec_gsSPTexture_f3d(hl_state_t* state, char* paramsBuf)
+const char* CDisplayListParser::dec_gsSPTexture_f3d(hle_dmem_state_t* state, char* paramsBuf)
 {
     dl_cmd_texture_f3d_t* cmd = &state->command.texture_f3d;
     sprintf(paramsBuf, "s:%d, t:%d, levels:%d, tile:%d, on:%d", cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);

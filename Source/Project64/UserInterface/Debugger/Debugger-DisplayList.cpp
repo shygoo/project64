@@ -98,14 +98,14 @@ void CDebugDisplayList::Refresh(void)
 
 	for (int i = 0; i < numCommands; i++)
 	{
-		hl_state_t *state = dlistParser.GetLogState(i);
+		hle_dmem_state_t *state = dlistParser.GetLogState(i);
 	
 		uint32_t virtAddress = CDisplayListParser::SegmentedToVirtual(state, state->address);
 
 		const char* commandName;
 		char commandParams[512];
 
-		commandName = dlistParser.DecodeCommand(i, commandParams);
+		//commandName = dlistParser.DecodeNextCommand(i, commandParams);
 
 		stdstr strPhysAddress = stdstr_f("%08X", virtAddress);
 		stdstr strAddress = stdstr_f("%08X", state->address);
