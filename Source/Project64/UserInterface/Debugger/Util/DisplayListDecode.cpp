@@ -20,9 +20,17 @@ const char* dec_gsSPMoveWord_f3d(CHleDmemState* state, char* paramsBuf)
     if (cmd->index == 0x02 && cmd->offset == 0x00) // MW_NUMLIGHT, MWO_NUMLIGHT
     {
         int numLights = ((cmd->data - 0x80000000) / 32) - 1;
-        sprintf(paramsBuf, "%d", numLights);
+		sprintf(paramsBuf, "%d", numLights);
         return "gsSPNumLights";
     }
+
+	if (cmd->index == 0x0E) // G_MW_PERSPNORM
+	{
+		MessageBox(NULL, "perspnorm", "", MB_OK);
+		sprintf(paramsBuf, "%d", (uint16_t)cmd->data);
+		return "gsSPPerspNormalize";
+	}
+	
 
     return NULL;
 }
@@ -212,9 +220,16 @@ const char* dec_gsDPLoadBlock(CHleDmemState* state, char* paramsBuf)
     int bytesPerLine = (0x800 / cmd->dxt) / sizeof(uint64_t);
     int width = bytesPerLine / bytesPerTexel;
 
-    //sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d // test %dx%d",
-    //    cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt,
-    //    width, cmd->lrs);
+	state->lastBlockLoadTexelSize = bytesPerTexel;
+	state->lastBlockLoadSize = cmd->lrs;
+
+	if (cmd->uls != 0 || cmd->ult != 0)
+	{
+		MessageBox(NULL, "nonzero uls/ult", "", MB_OK);
+	}
+
+    sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d",
+        cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt);
 
     return NULL;
 }

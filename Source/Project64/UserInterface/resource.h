@@ -2,7 +2,6 @@
 // Microsoft Visual C++ generated include file.
 // Used by UIResources.rc
 //
-
 #define VERSION_REVISION                0
 #define VER_VER_DEBUG                   0
 #define VERSION_MAJOR                   2
@@ -697,6 +696,8 @@
 #define IDC_LST_DLIST                   1539
 #define IDC_EDIT1                       1540
 #define IDC_EDIT_STATE                  1540
+#define IDC_TEX_PREVIEW                 1541
+#define IDC_THUMBNAIL                   1541
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ADDSYMBOL          40013
 #define ID_POPUPMENU_VIEWDISASM         40017
@@ -754,7 +755,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        215
 #define _APS_NEXT_COMMAND_VALUE         40085
-#define _APS_NEXT_CONTROL_VALUE         1541
+#define _APS_NEXT_CONTROL_VALUE         1542
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

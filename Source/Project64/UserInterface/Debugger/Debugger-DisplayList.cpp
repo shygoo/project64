@@ -61,6 +61,7 @@ LRESULT CDebugDisplayList::OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*
 	case IDC_BTN_REFRESH:
 		m_bRefreshPending = true;
 		SetWindowText("Display List (Waiting for RSP task...)");
+		::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), false);
 		break;
 	}
 
@@ -83,7 +84,6 @@ void CDebugDisplayList::Refresh(void)
 
     m_DisplayListParser.Reset(ucodeAddr, dlistAddr, dlistSize);
     
-	//CDisplayListParser dlistParser(ucodeAddr, dlistAddr, dlistSize);
 	ucode_version_t ucodeVersion = m_DisplayListParser.GetUCodeVersion();
 
 	if (ucodeVersion != UCODE_UNKNOWN)
@@ -127,7 +127,7 @@ void CDebugDisplayList::Refresh(void)
     }
 
 	m_DisplayListCtrl.SetRedraw(TRUE);
-
+	::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), TRUE);
 	m_bRefreshPending = false;
 }
 
@@ -137,6 +137,8 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     int nItem = pIA->iItem;
 
     CHleDmemState* state = m_DisplayListParser.GetLoggedState(nItem);
+
+	// Geometry mode
 
     stdstr strGeoMode = "GeometryMode: ";
 
@@ -153,11 +155,15 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     strGeoMode += "\r\n";
 
+	// Texture address
+
     stdstr strTextureImage = stdstr_f(
         "TextureImage: 0x%08X (0x%08X)\r\n",
         state->textureAddr,
         state->SegmentedToVirtual(state->textureAddr)
     );
+
+	// tiles
 
     stdstr strTileDescriptors = "";
 
@@ -167,7 +173,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     
         if (t->enabled == 0)
         {
-            strTileDescriptors += stdstr_f("TileDescriptor %d: (disabled)\r\n", i);
+            strTileDescriptors += stdstr_f("Tile %d: (off)\r\n", i);
             continue;
         }
 
@@ -175,13 +181,13 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
         const char* fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, t->fmt);
 
         strTileDescriptors += stdstr_f(
-            "TileDescriptor %d:\r\n"
+            "Tile %d:\r\n"
             "tmem: 0x%03X, siz: %s, fmt: %s, line: %d, "
             "shifts: %d, masks: %d, cms: %d, "
             "shiftt: %d, maskt: %d, cmt: %d,\r\n"
             "scaleS: %d, scaleT: %d, "
             "palette: %d, "
-            "mipmapLevels: %d, enabled: %d\r\n",
+            "mipmapLevels: %d, on: %d\r\n",
             i,
             t->tmem, sizName, fmtName, t->line,
             t->shifts, t->masks, t->cms,
@@ -192,11 +198,56 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
         );
     }
 
+	// lights
+
     stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+
+	/////////////
 
     stdstr strStateSummary = strGeoMode + strTextureImage + strNumLights + strTileDescriptors;
     
     m_StateTextbox.SetWindowTextA(strStateSummary.c_str());
+
+	// texture preview test
+
+	HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
+	HDC hDC = ::GetDC(texWnd);
+
+	int texelSize = state->lastBlockLoadTexelSize; // TEST
+	int calcWidth = (state->tiles[0].line * sizeof(uint64_t)) / 2; // ; // TEST
+
+	if (calcWidth == 0)
+	{
+		calcWidth = 32;
+	}
+
+	int width = calcWidth;
+	int height = 32;
+
+	uint32_t* imageBuffer = new uint32_t[width * height];
+	uint8_t* imgSrc = m_DisplayListParser.GetRamSnapshot() + state->SegmentedToPhysical(state->textureAddr);
+
+	for (int i = 0; i < 32 * 32; i++)
+	{
+		uint16_t px = *(uint16_t*) &imgSrc[(i*2)^2];
+		uint8_t r = ((px >> 11) & 0x1F) * (255.0f / 32.0f);
+		uint8_t g = ((px >> 6) & 0x1F) * (255.0f / 32.0f);
+		uint8_t b = ((px >> 1) & 0x1F) * (255.0f / 32.0f);
+		uint8_t a = (px & 1) * 255;
+		imageBuffer[i] = a << 24 | (r << 16) | (g << 8) | (b << 0);
+	}
+
+	//::SetWindowPos(texWnd, m_hWnd, 0, 0, width*4, height*4, SWP_NOMOVE);
+
+	HBITMAP hBitmap = CreateBitmap(width, height, 1, 32, imageBuffer);
+	HDC hTempDC = CreateCompatibleDC(hDC);
+	SelectObject(hTempDC, hBitmap);
+	StretchBlt(hDC, 0, 0, width * 4, height * 4, hTempDC, 0, 0, width, height, SRCCOPY);
+	
+	::ReleaseDC(texWnd, hDC);
+	::DeleteDC(hTempDC);
+	::DeleteObject(hBitmap);
+	delete[] imageBuffer;
 
     return FALSE;
 }

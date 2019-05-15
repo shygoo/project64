@@ -65,6 +65,9 @@ public:
     uint8_t  numLights;
     bool bDone;
 
+	uint8_t lastBlockLoadTexelSize;
+	uint16_t lastBlockLoadSize;
+
     uint32_t SegmentedToPhysical(uint32_t segaddr);
     uint32_t SegmentedToVirtual(uint32_t segaddr);
 };
@@ -115,8 +118,11 @@ public:
     int GetStackIndex(void);
 
     CHleDmemState* GetLoggedState(size_t index);
+	uint8_t* GetRamSnapshot(void);
 
 private:
+	uint8_t* m_RamSnapshot;
+
     static ucode_version_info_t UCodeVersions[];
 
     static dl_cmd_info_t Commands_Global[];
@@ -136,4 +142,6 @@ private:
 
     uint32_t m_RootDListSize;
     uint32_t m_VertexBufferSize;
+
+	uint32_t m_RootDListEndAddress;
 };

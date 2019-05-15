@@ -24,8 +24,15 @@ CDisplayListParser::CDisplayListParser(void) :
 	m_UCodeName(NULL),
 	m_CommandTable(NULL),
 	m_RootDListSize(0),
-	m_VertexBufferSize(16)
+	m_RootDListEndAddress(0),
+	m_VertexBufferSize(16),
+	m_RamSnapshot(NULL)
 {
+}
+
+uint8_t* CDisplayListParser::GetRamSnapshot(void)
+{
+	return m_RamSnapshot;
 }
 
 CHleDmemState* CDisplayListParser::GetLoggedState(size_t index)
@@ -40,11 +47,29 @@ CHleDmemState* CDisplayListParser::GetLoggedState(size_t index)
 
 void CDisplayListParser::Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
+	m_UCodeChecksum = 0;
+	m_UCodeVersion = UCODE_UNKNOWN;
+	m_UCodeName = "unknown microcode";
+	m_CommandTable = NULL;
+	m_RootDListSize = dlistSize;
+	m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
+	m_VertexBufferSize = 16;
+
+	if (m_RamSnapshot != NULL)
+	{
+		free(m_RamSnapshot);
+	}
+
+	uint32_t ramSize = g_MMU->RdramSize();
+	m_RamSnapshot = (uint8_t*)malloc(ramSize);
+	memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
+
+	memset(&m_State, 0, sizeof(m_State));
+	m_State.address = dlistAddr;
+
     m_StateLog.clear();
 
-    memset(&m_State, 0, sizeof(m_State));
-
-    uint8_t* ucode = g_MMU->Rdram() + ucodeAddr;
+    uint8_t* ucode = m_RamSnapshot + ucodeAddr;
 
     for (int i = 0; i < 3072; i += sizeof(uint32_t))
     {
@@ -53,26 +78,18 @@ void CDisplayListParser::Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t 
 
     const ucode_version_info_t* info = GetUCodeVersionInfo(m_UCodeChecksum);
 
-    if (info == NULL)
+    if (info != NULL)
     {
-        m_UCodeVersion = UCODE_UNKNOWN;
-        m_UCodeName = "unknown microcode";
-        return;
+		m_UCodeVersion = info->version;
+		m_UCodeName = info->name;
+		m_CommandTable = info->commandTable;
     }
-
-    m_UCodeVersion = info->version;
-    m_UCodeName = info->name;
-    m_CommandTable = info->commandTable;
-
-    m_State.address = dlistAddr;
 }
 
 // decode and execute command
 const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
 {
     uint32_t physAddress = m_State.SegmentedToPhysical(m_State.address);
-
-    //MessageBox(NULL, stdstr_f("%08X", physAddress).c_str(), "", MB_OK);
 
     g_MMU->LW_PAddr(physAddress, m_State.command.w0);
     g_MMU->LW_PAddr(physAddress + 4, m_State.command.w1);
@@ -93,29 +110,32 @@ const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
         commandInfo = LookupCommand(m_CommandTable, commandByte);
     }
 
-    if (commandInfo == NULL)
+    if (commandInfo != NULL)
     {
-        return commandName;
+		commandName = commandInfo->commandName;
+
+		// disassemble command
+		if (commandInfo->decodeFunc != NULL)
+		{
+			const char* overrideName = commandInfo->decodeFunc(&m_State, paramsTextBuf);
+
+			if (overrideName != NULL)
+			{
+				commandName = overrideName;
+			}
+		}
+
+		// execute command
+		if (commandInfo->opFunc != NULL)
+		{
+			commandInfo->opFunc(&m_State);
+		}
     }
-
-    commandName = commandInfo->commandName;
-
-    if (commandInfo->decodeFunc != NULL)
-    {
-        // disassemble command
-        const char* overrideName = commandInfo->decodeFunc(&m_State, paramsTextBuf);
-
-        if (overrideName != NULL)
-        {
-            commandName = overrideName;
-        }
-    }
-
-    if (commandInfo->opFunc != NULL)
-    {
-        // execute command
-        commandInfo->opFunc(&m_State);
-    }
+	
+	if (m_UCodeVersion == UCODE_UNKNOWN && m_State.address >= m_RootDListEndAddress)
+	{
+		m_State.bDone = true;
+	}
 
     return commandName;
 }
