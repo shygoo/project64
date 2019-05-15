@@ -216,6 +216,8 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 	int texelSize = state->lastBlockLoadTexelSize; // TEST
 	int calcWidth = (state->tiles[0].line * sizeof(uint64_t)) / 2; // ; // TEST
 
+	MessageBox(stdstr_f("lastBlockLoadTexelSize:%d, lastBlockLoad %d", state->lastBlockLoadTexelSize, state->lastBlockLoadSize).c_str());
+
 	if (calcWidth == 0)
 	{
 		calcWidth = 32;

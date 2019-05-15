@@ -24,12 +24,12 @@ const char* dec_gsSPMoveWord_f3d(CHleDmemState* state, char* paramsBuf)
         return "gsSPNumLights";
     }
 
-	if (cmd->index == 0x0E) // G_MW_PERSPNORM
-	{
-		MessageBox(NULL, "perspnorm", "", MB_OK);
-		sprintf(paramsBuf, "%d", (uint16_t)cmd->data);
-		return "gsSPPerspNormalize";
-	}
+	//if (cmd->index == 0x0E) // G_MW_PERSPNORM
+	//{
+	//	MessageBox(NULL, "perspnorm", "", MB_OK);
+	//	sprintf(paramsBuf, "%d", (uint16_t)cmd->data);
+	//	return "gsSPPerspNormalize";
+	//}
 	
 
     return NULL;
@@ -44,7 +44,7 @@ const char* dec_gsSPMoveMem_f3d(CHleDmemState* state, char* paramsBuf)
     if (cmd->p == 0x80) // G_MV_VIEWPORT
     {
         // todo params
-        sprintf(paramsBuf, "0x%08X // 0x%08X", cmd->address,
+        sprintf(paramsBuf, "addr:0x%08X // 0x%08X", cmd->address,
             state->SegmentedToVirtual(cmd->address));
         return "gsSPViewport";
     }
@@ -52,7 +52,7 @@ const char* dec_gsSPMoveMem_f3d(CHleDmemState* state, char* paramsBuf)
     if (cmd->p >= 0x86 && cmd->p <= 0x94) // G_MV_L0:7
     {
         int lightNumber = (cmd->p - 0x86) / 2;
-        sprintf(paramsBuf, "0x%08X, %d // 0x%08X", cmd->address, lightNumber,
+        sprintf(paramsBuf, "addr:0x%08X, lightnum:%d // 0x%08X", cmd->address, lightNumber,
             state->SegmentedToVirtual(cmd->address));
         return "gsSPLight";
     }
@@ -66,7 +66,7 @@ const char* dec_gsSPMoveWord_f3dex2(CHleDmemState* state, char* paramsBuf)
 
     if (cmd->index == 0x06) // MW_SEGMENT
     {
-        sprintf(paramsBuf, "0x%02X, 0x%08X", cmd->offset / 4, (uint32_t)cmd->data);
+        sprintf(paramsBuf, "segment:0x%02X, data:0x%08X", cmd->offset / 4, (uint32_t)cmd->data);
         return "gsSPSegment";
     }
 
@@ -76,14 +76,14 @@ const char* dec_gsSPMoveWord_f3dex2(CHleDmemState* state, char* paramsBuf)
 const char* dec_gsSP1Triangle_f3d(CHleDmemState* state, char* paramsBuf)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
-    sprintf(paramsBuf, "%d, %d, %d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
+    sprintf(paramsBuf, "v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
     return NULL;
 }
 
 const char* dec_gsSPVertex_f3d(CHleDmemState* state, char* paramsBuf)
 {
     dl_cmd_vtx_f3d_t *cmd = &state->command.vtx_f3d;
-    sprintf(paramsBuf, "0x%08X, %d, %d // 0x%08X", cmd->address, cmd->num + 1, cmd->idx,
+    sprintf(paramsBuf, "addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num + 1, cmd->idx,
         state->SegmentedToVirtual(cmd->address));
     return NULL;
 }
@@ -132,7 +132,7 @@ const char* dec_gsSPMatrix_f3d(CHleDmemState* state, char* paramsBuf)
 {
     dl_cmd_mtx_f3d_t* cmd = &state->command.mtx_f3d;
 
-    sprintf(paramsBuf, "0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
+    sprintf(paramsBuf, "addr:0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
         (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
         (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
         (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
@@ -144,7 +144,7 @@ const char* dec_gsSPMatrix_f3d(CHleDmemState* state, char* paramsBuf)
 const char* dec_gsDPFillRectangle(CHleDmemState* state, char* paramsBuf)
 {
     dl_cmd_fillrect_t* cmd = &state->command.fillrect;
-    sprintf(paramsBuf, "%d, %d, %d, %d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+    sprintf(paramsBuf, "ulx:%d, uly:%d, lrx:%d, lry:%d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
     return NULL;
 }
 
@@ -163,7 +163,7 @@ const char* dec_gsDPSetScissor(CHleDmemState* state, char* paramsBuf)
 
     // TODO check for frac bits and use gsDPSetScissorFrac if set
 
-    sprintf(paramsBuf, "%s, %d, %d, %d, %d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+    sprintf(paramsBuf, "mode:%s, ulx:%d, uly:%d, lrx:%d, lry:%d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
     return NULL;
 }
 
@@ -177,7 +177,7 @@ const char* dec_gsDPSetTextureImage(CHleDmemState* state, char* paramsBuf)
     fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
     sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
 
-    sprintf(paramsBuf, "%s, %s, %d, 0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
+    sprintf(paramsBuf, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
     return NULL;
@@ -193,7 +193,7 @@ const char* dec_gsDPSetTile(CHleDmemState* state, char* paramsBuf)
     fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
     sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
 
-    sprintf(paramsBuf, "%s, %s, %d, 0x%03X, %d, %d, %d, %d, %d, %d, %d, %d", fmtName, sizName,
+    sprintf(paramsBuf, "fmt:%s, siz:%s, line:%d, tmem:0x%03X, tile:%d, palette:%d, cmt:%d, maskt:%d, shiftt:%d, cmd:%d, masks:%d, shifts:%d", fmtName, sizName,
         cmd->line, cmd->tmem, cmd->tile, cmd->palette,
         cmd->cmt, cmd->maskt, cmd->shiftt,
         cmd->cms, cmd->masks, cmd->shifts);
