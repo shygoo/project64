@@ -1193,7 +1193,7 @@ void CMainMenu::FillOutMenu(HMENU hMenu)
 
 		/* Debug - Display list
 		*******************/
-		Item.Reset(ID_DEBUGGER_DISPLAYLIST, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Display list...");
+		Item.Reset(ID_DEBUGGER_DISPLAYLIST, EMPTY_STRING, EMPTY_STDSTR, NULL, L"Display List...");
 		DebugMenu.push_back(Item);
 
         DebugMenu.push_back(MENU_ITEM(SPLITER));

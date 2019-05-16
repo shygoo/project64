@@ -28,7 +28,8 @@ CDisplayListParser::CDisplayListParser(void) :
 	m_RootDListSize(0),
 	m_RootDListEndAddress(0),
 	m_VertexBufferSize(16),
-	m_RamSnapshot(NULL)
+	m_RamSnapshot(NULL),
+    m_nCommand(0)
 {
 }
 
@@ -56,6 +57,7 @@ void CDisplayListParser::Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t 
 	m_RootDListSize = dlistSize;
 	m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
 	m_VertexBufferSize = 16;
+    m_nCommand = 0;
 
 	if (m_RamSnapshot != NULL)
 	{
@@ -106,6 +108,7 @@ void CDisplayListParser::StepDecode(decode_context_t* dc)
 	memset(dc, 0, sizeof(decode_context_t));
 	dc->name = "?";
 	sprintf(dc->params, "?");
+    dc->dramResource.nCommand = m_nCommand;
 
     commandInfo = LookupCommand(Commands_Global, commandByte);
 
@@ -135,6 +138,8 @@ void CDisplayListParser::StepDecode(decode_context_t* dc)
 	{
 		m_State.bDone = true;
 	}
+    
+    m_nCommand++;
 }
 
 const ucode_version_info_t* CDisplayListParser::GetUCodeVersionInfo(uint32_t checksum)

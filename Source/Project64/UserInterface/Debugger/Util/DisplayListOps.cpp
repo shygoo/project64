@@ -85,19 +85,21 @@ void op_gsDPSetTile(CHleDmemState* state)
 void op_gsDPSetTextureImage(CHleDmemState* state)
 {
     dl_cmd_settimg_t* cmd = &state->command.settimg;
-    state->textureImage = cmd->address; // todo are other params used?
+    state->textureImage = cmd->address;
+    state->textureImageSiz = cmd->siz;
+    state->textureImageFmt = cmd->fmt;
 }
 
 void op_gsDPSetDepthImage(CHleDmemState* state)
 {
 	dl_cmd_settimg_t* cmd = &state->command.settimg;
-	state->depthImage = cmd->address; // todo are other params used?
+	state->depthImage = cmd->address; // todo other params
 }
 
 void op_gsDPSetColorImage(CHleDmemState* state)
 {
 	dl_cmd_settimg_t* cmd = &state->command.settimg;
-	state->colorImage = cmd->address; // todo are other params used?
+	state->colorImage = cmd->address; // todo other params
 }
 
 void op_gsSPSetGeometryMode_f3d(CHleDmemState* state)

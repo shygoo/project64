@@ -6,6 +6,7 @@ void ReportDramResource(decode_context_t* dc, CHleDmemState* state, resource_typ
 	dc->dramResource.type = resType;
 	dc->dramResource.address = state->command.w1;
 	dc->dramResource.virtAddress = state->SegmentedToVirtual(state->command.w1);
+    dc->dramResource.param = param;
 }
 
 ////////////
@@ -24,7 +25,7 @@ void dec_gsSPMoveWord_f3d(CHleDmemState* state, decode_context_t* dc)
         sprintf(dc->params, "0x%02X, 0x%08X", cmd->offset / 4, cmd->data);
         dc->overrideName = "gsSPSegment";
 
-		ReportDramResource(dc, state, RES_SEGMENT);
+		ReportDramResource(dc, state, RES_SEGMENT, cmd->offset/4);
     }
 
     if (cmd->index == 0x02 && cmd->offset == 0x00) // MW_NUMLIGHT, MWO_NUMLIGHT
@@ -86,6 +87,7 @@ void dec_gsSP1Triangle_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
     sprintf(dc->params, "v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
+    dc->numTris = 1;
 }
 
 void dec_gsSPVertex_f3d(CHleDmemState* state, decode_context_t* dc)
@@ -190,9 +192,6 @@ void dec_gsDPSetTextureImage(CHleDmemState* state, decode_context_t* dc)
 
     sprintf(dc->params, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
         state->SegmentedToVirtual(cmd->address));
-
-	// TODO move this to loadblock?
-	ReportDramResource(dc, state, RES_TEXTURE);
 }
 
 void dec_gsDPSetDepthImage(CHleDmemState* state, decode_context_t* dc)
@@ -225,6 +224,8 @@ void dec_gsDPSetColorImage(CHleDmemState* state, decode_context_t* dc)
 		state->SegmentedToVirtual(cmd->address));
 
 	ReportDramResource(dc, state, RES_COLORBUFFER);
+    dc->dramResource.imageWidth = 320;
+    dc->dramResource.imageHeight = 240;
 }
 
 void dec_gsDPSetTile(CHleDmemState* state, decode_context_t* dc)
@@ -249,27 +250,36 @@ void dec_gsDPLoadBlock(CHleDmemState* state, decode_context_t* dc)
 	sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d",
 		cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt);
 	
-
-    //uint8_t siz = state->tiles[cmd->tile].siz;
-    //int bytesPerTexel = 0;
-    //switch (siz)
+    //if (cmd->uls != 0 || cmd->ult != 0)
     //{
-    //case 0: bytesPerTexel = 0; break; // G_IM_SIZ_4b
-    //case 1: bytesPerTexel = 1; break; // G_IM_SIZ_8b
-    //case 2: bytesPerTexel = 2; break; // G_IM_SIZ_16b
-    //case 3: bytesPerTexel = 4; break; // G_IM_SIZ_32b
+    //	MessageBox(NULL, "nonzero uls/ult", "", MB_OK);
     //}
-	//
-    //int bytesPerLine = (0x800 / cmd->dxt) / sizeof(uint64_t);
-    //int width = bytesPerLine / bytesPerTexel;
-	//! TODO
-	//state->lastBlockLoadTexelSize = bytesPerTexel;
-	//state->lastBlockLoadSize = cmd->lrs;
-	//
-	//if (cmd->uls != 0 || cmd->ult != 0)
-	//{
-	//	MessageBox(NULL, "nonzero uls/ult", "", MB_OK);
-	//}
+
+    uint8_t siz = state->textureImageSiz;
+
+    int width, height;
+
+    int numTexelsToLoad = cmd->lrs + 1;
+    int bytesPerTexel = (1 << siz) / 2;
+
+    int bytesPerLine = ceil((2048.0f / cmd->dxt) * 8);
+
+    if (bytesPerTexel != 0)
+    {
+        width = bytesPerLine / bytesPerTexel;
+    }
+    else
+    {
+        width = bytesPerLine * 2; // I4, two texels per byte
+    }
+	
+    height = numTexelsToLoad / width;
+
+    dc->dramResource.type = RES_TEXTURE;
+    dc->dramResource.address = state->textureImage;
+    dc->dramResource.virtAddress = state->SegmentedToVirtual(state->textureImage);
+    dc->dramResource.imageWidth = width;
+    dc->dramResource.imageHeight = height;
 }
 
 void dec_gsDPSetTileSize(CHleDmemState* state, decode_context_t* dc)

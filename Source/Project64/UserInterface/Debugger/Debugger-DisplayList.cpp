@@ -13,6 +13,24 @@ CDebugDisplayList::~CDebugDisplayList()
 {
 }
 
+void CDebugDisplayList::ResetResourceTreeCtrl(void)
+{
+    m_TreeImageList.Destroy();
+    m_TreeImageList.Create(16, 16, ILC_COLOR8, 0, 4);
+
+    m_ResourceTreeCtrl.DeleteAllItems();
+    //m_ResourceTreeCtrl.SetImageList(m_TreeImageList);
+
+    m_hTreeDisplayLists = m_ResourceTreeCtrl.InsertItem("Display lists", -1, -1, NULL, NULL);
+    m_hTreeSegments = m_ResourceTreeCtrl.InsertItem("Segments", -1, -1, NULL, NULL);
+    m_hTreeImages = m_ResourceTreeCtrl.InsertItem("Images", -1, -1, NULL, NULL);
+    m_hTreeVertices = m_ResourceTreeCtrl.InsertItem("Vertices", -1, -1, NULL, NULL);
+    m_hTreeMatrices = m_ResourceTreeCtrl.InsertItem("Matrices", -1, -1, NULL, NULL);
+    m_hTreeViewports = m_ResourceTreeCtrl.InsertItem("Viewports", -1, -1, NULL, NULL);
+    m_hTreeLights = m_ResourceTreeCtrl.InsertItem("Lights", -1, -1, NULL, NULL);
+    //m_ResourceTreeCtrl.SetExtendedStyle(TVS_)
+}
+
 LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
 	DlgResize_Init(false, true);
@@ -20,7 +38,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	DlgSavePos_Init(DebuggerUI_DisplayListPos);
 
 	m_DisplayListCtrl.Attach(GetDlgItem(IDC_LST_DLIST));
-	m_ResourceListCtrl.Attach(GetDlgItem(IDC_LST_RESOURCES));
+    m_ResourceTreeCtrl.Attach(GetDlgItem(IDC_TREE_RESOURCES));
     m_StateTextbox.Attach(GetDlgItem(IDC_EDIT_STATE));
 	m_StatusText.Attach(GetDlgItem(IDC_STATUS_TEXT));
 
@@ -39,16 +57,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Command, 140);
 	m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Parameters, 340);
 
-	m_ResourceListCtrl.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
-	m_ResourceListCtrl.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
-
-	m_ResourceListCtrl.AddColumn("Address", 0);
-	m_ResourceListCtrl.AddColumn("SegOffset", 1);
-	m_ResourceListCtrl.AddColumn("Resource", 2);
-
-	m_ResourceListCtrl.SetColumnWidth(0, 65);
-	m_ResourceListCtrl.SetColumnWidth(1, 65);
-	m_ResourceListCtrl.SetColumnWidth(2, 95);
+    ResetResourceTreeCtrl();
 
 	LoadWindowPos();
 	WindowCreated();
@@ -58,7 +67,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 LRESULT CDebugDisplayList::OnDestroy(void)
 {
 	m_DisplayListCtrl.Detach();
-	m_ResourceListCtrl.Detach();
+	//m_ResourceListCtrl.Detach();
     m_StateTextbox.Detach();
 	m_StatusText.Detach();
 	return 0;
@@ -112,6 +121,7 @@ void CDebugDisplayList::Refresh(void)
 	m_RamResources.clear();
 
     int nCommand = 0;
+    uint32_t triangleCount = 0;
 
     while (!m_DisplayListParser.IsDone())
     {
@@ -140,49 +150,66 @@ void CDebugDisplayList::Refresh(void)
 			m_RamResources.push_back(dc.dramResource);
 		}
 
+        triangleCount += dc.numTris;
+
         nCommand++;
     }
 
 	m_DisplayListCtrl.SetRedraw(TRUE);
 
-	m_ResourceListCtrl.SetRedraw(FALSE);
-	m_ResourceListCtrl.DeleteAllItems();
+    m_ResourceTreeCtrl.SetRedraw(FALSE);
+    ResetResourceTreeCtrl();
 
-	for (size_t i = 0; i < m_RamResources.size(); i++)
+    CTreeViewCtrl& rtc = m_ResourceTreeCtrl;
+
+	for (size_t resIdx = 0; resIdx < m_RamResources.size(); resIdx++)
 	{
-		dram_resource_t* res = &m_RamResources[i];
-		stdstr strVirtAddress = stdstr_f("%08X", res->virtAddress);
-		stdstr strAddress = stdstr_f("%08X", res->address);
-		stdstr strType;
+		dram_resource_t* res = &m_RamResources[resIdx];
+        stdstr str = stdstr_f("0x%08X (0x%08X)", res->address, res->virtAddress);
+		//stdstr strType;
+        
+        HTREEITEM hParentItem = NULL;
 
 		switch (res->type)
 		{
-		case RES_ROOT_DL: strType = "Display list (root)"; break;
-		case RES_DL: strType = "Display list"; break;
-		case RES_SEGMENT: strType = "DRAM segment"; break;
-		case RES_COLORBUFFER: strType = "Color buffer"; break;
-		case RES_DEPTHBUFFER: strType = "Depth buffer"; break;
-		case RES_TEXTURE: strType = "Texture"; break;
-		case RES_PALETTE: strType = "Palette"; break;
-		case RES_VERTICES: strType = "Vertices"; break;
-		case RES_PROJECTION_MATRIX: strType = "Projection matrix"; break;
-		case RES_MODELVIEW_MATRIX: strType = "Modelview matrix"; break;
-		case RES_VIEWPORT: strType = "Viewport"; break;
-		case RES_DIFFUSE_LIGHT: strType = "Diffuse light"; break;
-		case RES_AMBIENT_LIGHT: strType = "Ambient light"; break;
-		default: strType = "?"; break;
+        case RES_ROOT_DL: hParentItem = m_hTreeDisplayLists; break;
+		case RES_DL: hParentItem = m_hTreeDisplayLists; break;
+		case RES_SEGMENT:
+            hParentItem = m_hTreeSegments;
+            str = stdstr_f("0x%02X: 0x%08X", res->param, res->address);
+            break;
+		case RES_COLORBUFFER:
+            str += " Colorbuffer";
+            hParentItem = m_hTreeImages; break;
+		case RES_DEPTHBUFFER:
+            str += " Depthbuffer";
+            hParentItem = m_hTreeImages; break;
+		case RES_TEXTURE:
+            str += " Texture";
+            hParentItem = m_hTreeImages; break;
+		case RES_PALETTE:
+            str += " Palette";
+            hParentItem = m_hTreeImages;  break;
+		case RES_VERTICES: hParentItem = m_hTreeVertices;  break;
+		case RES_PROJECTION_MATRIX: hParentItem = m_hTreeMatrices;  break;
+		case RES_MODELVIEW_MATRIX: hParentItem = m_hTreeMatrices;  break;
+		case RES_VIEWPORT: hParentItem = m_hTreeViewports;  break;
+		case RES_DIFFUSE_LIGHT: hParentItem = m_hTreeLights;  break;
+		case RES_AMBIENT_LIGHT: hParentItem = m_hTreeLights;  break;
 		}
 
-		m_ResourceListCtrl.AddItem(i, 0, strVirtAddress.c_str());
-		m_ResourceListCtrl.AddItem(i, 1, strAddress.c_str());
-		m_ResourceListCtrl.AddItem(i, 2, strType.c_str());
+        if (hParentItem != NULL)
+        {
+            HTREEITEM hItem = m_ResourceTreeCtrl.InsertItem(str.c_str(), hParentItem, NULL);
+            m_ResourceTreeCtrl.SetItemData(hItem, resIdx);
+        }
 	}
 
-	m_ResourceListCtrl.SetRedraw(TRUE);
+    m_ResourceTreeCtrl.SetRedraw(TRUE);
 
 	::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), TRUE);
 	
-	strStatus += stdstr_f(" - %d commands", nCommand);
+	strStatus += stdstr_f(" - %d commands, %d triangles", nCommand, triangleCount);
 	m_StatusText.SetWindowTextA(strStatus.c_str());
 
 	m_bRefreshPending = false;
@@ -248,16 +275,11 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     {
         hle_tile_descriptor_t* t = &state->tiles[i];
     
-		if (i != 0 && i != 7)
+		if (t->enabled == 0 && i != 7)
 		{
-			continue; // TODO checkbox to enable uncommon tiles
+            // skip the render tiles if they are disabled
+			continue;
 		}
-
-        //if (t->enabled == 0)
-        //{
-        //    strTileDescriptors += stdstr_f("Tile %d: (off)\r\n", i);
-        //    continue;
-        //}
 
         const char* sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, t->siz);
         const char* fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, t->fmt);
@@ -316,50 +338,101 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     
     m_StateTextbox.SetWindowTextA(strStateSummary.c_str());
 
-	// texture preview test
+    return FALSE;
+}
 
-	/*
-	HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
-	HDC hDC = ::GetDC(texWnd);
 
-	int texelSize = state->lastBlockLoadTexelSize; // TEST
-	int calcWidth = (state->tiles[0].line * sizeof(uint64_t)) / 2; // ; // TEST
+LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
+{
+    NMTREEVIEW* pnmtv = reinterpret_cast<NMTREEVIEW*>(pNMHDR);
+    TVITEM tvItem = pnmtv->itemNew;
 
-	MessageBox(stdstr_f("lastBlockLoadTexelSize:%d, lastBlockLoad %d", state->lastBlockLoadTexelSize, state->lastBlockLoadSize).c_str());
+    HTREEITEM hItem = tvItem.hItem;
+    HTREEITEM hParentItem = m_ResourceTreeCtrl.GetParentItem(hItem);
 
-	if (calcWidth == 0)
-	{
-		calcWidth = 32;
-	}
+    if (hParentItem == NULL)
+    {
+        // don't do anything for root items
+        return FALSE;
+    }
 
-	int width = calcWidth;
-	int height = 32;
+    int resIdx = m_ResourceTreeCtrl.GetItemData(hItem);
 
-	uint32_t* imageBuffer = new uint32_t[width * height];
-	uint8_t* imgSrc = m_DisplayListParser.GetRamSnapshot() + state->SegmentedToPhysical(state->textureAddr);
+    dram_resource_t* res = &m_RamResources[resIdx];
+    
+    m_DisplayListCtrl.SetFocus();
+    m_DisplayListCtrl.EnsureVisible(res->nCommand, FALSE);
+    m_DisplayListCtrl.SelectItem(res->nCommand);
 
-	for (int i = 0; i < 32 * 32; i++)
-	{
-		uint16_t px = *(uint16_t*) &imgSrc[(i*2)^2];
-		uint8_t r = ((px >> 11) & 0x1F) * (255.0f / 32.0f);
-		uint8_t g = ((px >> 6) & 0x1F) * (255.0f / 32.0f);
-		uint8_t b = ((px >> 1) & 0x1F) * (255.0f / 32.0f);
-		uint8_t a = (px & 1) * 255;
-		imageBuffer[i] = a << 24 | (r << 16) | (g << 8) | (b << 0);
-	}
+    // texture preview test
 
-	//::SetWindowPos(texWnd, m_hWnd, 0, 0, width*4, height*4, SWP_NOMOVE);
+    HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
+    HDC hDC = ::GetDC(texWnd);
 
-	HBITMAP hBitmap = CreateBitmap(width, height, 1, 32, imageBuffer);
-	HDC hTempDC = CreateCompatibleDC(hDC);
-	SelectObject(hTempDC, hBitmap);
-	StretchBlt(hDC, 0, 0, width * 4, height * 4, hTempDC, 0, 0, width, height, SRCCOPY);
-	
-	::ReleaseDC(texWnd, hDC);
-	::DeleteDC(hTempDC);
-	::DeleteObject(hBitmap);
-	delete[] imageBuffer;
-	*/
+    int width = (res->imageWidth != 0) ? res->imageWidth : 32;
+    int height = (res->imageHeight != 0) ? res->imageHeight : 32;
+
+    //MessageBox(stdstr_f("%d", width).c_str(), "", MB_OK);
+
+    uint32_t* imageBuffer = new uint32_t[width * height];
+    uint8_t* imgSrc = m_DisplayListParser.GetRamSnapshot() + (res->virtAddress - 0x80000000);
+
+    // rgba16 -> rgba32 convert
+    for (int i = 0; i < width * height; i++)
+    {
+        uint16_t px = *(uint16_t*) &imgSrc[(i*2)^2];
+        uint8_t r = ((px >> 11) & 0x1F) * (255.0f / 32.0f);
+        uint8_t g = ((px >> 6) & 0x1F) * (255.0f / 32.0f);
+        uint8_t b = ((px >> 1) & 0x1F) * (255.0f / 32.0f);
+        uint8_t a = (px & 1) * 255;
+        imageBuffer[i] = a << 24 | (r << 16) | (g << 8) | (b << 0);
+    }
+
+    //::SetWindowPos(texWnd, m_hWnd, 0, 0, width*4, height*4, SWP_NOMOVE);
+
+    CRect rc;
+    ::GetWindowRect(texWnd, &rc);
+
+    int scaledWidth = width * 4;
+    int scaledHeight = height * 4;
+
+    while (scaledWidth >= rc.Width() || scaledHeight >= rc.Height())
+    {
+        scaledWidth /= 2;
+        scaledHeight /= 2;
+    }
+
+    HBITMAP hBitmap = CreateBitmap(width, height, 1, 32, imageBuffer);
+    HDC hTempDC = CreateCompatibleDC(hDC);
+
+    HBRUSH hBrush = CreateSolidBrush(RGB(240, 240, 240));
+
+    RECT rcFill = { 1, 1, rc.Width()-1, rc.Height()-1 };
+
+    SelectObject(hTempDC, hBitmap);
+
+    int xoffs = rc.Width() / 2 - (scaledWidth / 2);
+    int yoffs = rc.Height() / 2 - (scaledHeight / 2);
+
+    FillRect(hDC, &rcFill, hBrush);
+    StretchBlt(hDC, xoffs, yoffs, scaledWidth, scaledHeight,
+        hTempDC, 0, 0, width, height, SRCCOPY);
+
+    // dumb test
+    //CImageList imgList = m_TreeImageList;
+    //int idx = imgList.Add(hBitmap);
+    //pnmtv->itemNew.iImage = idx;
+    //pnmtv->itemNew.iSelectedImage = idx;
+    //pnmtv->itemNew.mask &= ~(TVIF_IMAGE | TVIF_SELECTEDIMAGE);
+    //m_ResourceTreeCtrl.SetItemImage(hItem, idx, idx);
+
+    m_ResourceTreeCtrl.RedrawWindow();
+
+    ::ReleaseDC(texWnd, hDC);
+    ::DeleteDC(hTempDC);
+    ::DeleteObject(hBitmap);
+    ::DeleteObject(hBrush);
+    delete[] imageBuffer;
 
     return FALSE;
 }

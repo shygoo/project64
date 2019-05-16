@@ -81,6 +81,7 @@ public:
     uint32_t geometryMode;
     uint8_t  numLights;
 	uint32_t textureImage, depthImage, colorImage;
+    int textureImageFmt, textureImageSiz;
 	uint32_t fillColor, fogColor, blendColor, primColor, envColor;
     bool bDone;
 
@@ -111,10 +112,13 @@ enum resource_type_t
 
 typedef struct
 {
+    int nCommand;
 	resource_type_t type;
 	uint32_t address;
 	uint32_t virtAddress;
 	uint32_t param;
+    uint32_t imageWidth;
+    uint32_t imageHeight;
 } dram_resource_t;
 
 typedef struct
@@ -125,6 +129,7 @@ typedef struct
 	};
 	char params[512];
 	dram_resource_t dramResource;
+    int numTris;
 	COLORREF listBgColor, listFgColor;
 } decode_context_t;
 
@@ -188,6 +193,7 @@ private:
 
     static dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
 
+    int m_nCommand;
     CHleDmemState m_State;
     std::vector<CHleDmemState> m_StateLog;
 
