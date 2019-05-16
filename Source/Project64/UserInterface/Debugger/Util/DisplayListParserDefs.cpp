@@ -42,15 +42,15 @@ dl_cmd_info_t CDisplayListParser::Commands_Global[] = {
     { 0xF4, "gsDPLoadTile",          NULL, NULL },
     { 0xF5, "gsDPSetTile",           op_gsDPSetTile, dec_gsDPSetTile },
     { 0xF6, "gsDPFillRectangle",     NULL, dec_gsDPFillRectangle },
-    { 0xF7, "gsDPSetFillColor",      NULL, dec_HexParam32 },
-    { 0xF8, "gsDPSetFogColor",       NULL, dec_HexParam32 },
-    { 0xF9, "gsDPSetBlendColor",     NULL, dec_HexParam32 },
-    { 0xFA, "gsDPSetPrimColor",      NULL, dec_HexParam32 },
-    { 0xFB, "gsDPSetEnvColor",       NULL, dec_HexParam32 },
+    { 0xF7, "gsDPSetFillColor",      op_gsDPSetFillColor, dec_HexParam32 },
+    { 0xF8, "gsDPSetFogColor",       op_gsDPSetFogColor, dec_HexParam32 },
+    { 0xF9, "gsDPSetBlendColor",     op_gsDPSetBlendColor, dec_HexParam32 },
+    { 0xFA, "gsDPSetPrimColor",      op_gsDPSetPrimColor, dec_HexParam32 },
+    { 0xFB, "gsDPSetEnvColor",       op_gsDPSetEnvColor, dec_HexParam32 },
     { 0xFC, "gsDPSetCombine",        NULL, NULL },
     { 0xFD, "gsDPSetTextureImage",   op_gsDPSetTextureImage, dec_gsDPSetTextureImage },
-    { 0xFE, "gsDPSetDepthImage",     NULL, NULL },
-    { 0xFF, "gsDPSetColorImage",     NULL, NULL },
+    { 0xFE, "gsDPSetDepthImage",     op_gsDPSetDepthImage, dec_gsDPSetDepthImage },
+    { 0xFF, "gsDPSetColorImage",     op_gsDPSetColorImage, dec_gsDPSetColorImage },
     { 0, NULL, NULL, NULL }
 };
 
@@ -73,8 +73,8 @@ dl_cmd_info_t CDisplayListParser::Commands_F3D[] = {
     { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d, dec_gsSPClearGeometryMode_f3d },
     { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d, dec_gsSPSetGeometryMode_f3d },
     { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList, dec_NoParams },
-    { 0xB9, "gsSPSetOtherModeLow",   NULL, NULL },
-    { 0xBA, "gsSPSetOtherModeHigh",  NULL, NULL },
+    { 0xB9, "gsSPSetOtherMode_l",    NULL, NULL },
+    { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h, dec_gsSPSetOtherMode_h },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d, dec_gsSPTexture_f3d },
     { 0xBC, "gsSPMoveWord",          op_gsSPMoveWord_f3d, dec_gsSPMoveWord_f3d },
     { 0xBD, "gsSPPopMatrix",         NULL, NULL },
@@ -144,3 +144,16 @@ name_lut_entry_t CDisplayListParser::GeometryModeNames_F3DEX2[] = {
     { 0x00800000, "G_CLIPPING" },
     { 0, NULL }
 };
+
+const char* OtherModeNames::ad[] = { "G_AD_PATTERN", "G_AD_NOTPATTERN", "G_AD_NOISE", "G_AD_DISABLE" };
+const char* OtherModeNames::rd[] = { "G_CD_MAGICSQ", "G_CD_BAYER", "G_CD_NOISE" };
+const char* OtherModeNames::ck[] = { "G_CK_NONE", "G_CK_KEY" };
+const char* OtherModeNames::tc[] = { "G_TC_CONV", "1","2","3", "G_TC_INVALID_4", "G_TC_FILTCONV", "G_TC_FILT" };
+const char* OtherModeNames::tf[] = { "G_TF_POINT", "1", "G_TF_BILERP", "G_TF_AVERAGE" };
+const char* OtherModeNames::tt[] = { "G_TT_NONE", "1", "G_TT_RGBA16", "G_TT_IA16" };
+const char* OtherModeNames::tl[] = { "G_TL_TILE", "G_TL_LOD" };
+const char* OtherModeNames::td[] = { "G_TD_CLAMP", "G_TD_SHARPEN", "G_TD_DETAIL" };
+const char* OtherModeNames::tp[] = { "G_TP_NONE", "G_TP_PERSP" };
+const char* OtherModeNames::cyc[] = { "G_CYC_1CYCLE", "G_CYC_2CYCLE", "G_CYC_COPY", "G_CYC_FILL" };
+const char* OtherModeNames::cd[] = { "0", "1", "G_CD_DISABLE", "G_CD_ENABLE" };
+const char* OtherModeNames::pm[] = { "G_PM_NPRIMITIVE", "G_PM_1PRIMITIVE" };

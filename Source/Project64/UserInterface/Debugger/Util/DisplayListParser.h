@@ -50,6 +50,23 @@ typedef enum
 	UCODE_F3DEX2
 } ucode_version_t;
 
+class OtherModeNames
+{
+public:
+	static const char* ad[]; 
+	static const char* rd[];
+	static const char* ck[];
+	static const char* tc[];
+	static const char* tf[];
+	static const char* tt[];
+	static const char* tl[];
+	static const char* td[];
+	static const char* tp[];
+	static const char* cyc[];
+	static const char* cd[];
+	static const char* pm[];
+};
+
 class CHleDmemState
 {
 public:
@@ -60,9 +77,11 @@ public:
     uint32_t stackIndex;
     vertex_t vertices[64];
     hle_tile_descriptor_t tiles[8];
-    uint32_t textureAddr;
+	othermode_h_t othermode_h;
     uint32_t geometryMode;
     uint8_t  numLights;
+	uint32_t textureImage, depthImage, colorImage;
+	uint32_t fillColor, fogColor, blendColor, primColor, envColor;
     bool bDone;
 
 	uint8_t lastBlockLoadTexelSize;
@@ -72,8 +91,45 @@ public:
     uint32_t SegmentedToVirtual(uint32_t segaddr);
 };
 
+enum resource_type_t
+{
+	RES_NONE = 0,
+	RES_ROOT_DL,
+	RES_DL,
+	RES_SEGMENT,
+	RES_COLORBUFFER,
+	RES_DEPTHBUFFER,
+	RES_TEXTURE,
+	RES_PALETTE,
+	RES_VERTICES,
+	RES_PROJECTION_MATRIX,
+	RES_MODELVIEW_MATRIX,
+	RES_VIEWPORT,
+	RES_DIFFUSE_LIGHT,
+	RES_AMBIENT_LIGHT,
+};
+
+typedef struct
+{
+	resource_type_t type;
+	uint32_t address;
+	uint32_t virtAddress;
+	uint32_t param;
+} dram_resource_t;
+
+typedef struct
+{
+	union {
+		const char* name;
+		const char* overrideName;
+	};
+	char params[512];
+	dram_resource_t dramResource;
+	COLORREF listBgColor, listFgColor;
+} decode_context_t;
+
 typedef void (*dl_cmd_operation_func_t)(CHleDmemState* state);
-typedef const char* (*dl_cmd_decoder_func_t)(CHleDmemState* state, char* paramsBuf);
+typedef void (*dl_cmd_decoder_func_t)(CHleDmemState* state, decode_context_t* dc);
 
 typedef struct {
 	uint8_t commandByte;
@@ -110,7 +166,7 @@ public:
 	uint32_t GetUCodeChecksum(void);
 
     bool IsDone(void);
-    const char* StepDecode(char* paramsTextBuf, uint32_t* flags);
+    void StepDecode(decode_context_t* dc);
 
     uint32_t GetCommandAddress(void);
     uint32_t GetCommandVirtualAddress(void);

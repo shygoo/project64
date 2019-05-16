@@ -4,6 +4,8 @@
 #include "DisplayListOps.h"
 #include "DisplayListDecode.h"
 
+////////////
+
 uint32_t CHleDmemState::SegmentedToPhysical(uint32_t address)
 {
 	uint32_t segment = (address >> 24) & 0x0F;
@@ -87,7 +89,7 @@ void CDisplayListParser::Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t 
 }
 
 // decode and execute command
-const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
+void CDisplayListParser::StepDecode(decode_context_t* dc)
 {
     uint32_t physAddress = m_State.SegmentedToPhysical(m_State.address);
 
@@ -100,8 +102,10 @@ const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
     uint8_t commandByte = m_State.command.w0 >> 24;
 
     const dl_cmd_info_t *commandInfo;
-    const char* commandName = "?";
-    sprintf(paramsTextBuf, "?");
+
+	memset(dc, 0, sizeof(decode_context_t));
+	dc->name = "?";
+	sprintf(dc->params, "?");
 
     commandInfo = LookupCommand(Commands_Global, commandByte);
 
@@ -112,17 +116,12 @@ const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
 
     if (commandInfo != NULL)
     {
-		commandName = commandInfo->commandName;
+		dc->name = commandInfo->commandName;
 
 		// disassemble command
 		if (commandInfo->decodeFunc != NULL)
 		{
-			const char* overrideName = commandInfo->decodeFunc(&m_State, paramsTextBuf);
-
-			if (overrideName != NULL)
-			{
-				commandName = overrideName;
-			}
+			commandInfo->decodeFunc(&m_State, dc);
 		}
 
 		// execute command
@@ -136,8 +135,6 @@ const char* CDisplayListParser::StepDecode(char* paramsTextBuf, uint32_t* flags)
 	{
 		m_State.bDone = true;
 	}
-
-    return commandName;
 }
 
 const ucode_version_info_t* CDisplayListParser::GetUCodeVersionInfo(uint32_t checksum)

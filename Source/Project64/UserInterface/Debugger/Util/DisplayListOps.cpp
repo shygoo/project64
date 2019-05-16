@@ -85,7 +85,19 @@ void op_gsDPSetTile(CHleDmemState* state)
 void op_gsDPSetTextureImage(CHleDmemState* state)
 {
     dl_cmd_settimg_t* cmd = &state->command.settimg;
-    state->textureAddr = cmd->address; // todo are other params used?
+    state->textureImage = cmd->address; // todo are other params used?
+}
+
+void op_gsDPSetDepthImage(CHleDmemState* state)
+{
+	dl_cmd_settimg_t* cmd = &state->command.settimg;
+	state->depthImage = cmd->address; // todo are other params used?
+}
+
+void op_gsDPSetColorImage(CHleDmemState* state)
+{
+	dl_cmd_settimg_t* cmd = &state->command.settimg;
+	state->colorImage = cmd->address; // todo are other params used?
 }
 
 void op_gsSPSetGeometryMode_f3d(CHleDmemState* state)
@@ -98,4 +110,36 @@ void op_gsSPClearGeometryMode_f3d(CHleDmemState* state)
 {
     dl_cmd_setgeometrymode_f3d_t* cmd = &state->command.setgeometrymode_f3d;
     state->geometryMode &= ~cmd->mode;
+}
+
+void op_gsSPSetOtherMode_h(CHleDmemState* state)
+{
+	dl_cmd_setothermode_h_t* cmd = &state->command.setothermode_h;
+	uint32_t mask = ~(((1 << cmd->len) - 1) << cmd->sft);
+	state->othermode_h.data = (state->othermode_h.data & mask) | cmd->bits.data;
+}
+
+void op_gsDPSetFillColor(CHleDmemState* state)
+{
+	state->fillColor = state->command.w1;
+}
+
+void op_gsDPSetFogColor(CHleDmemState* state)
+{
+	state->fogColor = state->command.w1;
+}
+
+void op_gsDPSetBlendColor(CHleDmemState* state)
+{
+	state->blendColor = state->command.w1;
+}
+
+void op_gsDPSetPrimColor(CHleDmemState* state)
+{
+	state->primColor = state->command.w1;
+}
+
+void op_gsDPSetEnvColor(CHleDmemState* state)
+{
+	state->envColor = state->command.w1;
 }

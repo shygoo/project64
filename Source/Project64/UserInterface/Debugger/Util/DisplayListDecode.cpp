@@ -1,41 +1,48 @@
 #include <stdafx.h>
 #include "DisplayListDecode.h"
 
-const char* dec_NoParams(CHleDmemState*, char* paramsBuf)
+void ReportDramResource(decode_context_t* dc, CHleDmemState* state, resource_type_t resType, uint32_t param = 0)
 {
-    sprintf(paramsBuf, "");
-    return NULL;
+	dc->dramResource.type = resType;
+	dc->dramResource.address = state->command.w1;
+	dc->dramResource.virtAddress = state->SegmentedToVirtual(state->command.w1);
 }
 
-const char* dec_gsSPMoveWord_f3d(CHleDmemState* state, char* paramsBuf)
+////////////
+
+void dec_NoParams(CHleDmemState*, decode_context_t* dc)
+{
+    sprintf(dc->params, "");
+}
+
+void dec_gsSPMoveWord_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;
 
     if (cmd->index == 0x06) // MW_SEGMENT
     {
-        sprintf(paramsBuf, "0x%02X, 0x%08X", cmd->offset / 4, (uint32_t)cmd->data);
-        return "gsSPSegment";
+        sprintf(dc->params, "0x%02X, 0x%08X", cmd->offset / 4, cmd->data);
+        dc->overrideName = "gsSPSegment";
+
+		ReportDramResource(dc, state, RES_SEGMENT);
     }
 
     if (cmd->index == 0x02 && cmd->offset == 0x00) // MW_NUMLIGHT, MWO_NUMLIGHT
     {
         int numLights = ((cmd->data - 0x80000000) / 32) - 1;
-		sprintf(paramsBuf, "%d", numLights);
-        return "gsSPNumLights";
+		sprintf(dc->params, "%d", numLights);
+        dc->overrideName = "gsSPNumLights";
     }
 
 	//if (cmd->index == 0x0E) // G_MW_PERSPNORM
 	//{
 	//	MessageBox(NULL, "perspnorm", "", MB_OK);
-	//	sprintf(paramsBuf, "%d", (uint16_t)cmd->data);
-	//	return "gsSPPerspNormalize";
+	//	sprintf(dc->params, "%d", (uint16_t)cmd->data);
+	//	dc->overrideName = "gsSPPerspNormalize";
 	//}
-	
-
-    return NULL;
 }
 
-const char* dec_gsSPMoveMem_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPMoveMem_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     // gsDma2p G_MOVEMEM adrs len idx ofs 
 
@@ -44,53 +51,56 @@ const char* dec_gsSPMoveMem_f3d(CHleDmemState* state, char* paramsBuf)
     if (cmd->p == 0x80) // G_MV_VIEWPORT
     {
         // todo params
-        sprintf(paramsBuf, "addr:0x%08X // 0x%08X", cmd->address,
+        sprintf(dc->params, "addr:0x%08X // 0x%08X", cmd->address,
             state->SegmentedToVirtual(cmd->address));
-        return "gsSPViewport";
+        dc->overrideName = "gsSPViewport";
+
+		ReportDramResource(dc, state, RES_VIEWPORT);
     }
 
     if (cmd->p >= 0x86 && cmd->p <= 0x94) // G_MV_L0:7
     {
         int lightNumber = (cmd->p - 0x86) / 2;
-        sprintf(paramsBuf, "addr:0x%08X, lightnum:%d // 0x%08X", cmd->address, lightNumber,
+        sprintf(dc->params, "addr:0x%08X, lightnum:%d // 0x%08X", cmd->address, lightNumber,
             state->SegmentedToVirtual(cmd->address));
-        return "gsSPLight";
-    }
+        dc->overrideName = "gsSPLight";
 
-    return NULL;
+		ReportDramResource(dc, state, RES_AMBIENT_LIGHT);
+    }
 }
 
-const char* dec_gsSPMoveWord_f3dex2(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPMoveWord_f3dex2(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_moveword_f3dex2_t* cmd = &state->command.moveword_f3dex2;
 
     if (cmd->index == 0x06) // MW_SEGMENT
     {
-        sprintf(paramsBuf, "segment:0x%02X, data:0x%08X", cmd->offset / 4, (uint32_t)cmd->data);
-        return "gsSPSegment";
-    }
+        sprintf(dc->params, "segment:0x%02X, data:0x%08X", cmd->offset / 4, cmd->data);
+        dc->overrideName = "gsSPSegment";
 
-    return NULL;
+		ReportDramResource(dc, state, RES_SEGMENT);
+    }
 }
 
-const char* dec_gsSP1Triangle_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSP1Triangle_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
-    sprintf(paramsBuf, "v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
-    return NULL;
+    sprintf(dc->params, "v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
 }
 
-const char* dec_gsSPVertex_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPVertex_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_vtx_f3d_t *cmd = &state->command.vtx_f3d;
-    sprintf(paramsBuf, "addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num + 1, cmd->idx,
+    sprintf(dc->params, "addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num + 1, cmd->idx,
         state->SegmentedToVirtual(cmd->address));
-    return NULL;
+
+	ReportDramResource(dc, state, RES_VERTICES, cmd->num+1);
 }
 
-const char* dec_gsSPSetGeometryMode_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPSetGeometryMode_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     bool havePrev = false;
+	char *paramsOut = dc->params;
 
     for (int i = 0; CDisplayListParser::GeometryModeNames[i].name != NULL; i++)
     {
@@ -98,57 +108,59 @@ const char* dec_gsSPSetGeometryMode_f3d(CHleDmemState* state, char* paramsBuf)
         {
             if (havePrev)
             {
-                paramsBuf += sprintf(paramsBuf, " | ");
+				paramsOut += sprintf(paramsOut, " | ");
             }
 
-            paramsBuf += sprintf(paramsBuf, CDisplayListParser::GeometryModeNames[i].name);
+			paramsOut += sprintf(paramsOut, CDisplayListParser::GeometryModeNames[i].name);
             havePrev = true;
         }
     }
-    return NULL;
 }
 
-const char* dec_gsSPDisplayList(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPDisplayList(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_dl_t *cmd = &state->command.dl;
-    sprintf(paramsBuf, "0x%08X // 0x%08X", cmd->address,
+
+    sprintf(dc->params, "0x%08X // 0x%08X", cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
     if (cmd->branch)
     {
-        return "gsSPBranchList";
+        dc->overrideName = "gsSPBranchList";
+		dc->listFgColor = RGB(100, 100, 0);
     }
-
-    return NULL;
+	else
+	{
+		ReportDramResource(dc, state, RES_DL);
+		dc->listFgColor = RGB(0, 100, 0);
+	}
 }
 
-const char* dec_HexParam32(CHleDmemState* state, char* paramsBuf)
+void dec_HexParam32(CHleDmemState* state, decode_context_t* dc)
 {
-    sprintf(paramsBuf, "0x%08X", state->command.w1);
-    return NULL;
+    sprintf(dc->params, "0x%08X", state->command.w1);
 }
 
-const char* dec_gsSPMatrix_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPMatrix_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_mtx_f3d_t* cmd = &state->command.mtx_f3d;
 
-    sprintf(paramsBuf, "addr:0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
+    sprintf(dc->params, "addr:0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
         (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
         (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
         (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         state->SegmentedToVirtual(cmd->address));
 
-    return NULL;
+	ReportDramResource(dc, state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
 }
 
-const char* dec_gsDPFillRectangle(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPFillRectangle(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_fillrect_t* cmd = &state->command.fillrect;
-    sprintf(paramsBuf, "ulx:%d, uly:%d, lrx:%d, lry:%d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
-    return NULL;
+    sprintf(dc->params, "ulx:%d, uly:%d, lrx:%d, lry:%d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 }
 
-const char* dec_gsDPSetScissor(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPSetScissor(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_setscissor_t* cmd = &state->command.setscissor;
 
@@ -163,11 +175,10 @@ const char* dec_gsDPSetScissor(CHleDmemState* state, char* paramsBuf)
 
     // TODO check for frac bits and use gsDPSetScissorFrac if set
 
-    sprintf(paramsBuf, "mode:%s, ulx:%d, uly:%d, lrx:%d, lry:%d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
-    return NULL;
+    sprintf(dc->params, "mode:%s, ulx:%d, uly:%d, lrx:%d, lry:%d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 }
 
-const char* dec_gsDPSetTextureImage(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPSetTextureImage(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_settimg_t* cmd = &state->command.settimg;
 
@@ -177,13 +188,46 @@ const char* dec_gsDPSetTextureImage(CHleDmemState* state, char* paramsBuf)
     fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
     sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
 
-    sprintf(paramsBuf, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
+    sprintf(dc->params, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
-    return NULL;
+	// TODO move this to loadblock?
+	ReportDramResource(dc, state, RES_TEXTURE);
 }
 
-const char* dec_gsDPSetTile(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPSetDepthImage(CHleDmemState* state, decode_context_t* dc)
+{
+	dl_cmd_settimg_t* cmd = &state->command.settimg;
+
+	const char* fmtName = "?";
+	const char* sizName = "?";
+
+	fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
+	sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
+
+	sprintf(dc->params, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
+		state->SegmentedToVirtual(cmd->address));
+
+	ReportDramResource(dc, state, RES_DEPTHBUFFER);
+}
+
+void dec_gsDPSetColorImage(CHleDmemState* state, decode_context_t* dc)
+{
+	dl_cmd_settimg_t* cmd = &state->command.settimg;
+
+	const char* fmtName = "?";
+	const char* sizName = "?";
+
+	fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
+	sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
+
+	sprintf(dc->params, "fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
+		state->SegmentedToVirtual(cmd->address));
+
+	ReportDramResource(dc, state, RES_COLORBUFFER);
+}
+
+void dec_gsDPSetTile(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_settile_t* cmd = &state->command.settile;
 
@@ -193,57 +237,78 @@ const char* dec_gsDPSetTile(CHleDmemState* state, char* paramsBuf)
     fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, cmd->fmt);
     sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, cmd->siz);
 
-    sprintf(paramsBuf, "fmt:%s, siz:%s, line:%d, tmem:0x%03X, tile:%d, palette:%d, cmt:%d, maskt:%d, shiftt:%d, cmd:%d, masks:%d, shifts:%d", fmtName, sizName,
+    sprintf(dc->params, "fmt:%s, siz:%s, line:%d, tmem:0x%03X, tile:%d, palette:%d, cmt:%d, maskt:%d, shiftt:%d, cmt:%d, masks:%d, shifts:%d", fmtName, sizName,
         cmd->line, cmd->tmem, cmd->tile, cmd->palette,
         cmd->cmt, cmd->maskt, cmd->shiftt,
         cmd->cms, cmd->masks, cmd->shifts);
-
-    return NULL;
 }
 
-const char* dec_gsDPLoadBlock(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPLoadBlock(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_loadblock_t* cmd = &state->command.loadblock;
+	sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d",
+		cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt);
+	
 
-    uint8_t siz = state->tiles[cmd->tile].siz;
-
-    int bytesPerTexel = 0;
-
-    switch (siz)
-    {
-    case 0: bytesPerTexel = 0; break; // G_IM_SIZ_4b
-    case 1: bytesPerTexel = 1; break; // G_IM_SIZ_8b
-    case 2: bytesPerTexel = 2; break; // G_IM_SIZ_16b
-    case 3: bytesPerTexel = 4; break; // G_IM_SIZ_32b
-    }
-
-    int bytesPerLine = (0x800 / cmd->dxt) / sizeof(uint64_t);
-    int width = bytesPerLine / bytesPerTexel;
-
-	state->lastBlockLoadTexelSize = bytesPerTexel;
-	state->lastBlockLoadSize = cmd->lrs;
-
-	if (cmd->uls != 0 || cmd->ult != 0)
-	{
-		MessageBox(NULL, "nonzero uls/ult", "", MB_OK);
-	}
-
-    sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, dxt:%d",
-        cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->dxt);
-
-    return NULL;
+    //uint8_t siz = state->tiles[cmd->tile].siz;
+    //int bytesPerTexel = 0;
+    //switch (siz)
+    //{
+    //case 0: bytesPerTexel = 0; break; // G_IM_SIZ_4b
+    //case 1: bytesPerTexel = 1; break; // G_IM_SIZ_8b
+    //case 2: bytesPerTexel = 2; break; // G_IM_SIZ_16b
+    //case 3: bytesPerTexel = 4; break; // G_IM_SIZ_32b
+    //}
+	//
+    //int bytesPerLine = (0x800 / cmd->dxt) / sizeof(uint64_t);
+    //int width = bytesPerLine / bytesPerTexel;
+	//! TODO
+	//state->lastBlockLoadTexelSize = bytesPerTexel;
+	//state->lastBlockLoadSize = cmd->lrs;
+	//
+	//if (cmd->uls != 0 || cmd->ult != 0)
+	//{
+	//	MessageBox(NULL, "nonzero uls/ult", "", MB_OK);
+	//}
 }
 
-const char* dec_gsDPSetTileSize(CHleDmemState* state, char* paramsBuf)
+void dec_gsDPSetTileSize(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_settilesize_t* cmd = &state->command.settilesize;
-    sprintf(paramsBuf, "tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
-    return NULL;
+
+	if ((cmd->lrs & 3) == 0 && (cmd->lrt & 3) == 0)
+	{
+		sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:(%d << 2), lrt:(%d << 2)", cmd->tile, cmd->uls, cmd->ult, cmd->lrs >> 2, cmd->lrt >> 2);
+		
+	}
+    sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
+    
 }
 
-const char* dec_gsSPTexture_f3d(CHleDmemState* state, char* paramsBuf)
+void dec_gsSPTexture_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_texture_f3d_t* cmd = &state->command.texture_f3d;
-    sprintf(paramsBuf, "s:%d, t:%d, levels:%d, tile:%d, on:%d", cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
-    return NULL;
+    sprintf(dc->params, "s:%d, t:%d, levels:%d, tile:%d, on:%d", cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
+}
+
+void dec_gsSPSetOtherMode_h(CHleDmemState* state, decode_context_t* dc)
+{
+	dl_cmd_setothermode_h_t* cmd = &state->command.setothermode_h;
+	othermode_h_t* bits = &cmd->bits;
+
+	switch (cmd->sft)
+	{
+	case 23: sprintf(dc->params, OtherModeNames::pm[bits->pm]); dc->overrideName = "gsDPPipelineMode"; break;      // G_MDSFT_PIPELINE
+	case 22: sprintf(dc->params, OtherModeNames::cd[bits->cd]); dc->overrideName = "gsDPSetColorDither"; break;    // G_MDSFT_COLORDITHER // hw1 only
+	case 20: sprintf(dc->params, OtherModeNames::cyc[bits->cyc]); dc->overrideName = "gsDPSetCycleType"; break;   // G_MDSFT_CYCLETYPE
+	case 19: sprintf(dc->params, OtherModeNames::tp[bits->tp]); dc->overrideName = "gsDPSetTexturePersp"; break;  // G_MDSFT_TEXTPERSP
+	case 17: sprintf(dc->params, OtherModeNames::td[bits->td]); dc->overrideName = "gsDPSetTextureDetail"; break; // G_MDSFT_TEXTDETAIL
+	case 16: sprintf(dc->params, OtherModeNames::tl[bits->tl]); dc->overrideName = "gsDPSetTextureLOD"; break;    // G_MDSFT_TEXTLOD
+	case 14: sprintf(dc->params, OtherModeNames::tt[bits->tt]); dc->overrideName = "gsDPSetTextureLUT"; break;    // G_MDSFT_TEXTLUT
+	case 12: sprintf(dc->params, OtherModeNames::tf[bits->tf]); dc->overrideName = "gsDPSetTextureFilter"; break; // G_MDSFT_TEXTFILT
+	case 9:  sprintf(dc->params, OtherModeNames::tc[bits->tc]); dc->overrideName = "gsDPSetTextureConvert"; break; // G_MDSFT_TEXTCONV
+	case 8:  sprintf(dc->params, OtherModeNames::ck[bits->ck]); dc->overrideName = "gsDPSetCombineKey"; break;    // G_MDSFT_COMBKEY
+	case 6:  sprintf(dc->params, OtherModeNames::rd[bits->rd]); dc->overrideName = "gsDPSetColorDither"; break;   // G_MDSFT_RGBDITHER // hw2 only
+	case 4:  sprintf(dc->params, OtherModeNames::ad[bits->ad]); dc->overrideName = "gsDPSetAlphaDither"; break;   // G_MDSFT_ALPHADITHER // hw2 only
+	}
 }

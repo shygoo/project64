@@ -2,6 +2,30 @@
 
 #include <stdafx.h>
 
+typedef union
+{
+	uint32_t data;
+	struct
+	{
+		uint32_t : 4;
+		uint32_t ad : 2; // alpha dither
+		uint32_t rd : 2; // rgb dither
+		uint32_t ck : 1; // chroma key
+		uint32_t tc : 3; // texture convert
+		uint32_t tf : 2; // texture filter
+		uint32_t tt : 2; // texture lut
+		uint32_t tl : 1; // texture lod
+		uint32_t td : 2; // texture detail
+		uint32_t tp : 1; // texture perspective
+		uint32_t cyc : 2; // cycle type
+		uint32_t cd : 1; // color dither
+		uint32_t pm : 1; // pipeline mode
+		uint32_t : 8;
+	};
+} othermode_h_t;
+
+////////////////
+
 typedef struct
 {
 	struct { uint32_t index : 8; uint32_t offset : 16; uint32_t c : 8; }; // w0
@@ -96,6 +120,12 @@ typedef struct
 	uint32_t address;
 } dl_cmd_dl_t;
 
+typedef struct
+{
+	struct { uint32_t len : 8; uint32_t sft : 8; uint32_t : 8; uint32_t c : 8; };
+	othermode_h_t bits;
+} dl_cmd_setothermode_h_t;
+
 typedef union
 {
 	struct { uint32_t w0, w1; };
@@ -110,6 +140,7 @@ typedef union
 
     /* shared rsp commands */
     dl_cmd_dl_t dl;
+	dl_cmd_setothermode_h_t setothermode_h;
 
     /* fast3d commands */
 	dl_cmd_moveword_f3d_t moveword_f3d;
