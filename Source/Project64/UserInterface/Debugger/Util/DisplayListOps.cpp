@@ -102,15 +102,20 @@ void op_gsDPSetColorImage(CHleDmemState* state)
 	state->colorImage = cmd->address; // todo other params
 }
 
+void op_gsDPSetCombineLERP(CHleDmemState* state)
+{
+    state->combiner = state->command.setcombine;
+}
+
 void op_gsSPSetGeometryMode_f3d(CHleDmemState* state)
 {
-    dl_cmd_setgeometrymode_f3d_t* cmd = &state->command.setgeometrymode_f3d;
+    dl_cmd_geometrymode_f3d_t* cmd = &state->command.geometrymode_f3d;
     state->geometryMode |= cmd->mode;
 }
 
 void op_gsSPClearGeometryMode_f3d(CHleDmemState* state)
 {
-    dl_cmd_setgeometrymode_f3d_t* cmd = &state->command.setgeometrymode_f3d;
+    dl_cmd_geometrymode_f3d_t* cmd = &state->command.geometrymode_f3d;
     state->geometryMode &= ~cmd->mode;
 }
 

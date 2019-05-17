@@ -25,3 +25,4 @@ void dec_gsSPMoveMem_f3d(CHleDmemState*, decode_context_t*);
 void dec_gsSPTexture_f3d(CHleDmemState*, decode_context_t*);
 void dec_gsSPDisplayList(CHleDmemState*, decode_context_t*);
 void dec_gsSPSetOtherMode_h(CHleDmemState*, decode_context_t*);
+void dec_gsDPSetCombineLERP(CHleDmemState*, decode_context_t*);

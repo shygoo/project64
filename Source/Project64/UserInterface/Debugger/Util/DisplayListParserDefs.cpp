@@ -48,7 +48,7 @@ dl_cmd_info_t CDisplayListParser::Commands_Global[] = {
     { 0xF9, "gsDPSetBlendColor",     op_gsDPSetBlendColor, dec_HexParam32 },
     { 0xFA, "gsDPSetPrimColor",      op_gsDPSetPrimColor, dec_HexParam32 },
     { 0xFB, "gsDPSetEnvColor",       op_gsDPSetEnvColor, dec_HexParam32 },
-    { 0xFC, "gsDPSetCombine",        NULL, NULL },
+    { 0xFC, "gsDPSetCombineLERP",    op_gsDPSetCombineLERP, dec_gsDPSetCombineLERP },
     { 0xFD, "gsDPSetTextureImage",   op_gsDPSetTextureImage, dec_gsDPSetTextureImage },
     { 0xFE, "gsDPSetDepthImage",     op_gsDPSetDepthImage, dec_gsDPSetDepthImage },
     { 0xFF, "gsDPSetColorImage",     op_gsDPSetColorImage, dec_gsDPSetColorImage },
@@ -144,6 +144,103 @@ name_lut_entry_t CDisplayListParser::GeometryModeNames_F3DEX2[] = {
     { 0x00200000, "G_SHADING_SMOOTH" },
     { 0x00800000, "G_CLIPPING" },
     { 0, NULL }
+};
+
+cc_preset_lut_entry_t CDisplayListParser::CombinerPresetNames[] = {
+    { "G_CC_PRIMITIVE",             15, 15, 31,  3, 7, 7, 7, 3 },
+    { "G_CC_SHADE",                 15, 15, 31,  4, 7, 7, 7, 4 },
+    { "G_CC_MODULATEI",             1,  15,  4,  7, 7, 7, 7, 4 },
+    { "G_CC_MODULATEIA",            1,  15,  4,  7, 1, 7, 4, 7 },
+    { "G_CC_MODULATEIDECALA",       1,  15,  4,  7, 7, 7, 7, 1 },
+    { "G_CC_MODULATEI_PRIM",        1,  15,  3,  7, 7, 7, 7, 3 },
+    { "G_CC_MODULATEIA_PRIM",       1,  15,  3,  7, 1, 7, 3, 7 },
+    { "G_CC_MODULATEIDECALA_PRIM",  1,  15,  3,  7, 7, 7, 7, 1 },
+    { "G_CC_DECALRGB",              15, 15, 31,  1, 7, 7, 7, 4 },
+    { "G_CC_DECALRGBA",             15, 15, 31,  1, 7, 7, 7, 1 },
+    { "G_CC_BLENDI",                5,   4,  1,  4, 7, 7, 7, 4 },
+    { "G_CC_BLENDIA",               5,   4,  1,  4, 1, 7, 4, 7 },
+    { "G_CC_BLENDIDECALA",          5,   4,  1,  4, 7, 7, 7, 1 },
+    { "G_CC_BLENDRGBA",             1,   4,  8,  4, 7, 7, 7, 4 },
+    { "G_CC_BLENDRGBDECALA",        1,   4,  8,  4, 7, 7, 7, 1 },
+    { "G_CC_ADDRGB",                6,  15,  1,  4, 7, 7, 7, 4 },
+    { "G_CC_ADDRGBDECALA",          6,  15,  1,  4, 7, 7, 7, 1 },
+    { "G_CC_REFLECTRGB",            5,  15,  1,  4, 7, 7, 7, 4 },
+    { "G_CC_REFLECTRGBDECALA",      5,  15,  1,  4, 7, 7, 7, 1 },
+    { "G_CC_HILITERGB",             3,   4,  1,  4, 7, 7, 7, 4 },
+    { "G_CC_HILITERGBA",            3,   4,  1,  4, 3, 4, 1, 4 },
+    { "G_CC_HILITERGBDECALA",       3,   4,  1,  4, 7, 7, 7, 1 },
+    { "G_CC_SHADEDECALA",           15, 15,  31, 4, 7, 7, 7, 1 },
+    { "G_CC_BLENDPE",               3,   5,  1,  5, 1, 7, 4, 7 },
+    { "G_CC_BLENDPEDECALA",         3,   5,  1,  5, 7, 7, 7, 1 },
+    { "_G_CC_BLENDPE",              5,   3,  1,  3, 1, 7, 4, 7 },
+    { "_G_CC_BLENDPEDECALA",        5,   3,  1,  3, 7, 7, 7, 1 },
+    { "_G_CC_TWOCOLORTEX",          3,   4,  1,  4, 7, 7, 7, 4 },
+    { "_G_CC_SPARSEST",             3,   1, 13,  1, 3, 1, 0, 1 },
+    { "G_CC_TEMPLERP",              2,   1, 14,  1, 2, 1, 6, 1 },
+    { "G_CC_TRILERP",               2,   1, 13,  1, 2, 1, 0, 1 },
+    { "G_CC_INTERFERENCE",          1,  15,  2,  7, 1, 7, 2, 7 },
+    { "G_CC_1CYUV2RGB",             1,   7, 15,  1, 7, 7, 7, 4 },
+    { "G_CC_YUV2RGB",               2,   7, 15,  2, 7, 7, 7, 7 },
+    { "G_CC_PASS2",                 15, 15, 31,  0, 7, 7, 7, 0 },
+    { "G_CC_MODULATEI2",            0,  15,  4,  7, 7, 7, 7, 4 },
+    { "G_CC_MODULATEIA2",           0,   5,  4,  7, 0, 7, 4, 7 },
+    { "G_CC_MODULATEI_PRIM2",       0,  15,  3,  7, 7, 7, 7, 3 },
+    { "G_CC_MODULATEIA_PRIM2",      0,  15,  3,  7, 0, 7, 3, 7 },
+    { "G_CC_DECALRGB2",             15, 15, 31,  0, 7, 7, 7, 4 },
+    { "G_CC_BLENDI2",               5,   4,  0,  4, 7, 7, 7, 4 },
+    { "G_CC_BLENDIA2",              5,   4,  0,  4, 0, 7, 4, 7 },
+    { "G_CC_CHROMA_KEY2",           1,   6,  6,  7, 7, 7, 7, 7 },
+    { "G_CC_HILITERGB2",            5,   0,  1,  0, 7, 7, 7, 4 },
+    { "G_CC_HILITERGBA2",           5,   0,  1,  0, 5, 0, 1, 0 },
+    { "G_CC_HILITERGBDECALA2",      5,   0,  1,  0, 7, 7, 7, 1 },
+    { "G_CC_HILITERGBPASSA2",       5,   0,  1,  0, 7, 7, 7, 0 },
+    { NULL, 0, 0, 0, 0, 0, 0, 0, 0 }
+};
+
+name_lut_entry_t CDisplayListParser::CCMuxA[] = {
+    { 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
+    { 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },{ 7,  "NOISE" },
+    { 15, "ZERO" },
+    { 0 , NULL },
+};
+
+name_lut_entry_t CDisplayListParser::CCMuxB[] = {
+    { 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
+    { 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "CENTER" },{ 7,  "K4" },
+    { 15, "ZERO" },
+    { 0 , NULL }
+};
+
+name_lut_entry_t CDisplayListParser::CCMuxC[] = {
+    { 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
+    { 4,  "SHADE" },{ 5, "ENVIRONMENT" },{ 6, "SCALE" },{ 7,  "COMBINED_ALPHA" },
+    { 8,  "TEXEL0_ALPHA" },{ 9,  "TEXEL1_ALPHA" },{ 10, "PRIMITIVE_ALPHA" },
+    { 11, "SHADE_ALPHA" },{ 12, "ENV_ALPHA" },{ 13, "LOD_FRACTION" },
+    { 14, "PRIM_LOD_FRAC" },{ 15, "K5" },
+    { 31, "ZERO" },
+    { 0 , NULL }
+};
+
+name_lut_entry_t CDisplayListParser::CCMuxD[] = {
+    { 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
+    { 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },
+    { 7,  "ZERO" },
+    { 0 , NULL }
+};
+
+name_lut_entry_t CDisplayListParser::ACMuxA_B_D[] = {
+    { 0, "COMBINED" },{ 1,  "TEXEL0" },{ 2, "TEXEL1" },{ 3,  "PRIMITIVE" },
+    { 4, "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },
+    { 7, "ZERO" },
+    { 0 , NULL }
+};
+
+
+name_lut_entry_t CDisplayListParser::ACMuxC[] = {
+    { 0,  "LOD_FRACTION" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },
+    { 3,  "PRIMITIVE" },{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6, "PRIM_LOD_FRAC" },
+    { 7,  "ZERO" },
+    { 0 , NULL }
 };
 
 const char* OtherModeNames::ad[] = { "G_AD_PATTERN", "G_AD_NOTPATTERN", "G_AD_NOISE", "G_AD_DISABLE" };

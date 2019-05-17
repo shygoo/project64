@@ -252,11 +252,11 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 	// rdp colors
 
 	stdstr strColors = stdstr_f(
-		"Colors: Fill: 0x%08X, "
-		"Fog: 0x%08X, "
-		"Blend: 0x%08X, "
-		"Prim: 0x%08X, "
-		"Env: 0x%08X\r\n",
+		"FillColor: 0x%08X\r\n"
+		"FogColor: 0x%08X\r\n"
+		"BlendColor: 0x%08X\r\n"
+		"PrimColor: 0x%08X\r\n"
+		"EnvColor: 0x%08X\r\n",
 		state->fillColor,
 		state->fogColor,
 		state->blendColor,
@@ -325,13 +325,30 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
 	/////////////
 
-	stdstr split = "-----------------\r\n";
+    stdstr cycle1Color = stdstr_f("Cycle 1 Color: (%s - %s) * %s + %s\r\n",
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxA, state->combiner.a0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxB, state->combiner.b0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxC, state->combiner.c0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxD, state->combiner.d0));
+
+    stdstr cycle1Alpha = stdstr_f("Cycle 1 Alpha: (%s - %s) * %s + %s\r\n",
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Aa0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ab0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxC, state->combiner.Ac0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ad0));
+
+    stdstr strCombiner = cycle1Color + cycle1Alpha;
+
+    //
+
+	stdstr split = "";
 
     stdstr strStateSummary = (
 		strTextureImage + split +
 		strColors + split +
 		strGeoMode + split +
 		strOtherModeH + split +
+        strCombiner + split +
 		strNumLights + split +
 		strTileDescriptors);
     

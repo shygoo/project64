@@ -12,6 +12,7 @@ void op_gsDPSetFogColor(CHleDmemState* state);
 void op_gsDPSetBlendColor(CHleDmemState* state);
 void op_gsDPSetPrimColor(CHleDmemState* state);
 void op_gsDPSetEnvColor(CHleDmemState* state);
+void op_gsDPSetCombineLERP(CHleDmemState* state);
 
 void op_gsSPDisplayList(CHleDmemState* state);
 void op_gsSPEndDisplayList(CHleDmemState* state);

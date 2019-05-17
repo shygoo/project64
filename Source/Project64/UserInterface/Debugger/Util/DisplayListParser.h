@@ -84,6 +84,13 @@ public:
 	static const char* pm[];
 };
 
+typedef struct
+{
+    const char* name;
+    int a, b, c, d;
+    int Aa, Ab, Ac, Ad;
+} cc_preset_lut_entry_t;
+
 class CHleDmemState
 {
 public:
@@ -101,6 +108,9 @@ public:
 	im_fmt_t textureImageFmt;
 	im_siz_t textureImageSiz;
 	uint32_t fillColor, fogColor, blendColor, primColor, envColor;
+
+    dl_cmd_setcombine_t combiner;
+
     bool bDone;
 
 	uint8_t lastBlockLoadTexelSize;
@@ -184,6 +194,13 @@ public:
     static name_lut_entry_t GeometryModeNames_F3DEX2[];
     static name_lut_entry_t TexelSizeNames[];
     static name_lut_entry_t ImageFormatNames[];
+    static cc_preset_lut_entry_t CombinerPresetNames[];
+    static name_lut_entry_t CCMuxA[];
+    static name_lut_entry_t CCMuxB[];
+    static name_lut_entry_t CCMuxC[];
+    static name_lut_entry_t CCMuxD[];
+    static name_lut_entry_t ACMuxA_B_D[];
+    static name_lut_entry_t ACMuxC[];
 
     static const char* LookupName(name_lut_entry_t* set, uint32_t value);
 

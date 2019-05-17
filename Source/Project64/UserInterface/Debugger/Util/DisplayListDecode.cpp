@@ -196,7 +196,7 @@ void dec_gsDPSetTextureImage(CHleDmemState* state, decode_context_t* dc)
 
 void dec_gsDPSetDepthImage(CHleDmemState* state, decode_context_t* dc)
 {
-	dl_cmd_settimg_t* cmd = &state->command.settimg;
+	dl_cmd_setzimg_t* cmd = &state->command.setzimg;
 
 	const char* fmtName = "?";
 	const char* sizName = "?";
@@ -212,7 +212,7 @@ void dec_gsDPSetDepthImage(CHleDmemState* state, decode_context_t* dc)
 
 void dec_gsDPSetColorImage(CHleDmemState* state, decode_context_t* dc)
 {
-	dl_cmd_settimg_t* cmd = &state->command.settimg;
+	dl_cmd_setcimg_t* cmd = &state->command.setcimg;
 
 	const char* fmtName = "?";
 	const char* sizName = "?";
@@ -293,8 +293,8 @@ void dec_gsDPSetTileSize(CHleDmemState* state, decode_context_t* dc)
 		sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:(%d << 2), lrt:(%d << 2)", cmd->tile, cmd->uls, cmd->ult, cmd->lrs >> 2, cmd->lrt >> 2);
 		
 	}
+
     sprintf(dc->params, "tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
-    
 }
 
 void dec_gsSPTexture_f3d(CHleDmemState* state, decode_context_t* dc)
@@ -310,17 +310,79 @@ void dec_gsSPSetOtherMode_h(CHleDmemState* state, decode_context_t* dc)
 
 	switch (cmd->sft)
 	{
-	case 23: sprintf(dc->params, OtherModeNames::pm[bits->pm]); dc->overrideName = "gsDPPipelineMode"; break;      // G_MDSFT_PIPELINE
-	case 22: sprintf(dc->params, OtherModeNames::cd[bits->cd]); dc->overrideName = "gsDPSetColorDither"; break;    // G_MDSFT_COLORDITHER // hw1 only
-	case 20: sprintf(dc->params, OtherModeNames::cyc[bits->cyc]); dc->overrideName = "gsDPSetCycleType"; break;   // G_MDSFT_CYCLETYPE
-	case 19: sprintf(dc->params, OtherModeNames::tp[bits->tp]); dc->overrideName = "gsDPSetTexturePersp"; break;  // G_MDSFT_TEXTPERSP
-	case 17: sprintf(dc->params, OtherModeNames::td[bits->td]); dc->overrideName = "gsDPSetTextureDetail"; break; // G_MDSFT_TEXTDETAIL
-	case 16: sprintf(dc->params, OtherModeNames::tl[bits->tl]); dc->overrideName = "gsDPSetTextureLOD"; break;    // G_MDSFT_TEXTLOD
-	case 14: sprintf(dc->params, OtherModeNames::tt[bits->tt]); dc->overrideName = "gsDPSetTextureLUT"; break;    // G_MDSFT_TEXTLUT
-	case 12: sprintf(dc->params, OtherModeNames::tf[bits->tf]); dc->overrideName = "gsDPSetTextureFilter"; break; // G_MDSFT_TEXTFILT
-	case 9:  sprintf(dc->params, OtherModeNames::tc[bits->tc]); dc->overrideName = "gsDPSetTextureConvert"; break; // G_MDSFT_TEXTCONV
-	case 8:  sprintf(dc->params, OtherModeNames::ck[bits->ck]); dc->overrideName = "gsDPSetCombineKey"; break;    // G_MDSFT_COMBKEY
-	case 6:  sprintf(dc->params, OtherModeNames::rd[bits->rd]); dc->overrideName = "gsDPSetColorDither"; break;   // G_MDSFT_RGBDITHER // hw2 only
-	case 4:  sprintf(dc->params, OtherModeNames::ad[bits->ad]); dc->overrideName = "gsDPSetAlphaDither"; break;   // G_MDSFT_ALPHADITHER // hw2 only
+	case 23: sprintf(dc->params, OtherModeNames::pm[bits->pm]); dc->overrideName = "gsDPPipelineMode"; break;
+	case 22: sprintf(dc->params, OtherModeNames::cd[bits->cd]); dc->overrideName = "gsDPSetColorDither"; break; // hw1 only
+	case 20: sprintf(dc->params, OtherModeNames::cyc[bits->cyc]); dc->overrideName = "gsDPSetCycleType"; break;
+	case 19: sprintf(dc->params, OtherModeNames::tp[bits->tp]); dc->overrideName = "gsDPSetTexturePersp"; break;
+	case 17: sprintf(dc->params, OtherModeNames::td[bits->td]); dc->overrideName = "gsDPSetTextureDetail"; break;
+	case 16: sprintf(dc->params, OtherModeNames::tl[bits->tl]); dc->overrideName = "gsDPSetTextureLOD"; break;
+	case 14: sprintf(dc->params, OtherModeNames::tt[bits->tt]); dc->overrideName = "gsDPSetTextureLUT"; break;
+	case 12: sprintf(dc->params, OtherModeNames::tf[bits->tf]); dc->overrideName = "gsDPSetTextureFilter"; break;
+	case 9:  sprintf(dc->params, OtherModeNames::tc[bits->tc]); dc->overrideName = "gsDPSetTextureConvert"; break;
+	case 8:  sprintf(dc->params, OtherModeNames::ck[bits->ck]); dc->overrideName = "gsDPSetCombineKey"; break;
+	case 6:  sprintf(dc->params, OtherModeNames::rd[bits->rd]); dc->overrideName = "gsDPSetColorDither"; break; // hw2 only
+	case 4:  sprintf(dc->params, OtherModeNames::ad[bits->ad]); dc->overrideName = "gsDPSetAlphaDither"; break; // hw2 only
 	}
+}
+
+void dec_gsDPSetCombineLERP(CHleDmemState* state, decode_context_t* dc)
+{
+    dl_cmd_setcombine_t* cmd = &state->command.setcombine;
+
+    const char* cycle1Preset = NULL;
+    const char* cycle2Preset = NULL;
+
+    for (int i = 0; CDisplayListParser::CombinerPresetNames[i].name != NULL; i++)
+    {
+        cc_preset_lut_entry_t* cc = &CDisplayListParser::CombinerPresetNames[i];
+
+        if (cmd->a0 == cc->a && cmd->b0 == cc->b && cmd->c0 == cc->c && cmd->d0 == cc->d &&
+            cmd->Aa0 == cc->Aa && cmd->Ab0 == cc->Ab && cmd->Ac0 == cc->Ac && cmd->Ad0 == cc->Ad)
+        {
+            cycle1Preset = cc->name;
+            break;
+        }
+    }
+
+    for (int i = 0; CDisplayListParser::CombinerPresetNames[i].name != NULL; i++)
+    {
+        cc_preset_lut_entry_t* cc = &CDisplayListParser::CombinerPresetNames[i];
+
+        if (cmd->a1 == cc->a && cmd->b1 == cc->b && cmd->c1 == cc->c && cmd->d1 == cc->d &&
+            cmd->Aa1 == cc->Aa && cmd->Ab1 == cc->Ab && cmd->Ac1 == cc->Ac && cmd->Ad1 == cc->Ad)
+        {
+            cycle2Preset = cc->name;
+            break;
+        }
+    }
+
+    if (cycle1Preset != NULL && cycle2Preset != NULL)
+    {
+        sprintf(dc->params, "%s, %s", cycle1Preset, cycle2Preset);
+        dc->overrideName = "gsDPSetCombineMode";
+        return;
+    }
+
+    stdstr c1 = stdstr_f("%s, %s, %s, %s, %s, %s, %s, %s",
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxA, cmd->a0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxB, cmd->b0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxC, cmd->c0),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxD, cmd->d0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Aa0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Ab0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxC, cmd->Ac0),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Ad0));
+
+    stdstr c2 = stdstr_f("%s, %s, %s, %s, %s, %s, %s, %s",
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxA, cmd->a1),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxB, cmd->b1),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxC, cmd->c1),
+        CDisplayListParser::LookupName(CDisplayListParser::CCMuxD, cmd->d1),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Aa1),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Ab1),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxC, cmd->Ac1),
+        CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, cmd->Ad1));
+
+
+    sprintf(dc->params, "%s, %s", c1.c_str(), c2.c_str());
 }
