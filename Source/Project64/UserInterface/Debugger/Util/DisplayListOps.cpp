@@ -86,8 +86,8 @@ void op_gsDPSetTextureImage(CHleDmemState* state)
 {
     dl_cmd_settimg_t* cmd = &state->command.settimg;
     state->textureImage = cmd->address;
-    state->textureImageSiz = cmd->siz;
-    state->textureImageFmt = cmd->fmt;
+    state->textureImageSiz = (im_siz_t)cmd->siz;
+    state->textureImageFmt = (im_fmt_t)cmd->fmt;
 }
 
 void op_gsDPSetDepthImage(CHleDmemState* state)

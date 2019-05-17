@@ -7,7 +7,8 @@
 ucode_version_info_t CDisplayListParser::UCodeVersions[] = {
     { 0x3A1CBAC3, UCODE_F3D,    "Fast3D", Commands_F3D },
     { 0x8805FFEA, UCODE_F3DEX,  "F3DEX",  Commands_F3DEX },
-    { 0xBC45382E, UCODE_F3DEX2, "F3DEX2", Commands_F3DEX2 },
+	{ 0xBC45382E, UCODE_F3DEX2, "F3DEX2", Commands_F3DEX2 }, // kirby
+	{ 0x5D3099F1, UCODE_F3DEX2, "F3DEX2", Commands_F3DEX2 }, // zelda
     { 0, UCODE_UNKNOWN, NULL, NULL }
 };
 

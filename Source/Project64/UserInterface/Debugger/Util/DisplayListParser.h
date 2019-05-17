@@ -14,6 +14,23 @@ typedef struct
 	const char *name;
 } name_lut_entry_t;
 
+enum im_fmt_t
+{
+	G_IM_FMT_RGBA,
+	G_IM_FMT_YUV,
+	G_IM_FMT_CI,
+	G_IM_FMT_IA,
+	G_IM_FMT_I
+};
+
+enum im_siz_t
+{
+	G_IM_SIZ_4b,
+	G_IM_SIZ_8b,
+	G_IM_SIZ_16b,
+	G_IM_SIZ_32b
+};
+
 typedef struct
 {
     // via gDPSetTile
@@ -81,7 +98,8 @@ public:
     uint32_t geometryMode;
     uint8_t  numLights;
 	uint32_t textureImage, depthImage, colorImage;
-    int textureImageFmt, textureImageSiz;
+	im_fmt_t textureImageFmt;
+	im_siz_t textureImageSiz;
 	uint32_t fillColor, fogColor, blendColor, primColor, envColor;
     bool bDone;
 
@@ -119,6 +137,8 @@ typedef struct
 	uint32_t param;
     uint32_t imageWidth;
     uint32_t imageHeight;
+	im_fmt_t imageFmt;
+	im_siz_t imageSiz;
 } dram_resource_t;
 
 typedef struct
@@ -157,6 +177,8 @@ public:
     CDisplayListParser(void);
 
     void Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
+
+	static bool ConvertImage(uint32_t* dst, uint8_t *src, im_fmt_t fmt, im_siz_t siz, int numTexels);
 
     static name_lut_entry_t GeometryModeNames[];
     static name_lut_entry_t GeometryModeNames_F3DEX2[];

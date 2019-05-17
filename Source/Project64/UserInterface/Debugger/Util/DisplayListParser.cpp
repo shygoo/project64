@@ -226,3 +226,54 @@ const char* CDisplayListParser::LookupName(name_lut_entry_t* set, uint32_t value
 
     return NULL;
 }
+
+bool CDisplayListParser::ConvertImage(uint32_t* dst, uint8_t* src, im_fmt_t fmt, im_siz_t siz, int numTexels)
+{
+	if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_16b)
+	{
+		for (int i = 0; i < numTexels; i++)
+		{
+			uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
+			uint8_t r = ((px >> 11) & 0x1F) * (255.0f / 32.0f);
+			uint8_t g = ((px >> 6) & 0x1F) * (255.0f / 32.0f);
+			uint8_t b = ((px >> 1) & 0x1F) * (255.0f / 32.0f);
+			uint8_t alpha = (px & 1) * 255;
+			dst[i] = alpha << 24 | (r << 16) | (g << 8) | (b << 0);
+		}
+	}
+	else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_16b)
+	{
+		for (int i = 0; i < numTexels; i++)
+		{
+			uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
+			uint8_t intensity = (px >> 8);
+			uint8_t alpha = px & 0xFF;
+			dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+		}
+	}
+	else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_8b)
+	{
+		for (int i = 0; i < numTexels; i++)
+		{
+			uint8_t px = src[i ^ 3];
+			uint8_t intensity = (px >> 4) * 0x11;
+			uint8_t alpha = (px & 0xF) * 0x11;
+			dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+		}
+	}
+	else if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_8b)
+	{
+		for (int i = 0; i < numTexels; i++)
+		{
+			uint8_t intensity = src[i ^ 3];
+			dst[i] = (0xFF << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+		}
+	}
+	else
+	{
+		return false;
+		//MessageBox(NULL, stdstr_f("unhandled image texel/fmt combo fmt:%d siz:%d", res->imageFmt, res->imageSiz).c_str(), MB_OK);
+	}
+
+	return true;
+}

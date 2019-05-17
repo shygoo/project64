@@ -28,7 +28,6 @@ void CDebugDisplayList::ResetResourceTreeCtrl(void)
     m_hTreeMatrices = m_ResourceTreeCtrl.InsertItem("Matrices", -1, -1, NULL, NULL);
     m_hTreeViewports = m_ResourceTreeCtrl.InsertItem("Viewports", -1, -1, NULL, NULL);
     m_hTreeLights = m_ResourceTreeCtrl.InsertItem("Lights", -1, -1, NULL, NULL);
-    //m_ResourceTreeCtrl.SetExtendedStyle(TVS_)
 }
 
 LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -360,9 +359,9 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 
     dram_resource_t* res = &m_RamResources[resIdx];
     
-    m_DisplayListCtrl.SetFocus();
-    m_DisplayListCtrl.EnsureVisible(res->nCommand, FALSE);
-    m_DisplayListCtrl.SelectItem(res->nCommand);
+    // todo add this to context menu
+    //m_DisplayListCtrl.EnsureVisible(res->nCommand, FALSE);
+    //m_DisplayListCtrl.SelectItem(res->nCommand);
 
     // texture preview test
 
@@ -371,22 +370,14 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 
     int width = (res->imageWidth != 0) ? res->imageWidth : 32;
     int height = (res->imageHeight != 0) ? res->imageHeight : 32;
+	int numTexels = width * height;
 
     //MessageBox(stdstr_f("%d", width).c_str(), "", MB_OK);
 
-    uint32_t* imageBuffer = new uint32_t[width * height];
+    uint32_t* imageBuffer = new uint32_t[numTexels];
     uint8_t* imgSrc = m_DisplayListParser.GetRamSnapshot() + (res->virtAddress - 0x80000000);
 
-    // rgba16 -> rgba32 convert
-    for (int i = 0; i < width * height; i++)
-    {
-        uint16_t px = *(uint16_t*) &imgSrc[(i*2)^2];
-        uint8_t r = ((px >> 11) & 0x1F) * (255.0f / 32.0f);
-        uint8_t g = ((px >> 6) & 0x1F) * (255.0f / 32.0f);
-        uint8_t b = ((px >> 1) & 0x1F) * (255.0f / 32.0f);
-        uint8_t a = (px & 1) * 255;
-        imageBuffer[i] = a << 24 | (r << 16) | (g << 8) | (b << 0);
-    }
+	bool valid = CDisplayListParser::ConvertImage(imageBuffer, imgSrc, res->imageFmt, res->imageSiz, numTexels);
 
     //::SetWindowPos(texWnd, m_hWnd, 0, 0, width*4, height*4, SWP_NOMOVE);
 

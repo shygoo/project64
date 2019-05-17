@@ -280,6 +280,8 @@ void dec_gsDPLoadBlock(CHleDmemState* state, decode_context_t* dc)
     dc->dramResource.virtAddress = state->SegmentedToVirtual(state->textureImage);
     dc->dramResource.imageWidth = width;
     dc->dramResource.imageHeight = height;
+	dc->dramResource.imageSiz = state->textureImageSiz;
+	dc->dramResource.imageFmt = state->textureImageFmt;
 }
 
 void dec_gsDPSetTileSize(CHleDmemState* state, decode_context_t* dc)
