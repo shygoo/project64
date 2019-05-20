@@ -325,6 +325,39 @@ void dec_gsSPSetOtherMode_h(CHleDmemState* state, decode_context_t* dc)
 	}
 }
 
+void dec_gsSPSetOtherMode_l(CHleDmemState* state, decode_context_t* dc)
+{
+    dl_cmd_setothermode_l_t* cmd = &state->command.setothermode_l;
+    othermode_l_t* bits = &cmd->bits;
+
+    if (cmd->sft == 3)
+    {
+        const char* szPresetC1 = CDisplayListParser::LookupName(CDisplayListParser::RenderModePresetNamesCycle1, bits->data & RM_C1_MASK);
+        const char* szPresetC2 = CDisplayListParser::LookupName(CDisplayListParser::RenderModePresetNamesCycle2, bits->data & RM_C2_MASK);
+        
+        if (szPresetC1 != NULL && szPresetC2 != NULL)
+        {
+            sprintf(dc->params, "%s, %s", szPresetC1, szPresetC2);
+        }
+        
+        dc->overrideName = "gsDPSetRenderMode";
+        // todo fallback if no presets
+        return;
+    }
+
+    if (cmd->sft == 0)
+    {
+        //todo
+        dc->overrideName = "gsDPSetAlphaCompare";
+    }
+
+    if (cmd->sft == 2)
+    {
+        //todo
+        dc->overrideName = "gsDPSetDepthSource";
+    }
+}
+
 void dec_gsDPSetCombineLERP(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_setcombine_t* cmd = &state->command.setcombine;

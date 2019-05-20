@@ -14,6 +14,31 @@ typedef union
 
 typedef union
 {
+    uint32_t data;
+    struct
+    {
+        uint32_t
+            alphacompare : 2,
+            zsrcsel : 1,
+            // cycle independent blender settings
+            aa_en : 1,
+            z_cmp : 1,
+            z_upd : 1,
+            im_rd : 1,
+            clr_on_cvg : 1,
+            cvg_dst : 2,
+            zmode : 2,
+            cvg_x_alpha : 1,
+            alpha_cvg_sel : 1,
+            force_bl : 1,
+            _u0 : 1, // ?
+                     // cycle dependent blender settings
+            b1 : 2, b0 : 2, m1 : 2, m0 : 2, a1 : 2, a0 : 2, p1 : 2, p0 : 2;
+    };
+} othermode_l_t;
+
+typedef union
+{
 	uint32_t data;
 	struct {
 		uint32_t
@@ -146,6 +171,12 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t len : 8, sft : 8, _u0 : 8, _c : 8; };
+    othermode_l_t bits;
+} dl_cmd_setothermode_l_t;
+
+typedef struct
+{
     struct { uint32_t c1 : 5, a1 : 4, Ac0 : 3, Aa0 : 3, c0 : 5, a0 : 4, _c : 8; };
     struct { uint32_t Ad1 : 3, Ab1 : 3, d1 : 3, Ad0 : 3, Ab0 : 3, d0 : 3, Ac1 : 3, Aa1 : 3, b1 : 4, b0 : 4; };
 } dl_cmd_setcombine_t;
@@ -168,7 +199,8 @@ typedef union
 
     /* shared rsp commands */
     dl_cmd_dl_t dl;
-	dl_cmd_setothermode_h_t setothermode_h;
+    dl_cmd_setothermode_h_t setothermode_h;
+    dl_cmd_setothermode_l_t setothermode_l;
 
     /* fast3d commands */
 	dl_cmd_moveword_f3d_t moveword_f3d;

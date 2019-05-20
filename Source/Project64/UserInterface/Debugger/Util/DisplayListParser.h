@@ -31,6 +31,9 @@ enum im_siz_t
 	G_IM_SIZ_32b
 };
 
+#define RM_C1_MASK 0xCCCCFFFF
+#define RM_C2_MASK 0x3333FFFF
+
 typedef struct
 {
     // via gDPSetTile
@@ -197,6 +200,8 @@ public:
 	static name_lut_entry_t TexelSizeShortNames[];
 	static name_lut_entry_t ImageFormatShortNames[];
     static cc_preset_lut_entry_t CombinerPresetNames[];
+    static name_lut_entry_t RenderModePresetNamesCycle1[];
+    static name_lut_entry_t RenderModePresetNamesCycle2[];
     static name_lut_entry_t CCMuxA[];
     static name_lut_entry_t CCMuxB[];
     static name_lut_entry_t CCMuxC[];
