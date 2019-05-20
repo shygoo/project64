@@ -41,6 +41,14 @@ private:
     CEdit m_StateTextbox;
 	CStatic m_StatusText;
 
+	//CListViewCtrl m_TileListCtrl;
+
+	//CButton m_GMZBufferChk, m_GMShadeChk, m_GMCullFrontChk, m_GMCullBackChk,
+	//	    m_GMFogChk, m_GMLightingChk, m_GMTextureGen, m_GMTextureGenLinearChk,
+	//	    m_GMShadingSmoothChk, m_GMLODChk, m_GMClippingChk;
+	//
+	//CEdit m
+
     CTreeViewCtrl m_ResourceTreeCtrl;
     CImageList m_TreeImageList;
 
@@ -53,6 +61,7 @@ private:
     HTREEITEM m_hTreeLights;
     
     void ResetResourceTreeCtrl(void);
+	void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
 
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnDestroy(void);

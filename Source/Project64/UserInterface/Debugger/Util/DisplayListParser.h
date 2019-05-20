@@ -102,7 +102,7 @@ public:
     vertex_t vertices[64];
     hle_tile_descriptor_t tiles[8];
 	othermode_h_t othermode_h;
-    uint32_t geometryMode;
+    geometrymode_f3d_t geometryMode;
     uint8_t  numLights;
 	uint32_t textureImage, depthImage, colorImage;
 	im_fmt_t textureImageFmt;
@@ -193,7 +193,9 @@ public:
     static name_lut_entry_t GeometryModeNames[];
     static name_lut_entry_t GeometryModeNames_F3DEX2[];
     static name_lut_entry_t TexelSizeNames[];
-    static name_lut_entry_t ImageFormatNames[];
+	static name_lut_entry_t ImageFormatNames[];
+	static name_lut_entry_t TexelSizeShortNames[];
+	static name_lut_entry_t ImageFormatShortNames[];
     static cc_preset_lut_entry_t CombinerPresetNames[];
     static name_lut_entry_t CCMuxA[];
     static name_lut_entry_t CCMuxB[];

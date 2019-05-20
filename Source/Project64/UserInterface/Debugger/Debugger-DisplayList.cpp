@@ -40,6 +40,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     m_ResourceTreeCtrl.Attach(GetDlgItem(IDC_TREE_RESOURCES));
     m_StateTextbox.Attach(GetDlgItem(IDC_EDIT_STATE));
 	m_StatusText.Attach(GetDlgItem(IDC_STATUS_TEXT));
+	//m_TileListCtrl.Attach(GetDlgItem(IDC_LST_TILES));
 
 	m_DisplayListCtrl.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 	m_DisplayListCtrl.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
@@ -56,6 +57,8 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Command, 140);
 	m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Parameters, 340);
 
+	m_StateTextbox.SetFont((HFONT)GetStockObject(ANSI_FIXED_FONT), TRUE);
+
     ResetResourceTreeCtrl();
 
 	LoadWindowPos();
@@ -66,9 +69,10 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 LRESULT CDebugDisplayList::OnDestroy(void)
 {
 	m_DisplayListCtrl.Detach();
-	//m_ResourceListCtrl.Detach();
+	m_ResourceTreeCtrl.Detach();
     m_StateTextbox.Detach();
 	m_StatusText.Detach();
+	//m_TileListCtrl.Detach();
 	return 0;
 }
 
@@ -214,6 +218,25 @@ void CDebugDisplayList::Refresh(void)
 	m_bRefreshPending = false;
 }
 
+void CDebugDisplayList::SetPreviewColor(WORD ctrlId, uint32_t colorPair)
+{
+	uint16_t color16 = colorPair & 0xFFFF;
+	uint8_t r = ((color16 >> 11) & 0x1F) * (255.0f / 31.0f);
+	uint8_t g = ((color16 >> 6) & 0x1F) * (255.0f / 31.0f);
+	uint8_t b = ((color16 >> 1) & 0x1F) * (255.0f / 31.0f);
+	//uint8_t a = (color16 & 1) * 255;
+
+	HWND hWndPrevFillColor = GetDlgItem(ctrlId);
+	HDC dc = ::GetDC(hWndPrevFillColor);
+	HBRUSH hbr = CreateSolidBrush(RGB(r, g, b));
+	CRect rcWnd;
+	::GetWindowRect(hWndPrevFillColor, &rcWnd);
+	RECT rc = { 1, 1, rcWnd.Width() - 1, rcWnd.Height() - 1 };
+	FillRect(dc, &rc, hbr);
+	DeleteObject(hbr);
+	::ReleaseDC(hWndPrevFillColor, dc);
+}
+
 LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 {
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
@@ -223,52 +246,41 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
 	// Geometry mode
 
-    stdstr strGeoMode = "GeometryMode: ";
-
-    name_lut_entry_t *geoModeNames = CDisplayListParser::GeometryModeNames;
-
-    for (int i = 0; geoModeNames[i].name != NULL; i++)
-    {
-        if (state->geometryMode & geoModeNames[i].value)
-        {
-            strGeoMode += geoModeNames[i].name;
-            strGeoMode += " ";
-        }
-    }
-
-    strGeoMode += "\r\n";
+	::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->geometryMode.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->geometryMode.shade ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_FRONT), BM_SETCHECK, state->geometryMode.cull_front ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_BACK), BM_SETCHECK, state->geometryMode.cull_back ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->geometryMode.fog ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->geometryMode.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->geometryMode.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->geometryMode.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_SHADING_SMOOTH), BM_SETCHECK, state->geometryMode.shading_smooth ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->geometryMode.lod ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->geometryMode.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
 
 	// Texture address
 
-    stdstr strTextureImage = stdstr_f(
-        "TextureImage: 0x%08X (0x%08X)\r\n"
-		"DepthImage: 0x%08X (0x%08X)\r\n"
-		"ColorImage: 0x%08X (0x%08X)\r\n",
-		state->textureImage, state->SegmentedToVirtual(state->textureImage),
-		state->depthImage, state->SegmentedToVirtual(state->depthImage),
-		state->colorImage, state->SegmentedToVirtual(state->colorImage)
-    );
+	::SetWindowText(GetDlgItem(IDC_EDIT_TEXTUREIMAGE), stdstr_f("0x%08X (0x%08X)", state->textureImage, state->SegmentedToVirtual(state->textureImage)).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_DEPTHIMAGE), stdstr_f("0x%08X (0x%08X)", state->depthImage, state->SegmentedToVirtual(state->depthImage)).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_COLORIMAGE), stdstr_f("0x%08X (0x%08X)", state->colorImage, state->SegmentedToVirtual(state->colorImage)).c_str());
 
 	// rdp colors
 
-	stdstr strColors = stdstr_f(
-		"FillColor: 0x%08X\r\n"
-		"FogColor: 0x%08X\r\n"
-		"BlendColor: 0x%08X\r\n"
-		"PrimColor: 0x%08X\r\n"
-		"EnvColor: 0x%08X\r\n",
-		state->fillColor,
-		state->fogColor,
-		state->blendColor,
-		state->primColor,
-		state->envColor
-	);
+	::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->fillColor).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->fogColor).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->blendColor).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->primColor).c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->envColor).c_str());
+
+	SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->fillColor);
+	SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->fogColor);
+	SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->blendColor);
+	SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->primColor);
+	SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->envColor);
 
 	// tiles
 
-    stdstr strTileDescriptors = "";
-
-	const char* tileNames[] = { "0 (G_TX_RENDERTILE)", "1", "2", "3", "4", "5", "6", "7 (G_TX_LOADTILE)" };
+	stdstr strTileDescriptors = "# tmem  siz fmt  line shiftS maskS cms shiftT maskT cmT scaleS scaleT palette levels on\r\n";
 
     for (int i = 0; i <= 7; i++)
     {
@@ -280,18 +292,12 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 			continue;
 		}
 
-        const char* sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeNames, t->siz);
-        const char* fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatNames, t->fmt);
+        const char* sizName = CDisplayListParser::LookupName(CDisplayListParser::TexelSizeShortNames, t->siz);
+        const char* fmtName = CDisplayListParser::LookupName(CDisplayListParser::ImageFormatShortNames, t->fmt);
 
         strTileDescriptors += stdstr_f(
-            "Tile %s: "
-            "tmem: 0x%03X, siz: %s, fmt: %s, line: %d, "
-            "shifts: %d, masks: %d, cms: %d,\r\n"
-            "shiftt: %d, maskt: %d, cmt: %d, "
-            "scaleS: 0x%04X, scaleT: 0x%04X, "
-            "palette: %d, "
-            "mipmapLevels: %d, on: %d\r\n",
-            tileNames[i],
+            "%d 0x%03X %3s %4s %4d %6d %5d %3d %6d %5d %3d 0x%04X 0x%04X %7d %6d %d\r\n",
+            i,
             t->tmem, sizName, fmtName, t->line,
             t->shifts, t->masks, t->cms,
             t->shiftt, t->maskt, t->cmt,
@@ -303,53 +309,69 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
 	// lights
 
-    stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+    //stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
 
 	// othermode_h
 
 	othermode_h_t* omh = &state->othermode_h;
 
-	stdstr strOtherModeH = stdstr_f("OtherMode_H: %s, %s, %s, %s, %s,\r\n    %s, %s, %s, %s, %s, %s, %s\r\n",
-		OtherModeNames::pm[omh->pm],
-		OtherModeNames::cd[omh->cd],
-		OtherModeNames::cyc[omh->cyc],
-		OtherModeNames::tp[omh->tp],
-		OtherModeNames::td[omh->td],
-		OtherModeNames::tl[omh->tl],
-		OtherModeNames::tt[omh->tt],
-		OtherModeNames::tf[omh->tf],
-		OtherModeNames::tc[omh->tc],
-		OtherModeNames::ck[omh->ck],
-		OtherModeNames::rd[omh->rd],
-		OtherModeNames::ad[omh->ad]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_PIPELINE), OtherModeNames::pm[omh->pm]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_COLORDITHER), OtherModeNames::cd[omh->cd]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_CYCLETYPE), OtherModeNames::cyc[omh->cyc]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTPERSP), OtherModeNames::tp[omh->tp]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTDETAIL), OtherModeNames::td[omh->td]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTLOD), OtherModeNames::tl[omh->tl]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTLUT), OtherModeNames::tt[omh->tt]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTFILT), OtherModeNames::tf[omh->tf]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTCONV), OtherModeNames::tc[omh->tc]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_COMBKEY), OtherModeNames::ck[omh->ck]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_RGBDITHER), OtherModeNames::rd[omh->rd]);
+	::SetWindowText(GetDlgItem(IDC_EDIT_OMH_ALPHADITHER), OtherModeNames::ad[omh->ad]);
 
 	/////////////
 
-    stdstr cycle1Color = stdstr_f("Cycle 1 Color: (%s - %s) * %s + %s\r\n",
+    stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s\r\n",
         CDisplayListParser::LookupName(CDisplayListParser::CCMuxA, state->combiner.a0),
         CDisplayListParser::LookupName(CDisplayListParser::CCMuxB, state->combiner.b0),
         CDisplayListParser::LookupName(CDisplayListParser::CCMuxC, state->combiner.c0),
         CDisplayListParser::LookupName(CDisplayListParser::CCMuxD, state->combiner.d0));
 
-    stdstr cycle1Alpha = stdstr_f("Cycle 1 Alpha: (%s - %s) * %s + %s\r\n",
+    stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
         CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Aa0),
         CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ab0),
         CDisplayListParser::LookupName(CDisplayListParser::ACMuxC, state->combiner.Ac0),
         CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ad0));
 
-    stdstr strCombiner = cycle1Color + cycle1Alpha;
+	stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s\r\n",
+		CDisplayListParser::LookupName(CDisplayListParser::CCMuxA, state->combiner.a1),
+		CDisplayListParser::LookupName(CDisplayListParser::CCMuxB, state->combiner.b1),
+		CDisplayListParser::LookupName(CDisplayListParser::CCMuxC, state->combiner.c1),
+		CDisplayListParser::LookupName(CDisplayListParser::CCMuxD, state->combiner.d1));
+
+	stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
+		CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Aa1),
+		CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ab1),
+		CDisplayListParser::LookupName(CDisplayListParser::ACMuxC, state->combiner.Ac1),
+		CDisplayListParser::LookupName(CDisplayListParser::ACMuxA_B_D, state->combiner.Ad1));
+
+	::SetWindowText(GetDlgItem(IDC_EDIT_CC_1C), strCycle1Color.c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_CC_1A), strCycle1Alpha.c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_CC_2C), strCycle2Color.c_str());
+	::SetWindowText(GetDlgItem(IDC_EDIT_CC_2A), strCycle2Alpha.c_str());
+
+    //stdstr strCombiner = cycle1Color + cycle1Alpha;
 
     //
 
 	stdstr split = "";
 
     stdstr strStateSummary = (
-		strTextureImage + split +
-		strColors + split +
-		strGeoMode + split +
-		strOtherModeH + split +
-        strCombiner + split +
-		strNumLights + split +
+		//strTextureImage + split +
+		//strColors + split +
+		//strGeoMode + split +
+		//strOtherModeH + split +
+        //strCombiner + split +
+		//strNumLights + split +
 		strTileDescriptors);
     
     m_StateTextbox.SetWindowTextA(strStateSummary.c_str());

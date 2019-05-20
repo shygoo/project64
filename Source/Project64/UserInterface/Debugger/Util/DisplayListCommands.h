@@ -12,6 +12,31 @@ typedef union
 	};
 } othermode_h_t;
 
+typedef union
+{
+	uint32_t data;
+	struct {
+		uint32_t
+			zbuffer : 1,
+			_u0 : 1,
+			shade : 1,
+			_u1 : 6,
+			shading_smooth : 1,
+			_u2 : 2,
+			cull_front : 1,
+			cull_back : 1,
+			_u3 : 2,
+			fog : 1,
+			lighting : 1,
+			texture_gen : 1,
+			texture_gen_linear : 1,
+			lod : 1,
+			_u4 : 2,
+			clipping : 1,
+			_u5 : 8;
+	};
+} geometrymode_f3d_t;
+
 ////////////////
 
 typedef struct
@@ -104,7 +129,7 @@ typedef struct
 typedef struct
 {
     struct { uint32_t : 24, _c : 8; };
-    uint32_t mode;
+    geometrymode_f3d_t mode;
 } dl_cmd_geometrymode_f3d_t; // note: for both set and clear
 
 typedef struct

@@ -117,6 +117,23 @@ name_lut_entry_t CDisplayListParser::ImageFormatNames[] = {
     { 0, NULL }
 };
 
+name_lut_entry_t CDisplayListParser::TexelSizeShortNames[] = {
+	{ 0, "4b" },
+	{ 1, "8b" },
+	{ 2, "16b" },
+	{ 3, "32b" },
+	{ 0, NULL }
+};
+
+name_lut_entry_t CDisplayListParser::ImageFormatShortNames[] = {
+	{ 0, "RGBA" },
+	{ 1, "YUV" },
+	{ 2, "CI" },
+	{ 3, "IA" },
+	{ 4, "I" },
+	{ 0, NULL }
+};
+
 name_lut_entry_t CDisplayListParser::GeometryModeNames[] = {
     { 0x00000001, "G_ZBUFFER" },
     { 0x00000004, "G_SHADE" },

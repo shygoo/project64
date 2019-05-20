@@ -110,13 +110,13 @@ void op_gsDPSetCombineLERP(CHleDmemState* state)
 void op_gsSPSetGeometryMode_f3d(CHleDmemState* state)
 {
     dl_cmd_geometrymode_f3d_t* cmd = &state->command.geometrymode_f3d;
-    state->geometryMode |= cmd->mode;
+    state->geometryMode.data |= cmd->mode.data;
 }
 
 void op_gsSPClearGeometryMode_f3d(CHleDmemState* state)
 {
     dl_cmd_geometrymode_f3d_t* cmd = &state->command.geometrymode_f3d;
-    state->geometryMode &= ~cmd->mode;
+    state->geometryMode.data &= ~cmd->mode.data;
 }
 
 void op_gsSPSetOtherMode_h(CHleDmemState* state)
