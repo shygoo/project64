@@ -163,6 +163,10 @@ typedef struct
 	char params[512];
 	dram_resource_t dramResource;
     int numTris;
+	int tri0[3];
+	int tri1[3];
+	int tri2[3];
+	int tri3[3];
 	COLORREF listBgColor, listFgColor;
 } decode_context_t;
 

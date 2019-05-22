@@ -90,3 +90,8 @@ int WINAPI WinMain(HINSTANCE /*hInstance*/, HINSTANCE /*hPrevInstance*/, LPSTR /
     CoUninitialize();
     return true;
 }
+
+int main()
+{
+	return WinMain(GetModuleHandle(NULL), NULL, GetCommandLine(), SW_SHOW);
+}

@@ -87,7 +87,11 @@ void dec_gsSP1Triangle_f3d(CHleDmemState* state, decode_context_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->command.tri1_f3d;
     sprintf(dc->params, "v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
+
     dc->numTris = 1;
+	dc->tri0[0] = cmd->v0 / 10;
+	dc->tri0[1] = cmd->v1 / 10;
+	dc->tri0[2] = cmd->v2 / 10;
 }
 
 void dec_gsSPVertex_f3d(CHleDmemState* state, decode_context_t* dc)

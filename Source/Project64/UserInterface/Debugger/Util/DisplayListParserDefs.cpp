@@ -60,7 +60,7 @@ dl_cmd_info_t CDisplayListParser::Commands_F3D[] = {
     { 0x01, "gsSPMatrix",            NULL, dec_gsSPMatrix_f3d },
     //{ 0x02, "gsSPNoop", NULL, NULL }, ?
     { 0x03, "gsSPMoveMem",           NULL, dec_gsSPMoveMem_f3d },
-    { 0x04, "gsSPVertex",            NULL, dec_gsSPVertex_f3d },
+    { 0x04, "gsSPVertex",            op_gsSPVertex_f3d, dec_gsSPVertex_f3d },
     //{ 0x05, "gsSPNoop", NULL, NULL },
     { 0x06, "gsSPDisplayList",       op_gsSPDisplayList, dec_gsSPDisplayList },
     //{ 0x07, "gsSPNoop", NULL, NULL },

@@ -246,14 +246,17 @@
     <ClCompile Include="UserInterface\Debugger\Util\Symbols.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\Util\Renderer.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+    </ClCompile>
     <ClCompile Include="UserInterface\Debugger\Util\DisplayListDecode.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\Util\DisplayListOps.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\Util\DisplayListParserDefs.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -484,6 +487,9 @@
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\Util\DisplayListOps.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Util\Renderer.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

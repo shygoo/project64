@@ -25,6 +25,38 @@ void op_gsSPEndDisplayList(CHleDmemState* state)
     }
 }
 
+void op_gsSPVertex_f3d(CHleDmemState* state)
+{
+	dl_cmd_vtx_f3d_t* cmd = &state->command.vtx_f3d;
+
+	uint32_t physAddr = state->SegmentedToPhysical(cmd->address);
+
+	if (physAddr + cmd->num*16 >= g_MMU->RdramSize())
+	{
+		return;
+	}
+
+	if (cmd->idx + cmd->num >= sizeof(state->vertices) / sizeof(state->vertices[0]))
+	{
+		return;
+	}
+
+	uint8_t* ptr = g_MMU->Rdram() + physAddr;
+
+	for (int i = 0; i < cmd->num; i++)
+	{
+		vertex_t* vtx = &state->vertices[cmd->idx + i];
+		uint32_t offs = i * 16;
+
+		vtx->x = *(int16_t*)&ptr[(offs+0) ^ 2];
+		vtx->y = *(int16_t*)&ptr[(offs+2) ^ 2];
+		vtx->z = *(int16_t*)&ptr[(offs+4) ^ 2];
+
+		printf("%d %d %d\n", vtx->x, vtx->y, vtx->z);
+		// todo the rest
+	}
+}
+
 void op_gsSPMoveWord_f3d(CHleDmemState* state)
 {
     dl_cmd_moveword_f3d_t* cmd = &state->command.moveword_f3d;

@@ -18,6 +18,7 @@ void op_gsSPDisplayList(CHleDmemState* state);
 void op_gsSPEndDisplayList(CHleDmemState* state);
 void op_gsSPSetOtherMode_h(CHleDmemState* state);
 
+void op_gsSPVertex_f3d(CHleDmemState* state);
 void op_gsSPMoveWord_f3d(CHleDmemState* state);
 void op_gsSPSetGeometryMode_f3d(CHleDmemState* state);
 void op_gsSPClearGeometryMode_f3d(CHleDmemState* state);

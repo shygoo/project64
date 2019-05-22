@@ -2,6 +2,7 @@
 #include "DebuggerUI.h"
 
 #include "Util/DisplayListParser.h"
+#include "Util/Renderer.h"
 
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
 	CDebugDialog<CDebugDisplayList>(debugger),
@@ -151,6 +152,11 @@ void CDebugDisplayList::Refresh(void)
 		if (dc.dramResource.type != RES_NONE)
 		{
 			m_RamResources.push_back(dc.dramResource);
+		}
+
+		if (dc.numTris > 0)
+		{
+			// construct geom
 		}
 
         triangleCount += dc.numTris;
@@ -406,6 +412,13 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 
     HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
     HDC hDC = ::GetDC(texWnd);
+
+	if (res->type != RES_TEXTURE)
+	{
+		Test_3d(hDC);
+		::ReleaseDC(texWnd, hDC);
+		return FALSE;
+	}
 
     int width = (res->imageWidth != 0) ? res->imageWidth : 32;
     int height = (res->imageHeight != 0) ? res->imageHeight : 32;

@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <MinimumRequiredVersion Condition="'$(Platform)'=='Win32'">5.01</MinimumRequiredVersion>
       <MinimumRequiredVersion Condition="'$(Platform)'=='x64'">5.02</MinimumRequiredVersion>
       <StackReserveSize>1</StackReserveSize>
@@ -106,6 +106,7 @@
     <ClCompile Include="UserInterface\Debugger\Util\DisplayListParserDefs.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\DMALog.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\MemoryScanner.cpp" />
+    <ClCompile Include="UserInterface\Debugger\Util\Renderer.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\ScriptHook.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\ScriptInstance.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\ScriptSystem.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="UserInterface\Debugger\Util\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\Util\MemoryScanner.h" />
     <ClInclude Include="UserInterface\Debugger\Util\OpInfo.h" />
+    <ClInclude Include="UserInterface\Debugger\Util\Renderer.h" />
     <ClInclude Include="UserInterface\Debugger\Util\ScriptHook.h" />
     <ClInclude Include="UserInterface\Debugger\Util\ScriptInstance.h" />
     <ClInclude Include="UserInterface\Debugger\Util\ScriptSystem.h" />
