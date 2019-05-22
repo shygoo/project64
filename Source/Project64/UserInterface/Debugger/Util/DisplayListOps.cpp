@@ -36,14 +36,14 @@ void op_gsSPVertex_f3d(CHleDmemState* state)
 		return;
 	}
 
-	if (cmd->idx + cmd->num >= sizeof(state->vertices) / sizeof(state->vertices[0]))
+	if (cmd->idx + (cmd->num+1) >= sizeof(state->vertices) / sizeof(state->vertices[0]))
 	{
 		return;
 	}
 
 	uint8_t* ptr = g_MMU->Rdram() + physAddr;
 
-	for (int i = 0; i < cmd->num; i++)
+	for (int i = 0; i < cmd->num + 1; i++)
 	{
 		vertex_t* vtx = &state->vertices[cmd->idx + i];
 		uint32_t offs = i * 16;
@@ -52,7 +52,7 @@ void op_gsSPVertex_f3d(CHleDmemState* state)
 		vtx->y = *(int16_t*)&ptr[(offs+2) ^ 2];
 		vtx->z = *(int16_t*)&ptr[(offs+4) ^ 2];
 
-		printf("%d %d %d\n", vtx->x, vtx->y, vtx->z);
+		//printf("%d %d %d\n", vtx->x, vtx->y, vtx->z);
 		// todo the rest
 	}
 }

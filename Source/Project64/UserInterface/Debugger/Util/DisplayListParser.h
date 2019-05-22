@@ -156,6 +156,11 @@ typedef struct
 
 typedef struct
 {
+    vertex_t v0, v1, v2;
+} vbuf_tri_t;
+
+typedef struct
+{
 	union {
 		const char* name;
 		const char* overrideName;
@@ -163,10 +168,7 @@ typedef struct
 	char params[512];
 	dram_resource_t dramResource;
     int numTris;
-	int tri0[3];
-	int tri1[3];
-	int tri2[3];
-	int tri3[3];
+    vbuf_tri_t tris[4];
 	COLORREF listBgColor, listFgColor;
 } decode_context_t;
 

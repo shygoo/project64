@@ -149,16 +149,27 @@ void CDebugDisplayList::Refresh(void)
 
 		m_ListColors.push_back({ dc.listFgColor, dc.listBgColor });
 
+        // todo move this stuff to DisplayListParser?
 		if (dc.dramResource.type != RES_NONE)
 		{
 			m_RamResources.push_back(dc.dramResource);
 		}
 
-		if (dc.numTris > 0)
-		{
-			// construct geom
-		}
+        for (int i = 0; i < dc.numTris; i++)
+        {
+            CVec3 v0, v1, v2;
+            // N64VertexToVec3
+            v0 = { (float)dc.tris[i].v0.x * 50 / 0x7FFF, (float)dc.tris[i].v0.y * 50 / 0x7FFF, (float)dc.tris[i].v0.z * 50 / 0x7FFF };
+            v1 = { (float)dc.tris[i].v1.x * 50 / 0x7FFF, (float)dc.tris[i].v1.y * 50 / 0x7FFF, (float)dc.tris[i].v1.z * 50 / 0x7FFF };
+            v2 = { (float)dc.tris[i].v2.x * 50 / 0x7FFF, (float)dc.tris[i].v2.y * 50 / 0x7FFF, (float)dc.tris[i].v2.z * 50 / 0x7FFF };
 
+            int v0idx = geom.AddVertexUnique(v0);
+            int v1idx = geom.AddVertexUnique(v1);
+            int v2idx = geom.AddVertexUnique(v2);
+
+            geom.AddTriangleRef(v0idx, v1idx, v2idx);
+        }
+          
         triangleCount += dc.numTris;
 
         nCommand++;
@@ -411,14 +422,15 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
     // texture preview test
 
     HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
-    HDC hDC = ::GetDC(texWnd);
-
+    
 	if (res->type != RES_TEXTURE)
 	{
-		Test_3d(hDC);
-		::ReleaseDC(texWnd, hDC);
+		Test_3d(texWnd, &geom);
+		//::ReleaseDC(texWnd, hDC);
 		return FALSE;
 	}
+
+    HDC hDC = ::GetDC(texWnd);
 
     int width = (res->imageWidth != 0) ? res->imageWidth : 32;
     int height = (res->imageHeight != 0) ? res->imageHeight : 32;

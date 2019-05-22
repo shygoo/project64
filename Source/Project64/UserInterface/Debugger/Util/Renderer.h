@@ -22,9 +22,12 @@ public:
 	CVec3(float x, float y, float z);
 	void Mult(CVec3 *out, CMtx* mtx);
 	void Translate(CVec3 *out, float x, float y, float z);
+    void Scale(CVec3 *out, float x, float y, float z);
 	void RotateX(CVec3 *out, float degrees);
 	void RotateY(CVec3 *out, float degrees);
 	void RotateZ(CVec3 *out, float degrees);
+    void Subtract(CVec3 *in, CVec3 *out);
+    float DotProduct(CVec3 *otherVec);
 };
 
 class CTri
@@ -33,9 +36,12 @@ public:
 	CVec3 m_v[3];
 	void Mult(CTri *out, CMtx *mtx);
 	void Translate(CTri *out, float x, float y, float z);
+    void Scale(CTri *out, float x, float y, float z);
 	void RotateX(CTri *out, float degrees);
 	void RotateY(CTri *out, float degrees);
 	void RotateZ(CTri *out, float degrees);
+    void CalculateNormal(CVec3 *out);
+    void Center(CVec3 *out);
 };
 
 class CProjection
@@ -61,7 +67,8 @@ class CBasicMeshGeometry
 	std::vector<CVec3> m_Vertices;
 	std::vector<geom_tri_ref_t> m_TriangleRefs;
 public:
-	void AddVertex(CVec3 vertex);
+    void AddVertex(CVec3 vertex);
+    size_t AddVertexUnique(CVec3 vertex);
 	void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2);
 	void AddTriangleRef(geom_tri_ref_t triref);
 	void AddVertices(CVec3 vertices[], size_t count);
@@ -70,4 +77,4 @@ public:
 	bool GetTriangle(CTri *out, size_t index);
 };
 
-void Test_3d(HDC hdc);
+void Test_3d(HWND hwnd, CBasicMeshGeometry *geom);

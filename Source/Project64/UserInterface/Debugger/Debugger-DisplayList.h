@@ -3,6 +3,7 @@
 #include <stdafx.h>
 #include "DebuggerUI.h"
 #include "Util/DisplayListParser.h"
+#include "Util/Renderer.h"
 
 typedef struct
 {
@@ -40,6 +41,8 @@ private:
     CDisplayListParser m_DisplayListParser;
     CEdit m_StateTextbox;
 	CStatic m_StatusText;
+
+    CBasicMeshGeometry geom; // TEMPORARY
 
 	//CListViewCtrl m_TileListCtrl;
 
