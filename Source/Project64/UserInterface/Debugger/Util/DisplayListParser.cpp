@@ -90,8 +90,16 @@ void CDisplayListParser::Reset(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t 
     }
 }
 
+void CDisplayListParser::Run(void)
+{
+    while (!m_State.bDone)
+    {
+        StepDecode();
+    }
+}
+
 // decode and execute command
-void CDisplayListParser::StepDecode(decode_context_t* dc)
+void CDisplayListParser::StepDecode(void)
 {
     uint32_t physAddress = m_State.SegmentedToPhysical(m_State.address);
 
@@ -104,11 +112,12 @@ void CDisplayListParser::StepDecode(decode_context_t* dc)
     uint8_t commandByte = m_State.command.w0 >> 24;
 
     const dl_cmd_info_t *commandInfo;
+    decode_context_t dc;
 
-	memset(dc, 0, sizeof(decode_context_t));
-	dc->name = "?";
-	sprintf(dc->params, "?");
-    dc->dramResource.nCommand = m_nCommand;
+	memset(&dc, 0, sizeof(decode_context_t));
+	dc.name = "?";
+	sprintf(dc.params, "?");
+    dc.dramResource.nCommand = m_nCommand;
 
     commandInfo = LookupCommand(Commands_Global, commandByte);
 
@@ -119,12 +128,12 @@ void CDisplayListParser::StepDecode(decode_context_t* dc)
 
     if (commandInfo != NULL)
     {
-		dc->name = commandInfo->commandName;
+		dc.name = commandInfo->commandName;
 
 		// disassemble command
 		if (commandInfo->decodeFunc != NULL)
 		{
-			commandInfo->decodeFunc(&m_State, dc);
+			commandInfo->decodeFunc(&m_State, &dc);
 		}
 
 		// execute command
@@ -139,6 +148,7 @@ void CDisplayListParser::StepDecode(decode_context_t* dc)
 		m_State.bDone = true;
 	}
     
+    m_DecodedCommands.push_back(dc);
     m_nCommand++;
 }
 
@@ -170,10 +180,10 @@ uint32_t CDisplayListParser::GetUCodeChecksum(void)
 	return m_UCodeChecksum;
 }
 
-bool CDisplayListParser::IsDone(void)
-{
-    return m_State.bDone;
-}
+//bool CDisplayListParser::IsDone(void)
+//{
+//    return m_State.bDone;
+//}
 
 uint32_t CDisplayListParser::GetCommandAddress(void)
 {

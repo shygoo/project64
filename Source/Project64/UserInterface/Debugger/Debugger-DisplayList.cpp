@@ -127,6 +127,11 @@ void CDebugDisplayList::Refresh(void)
     int nCommand = 0;
     uint32_t triangleCount = 0;
 
+    // last gsSPDisplayList jump target
+    uint32_t currentEntryPoint = dlistAddr;
+    m_Scene.AddGeometry(currentEntryPoint);
+    bool bAlreadyHaveGeom = false;
+
     while (!m_DisplayListParser.IsDone())
     {
         uint32_t virtAddress = m_DisplayListParser.GetCommandVirtualAddress();
@@ -154,6 +159,12 @@ void CDebugDisplayList::Refresh(void)
 		{
 			m_RamResources.push_back(dc.dramResource);
 		}
+
+        if (dc.dramResource.type == RES_DL)
+        {
+            currentEntryPoint = dc.dramResource.address;
+            bAlreadyHaveGeom = !m_Scene.AddGeometry(currentEntryPoint);
+        }
 
         for (int i = 0; i < dc.numTris; i++)
         {

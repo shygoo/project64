@@ -1,6 +1,7 @@
 #pragma once
 #include <stdafx.h>
 #include "DisplayListCommands.h"
+#include "Renderer.h"
 
 typedef struct
 {
@@ -216,46 +217,50 @@ public:
     static name_lut_entry_t ACMuxC[];
 
     static const char* LookupName(name_lut_entry_t* set, uint32_t value);
-
-	static const ucode_version_info_t* GetUCodeVersionInfo(uint32_t checksum);
-	ucode_version_t GetUCodeVersion(void);
-	const char* GetUCodeName(void);
-	uint32_t GetUCodeChecksum(void);
-
-    bool IsDone(void);
-    void StepDecode(decode_context_t* dc);
-
-    uint32_t GetCommandAddress(void);
-    uint32_t GetCommandVirtualAddress(void);
-    dl_cmd_t GetRawCommand(void);
-    int GetStackIndex(void);
-
-    CHleDmemState* GetLoggedState(size_t index);
-	uint8_t* GetRamSnapshot(void);
+    static const ucode_version_info_t* GetUCodeVersionInfo(uint32_t checksum);
 
 private:
-	uint8_t* m_RamSnapshot;
-
     static ucode_version_info_t UCodeVersions[];
-
+    static dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
     static dl_cmd_info_t Commands_Global[];
     static dl_cmd_info_t Commands_F3D[];
     static dl_cmd_info_t Commands_F3DEX[];
     static dl_cmd_info_t Commands_F3DEX2[];
 
-    static dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
+public:
+    void Run();
 
-    int m_nCommand;
-    CHleDmemState m_State;
+	ucode_version_t GetUCodeVersion(void);
+	const char*     GetUCodeName(void);
+	uint32_t        GetUCodeChecksum(void);
+    
+    CHleDmemState* GetLoggedState(size_t index);
+	uint8_t*       GetRamSnapshot(void);
+
+private:
+    void     StepDecode();
+    uint32_t GetCommandAddress(void);
+    uint32_t GetCommandVirtualAddress(void);
+    dl_cmd_t GetRawCommand(void);
+    int      GetStackIndex(void);
+    //bool     IsDone(void);
+
+    uint8_t* m_RamSnapshot;
+    CScene   m_Scene;
+    //int      m_nCommand;
+
+    CHleDmemState m_State; // hle dmem/rdp state
+
     std::vector<CHleDmemState> m_StateLog;
+    std::vector<decode_context_t> m_DecodedCommands;
 
-    uint32_t m_UCodeChecksum;
+    uint32_t        m_UCodeChecksum;
     ucode_version_t m_UCodeVersion;
-    const char *m_UCodeName;
-    dl_cmd_info_t *m_CommandTable;
+    const char*     m_UCodeName;
+    uint32_t        m_VertexBufferSize;
+
+    dl_cmd_info_t*  m_CommandTable;
 
     uint32_t m_RootDListSize;
-    uint32_t m_VertexBufferSize;
-
-	uint32_t m_RootDListEndAddress;
+    uint32_t m_RootDListEndAddress;
 };

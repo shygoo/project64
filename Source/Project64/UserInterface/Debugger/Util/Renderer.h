@@ -28,12 +28,15 @@ public:
 	void RotateZ(CVec3 *out, float degrees);
     void Subtract(CVec3 *in, CVec3 *out);
     float DotProduct(CVec3 *otherVec);
+    void Normalize(CVec3 *out);
 };
 
 class CTri
 {
 public:
+    CTri(void);
 	CVec3 m_v[3];
+    COLORREF m_Color;
 	void Mult(CTri *out, CMtx *mtx);
 	void Translate(CTri *out, float x, float y, float z);
     void Scale(CTri *out, float x, float y, float z);
@@ -75,6 +78,23 @@ public:
 	void AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count);
 	size_t GetNumTriangles(void);
 	bool GetTriangle(CTri *out, size_t index);
+};
+
+class CGeometryInstance
+{
+    CMtx m_Matrix;
+    uint32_t m_GeometryKey; // key of scene.m_Geometries
+    CGeometryInstance* m_Parent;
+    std::vector<CGeometryInstance> m_Children;
+};
+
+class CScene
+{
+    // use dl address
+    std::map<uint32_t, CBasicMeshGeometry> m_Geometries;
+    //CGeometryInstance m_RootInstance;
+public:
+    bool AddGeometry(uint32_t dlAddr);
 };
 
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom);

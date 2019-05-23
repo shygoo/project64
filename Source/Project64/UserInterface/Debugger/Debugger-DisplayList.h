@@ -42,7 +42,9 @@ private:
     CEdit m_StateTextbox;
 	CStatic m_StatusText;
 
-    CBasicMeshGeometry geom; // TEMPORARY
+    CScene m_Scene;
+
+    //CBasicMeshGeometry geom; // TEMPORARY
 
 	//CListViewCtrl m_TileListCtrl;
 

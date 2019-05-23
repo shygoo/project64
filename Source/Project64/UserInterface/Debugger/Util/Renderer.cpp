@@ -120,7 +120,20 @@ void CVec3::Subtract(CVec3 *in, CVec3 *out)
     out->m_z = m_z - in->m_z;
 }
 
+void CVec3::Normalize(CVec3 *out)
+{
+    float length = sqrtf((m_x * m_x) + (m_y * m_y) + (m_z * m_z));
+    out->m_x = m_x / length;
+    out->m_y = m_y / length;
+    out->m_z = m_z / length;
+}
+
 /********************/
+
+CTri::CTri(void):
+    m_Color(RGB(255, 255, 255))
+{
+}
 
 void CTri::Mult(CTri *out, CMtx *mtx)
 {
@@ -175,18 +188,14 @@ void CTri::CalculateNormal(CVec3 *out)
     out->m_y = (lineA.m_z * lineB.m_x) - (lineA.m_x * lineB.m_z);
     out->m_z = (lineA.m_x * lineB.m_y) - (lineA.m_y * lineB.m_x);
 
-    float length = sqrtf(out->m_x * out->m_x + out->m_y * out->m_y + out->m_z * out->m_z);
-
-    out->m_x /= length;
-    out->m_y /= length;
-    out->m_z /= length;
+    out->Normalize(out);
 }
 
 void CTri::Center(CVec3 *out)
 {
-    float x =(m_v[0].m_x + m_v[1].m_x + m_v[2].m_x) / 3.0f;
-    float y =(m_v[0].m_y + m_v[1].m_y + m_v[2].m_y) / 3.0f;
-    float z =(m_v[0].m_z + m_v[1].m_z + m_v[2].m_z) / 3.0f;
+    float x = (m_v[0].m_x + m_v[1].m_x + m_v[2].m_x) / 3.0f;
+    float y = (m_v[0].m_y + m_v[1].m_y + m_v[2].m_y) / 3.0f;
+    float z = (m_v[0].m_z + m_v[1].m_z + m_v[2].m_z) / 3.0f;
     out->m_x = x;
     out->m_y = y;
     out->m_z = z;
@@ -295,50 +304,66 @@ size_t CBasicMeshGeometry::GetNumTriangles(void)
 
 /********************/
 
+bool CScene::AddGeometry(uint32_t dlAddr)
+{
+    std::pair<uint32_t, CBasicMeshGeometry> ret;
+    CBasicMeshGeometry geom;
+    return m_Geometries.insert(std::pair<uint32_t, CBasicMeshGeometry>(dlAddr, geom)).second;
+}
+
+/********************/
+
 bool CompareTriangleDepth(CTri tri1, CTri tri2)
 {
-    // todo center
     CVec3 c1, c2;
     tri1.Center(&c1);
     tri2.Center(&c2);
     return c1.m_z > c2.m_z;
 }
 
+COLORREF Highlight(COLORREF in, int adjust)
+{
+    int r = (in & 0xFF) + adjust;
+    int g = ((in >> 8) & 0xFF) + adjust;
+    int b = ((in >> 16) & 0xFF) + adjust;
+    r = max(0, r); r = min(255, r);
+    g = max(0, g); g = min(255, g);
+    b = max(0, b); b = min(255, b);
+    return RGB(r, g, b);
+}
+
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
 {
-    HDC hdc = GetDC(hwnd);
-
     CRect rc;
     GetWindowRect(hwnd, &rc);
 
-    float width = rc.Width() - 1;
-    float height = rc.Height() - 1;
+    float width = rc.Width();
+    float height = rc.Height();
+
+    HDC hdc = GetDC(hwnd);
+    HBITMAP hbm = CreateCompatibleBitmap(hdc, width, height);
+    HDC hdcMem = CreateCompatibleDC(hdc);
+    SelectObject(hdcMem, hbm);
 
 	CProjection projection(0.1f, 1000.0f, 90.0f, height / width);
 	CMtx projMtx;
 	projection.GetMtx(&projMtx);
 
-	float zDistFromCam = 4.0f;
+	float zDistFromCam = 3.0f;
 
-    HRGN hrgn = CreateRectRgn(0, 0, width, height);
-    SelectClipRgn(hdc, hrgn);
+    HRGN hrgn = CreateRectRgn(1, 1, width-1, height-1);
+    CRect fillRc(1, 1, width-1, height-1);
+    HBRUSH hbrBlack = CreateSolidBrush(RGB(0x22, 0x22, 0x22));
 
-	HBRUSH hbrBlack = CreateSolidBrush(RGB(0x22, 0x22, 0x22));
-	
-
-	CRect fillRc;
-	rc.left = 0;
-	rc.top = 0;
-	rc.right = width;
-	rc.bottom = height;
-	FillRect(hdc, &rc, hbrBlack);
+    SelectClipRgn(hdcMem, hrgn);
+	FillRect(hdcMem, &fillRc, hbrBlack);
 
 	static float yrot = 0.0f;
 	yrot += 1.0f;
 
     CVec3 cameraPos(0, 0, 0);
 
-    std::vector<CTri> triangles2d;
+    std::vector<CTri> projectedTris;
 
 	size_t numTris = geom->GetNumTriangles();
 	for (size_t i = 0; i < numTris; i++)
@@ -346,11 +371,9 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
 		CTri tri;
 		geom->GetTriangle(&tri, i);
 
+        tri.RotateY(&tri, yrot); // rotate at origin
         tri.Scale(&tri, 1.0f, -1.0f, -1.0f); // flip y and z
-
-		//tri.RotateX(&tri, yrot);
-		tri.RotateY(&tri, yrot);
-		tri.Translate(&tri, 0, 0, zDistFromCam);
+		tri.Translate(&tri, 0, 0, zDistFromCam); // push away from origin
 
         CVec3 normal;
         tri.CalculateNormal(&normal);
@@ -359,50 +382,62 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
         tri.m_v[0].Subtract(&cameraPos, &temp);
         float d = normal.DotProduct(&temp);
 
-        if (d > 0.0f)
+        if (d > 0.0f) // cull backface
         {
-            // cull backfaces
             continue;
         }
 
+        CVec3 lightDirection = { 0.0f, 0.0f, -1.0f };
+        float dpLight = normal.DotProduct(&lightDirection);
+        float intensity = (dpLight + 1.0f) * (200.0f / 2); // map -1:1 to 0:200
+        tri.m_Color = RGB(intensity, intensity, intensity);
+
 		tri.Mult(&tri, &projMtx);
 
-        triangles2d.push_back(tri);
+        projectedTris.push_back(tri);
 	}
 
-    std::sort(triangles2d.begin(), triangles2d.end(), CompareTriangleDepth);
+    // zsort
+    std::sort(projectedTris.begin(), projectedTris.end(), CompareTriangleDepth);
 
-    for (size_t i = 0; i < triangles2d.size(); i++)
+    for (size_t i = 0; i < projectedTris.size(); i++)
     {
-        CTri tri = triangles2d[i];
+        CTri tri = projectedTris[i];
 
-        HPEN hPenOutline = CreatePen(PS_SOLID, 1, RGB(0x00, 0x55, 0x55));
-        HBRUSH hBrushFill = CreateSolidBrush(RGB(0x60, 0x60, 0x60));
-        SelectObject(hdc, hPenOutline);
-        SelectObject(hdc, hBrushFill);
+        HPEN hPenOutline = CreatePen(PS_SOLID, 1, Highlight(tri.m_Color, -10));
+        HBRUSH hBrushFill = CreateSolidBrush(tri.m_Color);
+        SelectObject(hdcMem, hPenOutline);
+        SelectObject(hdcMem, hBrushFill);
 
-        float v0_x = tri.m_v[0].m_x * 256.0f + (256.0f / 2);
-        float v0_y = tri.m_v[0].m_y * 256.0f + (256.0f / 2);
-        float v1_x = tri.m_v[1].m_x * 256.0f + (256.0f / 2);
-        float v1_y = tri.m_v[1].m_y * 256.0f + (256.0f / 2);
-        float v2_x = tri.m_v[2].m_x * 256.0f + (256.0f / 2);
-        float v2_y = tri.m_v[2].m_y * 256.0f + (256.0f / 2);
+        // map 0:1 to screen center:edge
+        float v0_x = tri.m_v[0].m_x * width + (width / 2);
+        float v0_y = tri.m_v[0].m_y * height + (height / 2);
+        float v1_x = tri.m_v[1].m_x * width + (width / 2);
+        float v1_y = tri.m_v[1].m_y * height + (height / 2);
+        float v2_x = tri.m_v[2].m_x * width + (width / 2);
+        float v2_y = tri.m_v[2].m_y * height + (height / 2);
 
-        BeginPath(hdc);
+        BeginPath(hdcMem);
+        MoveToEx(hdcMem, v0_x, v0_y, NULL);
+        LineTo(hdcMem, v1_x, v1_y);
+        LineTo(hdcMem, v2_x, v2_y);
+        LineTo(hdcMem, v0_x, v0_y);
+        EndPath(hdcMem);
+        StrokeAndFillPath(hdcMem);
 
-        MoveToEx(hdc, v0_x, v0_y, NULL);
-        LineTo(hdc, v1_x, v1_y);
-        LineTo(hdc, v2_x, v2_y);
-        LineTo(hdc, v0_x, v0_y);
-        EndPath(hdc);
-        StrokeAndFillPath(hdc);
+        SetPixel(hdcMem, v0_x, v0_y, RGB(100, 100, 100));
+        SetPixel(hdcMem, v1_x, v1_y, RGB(100, 100, 100));
+        SetPixel(hdcMem, v2_x, v2_y, RGB(100, 100, 100));
 
-        FillPath(hdc);
         DeleteObject(hPenOutline);
         DeleteObject(hBrushFill);
     }
+
+    BitBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, SRCCOPY);
     
     DeleteObject(hrgn);
 	DeleteObject(hbrBlack);
     ReleaseDC(hwnd, hdc);
+    DeleteDC(hdcMem);
+    DeleteObject(hbm);
 }
