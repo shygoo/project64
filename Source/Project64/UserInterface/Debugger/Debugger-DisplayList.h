@@ -2,14 +2,8 @@
 
 #include <stdafx.h>
 #include "DebuggerUI.h"
-#include "Util/DisplayListParser.h"
-#include "Util/Renderer.h"
-
-typedef struct
-{
-	COLORREF fgColor;
-	COLORREF bgColor;
-} list_entry_colors_t;
+#include "Util/GfxParser.h"
+#include "Util/GfxRenderer.h"
 
 class CDebugDisplayList :
 	public CDebugDialog<CDebugDisplayList>,
@@ -34,28 +28,17 @@ public:
 
 private:
     bool m_bRefreshPending;
-	std::vector<list_entry_colors_t> m_ListColors;
-	std::vector<dram_resource_t> m_RamResources;
 	
+	CGfxParser    m_GfxParser;
+
 	CListViewCtrl m_DisplayListCtrl;
-    CDisplayListParser m_DisplayListParser;
-    CEdit m_StateTextbox;
-	CStatic m_StatusText;
+    CEdit         m_StateTextbox;
+	CStatic       m_StatusText;
+	CTreeViewCtrl m_ResourceTreeCtrl;
+	CImageList    m_TreeImageList;
 
-    CScene m_Scene;
-
+    //CScene m_Scene;
     //CBasicMeshGeometry geom; // TEMPORARY
-
-	//CListViewCtrl m_TileListCtrl;
-
-	//CButton m_GMZBufferChk, m_GMShadeChk, m_GMCullFrontChk, m_GMCullBackChk,
-	//	    m_GMFogChk, m_GMLightingChk, m_GMTextureGen, m_GMTextureGenLinearChk,
-	//	    m_GMShadingSmoothChk, m_GMLODChk, m_GMClippingChk;
-	//
-	//CEdit m
-
-    CTreeViewCtrl m_ResourceTreeCtrl;
-    CImageList m_TreeImageList;
 
     HTREEITEM m_hTreeDisplayLists;
     HTREEITEM m_hTreeSegments;
@@ -67,6 +50,8 @@ private:
     
     void ResetResourceTreeCtrl(void);
 	void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
+
+	void PreviewImageResource(dram_resource_t* res);
 
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 	LRESULT OnDestroy(void);

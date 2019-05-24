@@ -743,8 +743,9 @@
 #define IDC_EDIT21                      1587
 #define IDC_EDIT_CC_2A                  1587
 #define IDC_PREVIEW_PRIMCOLOR           1588
-#define IDC_STATIC_PREVIEW_ENVCOLOR     1589
 #define IDC_PREVIEW_ENVCOLOR            1589
+#define IDC_EDIT2                       1590
+#define IDC_EDIT_RESINFO                1590
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ADDSYMBOL          40013
 #define ID_POPUPMENU_VIEWDISASM         40017
@@ -802,7 +803,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        215
 #define _APS_NEXT_COMMAND_VALUE         40085
-#define _APS_NEXT_CONTROL_VALUE         1590
+#define _APS_NEXT_CONTROL_VALUE         1591
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

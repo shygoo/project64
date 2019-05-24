@@ -1,5 +1,5 @@
 #include <stdafx.h>
-#include "Renderer.h"
+#include "GfxRenderer.h"
 
 CMtx::CMtx(void)
 {

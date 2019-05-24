@@ -1,68 +1,8 @@
 #pragma once
 
 #include <stdafx.h>
-
-typedef union
-{
-	uint32_t data;
-	struct
-	{
-		uint32_t _u0 : 4, ad : 2, rd : 2, ck : 1, tc : 3, tf : 2, tt : 2,
-            tl : 1, td : 2, tp : 1, cyc : 2, cd : 1, pm : 1, c : 8;
-	};
-} othermode_h_t;
-
-typedef union
-{
-    uint32_t data;
-    struct
-    {
-        uint32_t
-            alphacompare : 2,
-            zsrcsel : 1,
-            // cycle independent blender settings
-            aa_en : 1,
-            z_cmp : 1,
-            z_upd : 1,
-            im_rd : 1,
-            clr_on_cvg : 1,
-            cvg_dst : 2,
-            zmode : 2,
-            cvg_x_alpha : 1,
-            alpha_cvg_sel : 1,
-            force_bl : 1,
-            _u0 : 1, // ?
-                     // cycle dependent blender settings
-            b1 : 2, b0 : 2, m1 : 2, m0 : 2, a1 : 2, a0 : 2, p1 : 2, p0 : 2;
-    };
-} othermode_l_t;
-
-typedef union
-{
-	uint32_t data;
-	struct {
-		uint32_t
-			zbuffer : 1,
-			_u0 : 1,
-			shade : 1,
-			_u1 : 6,
-			shading_smooth : 1,
-			_u2 : 2,
-			cull_front : 1,
-			cull_back : 1,
-			_u3 : 2,
-			fog : 1,
-			lighting : 1,
-			texture_gen : 1,
-			texture_gen_linear : 1,
-			lod : 1,
-			_u4 : 2,
-			clipping : 1,
-			_u5 : 8;
-	};
-} geometrymode_f3d_t;
-
-////////////////
+//#include "GfxParser.h"
+//#include "GfxState.h"
 
 typedef struct
 {
@@ -154,7 +94,8 @@ typedef struct
 typedef struct
 {
     struct { uint32_t : 24, _c : 8; };
-    geometrymode_f3d_t mode;
+    //geometrymode_f3d_t mode;
+	uint32_t mode;
 } dl_cmd_geometrymode_f3d_t; // note: for both set and clear
 
 typedef struct
@@ -166,13 +107,15 @@ typedef struct
 typedef struct
 {
 	struct { uint32_t len : 8, sft : 8, _u0 : 8, _c : 8; };
-	othermode_h_t bits;
+	//othermode_h_t bits;
+	uint32_t mode;
 } dl_cmd_setothermode_h_t;
 
 typedef struct
 {
     struct { uint32_t len : 8, sft : 8, _u0 : 8, _c : 8; };
-    othermode_l_t bits;
+    //othermode_l_t bits;
+	uint32_t mode;
 } dl_cmd_setothermode_l_t;
 
 typedef struct
