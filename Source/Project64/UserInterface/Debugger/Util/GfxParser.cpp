@@ -76,8 +76,10 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
 	m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
 	m_VertexBufferSize = 16;
 	m_TriangleCount = 0;
+
 	m_StateLog.clear();
 	m_CommandLog.clear();
+	m_RamResources.clear();
 
 	if (m_RamSnapshot != NULL)
 	{
@@ -128,8 +130,7 @@ void CGfxParser::Step(void)
 
 	// todo dump states to file instead?
     m_StateLog.push_back(m_State);
-    m_State.m_Address += 8;
-
+    
     uint8_t commandByte = m_State.m_Command.w0 >> 24;
 
     const dl_cmd_info_t *commandInfo;
@@ -143,6 +144,8 @@ void CGfxParser::Step(void)
 	dc.virtualAddress = m_State.SegmentedToVirtual(dc.address);
 	dc.name = "?";
 	dc.params = "?";
+
+	m_State.m_Address += 8;
 
     commandInfo = CGfxOps::LookupCommand(CGfxOps::Commands_RDP, commandByte);
 
