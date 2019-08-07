@@ -47,6 +47,9 @@ private:
     HTREEITEM m_hTreeMatrices;
     HTREEITEM m_hTreeViewports;
     HTREEITEM m_hTreeLights;
+
+	CRect m_OrgTexPreviewRect;
+	CRect m_OrgResInfoRect;
     
     void ResetResourceTreeCtrl(void);
 	void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
@@ -85,7 +88,7 @@ private:
         DLGRESIZE_CONTROL(IDC_EDIT_STATE, DLSZ_SIZE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_GRP_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
         DLGRESIZE_CONTROL(IDC_TREE_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
-        DLGRESIZE_CONTROL(IDC_TEX_PREVIEW, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_EDIT_RESINFO, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
 	BEGIN_TOOLTIP_MAP()

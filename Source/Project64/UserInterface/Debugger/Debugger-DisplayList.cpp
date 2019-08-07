@@ -63,6 +63,12 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     ResetResourceTreeCtrl();
 
+	::GetWindowRect(GetDlgItem(IDC_TEX_PREVIEW), &m_OrgTexPreviewRect);
+	::GetWindowRect(GetDlgItem(IDC_EDIT_RESINFO), &m_OrgResInfoRect);
+
+	ScreenToClient(m_OrgTexPreviewRect);
+	ScreenToClient(m_OrgResInfoRect);
+
 	LoadWindowPos();
 	WindowCreated();
 	return TRUE;
@@ -398,11 +404,42 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 	
     // texture preview test
 
+	//switch (res->type)
+	//{
+	//case RES_TEXTURE: PreviewImageResource(res);
+	//case RES_DL:
+
+	//Test_3d(texWnd, &geom);
+	CRect& texPrevRc = m_OrgTexPreviewRect;
+	CRect& resInfoRc = m_OrgResInfoRect;
+
+	if (res->type == RES_TEXTURE || res->type == RES_DL)
+	{
+		::ShowWindow(GetDlgItem(IDC_TEX_PREVIEW), SW_SHOW);
+		::MoveWindow(GetDlgItem(IDC_EDIT_RESINFO),
+			resInfoRc.left, resInfoRc.top,
+			resInfoRc.Width(), resInfoRc.Height(), TRUE);
+	}
+	else
+	{
+		::ShowWindow(GetDlgItem(IDC_TEX_PREVIEW), SW_HIDE);
+		::MoveWindow(GetDlgItem(IDC_EDIT_RESINFO),
+			texPrevRc.left, texPrevRc.top,
+			texPrevRc.Width(), texPrevRc.Height(), TRUE);
+	}
+
+	stdstr strDefaultInfo = stdstr_f("Segment offset: 0x%08X\r\nVirtual address: 0x%08X", res->address, res->virtAddress);
+
 	switch (res->type)
 	{
-	case RES_TEXTURE: PreviewImageResource(res);
-	case RES_DL:
-		//Test_3d(texWnd, &geom);
+	case RES_TEXTURE:
+		PreviewImageResource(res);
+		break;
+	//case RES_DL:
+	//	Test_3d(texWnd, &geom);
+	//	break;
+	default:
+		::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strDefaultInfo.c_str());
 		break;
 	}
 	
@@ -437,6 +474,9 @@ LRESULT CDebugDisplayList::OnCustomDrawList(NMHDR* pNMHDR)
 	uint32_t nSubItem = pLVCD->iSubItem;
 
 	decoded_cmd_t* dc = m_GfxParser.GetLoggedCommand(nItem);
+	CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
+
+	int depth = state->m_StackIndex * 10;
 
 	switch (nSubItem)
 	{
