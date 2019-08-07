@@ -60,7 +60,15 @@ typedef struct
 typedef struct
 {
 	int16_t x, y, z;
+    int16_t _unused;
 	int16_t u, v;
+    union
+    {
+        struct { uint8_t r, g, b; };
+        struct { uint8_t nx, ny, nz; };
+    };
+    uint8_t a;
+    
 } vertex_t;
 
 typedef struct
@@ -96,12 +104,26 @@ enum ucode_version_t
 	UCODE_UNKNOWN,
 	UCODE_F3D,
 	UCODE_F3DEX,
-	UCODE_F3DEX2
+	UCODE_F3DEX2,
+    UCODE_ZSORT,
+    UCODE_DKR,
+    UCODE_S2DEX,
+    UCODE_TURBO3D,
+    UCODE_PD,
+    UCODE_FACTOR5,
+    UCODE_F3DEX_WR,
+    UCODE_F3DEXBG,
+    UCODE_F3DTEXA
 };
 
 typedef struct
 {
-	uint32_t        checksum;
+    uint32_t checksum;
+    ucode_version_t version;
+} ucode_checksum_t;
+
+typedef struct
+{
 	ucode_version_t version;
 	const char*     name;
 	dl_cmd_info_t*  commandTable;
@@ -113,6 +135,7 @@ public:
 	static const ucode_info_t*  LookupMicrocode(uint32_t checksum);
 	static const dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
 
+    static ucode_checksum_t MicrocodeChecksums[];
 	static ucode_info_t  Microcodes[];
 	static dl_cmd_info_t Commands_RDP[];
 	static dl_cmd_info_t Commands_F3D[];
@@ -142,8 +165,6 @@ private:
 	// Shared RSP
 	static void op_gsSPDisplayList(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsSPEndDisplayList(CHleGfxState*, decoded_cmd_t*);
-	static void op_gsSPSetOtherMode_h(CHleGfxState*, decoded_cmd_t*);
-	static void op_gsSPSetOtherMode_l(CHleGfxState*, decoded_cmd_t*);
 
 	// Fast3D
 	static void op_gsSPVertex_f3d(CHleGfxState*, decoded_cmd_t*);
@@ -154,9 +175,21 @@ private:
 	static void op_gsSP1Triangle_f3d(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsSPMatrix_f3d(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsSPMoveMem_f3d(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPSetOtherMode_h_f3d(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPSetOtherMode_l_f3d(CHleGfxState*, decoded_cmd_t*);
 
-	// F3DEX2
+    // Fast3DEX
+    static void op_gsSPVertex_f3dex(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSP1Triangle_f3dex(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSP1Quadrangle_f3dex(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSP2Triangles_f3dex(CHleGfxState*, decoded_cmd_t*);
+
+	// Fast3DEX2
 	static void op_gsSPMoveWord_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPVertex_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSP1Triangle_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPSetOtherMode_h_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPSetOtherMode_l_f3dex2(CHleGfxState*, decoded_cmd_t*);
 };
 
 

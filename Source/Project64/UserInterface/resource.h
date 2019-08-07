@@ -746,6 +746,37 @@
 #define IDC_PREVIEW_ENVCOLOR            1589
 #define IDC_EDIT2                       1590
 #define IDC_EDIT_RESINFO                1590
+#define IDC_GRP_GEOMODE                 1591
+#define IDC_GRP_OTHERMODEH              1592
+#define IDC_GRP_CC1                     1593
+#define IDC_GRP_CC2                     1594
+#define IDC_GRP_IMGADDRS                1595
+#define IDC_GRP_COLORS                  1596
+#define IDC_LBL_PIPELINE                1597
+#define IDC_LBL_COLORDITHER             1598
+#define IDC_CYCLETYPE                   1599
+#define IDC_LBL_CYCLETYPE               1599
+#define IDC_LBL_TEXTDETAIL              1600
+#define IDC_LBL_TEXTPERSP               1601
+#define IDC_LBL_TEXTLOD                 1602
+#define IDC_LBL_TEXTLUT                 1603
+#define IDC_LBL_TEXTFILT                1604
+#define IDC_LBL_TEXTCONV                1605
+#define IDC_LBL_COMBKEY                 1606
+#define IDC_LBL_RGBDITHER               1607
+#define IDC_LBL_ALPHADITHER             1608
+#define IDC_LBL_COLOR1                  1609
+#define IDC_LBL_ALPHA1                  1610
+#define IDC_LBL_COLOR2                  1611
+#define IDC_LBL_ALPHA2                  1612
+#define IDC_LBL_TEXTURE                 1613
+#define IDC_LBL_COLORBUFFER             1614
+#define IDC_LBL_DEPTHBUFFER             1615
+#define IDC_LBL_FILL                    1616
+#define IDC_LBL_FOG                     1617
+#define IDC_LBL_BLEND                   1618
+#define IDC_LBL_PRIM                    1619
+#define IDC_LBL_ENV                     1620
 #define ID_POPUPMENU_PLAYGAMEWITHDISK   40008
 #define ID_POPUPMENU_ADDSYMBOL          40013
 #define ID_POPUPMENU_VIEWDISASM         40017
@@ -803,7 +834,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        215
 #define _APS_NEXT_COMMAND_VALUE         40085
-#define _APS_NEXT_CONTROL_VALUE         1591
+#define _APS_NEXT_CONTROL_VALUE         1621
 #define _APS_NEXT_SYMED_VALUE           102
 #endif
 #endif

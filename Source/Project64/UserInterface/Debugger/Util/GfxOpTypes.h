@@ -26,9 +26,43 @@ typedef struct
 
 typedef struct
 {
-	uint32_t w0;
-	struct { uint32_t v2 : 8, v1 : 8, v0 : 8, _c : 8; };
+    struct { uint32_t len : 10, num : 6, idx : 8, _c : 8; };
+    uint32_t address;
+} dl_cmd_vtx_f3dex_t;
+
+typedef struct
+{
+    struct { uint32_t idx : 8, _u0 : 4, num : 8, _u1 : 4, _c : 8; };
+    uint32_t address;
+} dl_cmd_vtx_f3dex2_t;
+
+typedef struct
+{
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t v2 : 8, v1 : 8, v0 : 8, _u1 : 8; };
 } dl_cmd_tri1_f3d_t;
+
+#define dl_cmd_tri1_f3dex_t dl_cmd_tri1_f3d_t
+
+typedef struct
+{
+    struct { uint32_t v2 : 8, v1 : 8, v0 : 8, _c : 8; };
+    uint32_t  _u0;
+} dl_cmd_tri1_f3dex2_t;
+
+typedef struct
+{
+    struct { uint32_t v2 : 8, v1 : 8, v0 : 8, _c : 8; };
+    struct { uint32_t v5 : 8, v4 : 8, v3 : 8, _u1 : 8; };
+} dl_cmd_tri2_f3dex_t;
+
+#define dl_cmd_tri2_f3dex2_t dl_cmd_tri2_f3dex_t;
+
+typedef struct
+{
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t v3 : 8, v2 : 8, v1 : 8, v0 : 8; };
+} dl_cmd_quad_f3dex_t; // mk64, different from gbi.h?
 
 typedef struct
 {
@@ -156,7 +190,13 @@ typedef union
 
     /* f3dex commands */
     dl_cmd_mtx_f3dex_t mtx_f3dex;
+    dl_cmd_vtx_f3dex_t vtx_f3dex;
+    dl_cmd_tri1_f3dex_t tri1_f3dex;
+    dl_cmd_quad_f3dex_t quad_f3dex;
+    dl_cmd_tri2_f3dex_t tri2_f3dex;
 
     /* f3dex2 commands */
     dl_cmd_moveword_f3dex2_t moveword_f3dex2;
+    dl_cmd_vtx_f3dex2_t vtx_f3dex2;
+    dl_cmd_tri1_f3dex2_t tri1_f3dex2;
 } dl_cmd_t;
