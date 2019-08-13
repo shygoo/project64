@@ -74,6 +74,12 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t params : 8, _u0: 8, size : 8, _c : 8; };
+    uint32_t address;
+} dl_cmd_mtx_f3dex2_t;
+
+typedef struct
+{
 	struct { uint32_t lry : 12, lrx : 12, _c : 8; };
 	struct { uint32_t uly : 12, ulx : 12, _u0 : 8; };
 } dl_cmd_fillrect_t;
@@ -127,10 +133,22 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t i : 8, o : 8, l : 8, _c : 8; };
+    uint32_t address;
+} dl_cmd_movemem_f3dex2_t;
+
+typedef struct
+{
     struct { uint32_t : 24, _c : 8; };
     //geometrymode_f3d_t mode;
 	uint32_t mode;
 } dl_cmd_geometrymode_f3d_t; // note: for both set and clear
+
+typedef struct
+{
+    struct { uint32_t c : 24, _c : 8; };
+    uint32_t s;
+} dl_cmd_geometrymode_f3dex2_t;
 
 typedef struct
 {
@@ -189,14 +207,17 @@ typedef union
     dl_cmd_geometrymode_f3d_t geometrymode_f3d;
 
     /* f3dex commands */
-    dl_cmd_mtx_f3dex_t mtx_f3dex;
-    dl_cmd_vtx_f3dex_t vtx_f3dex;
+    dl_cmd_mtx_f3dex_t  mtx_f3dex;
+    dl_cmd_vtx_f3dex_t  vtx_f3dex;
     dl_cmd_tri1_f3dex_t tri1_f3dex;
     dl_cmd_quad_f3dex_t quad_f3dex;
     dl_cmd_tri2_f3dex_t tri2_f3dex;
 
     /* f3dex2 commands */
     dl_cmd_moveword_f3dex2_t moveword_f3dex2;
-    dl_cmd_vtx_f3dex2_t vtx_f3dex2;
-    dl_cmd_tri1_f3dex2_t tri1_f3dex2;
+    dl_cmd_vtx_f3dex2_t      vtx_f3dex2;
+    dl_cmd_tri1_f3dex2_t     tri1_f3dex2;
+    dl_cmd_movemem_f3dex2_t  movemem_f3dex2;
+    dl_cmd_mtx_f3dex2_t      mtx_f3dex2;
+    dl_cmd_geometrymode_f3dex2_t geometrymode_f3dex2;
 } dl_cmd_t;

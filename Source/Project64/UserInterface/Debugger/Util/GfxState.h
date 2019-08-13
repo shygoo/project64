@@ -6,26 +6,40 @@
 
 typedef union
 {
+    uint32_t data;
+    struct
+    {
+        uint32_t
+            zbuffer : 1, _u0 : 1,
+            shade : 1, _u1 : 6,
+            cull_front : 1,
+            cull_back : 1, _u2 : 5,
+            fog : 1,
+            lighting : 1,
+            texture_gen : 1,
+            texture_gen_linear : 1, _u3 : 1,
+            shading_smooth : 1,
+            lod : 1,
+            clipping : 1, _u5 : 8;
+    };
+} geometrymode_f3dex2_t;
+
+typedef union
+{
 	uint32_t data;
 	struct {
 		uint32_t
-			zbuffer : 1,
-			_u0 : 1,
-			shade : 1,
-			_u1 : 6,
-			shading_smooth : 1,
-			_u2 : 2,
+			zbuffer : 1, _u0 : 1,
+			shade : 1, _u1 : 6,
+			shading_smooth : 1, _u2 : 2,
 			cull_front : 1,
-			cull_back : 1,
-			_u3 : 2,
+			cull_back : 1, _u3 : 2,
 			fog : 1,
 			lighting : 1,
 			texture_gen : 1,
 			texture_gen_linear : 1,
-			lod : 1,
-			_u4 : 2,
-			clipping : 1,
-			_u5 : 8;
+			lod : 1, _u4 : 2,
+			clipping : 1, _u5 : 8;
 	};
 } geometrymode_f3d_t;
 
@@ -105,7 +119,12 @@ public:
 	othermode_h_t m_OtherMode_h;
 	othermode_l_t m_OtherMode_l;
 	dl_cmd_setcombine_t m_Combiner;
-	geometrymode_f3d_t m_GeometryMode;
+    union
+    {
+        geometrymode_f3d_t f3d;
+        geometrymode_f3dex2_t f3dex2;
+        uint32_t data;
+    } m_GeometryMode;
 	uint8_t  m_NumLights;
 	uint32_t m_TextureImage;
 	uint32_t m_DepthImage;

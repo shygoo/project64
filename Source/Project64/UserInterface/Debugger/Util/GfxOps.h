@@ -190,6 +190,9 @@ private:
     static void op_gsSP1Triangle_f3dex2(CHleGfxState*, decoded_cmd_t*);
     static void op_gsSPSetOtherMode_h_f3dex2(CHleGfxState*, decoded_cmd_t*);
     static void op_gsSPSetOtherMode_l_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPMoveMem_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPGeometryMode_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsSPMatrix_f3dex2(CHleGfxState*, decoded_cmd_t*);
 };
 
 

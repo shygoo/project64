@@ -260,17 +260,34 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
 	// Geometry mode
 
-	::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->m_GeometryMode.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->m_GeometryMode.shade ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_FRONT), BM_SETCHECK, state->m_GeometryMode.cull_front ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_BACK), BM_SETCHECK, state->m_GeometryMode.cull_back ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->m_GeometryMode.fog ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->m_GeometryMode.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->m_GeometryMode.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->m_GeometryMode.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_SHADING_SMOOTH), BM_SETCHECK, state->m_GeometryMode.shading_smooth ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->m_GeometryMode.lod ? BST_CHECKED : BST_UNCHECKED, 0);
-	::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->m_GeometryMode.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->m_GeometryMode.f3d.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->m_GeometryMode.f3d.shade ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->m_GeometryMode.f3d.fog ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->m_GeometryMode.f3d.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->m_GeometryMode.f3d.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->m_GeometryMode.f3d.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->m_GeometryMode.f3d.lod ? BST_CHECKED : BST_UNCHECKED, 0);
+	::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->m_GeometryMode.f3d.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
+
+    bool shading_smooth, cull_front, cull_back;
+
+    if (m_GfxParser.GetUCodeVersion() == UCODE_F3DEX2)
+    {
+        shading_smooth = state->m_GeometryMode.f3dex2.shading_smooth;
+        cull_front = state->m_GeometryMode.f3dex2.cull_front;
+        cull_back = state->m_GeometryMode.f3dex2.cull_back;
+    }
+    else
+    {
+        shading_smooth = state->m_GeometryMode.f3d.shading_smooth;
+        cull_front = state->m_GeometryMode.f3d.cull_front;
+        cull_back = state->m_GeometryMode.f3d.cull_back;
+    }
+
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADING_SMOOTH), BM_SETCHECK, shading_smooth ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_FRONT), BM_SETCHECK, cull_front ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_BACK), BM_SETCHECK, cull_back ? BST_CHECKED : BST_UNCHECKED, 0);
+
 
 	// Texture address
 

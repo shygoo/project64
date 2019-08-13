@@ -268,7 +268,10 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX2[] = {
     { 0x05, "gsSP1Triangle",      op_gsSP1Triangle_f3dex2 },
     { 0x06, "gsSP2Triangles",     op_gsSP2Triangles_f3dex },
     { 0xD7, "gsSPTexture",        op_gsSPTexture_f3d }, // may be wrong
+    { 0xD9, "gsSPGeometryMode",   op_gsSPGeometryMode_f3dex2 },
+    { 0xDA, "gsSPMatrix",         op_gsSPMatrix_f3dex2 },
     { 0xDB, "gsSPMoveWord",       op_gsSPMoveWord_f3dex2 },
+    { 0xDC, "gsSPMoveMem",        op_gsSPMoveMem_f3dex2 },
     { 0xDE, "gsSPDisplayList",    op_gsSPDisplayList },
     { 0xDF, "gsSPEndDisplayList", op_gsSPEndDisplayList },
     { 0xE2, "gsSPSetOtherMode_l", op_gsSPSetOtherMode_l_f3dex2 },
@@ -793,6 +796,40 @@ void CGfxOps::op_gsSPClearGeometryMode_f3d(CHleGfxState* state, decoded_cmd_t* d
     }
 }
 
+void CGfxOps::op_gsSPGeometryMode_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_geometrymode_f3dex2_t* cmd = &state->m_Command.geometrymode_f3dex2;
+    state->m_GeometryMode.data &= ~cmd->c;
+    state->m_GeometryMode.data |= cmd->s;
+
+    if (cmd->c == 0xFFFFFF)
+    {
+        dc->overrideName = "gsSPSetGeometryMode";
+    }
+    else if (cmd->s == 0)
+    {
+        dc->overrideName = "gsSPClearGeometryMode";
+    }
+
+    // TODO clear bits
+    bool havePrev = false;
+    dc->params = "";
+
+    for (int i = 0; CGfxLabels::GeometryModes_F3DEX2[i].name != NULL; i++)
+    {
+        if (cmd->s & CGfxLabels::GeometryModes_F3DEX2[i].value)
+        {
+            if (havePrev)
+            {
+                dc->params += " | ";
+            }
+
+            dc->params += CGfxLabels::GeometryModes_F3DEX2[i].name;
+            havePrev = true;
+        }
+    }
+}
+
 void CGfxOps::op_gsSPSetOtherMode_h_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_setothermode_h_t* cmd = &state->m_Command.setothermode_h;
@@ -993,6 +1030,78 @@ void CGfxOps::op_gsSPMoveMem_f3d(CHleGfxState* state, decoded_cmd_t* dc)
     dc->listFgColor = COLOR_DMA;
 }
 
+void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_movemem_f3dex2_t* cmd = &state->m_Command.movemem_f3dex2;
+
+    if (cmd->i == 0x08) // viewport
+    {
+        dc->overrideName = "gsSPViewport";
+        dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
+            state->SegmentedToVirtual(cmd->address));
+        return;
+    }
+    else if (cmd->i == 0x0A)
+    {
+        int light = cmd->o / 24;
+
+        if (light == 0)
+        {
+            dc->overrideName = "gsSPLookAtX";
+        }
+        else if (light == 1)
+        {
+            dc->overrideName = "gsSPLookAtY";
+        }
+        else
+        {
+            dc->overrideName = "gsSPLight";
+        }
+    }
+
+    /*
+    # define G_MV_MMTX	2
+    # define G_MV_PMTX	6
+    # define G_MV_VIEWPORT	8
+    # define G_MV_LIGHT	10
+    # define G_MV_POINT	12
+    # define G_MV_MATRIX	14		// NOTE: this is in moveword table
+    # define G_MVO_LOOKATX	(0*24)
+    # define G_MVO_LOOKATY	(1*24)
+    # define G_MVO_L0	(2*24)
+    # define G_MVO_L1	(3*24)
+    # define G_MVO_L2	(4*24)
+    # define G_MVO_L3	(5*24)
+    # define G_MVO_L4	(6*24)
+    # define G_MVO_L5	(7*24)
+    # define G_MVO_L6	(8*24)
+    # define G_MVO_L7	(9*24)
+    */
+
+//#define	gsDma2p(c, adrs, len, idx, ofs)					\
+//{									\
+//	(_SHIFTL((c),24,8)|_SHIFTL(((len)-1)/8,19,5)|			\
+//	 _SHIFTL((ofs)/8,8,8)|_SHIFTL((idx),0,8)),			\
+//        (unsigned int)(adrs)						\
+//}
+
+//# define gsSPViewport(v)	\
+//		gsDma2p(      G_MOVEMEM, (v), sizeof(Vp), G_MV_VIEWPORT, 0)
+//
+//# define gsSPLight(l, n)	\
+//	 gsDma2p(      G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,(n)*24+24)
+//
+//# define gsSPLookAtX(l)		\
+//	 gsDma2p(     G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,G_MVO_LOOKATX)
+//
+//# define gsSPLookAtY(l)		\
+//	 gsDma2p(     G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,G_MVO_LOOKATY)
+//
+//#define	gsSPForceMatrix(mptr)						\
+//	gsDma2p(G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0),		\
+//	gsMoveWd(G_MW_FORCEMTX,0,0x00010000)
+}
+
 void CGfxOps::op_gsDPLoadBlock(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_loadblock_t* cmd = &state->m_Command.loadblock;
@@ -1050,7 +1159,8 @@ void CGfxOps::op_gsDPSetScissor(CHleGfxState* state, decoded_cmd_t* dc)
 
     // TODO check for frac bits and use gsDPSetScissorFrac if set
 
-    dc->params = stdstr_f("mode:%s, ulx:%d, uly:%d, lrx:%d, lry:%d", szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+    dc->params = stdstr_f("mode:%s, ulx:%d, uly:%d, lrx:%d, lry:%d",
+        szMode, cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 }
 
 void CGfxOps::op_gsDPFillRectangle(CHleGfxState* state, decoded_cmd_t* dc)
@@ -1062,6 +1172,21 @@ void CGfxOps::op_gsDPFillRectangle(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSPMatrix_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_mtx_f3d_t* cmd = &state->m_Command.mtx_f3d;
+
+    dc->params = stdstr_f("addr:0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
+        (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
+        (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
+        (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
+        state->SegmentedToVirtual(cmd->address));
+
+    ReportDramResource(dc, state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
+
+    dc->listFgColor = COLOR_DMA;
+}
+
+void CGfxOps::op_gsSPMatrix_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_mtx_f3dex2_t* cmd = &state->m_Command.mtx_f3dex2;
 
     dc->params = stdstr_f("addr:0x%08X, (%s | %s | %s) // 0x%08X", cmd->address,
         (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
