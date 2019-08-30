@@ -37,12 +37,15 @@ public:
     CTri(void);
 	CVec3 m_v[3];
     COLORREF m_Color;
+    bool m_Selected;
+    int index;
 	void Mult(CTri *out, CMtx *mtx);
 	void Translate(CTri *out, float x, float y, float z);
     void Scale(CTri *out, float x, float y, float z);
 	void RotateX(CTri *out, float degrees);
 	void RotateY(CTri *out, float degrees);
 	void RotateZ(CTri *out, float degrees);
+    void YSort(CTri *out);
     void CalculateNormal(CVec3 *out);
     void Center(CVec3 *out);
 };
@@ -63,13 +66,15 @@ public:
 typedef struct
 {
 	size_t vidx0, vidx1, vidx2;
+    bool bSelected;
+    int index;
 } geom_tri_ref_t;
 
 class CBasicMeshGeometry
 {
-	std::vector<CVec3> m_Vertices;
-	std::vector<geom_tri_ref_t> m_TriangleRefs;
 public:
+    std::vector<CVec3> m_Vertices;
+    std::vector<geom_tri_ref_t> m_TriangleRefs;
     void AddVertex(CVec3 vertex);
     size_t AddVertexUnique(CVec3 vertex);
 	void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2);
@@ -78,6 +83,7 @@ public:
 	void AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count);
 	size_t GetNumTriangles(void);
 	bool GetTriangle(CTri *out, size_t index);
+    void Clear(void);
 };
 
 class CGeometryInstance
@@ -97,4 +103,20 @@ public:
     bool AddGeometry(uint32_t dlAddr);
 };
 
-void Test_3d(HWND hwnd, CBasicMeshGeometry *geom);
+class CDrawBuffers
+{
+public:
+    int m_Width, m_Height;
+    //uint32_t m_SelectionIdx;
+    uint32_t *m_ColorBuffer; // todo
+    //uint32_t *m_DepthBuffer;
+    int *m_SelectBuffer;
+    CDrawBuffers(int width, int height);
+    ~CDrawBuffers(void);
+    void SetPixel(int x, int y, uint32_t color);
+    void SetSelect(int x, int y, int key);
+    int GetSelect(int x, int y);
+    void Clear(void);
+};
+
+void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db);

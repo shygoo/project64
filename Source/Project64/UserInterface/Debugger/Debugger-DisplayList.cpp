@@ -5,9 +5,14 @@
 #include "Util/GfxRenderer.h"
 #include "Util/GfxLabels.h"
 
+HHOOK CDebugDisplayList::hWinMessageHook = NULL;
+CDebugDisplayList* CDebugDisplayList::_this = NULL;
+//static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
+
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
 	CDebugDialog<CDebugDisplayList>(debugger),
-	m_bRefreshPending(false)
+	m_bRefreshPending(false),
+    m_DrawBuffers(NULL)
 {
 }
 
@@ -69,13 +74,64 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	ScreenToClient(m_OrgTexPreviewRect);
 	ScreenToClient(m_OrgResInfoRect);
 
+    m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width(), m_OrgTexPreviewRect.Height());
+    printf("drawbuffers %d %d\n", m_OrgTexPreviewRect.Width(), m_OrgTexPreviewRect.Height());
+
+    SetTimer(TIMER_ID_DRAW, 20, NULL);
+
+    _this = this;
+    m_ThreadId = ::GetCurrentThreadId();
+    hWinMessageHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)HookProc, NULL, m_ThreadId);
+
 	LoadWindowPos();
 	WindowCreated();
 	return TRUE;
 }
 
+LRESULT CALLBACK CDebugDisplayList::HookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    MSG *pMsg = (MSG*)lParam;
+
+    POINT pointerPos;
+    CRect ctrlRect;
+
+    switch (pMsg->message)
+    {
+    case WM_MOUSEWHEEL:
+        //_this->OnInterceptMouseWheel(pMsg->wParam, pMsg->lParam);
+        break;
+    case WM_LBUTTONDOWN:
+        ::GetCursorPos(&pointerPos);
+        ::GetWindowRect(_this->GetDlgItem(IDC_TEX_PREVIEW), &ctrlRect);
+        if (ctrlRect.PtInRect(pointerPos))
+        {
+            int x = pointerPos.x - ctrlRect.left;
+            int y = pointerPos.y - ctrlRect.top;
+            //_this->m_GfxParser.m
+            int triIndex = _this->m_DrawBuffers->GetSelect(x, y);
+            _this->m_GfxParser.testGeom.m_TriangleRefs[triIndex].bSelected = true;
+            //_this->m_GfxParser.testGeom.GetTriangle()
+            //_this->m_GfxParser.testGeom.m_Vertices[];
+            //printf("%d %d -> %d\n", x, y, );
+        }
+        break;
+    case WM_MOUSEMOVE:
+        {
+        }
+        break;
+    }
+
+    if (nCode < 0)
+    {
+        return CallNextHookEx(hWinMessageHook, nCode, wParam, lParam);
+    }
+
+    return 0;
+}
+
 LRESULT CDebugDisplayList::OnDestroy(void)
 {
+    KillTimer(TIMER_ID_DRAW);
 	m_DisplayListCtrl.Detach();
 	m_ResourceTreeCtrl.Detach();
     m_StateTextbox.Detach();
@@ -151,28 +207,6 @@ void CDebugDisplayList::Refresh(void)
 
 	m_DisplayListCtrl.SetRedraw(TRUE);
 	m_DisplayListCtrl.SelectItem(0);
-
-    // last gsSPDisplayList jump target
-    //uint32_t currentEntryPoint = dlistAddr;
-    //m_Scene.AddGeometry(currentEntryPoint);
-    //bool bAlreadyHaveGeom = false;
-    //    if (dc.dramResource.type == RES_DL)
-    //    {
-    //        currentEntryPoint = dc.dramResource.address;
-    //        bAlreadyHaveGeom = !m_Scene.AddGeometry(currentEntryPoint);
-    //    }
-    //    for (int i = 0; i < dc.numTris; i++)
-    //    {
-    //        CVec3 v0, v1, v2;
-    //        // N64VertexToVec3
-    //        v0 = { (float)dc.tris[i].v0.x * 50 / 0x7FFF, (float)dc.tris[i].v0.y * 50 / 0x7FFF, (float)dc.tris[i].v0.z * 50 / 0x7FFF };
-    //        v1 = { (float)dc.tris[i].v1.x * 50 / 0x7FFF, (float)dc.tris[i].v1.y * 50 / 0x7FFF, (float)dc.tris[i].v1.z * 50 / 0x7FFF };
-    //        v2 = { (float)dc.tris[i].v2.x * 50 / 0x7FFF, (float)dc.tris[i].v2.y * 50 / 0x7FFF, (float)dc.tris[i].v2.z * 50 / 0x7FFF };
-    //        int v0idx = geom.AddVertexUnique(v0);
-    //        int v1idx = geom.AddVertexUnique(v1);
-    //        int v2idx = geom.AddVertexUnique(v2);
-    //        geom.AddTriangleRef(v0idx, v1idx, v2idx);
-    //    }
 
     m_ResourceTreeCtrl.SetRedraw(FALSE);
     ResetResourceTreeCtrl();
@@ -399,6 +433,15 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     return FALSE;
 }
 
+void CDebugDisplayList::OnTimer(UINT_PTR nIDEvent)
+{
+    if (nIDEvent == TIMER_ID_DRAW)
+    {
+        HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
+        Test_3d(texWnd, &m_GfxParser.testGeom, m_DrawBuffers);
+    }
+}
+
 LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 {
     NMTREEVIEW* pnmtv = reinterpret_cast<NMTREEVIEW*>(pNMHDR);
@@ -419,14 +462,6 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
     //m_DisplayListCtrl.EnsureVisible(res->nCommand, FALSE);
     //m_DisplayListCtrl.SelectItem(res->nCommand);
 	
-    // texture preview test
-
-	//switch (res->type)
-	//{
-	//case RES_TEXTURE: PreviewImageResource(res);
-	//case RES_DL:
-
-	//Test_3d(texWnd, &geom);
 	CRect& texPrevRc = m_OrgTexPreviewRect;
 	CRect& resInfoRc = m_OrgResInfoRect;
 
@@ -452,9 +487,8 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 	case RES_TEXTURE:
 		PreviewImageResource(res);
 		break;
-	//case RES_DL:
-	//	Test_3d(texWnd, &geom);
-	//	break;
+	case RES_DL:
+		break;
 	default:
 		::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strDefaultInfo.c_str());
 		break;

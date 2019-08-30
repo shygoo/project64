@@ -11,6 +11,8 @@ public:
     CGfxParser(void);
 	static bool ConvertImage(uint32_t* dst, uint8_t *src, im_fmt_t fmt, im_siz_t siz, int numTexels);
     
+    CBasicMeshGeometry testGeom;
+
 public:
     void             Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
 	uint8_t*         GetRamSnapshot(void);

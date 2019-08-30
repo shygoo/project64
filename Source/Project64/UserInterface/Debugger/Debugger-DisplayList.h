@@ -12,7 +12,7 @@ class CDebugDisplayList :
 {
 public:
 	enum { IDD = IDD_Debugger_DisplayList };
-
+    enum { TIMER_ID_DRAW };
 	enum {
 		DisplayListCtrl_Col_VAddr,
 		DisplayListCtrl_Col_SegOffset,
@@ -28,6 +28,11 @@ public:
 
 private:
     bool m_bRefreshPending;
+
+    DWORD m_ThreadId;
+    static HHOOK hWinMessageHook;
+    static CDebugDisplayList* _this;
+    static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
 	
 	CGfxParser    m_GfxParser;
 
@@ -63,6 +68,9 @@ private:
     LRESULT OnResourceTreeSelChanged(NMHDR* pNMHDR);
 	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
 	LRESULT OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
+    void    OnTimer(UINT_PTR nIDEvent);
+
+    CDrawBuffers *m_DrawBuffers;
 
 	//LRESULT OnListDblClicked(NMHDR* pNMHDR);
 	//void    OnExitSizeMove(void);
@@ -76,6 +84,8 @@ private:
         NOTIFY_HANDLER_EX(IDC_TREE_RESOURCES, TVN_SELCHANGED, OnResourceTreeSelChanged)
 		NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_CUSTOMDRAW, OnCustomDrawList)
 		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
+        MSG_WM_TIMER(OnTimer)
+        //MESSAGE_HANDLER(WM_MOUSEMOVE(OnMouseMove)
 		//NOTIFY_HANDLER_EX(IDC_CPU_LIST, NM_DBLCLK, OnListDblClicked)
 		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
 		CHAIN_MSG_MAP(CDialogResize<CDebugDisplayList>)

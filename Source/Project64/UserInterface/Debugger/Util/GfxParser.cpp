@@ -112,6 +112,7 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
 
 void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
+    testGeom.Clear();
 	Setup(ucodeAddr, dlistAddr, dlistSize);
 
     while (!m_State.bDone)
@@ -170,7 +171,23 @@ void CGfxParser::Step(void)
 		m_State.bDone = true;
 	}
     
-	m_TriangleCount += dc.numTris;
+    if (dc.numTris != 0)
+    {
+        for (int i = 0; i < dc.numTris; i++)
+        {
+            CVec3 v0, v1, v2;
+            // N64VertexToVec3
+            v0 = { (float)dc.tris[i].v0.x * 50 / 0x7FFF, (float)dc.tris[i].v0.y * 50 / 0x7FFF, (float)dc.tris[i].v0.z * 50 / 0x7FFF };
+            v1 = { (float)dc.tris[i].v1.x * 50 / 0x7FFF, (float)dc.tris[i].v1.y * 50 / 0x7FFF, (float)dc.tris[i].v1.z * 50 / 0x7FFF };
+            v2 = { (float)dc.tris[i].v2.x * 50 / 0x7FFF, (float)dc.tris[i].v2.y * 50 / 0x7FFF, (float)dc.tris[i].v2.z * 50 / 0x7FFF };
+            int v0idx = testGeom.AddVertexUnique(v0);
+            int v1idx = testGeom.AddVertexUnique(v1);
+            int v2idx = testGeom.AddVertexUnique(v2);
+            testGeom.AddTriangleRef(v0idx, v1idx, v2idx);
+        }
+
+        m_TriangleCount += dc.numTris;
+    }
 
 	if (dc.dramResource.type != RES_NONE)
 	{

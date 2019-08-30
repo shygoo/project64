@@ -177,6 +177,28 @@ void CTri::RotateZ(CTri *out, float degrees)
 	m_v[2].RotateZ(&out->m_v[2], degrees);
 }
 
+void CTri::YSort(CTri *out)
+{
+    *out = *this;
+    CVec3 t;
+    CVec3 *v = out->m_v;
+
+    if (v[0].m_y > v[2].m_y)
+    {
+        t = v[0]; v[0] = v[2]; v[2] = t;
+    }
+
+    if (v[0].m_y > v[1].m_y)
+    {
+        t = v[0]; v[0] = v[1]; v[1] = t;
+    }
+
+    if (v[1].m_y > v[2].m_y)
+    {
+        t = v[1]; v[1] = v[2]; v[2] = t;
+    }
+}
+
 void CTri::CalculateNormal(CVec3 *out)
 {
     CVec3 lineA, lineB;
@@ -294,12 +316,19 @@ bool CBasicMeshGeometry::GetTriangle(CTri *out, size_t index)
 	out->m_v[0] = m_Vertices[v0];
 	out->m_v[1] = m_Vertices[v1];
 	out->m_v[2] = m_Vertices[v2];
+    out->index = m_TriangleRefs[index].index;
 	return true;
 }
 
 size_t CBasicMeshGeometry::GetNumTriangles(void)
 {
 	return m_TriangleRefs.size();
+}
+
+void CBasicMeshGeometry::Clear(void)
+{
+    m_TriangleRefs.clear();
+    m_Vertices.clear();
 }
 
 /********************/
@@ -309,6 +338,53 @@ bool CScene::AddGeometry(uint32_t dlAddr)
     std::pair<uint32_t, CBasicMeshGeometry> ret;
     CBasicMeshGeometry geom;
     return m_Geometries.insert(std::pair<uint32_t, CBasicMeshGeometry>(dlAddr, geom)).second;
+}
+
+/********************/
+
+CDrawBuffers::CDrawBuffers(int width, int height):
+    m_Width(width),
+    m_Height(height)
+{
+    m_ColorBuffer = new uint32_t[width * height];
+    m_SelectBuffer = new int[width * height];
+    Clear();
+}
+
+CDrawBuffers::~CDrawBuffers(void)
+{
+    delete[] m_ColorBuffer;
+}
+
+void CDrawBuffers::SetPixel(int x, int y, uint32_t color)
+{
+    if (x >= m_Width || x < 0) return;
+    if (y >= m_Height || y < 0) return;
+
+    m_ColorBuffer[y * m_Width + x] = color;
+}
+
+void CDrawBuffers::SetSelect(int x, int y, int key)
+{
+    if (x >= m_Width || x < 0) return;
+    if (y >= m_Height || y < 0) return;
+
+    m_SelectBuffer[y * m_Width + x] = key;
+}
+
+int CDrawBuffers::GetSelect(int x, int y)
+{
+    if (x >= m_Width || x < 0) return -1;
+    if (y >= m_Height || y < 0) return -1;
+
+    return m_SelectBuffer[y * m_Width + x];
+}
+
+void CDrawBuffers::Clear(void)
+{
+    size_t bufferSize = m_Width * m_Height * sizeof(uint32_t);
+    memset(m_ColorBuffer, 0, bufferSize);
+    memset(m_SelectBuffer, 0, bufferSize);
 }
 
 /********************/
@@ -332,18 +408,67 @@ COLORREF Highlight(COLORREF in, int adjust)
     return RGB(r, g, b);
 }
 
-void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
+void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
 {
-    CRect rc;
-    GetWindowRect(hwnd, &rc);
+    CTri tri;
+    _tri->YSort(&tri);
 
-    float width = rc.Width();
-    float height = rc.Height();
+    CVec3 *tv = tri.m_v;
 
-    HDC hdc = GetDC(hwnd);
-    HBITMAP hbm = CreateCompatibleBitmap(hdc, width, height);
-    HDC hdcMem = CreateCompatibleDC(hdc);
-    SelectObject(hdcMem, hbm);
+    double invslope1 = (tv[1].m_x - tv[0].m_x) / (tv[1].m_y - tv[0].m_y);
+    double invslope2 = (tv[2].m_x - tv[0].m_x) / (tv[2].m_y - tv[0].m_y);
+    double invslope3 = (tv[2].m_x - tv[1].m_x) / (tv[2].m_y - tv[1].m_y);
+
+    // top tri, flat bottom
+    if ((int)tv[0].m_y != (int)tv[1].m_y)
+    {
+        double x1 = tv[0].m_x;
+        double x2 = tv[0].m_x;
+
+        for (int y = roundf(tv[0].m_y); y < roundf(tv[1].m_y); y++)
+        {
+            int cx1 = roundf((x1 < x2) ? x1 : x2);
+            int cx2 = roundf((x1 > x2) ? x1 : x2);
+
+            for (int x = cx1; x < cx2; x++)
+            {
+                db->SetPixel(x, y, tri.m_Color);
+                db->SetSelect(x, y, index);
+            }
+
+            x1 += invslope1;
+            x2 += invslope2;
+        }
+    }
+
+    // bottom tri, flat top
+    if ((int)tv[1].m_y != (int)tv[2].m_y)
+    {
+        double x1 = tv[2].m_x;
+        double x2 = tv[2].m_x;
+
+        for (int y = roundf(tv[2].m_y); y >= roundf(tv[1].m_y); y--)
+        {
+            int cx1 = roundf((x1 < x2) ? x1 : x2);
+            int cx2 = roundf((x1 > x2) ? x1 : x2);
+
+            for (int x = cx1; x < cx2; x++)
+            {
+                db->SetPixel(x, y, tri.m_Color);
+                db->SetSelect(x, y, index);
+            }
+
+            x1 -= invslope2;
+            x2 -= invslope3;
+        }
+    }
+}
+
+void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
+{
+    db->Clear();
+    float width = db->m_Width;
+    float height = db->m_Height;
 
 	CProjection projection(0.1f, 1000.0f, 90.0f, height / width);
 	CMtx projMtx;
@@ -351,15 +476,8 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
 
 	float zDistFromCam = 3.0f;
 
-    HRGN hrgn = CreateRectRgn(1, 1, width-1, height-1);
-    CRect fillRc(1, 1, width-1, height-1);
-    HBRUSH hbrBlack = CreateSolidBrush(RGB(0x22, 0x22, 0x22));
-
-    SelectClipRgn(hdcMem, hrgn);
-	FillRect(hdcMem, &fillRc, hbrBlack);
-
-	static float yrot = 0.0f;
-	yrot += 1.0f;
+	static float yrot = 0.0f; // test
+	yrot += 0.1f;
 
     CVec3 cameraPos(0, 0, 0);
 
@@ -370,6 +488,7 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
 	{
 		CTri tri;
 		geom->GetTriangle(&tri, i);
+        tri.index = i;
 
         tri.RotateY(&tri, yrot); // rotate at origin
         tri.Scale(&tri, 1.0f, -1.0f, -1.0f); // flip y and z
@@ -390,7 +509,15 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
         CVec3 lightDirection = { 0.0f, 0.0f, -1.0f };
         float dpLight = normal.DotProduct(&lightDirection);
         float intensity = (dpLight + 1.0f) * (200.0f / 2); // map -1:1 to 0:200
-        tri.m_Color = RGB(intensity, intensity, intensity);
+
+        if (geom->m_TriangleRefs[tri.index].bSelected)
+        {
+            tri.m_Color = RGB(0xFF, 0xFF, 0);
+        }
+        else
+        {
+            tri.m_Color = RGB(intensity, intensity, intensity);
+        }
 
 		tri.Mult(&tri, &projMtx);
 
@@ -400,43 +527,39 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom)
     // zsort
     std::sort(projectedTris.begin(), projectedTris.end(), CompareTriangleDepth);
 
+    //if(0) // debug
     for (size_t i = 0; i < projectedTris.size(); i++)
     {
         CTri tri = projectedTris[i];
-
-        HPEN hPenOutline = CreatePen(PS_SOLID, 1, Highlight(tri.m_Color, -10));
-        HBRUSH hBrushFill = CreateSolidBrush(tri.m_Color);
-        SelectObject(hdcMem, hPenOutline);
-        SelectObject(hdcMem, hBrushFill);
+        CTri triSc = tri;
 
         // map 0:1 to screen center:edge
-        float v0_x = tri.m_v[0].m_x * width + (width / 2);
-        float v0_y = tri.m_v[0].m_y * height + (height / 2);
-        float v1_x = tri.m_v[1].m_x * width + (width / 2);
-        float v1_y = tri.m_v[1].m_y * height + (height / 2);
-        float v2_x = tri.m_v[2].m_x * width + (width / 2);
-        float v2_y = tri.m_v[2].m_y * height + (height / 2);
+        triSc.m_v[0].m_x = tri.m_v[0].m_x * width + (width / 2);
+        triSc.m_v[0].m_y = tri.m_v[0].m_y * height + (height / 2);
+        triSc.m_v[1].m_x = tri.m_v[1].m_x * width + (width / 2);
+        triSc.m_v[1].m_y = tri.m_v[1].m_y * height + (height / 2);
+        triSc.m_v[2].m_x = tri.m_v[2].m_x * width + (width / 2);
+        triSc.m_v[2].m_y = tri.m_v[2].m_y * height + (height / 2);
 
-        BeginPath(hdcMem);
-        MoveToEx(hdcMem, v0_x, v0_y, NULL);
-        LineTo(hdcMem, v1_x, v1_y);
-        LineTo(hdcMem, v2_x, v2_y);
-        LineTo(hdcMem, v0_x, v0_y);
-        EndPath(hdcMem);
-        StrokeAndFillPath(hdcMem);
+        if (triSc.m_v[0].m_x >= width || triSc.m_v[0].m_x <= 0) continue;
+        if (triSc.m_v[1].m_x >= width || triSc.m_v[1].m_x <= 0) continue;
+        if (triSc.m_v[2].m_x >= width || triSc.m_v[2].m_x <= 0) continue;
+        if (triSc.m_v[0].m_y >= width || triSc.m_v[0].m_y <= 0) continue;
+        if (triSc.m_v[1].m_y >= width || triSc.m_v[1].m_y <= 0) continue;
+        if (triSc.m_v[2].m_y >= width || triSc.m_v[2].m_y <= 0) continue;
 
-        SetPixel(hdcMem, v0_x, v0_y, RGB(100, 100, 100));
-        SetPixel(hdcMem, v1_x, v1_y, RGB(100, 100, 100));
-        SetPixel(hdcMem, v2_x, v2_y, RGB(100, 100, 100));
-
-        DeleteObject(hPenOutline);
-        DeleteObject(hBrushFill);
+        RasterTriangle(&triSc, db, tri.index);
     }
+
+    //db->m_ColorBuffer[4000] = 0xFFFFFFFF;
+
+    HDC hdc = GetDC(hwnd);
+    HBITMAP hbm = CreateBitmap(width, height, 1, 32, db->m_ColorBuffer);
+    HDC hdcMem = CreateCompatibleDC(hdc);
+    SelectObject(hdcMem, hbm);
 
     BitBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, SRCCOPY);
     
-    DeleteObject(hrgn);
-	DeleteObject(hbrBlack);
     ReleaseDC(hwnd, hdc);
     DeleteDC(hdcMem);
     DeleteObject(hbm);
