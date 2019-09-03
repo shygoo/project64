@@ -383,7 +383,10 @@ int CDrawBuffers::GetSelect(int x, int y)
 void CDrawBuffers::Clear(void)
 {
     size_t bufferSize = m_Width * m_Height * sizeof(uint32_t);
-    memset(m_ColorBuffer, 0, bufferSize);
+	for (size_t i = 0; i < m_Width * m_Height; i++)
+	{
+		m_ColorBuffer[i] = 0x44444444;
+	}
     memset(m_SelectBuffer, 0, bufferSize);
 }
 
@@ -408,6 +411,46 @@ COLORREF Highlight(COLORREF in, int adjust)
     return RGB(r, g, b);
 }
 
+void RasterRect(CDrawBuffers *db, int x, int y, int w, int h, uint32_t color)
+{
+	for (int cy = y; cy < y + h; cy++)
+	{
+		for (int cx = x; cx < x + w; cx++)
+		{
+			db->SetPixel(cx, cy, color);
+		}
+	}
+}
+
+void RasterLine(CDrawBuffers *db, int x0, int y0, int x1, int y1, uint32_t color)
+{
+	int deltaX = abs(x1 - x0);
+	int deltaY = -abs(y1 - y0);
+	int signX = x0 < x1 ? 1 : -1;
+	int signY = y0 < y1 ? 1 : -1;
+	int error = deltaX + deltaY;
+
+	while (!(x0 == x1 && y0 == y1))
+	{
+		int e2 = 2 * error;
+
+		if (e2 >= deltaY)
+		{
+			error += deltaY;
+			x0 += signX;
+		}
+
+		if (e2 <= deltaX)
+		{
+			error += deltaX;
+			y0 += signY;
+		}
+
+		db->SetPixel(x0, y0, color);
+	}
+}
+
+
 void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
 {
     CTri tri;
@@ -415,22 +458,29 @@ void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
 
     CVec3 *tv = tri.m_v;
 
+	tv[0].m_x = (int)(tv[0].m_x);
+	tv[0].m_y = (int)(tv[0].m_y);
+	tv[1].m_x = (int)(tv[1].m_x);
+	tv[1].m_y = (int)(tv[1].m_y);
+	tv[2].m_x = (int)(tv[2].m_x);
+	tv[2].m_y = (int)(tv[2].m_y);
+
     double invslope1 = (tv[1].m_x - tv[0].m_x) / (tv[1].m_y - tv[0].m_y);
     double invslope2 = (tv[2].m_x - tv[0].m_x) / (tv[2].m_y - tv[0].m_y);
     double invslope3 = (tv[2].m_x - tv[1].m_x) / (tv[2].m_y - tv[1].m_y);
 
     // top tri, flat bottom
-    if ((int)tv[0].m_y != (int)tv[1].m_y)
+    if (tv[0].m_y != tv[1].m_y)
     {
         double x1 = tv[0].m_x;
         double x2 = tv[0].m_x;
 
-        for (int y = roundf(tv[0].m_y); y < roundf(tv[1].m_y); y++)
+        for (int y = tv[0].m_y; y <= tv[1].m_y; y++)
         {
-            int cx1 = roundf((x1 < x2) ? x1 : x2);
-            int cx2 = roundf((x1 > x2) ? x1 : x2);
+            int cx1 = (x1 < x2) ? x1 : x2;
+            int cx2 = (x1 > x2) ? x1 : x2;
 
-            for (int x = cx1; x < cx2; x++)
+            for (int x = cx1; x <= cx2; x++)
             {
                 db->SetPixel(x, y, tri.m_Color);
                 db->SetSelect(x, y, index);
@@ -442,17 +492,17 @@ void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
     }
 
     // bottom tri, flat top
-    if ((int)tv[1].m_y != (int)tv[2].m_y)
+    if (tv[1].m_y != tv[2].m_y)
     {
         double x1 = tv[2].m_x;
         double x2 = tv[2].m_x;
 
-        for (int y = roundf(tv[2].m_y); y >= roundf(tv[1].m_y); y--)
+        for (double y = tv[2].m_y; y >= tv[1].m_y; y--)
         {
-            int cx1 = roundf((x1 < x2) ? x1 : x2);
-            int cx2 = roundf((x1 > x2) ? x1 : x2);
+            int cx1 = (x1 < x2) ? x1 : x2;
+            int cx2 = (x1 > x2) ? x1 : x2;
 
-            for (int x = cx1; x < cx2; x++)
+            for (int x = cx1; x <= cx2; x++)
             {
                 db->SetPixel(x, y, tri.m_Color);
                 db->SetSelect(x, y, index);
@@ -462,6 +512,14 @@ void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
             x2 -= invslope3;
         }
     }
+
+	RasterLine(db, tv[0].m_x, tv[0].m_y, tv[1].m_x, tv[1].m_y, 0x44444444);
+	RasterLine(db, tv[1].m_x, tv[1].m_y, tv[2].m_x, tv[2].m_y, 0x44444444);
+	RasterLine(db, tv[2].m_x, tv[2].m_y, tv[0].m_x, tv[0].m_y, 0x44444444);
+
+	RasterRect(db, tv[0].m_x - 1, tv[0].m_y - 1, 2, 2, 0x22222222);
+	RasterRect(db, tv[1].m_x - 1, tv[1].m_y - 1, 2, 2, 0x22222222);
+	RasterRect(db, tv[2].m_x - 1, tv[2].m_y - 1, 2, 2, 0x22222222);
 }
 
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
@@ -477,7 +535,7 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
 	float zDistFromCam = 3.0f;
 
 	static float yrot = 0.0f; // test
-	yrot += 0.1f;
+	yrot += 0.5f;
 
     CVec3 cameraPos(0, 0, 0);
 
@@ -527,7 +585,6 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
     // zsort
     std::sort(projectedTris.begin(), projectedTris.end(), CompareTriangleDepth);
 
-    //if(0) // debug
     for (size_t i = 0; i < projectedTris.size(); i++)
     {
         CTri tri = projectedTris[i];
@@ -550,8 +607,6 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
 
         RasterTriangle(&triSc, db, tri.index);
     }
-
-    //db->m_ColorBuffer[4000] = 0xFFFFFFFF;
 
     HDC hdc = GetDC(hwnd);
     HBITMAP hbm = CreateBitmap(width, height, 1, 32, db->m_ColorBuffer);
