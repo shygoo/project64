@@ -20,13 +20,15 @@ public:
 	float m_x, m_y, m_z;
 	CVec3(void);
 	CVec3(float x, float y, float z);
-	void Mult(CVec3 *out, CMtx* mtx);
+    void Mult(CVec3 *out, CMtx* mtx);
+    void Mult(CVec3 *out, float val);
 	void Translate(CVec3 *out, float x, float y, float z);
     void Scale(CVec3 *out, float x, float y, float z);
 	void RotateX(CVec3 *out, float degrees);
 	void RotateY(CVec3 *out, float degrees);
 	void RotateZ(CVec3 *out, float degrees);
     void Subtract(CVec3 *in, CVec3 *out);
+    void Add(CVec3 *in, CVec3 *out);
     float DotProduct(CVec3 *otherVec);
     void Normalize(CVec3 *out);
 };
@@ -48,6 +50,18 @@ public:
     void YSort(CTri *out);
     void CalculateNormal(CVec3 *out);
     void Center(CVec3 *out);
+    static bool CompareDepth(CTri& tri1, CTri& tri2);
+};
+
+class CPlane
+{
+public:
+    CPlane();
+    CPlane(float pointX, float pointY, float pointZ, float normalX, float normalY, float normalZ);
+    CVec3 m_Point;
+    CVec3 m_Normal;
+    float DistanceToPoint(CVec3 &point);
+    void Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *point);
 };
 
 class CProjection
@@ -105,7 +119,10 @@ public:
 
 class CDrawBuffers
 {
+private:
+    
 public:
+    CPlane m_ClippingPlanes[4];
     int m_Width, m_Height;
     //uint32_t m_SelectionIdx;
     uint32_t *m_ColorBuffer; // todo
@@ -117,6 +134,9 @@ public:
     void SetSelect(int x, int y, int key);
     int GetSelect(int x, int y);
     void Clear(void);
+    void DrawTriangle(CTri &tri, uint32_t clickIndex);
+    void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
+    
 };
 
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db);

@@ -24,7 +24,6 @@ CVec3::CVec3(float x, float y, float z) :
 
 void CVec3::Mult(CVec3 *out, CMtx* mtx)
 {
-	
 	float x = (m_x * mtx->m_m[0][0]) + (m_y * mtx->m_m[1][0]) + (m_z * mtx->m_m[2][0]) + mtx->m_m[3][0];
 	float y = (m_x * mtx->m_m[0][1]) + (m_y * mtx->m_m[1][1]) + (m_z * mtx->m_m[2][1]) + mtx->m_m[3][1];
 	float z = (m_x * mtx->m_m[0][2]) + (m_y * mtx->m_m[1][2]) + (m_z * mtx->m_m[2][2]) + mtx->m_m[3][2];
@@ -40,6 +39,13 @@ void CVec3::Mult(CVec3 *out, CMtx* mtx)
 		out->m_y /= w;
 		out->m_z /= w;
 	}
+}
+
+void CVec3::Mult(CVec3 *out, float val)
+{
+    out->m_x = m_x * val;
+    out->m_y = m_y * val;
+    out->m_z = m_z * val;
 }
 
 void CVec3::Translate(CVec3 *out, float x, float y, float z)
@@ -118,6 +124,13 @@ void CVec3::Subtract(CVec3 *in, CVec3 *out)
     out->m_x = m_x - in->m_x;
     out->m_y = m_y - in->m_y;
     out->m_z = m_z - in->m_z;
+}
+
+void CVec3::Add(CVec3 *in, CVec3 *out)
+{
+    out->m_x = m_x + in->m_x;
+    out->m_y = m_y + in->m_y;
+    out->m_z = m_z + in->m_z;
 }
 
 void CVec3::Normalize(CVec3 *out)
@@ -221,6 +234,14 @@ void CTri::Center(CVec3 *out)
     out->m_x = x;
     out->m_y = y;
     out->m_z = z;
+}
+
+bool CTri::CompareDepth(CTri& tri1, CTri& tri2)
+{
+    CVec3 c1, c2;
+    tri1.Center(&c1);
+    tri2.Center(&c2);
+    return c1.m_z > c2.m_z;
 }
 
 /********************/
@@ -346,6 +367,16 @@ CDrawBuffers::CDrawBuffers(int width, int height):
     m_Width(width),
     m_Height(height)
 {
+    CPlane topPlane(0, 0, 0, 0, 1, 0);
+    CPlane bottomPlane(0, height - 1, 0, 0, -1, 0);
+    CPlane leftPlane(0, 0, 0, 1, 0, 0);
+    CPlane rightPlane(width - 1, 0, 0, -1, 0, 0);
+
+    m_ClippingPlanes[0] = topPlane;
+    m_ClippingPlanes[1] = bottomPlane;
+    m_ClippingPlanes[2] = leftPlane;
+    m_ClippingPlanes[3] = topPlane;
+
     m_ColorBuffer = new uint32_t[width * height];
     m_SelectBuffer = new int[width * height];
     Clear();
@@ -392,13 +423,19 @@ void CDrawBuffers::Clear(void)
 
 /********************/
 
-bool CompareTriangleDepth(CTri tri1, CTri tri2)
+CPlane::CPlane(float pointX, float pointY, float pointZ, float normalX, float normalY, float normalZ):
+    m_Point(pointX, pointY, pointZ),
+    m_Normal(normalX, normalY, normalZ)
 {
-    CVec3 c1, c2;
-    tri1.Center(&c1);
-    tri2.Center(&c2);
-    return c1.m_z > c2.m_z;
 }
+
+CPlane::CPlane(void) :
+    m_Point(0, 0, 0),
+    m_Normal(0, 0, 0)
+{
+}
+
+/********************/
 
 COLORREF Highlight(COLORREF in, int adjust)
 {
@@ -422,104 +459,214 @@ void RasterRect(CDrawBuffers *db, int x, int y, int w, int h, uint32_t color)
 	}
 }
 
-void RasterLine(CDrawBuffers *db, int x0, int y0, int x1, int y1, uint32_t color)
+float CPlane::DistanceToPoint(CVec3& point)
 {
-	int deltaX = abs(x1 - x0);
-	int deltaY = -abs(y1 - y0);
-	int signX = x0 < x1 ? 1 : -1;
-	int signY = y0 < y1 ? 1 : -1;
-	int error = deltaX + deltaY;
-
-	while (!(x0 == x1 && y0 == y1))
-	{
-		int e2 = 2 * error;
-
-		if (e2 >= deltaY)
-		{
-			error += deltaY;
-			x0 += signX;
-		}
-
-		if (e2 <= deltaX)
-		{
-			error += deltaX;
-			y0 += signY;
-		}
-
-		db->SetPixel(x0, y0, color);
-	}
+    CVec3 pn;
+    m_Normal.Normalize(&pn);
+    return pn.DotProduct(&point) - pn.DotProduct(&m_Point);
 }
 
-
-void RasterTriangle(CTri *_tri, CDrawBuffers *db, uint32_t index)
+void CDrawBuffers::DrawLine(int x0, int y0, int x1, int y1, uint32_t color)
 {
-    CTri tri;
-    _tri->YSort(&tri);
+    int deltaX = abs(x1 - x0);
+    int deltaY = -abs(y1 - y0);
+    int signX = x0 < x1 ? 1 : -1;
+    int signY = y0 < y1 ? 1 : -1;
+    int error = deltaX + deltaY;
 
-    CVec3 *tv = tri.m_v;
-
-	tv[0].m_x = (int)(tv[0].m_x);
-	tv[0].m_y = (int)(tv[0].m_y);
-	tv[1].m_x = (int)(tv[1].m_x);
-	tv[1].m_y = (int)(tv[1].m_y);
-	tv[2].m_x = (int)(tv[2].m_x);
-	tv[2].m_y = (int)(tv[2].m_y);
-
-    double invslope1 = (tv[1].m_x - tv[0].m_x) / (tv[1].m_y - tv[0].m_y);
-    double invslope2 = (tv[2].m_x - tv[0].m_x) / (tv[2].m_y - tv[0].m_y);
-    double invslope3 = (tv[2].m_x - tv[1].m_x) / (tv[2].m_y - tv[1].m_y);
-
-    // top tri, flat bottom
-    if (tv[0].m_y != tv[1].m_y)
+    while (!(x0 == x1 && y0 == y1))
     {
-        double x1 = tv[0].m_x;
-        double x2 = tv[0].m_x;
+        int e2 = 2 * error;
 
-        for (int y = tv[0].m_y; y <= tv[1].m_y; y++)
+        if (e2 >= deltaY)
         {
-            int cx1 = (x1 < x2) ? x1 : x2;
-            int cx2 = (x1 > x2) ? x1 : x2;
+            error += deltaY;
+            x0 += signX;
+        }
 
-            for (int x = cx1; x <= cx2; x++)
+        if (e2 <= deltaX)
+        {
+            error += deltaX;
+            y0 += signY;
+        }
+
+        SetPixel(x0, y0, color);
+    }
+}
+
+void ClipTriangle(CTri *tri, CPlane clippingPlanes[4], std::vector<CTri>& trisDst)
+{
+    std::vector<CTri> outputTris;
+    outputTris.push_back(*tri);
+
+    for (int nPlane = 0; nPlane < 4; nPlane++)
+    {
+        std::vector<CTri> inputTris = outputTris;
+        outputTris.clear();
+
+        for (size_t nTri = 0; nTri < inputTris.size(); nTri++)
+        {
+            std::vector<int> insideIndeces;
+            std::vector<int> outsideIndeces;
+
+            for (int i = 0; i < 3; i++)
             {
-                db->SetPixel(x, y, tri.m_Color);
-                db->SetSelect(x, y, index);
+                float d = clippingPlanes[nPlane].DistanceToPoint(inputTris[nTri].m_v[i]);
+
+                if (d >= 0)
+                {
+                    insideIndeces.push_back(i);
+                }
+                else
+                {
+                    outsideIndeces.push_back(i);
+                }
             }
 
-            x1 += invslope1;
-            x2 += invslope2;
+            if (insideIndeces.size() == 3)
+            {
+                outputTris.push_back(inputTris[nTri]);
+            }
+            if (insideIndeces.size() == 2)
+            {
+                // two new triangles
+                CTri newTriA = *tri, newTriB = *tri;
+                CVec3 intersectA, intersectB;
+
+                CVec3 outsidePoint = inputTris[nTri].m_v[outsideIndeces[0]];
+                CVec3 insidePointA = inputTris[nTri].m_v[insideIndeces[0]];
+                CVec3 insidePointB = inputTris[nTri].m_v[insideIndeces[1]];
+
+                clippingPlanes[nPlane].Intersect(insidePointA, outsidePoint, &intersectA);
+                clippingPlanes[nPlane].Intersect(insidePointB, outsidePoint, &intersectB);
+
+                newTriA.m_v[insideIndeces[0]] = insidePointA;
+                newTriA.m_v[insideIndeces[1]] = intersectA;
+                newTriA.m_v[outsideIndeces[0]] = intersectB;
+
+                newTriB.m_v[insideIndeces[0]] = insidePointA;
+                newTriB.m_v[insideIndeces[1]] = insidePointB;
+                newTriB.m_v[outsideIndeces[0]] = intersectB;
+
+                outputTris.push_back(newTriA);
+                outputTris.push_back(newTriB);
+            }
+            else if (insideIndeces.size() == 1)
+            {
+                // new triangle
+                CTri newTri = *tri;
+                CVec3 intersectA, intersectB;
+
+                CVec3 insidePoint = inputTris[nTri].m_v[insideIndeces[0]];
+                CVec3 outsidePointA = inputTris[nTri].m_v[outsideIndeces[0]];
+                CVec3 outsidePointB = inputTris[nTri].m_v[outsideIndeces[1]];
+
+                clippingPlanes[nPlane].Intersect(insidePoint, outsidePointA, &intersectA);
+                clippingPlanes[nPlane].Intersect(insidePoint, outsidePointB, &intersectB);
+
+                newTri.m_v[insideIndeces[0]] = insidePoint;
+                newTri.m_v[outsideIndeces[0]] = intersectA;
+                newTri.m_v[outsideIndeces[1]] = intersectB;
+
+                outputTris.push_back(newTri);
+            }
         }
     }
 
-    // bottom tri, flat top
-    if (tv[1].m_y != tv[2].m_y)
+    for (size_t i = 0; i < outputTris.size(); i++)
     {
-        double x1 = tv[2].m_x;
-        double x2 = tv[2].m_x;
+        trisDst.push_back(outputTris[i]);
+    }
+}
 
-        for (double y = tv[2].m_y; y >= tv[1].m_y; y--)
+void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
+{
+    std::vector<CTri> clippedTris;
+    ClipTriangle(&tri, m_ClippingPlanes, clippedTris);
+    
+    for (int i = 0; i < clippedTris.size(); i++)
+    {
+        CTri clippedTri;
+        clippedTris[i].YSort(&clippedTri);
+        CVec3 *v = clippedTri.m_v;
+
+        v[0].m_x = (int)(v[0].m_x);
+        v[0].m_y = (int)(v[0].m_y);
+        v[1].m_x = (int)(v[1].m_x);
+        v[1].m_y = (int)(v[1].m_y);
+        v[2].m_x = (int)(v[2].m_x);
+        v[2].m_y = (int)(v[2].m_y);
+
+        double invslope1 = (v[1].m_x - v[0].m_x) / (v[1].m_y - v[0].m_y);
+        double invslope2 = (v[2].m_x - v[0].m_x) / (v[2].m_y - v[0].m_y);
+        double invslope3 = (v[2].m_x - v[1].m_x) / (v[2].m_y - v[1].m_y);
+
+        // top tri, flat bottom
+        if (v[0].m_y != v[1].m_y)
         {
-            int cx1 = (x1 < x2) ? x1 : x2;
-            int cx2 = (x1 > x2) ? x1 : x2;
+            double x1 = v[0].m_x;
+            double x2 = v[0].m_x;
 
-            for (int x = cx1; x <= cx2; x++)
+            for (int y = v[0].m_y; y <= v[1].m_y; y++)
             {
-                db->SetPixel(x, y, tri.m_Color);
-                db->SetSelect(x, y, index);
-            }
+                int cx1 = (x1 < x2) ? x1 : x2;
+                int cx2 = (x1 > x2) ? x1 : x2;
 
-            x1 -= invslope2;
-            x2 -= invslope3;
+                for (int x = cx1; x <= cx2; x++)
+                {
+                    SetPixel(x, y, tri.m_Color);
+                    SetSelect(x, y, clickIndex);
+                }
+
+                x1 += invslope1;
+                x2 += invslope2;
+            }
+        }
+
+        // bottom tri, flat top
+        if (v[1].m_y != v[2].m_y)
+        {
+            double x1 = v[2].m_x;
+            double x2 = v[2].m_x;
+
+            for (double y = v[2].m_y; y >= v[1].m_y; y--)
+            {
+                int cx1 = (x1 < x2) ? x1 : x2;
+                int cx2 = (x1 > x2) ? x1 : x2;
+
+                for (int x = cx1; x <= cx2; x++)
+                {
+                    SetPixel(x, y, tri.m_Color);
+                    SetSelect(x, y, clickIndex);
+                }
+
+                x1 -= invslope2;
+                x2 -= invslope3;
+            }
         }
     }
 
-	RasterLine(db, tv[0].m_x, tv[0].m_y, tv[1].m_x, tv[1].m_y, 0x44444444);
-	RasterLine(db, tv[1].m_x, tv[1].m_y, tv[2].m_x, tv[2].m_y, 0x44444444);
-	RasterLine(db, tv[2].m_x, tv[2].m_y, tv[0].m_x, tv[0].m_y, 0x44444444);
+	//RasterLine(db, tv[0].m_x, tv[0].m_y, tv[1].m_x, tv[1].m_y, 0x44444444);
+	//RasterLine(db, tv[1].m_x, tv[1].m_y, tv[2].m_x, tv[2].m_y, 0x44444444);
+	//RasterLine(db, tv[2].m_x, tv[2].m_y, tv[0].m_x, tv[0].m_y, 0x44444444);
+	//RasterRect(db, tv[0].m_x - 1, tv[0].m_y - 1, 2, 2, 0x22222222);
+	//RasterRect(db, tv[1].m_x - 1, tv[1].m_y - 1, 2, 2, 0x22222222);
+	//RasterRect(db, tv[2].m_x - 1, tv[2].m_y - 1, 2, 2, 0x22222222);
+}
 
-	RasterRect(db, tv[0].m_x - 1, tv[0].m_y - 1, 2, 2, 0x22222222);
-	RasterRect(db, tv[1].m_x - 1, tv[1].m_y - 1, 2, 2, 0x22222222);
-	RasterRect(db, tv[2].m_x - 1, tv[2].m_y - 1, 2, 2, 0x22222222);
+void CPlane::Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *out)
+{
+    CVec3 lineStartToEnd, lineToIntersect;
+
+    float pd = m_Point.DotProduct(&m_Normal);
+    float ad = lineStart.DotProduct(&m_Normal);
+    float bd = lineEnd.DotProduct(&m_Normal);
+    float t = (pd - ad) / (bd - ad);
+
+    lineEnd.Subtract(&lineStart, &lineStartToEnd);
+    lineStartToEnd.Mult(&lineToIntersect, t);
+
+    lineStart.Add(&lineToIntersect, out);
 }
 
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
@@ -529,17 +676,18 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
     float height = db->m_Height;
 
 	CProjection projection(0.1f, 1000.0f, 90.0f, height / width);
-	CMtx projMtx;
-	projection.GetMtx(&projMtx);
+    CMtx projectionMtx;
+    projection.GetMtx(&projectionMtx);
+
+    CVec3 lightDirection = { 0.0f, 0.0f, -1.0f };
+
+    CVec3 cameraPos(0, 0, 0);
+    std::vector<CTri> projectedTris;
 
 	float zDistFromCam = 3.0f;
 
 	static float yrot = 0.0f; // test
 	yrot += 0.5f;
-
-    CVec3 cameraPos(0, 0, 0);
-
-    std::vector<CTri> projectedTris;
 
 	size_t numTris = geom->GetNumTriangles();
 	for (size_t i = 0; i < numTris; i++)
@@ -563,8 +711,7 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
         {
             continue;
         }
-
-        CVec3 lightDirection = { 0.0f, 0.0f, -1.0f };
+        
         float dpLight = normal.DotProduct(&lightDirection);
         float intensity = (dpLight + 1.0f) * (200.0f / 2); // map -1:1 to 0:200
 
@@ -577,35 +724,24 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
             tri.m_Color = RGB(intensity, intensity, intensity);
         }
 
-		tri.Mult(&tri, &projMtx);
+		tri.Mult(&tri, &projectionMtx);
 
         projectedTris.push_back(tri);
 	}
 
-    // zsort
-    std::sort(projectedTris.begin(), projectedTris.end(), CompareTriangleDepth);
+    // zsort projectedTris
+    std::sort(projectedTris.begin(), projectedTris.end(), CTri::CompareDepth);
 
+    // screen-space clip projectedTris to clippedTris
     for (size_t i = 0; i < projectedTris.size(); i++)
     {
-        CTri tri = projectedTris[i];
-        CTri triSc = tri;
+        CTri triSc = projectedTris[i];
 
-        // map 0:1 to screen center:edge
-        triSc.m_v[0].m_x = tri.m_v[0].m_x * width + (width / 2);
-        triSc.m_v[0].m_y = tri.m_v[0].m_y * height + (height / 2);
-        triSc.m_v[1].m_x = tri.m_v[1].m_x * width + (width / 2);
-        triSc.m_v[1].m_y = tri.m_v[1].m_y * height + (height / 2);
-        triSc.m_v[2].m_x = tri.m_v[2].m_x * width + (width / 2);
-        triSc.m_v[2].m_y = tri.m_v[2].m_y * height + (height / 2);
+        // map 0->1 to screen center->screen right edge
+        triSc.Scale(&triSc, width, height, 1);
+        triSc.Translate(&triSc, width/2, height/2, 0);
 
-        if (triSc.m_v[0].m_x >= width || triSc.m_v[0].m_x <= 0) continue;
-        if (triSc.m_v[1].m_x >= width || triSc.m_v[1].m_x <= 0) continue;
-        if (triSc.m_v[2].m_x >= width || triSc.m_v[2].m_x <= 0) continue;
-        if (triSc.m_v[0].m_y >= width || triSc.m_v[0].m_y <= 0) continue;
-        if (triSc.m_v[1].m_y >= width || triSc.m_v[1].m_y <= 0) continue;
-        if (triSc.m_v[2].m_y >= width || triSc.m_v[2].m_y <= 0) continue;
-
-        RasterTriangle(&triSc, db, tri.index);
+        db->DrawTriangle(triSc, triSc.index);
     }
 
     HDC hdc = GetDC(hwnd);
