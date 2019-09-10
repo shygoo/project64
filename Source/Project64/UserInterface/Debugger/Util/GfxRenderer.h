@@ -51,6 +51,7 @@ public:
     void CalculateNormal(CVec3 *out);
     void Center(CVec3 *out);
     static bool CompareDepth(CTri& tri1, CTri& tri2);
+	void Weigh2d(float x, float y, CVec3 *weights);
 };
 
 class CPlane

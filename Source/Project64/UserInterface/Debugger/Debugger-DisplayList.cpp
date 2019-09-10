@@ -74,7 +74,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	ScreenToClient(m_OrgTexPreviewRect);
 	ScreenToClient(m_OrgResInfoRect);
 
-    m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width(), m_OrgTexPreviewRect.Height());
+    m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width()-2, m_OrgTexPreviewRect.Height()-2);
     printf("drawbuffers %d %d\n", m_OrgTexPreviewRect.Width(), m_OrgTexPreviewRect.Height());
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);

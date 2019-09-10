@@ -244,6 +244,33 @@ bool CTri::CompareDepth(CTri& tri1, CTri& tri2)
     return c1.m_z > c2.m_z;
 }
 
+void CTri::Weigh2d(float x, float y, CVec3 *weights)
+{
+	CVec3 *v = m_v;
+
+	float t0 = (v[1].m_y - v[2].m_y);
+	float t1 = (x - v[2].m_x);
+	float t2 = (v[2].m_x - v[1].m_x);
+	float t3 = (y - v[2].m_y);
+	float t4 = (v[0].m_x - v[2].m_x);
+	float t5 = (v[0].m_y - v[2].m_y);
+	float t6 = (v[2].m_y - v[0].m_y);
+
+	float denom = (t0 * t4 + t2 * t5);
+
+	float w1 = (t0 * t1 + t2 * t3) / denom;
+	float w2 = (t6 * t1 + t4 * t3) / denom;
+	float w3 = 1 - w1 - w2;
+
+	if (w1 < 0) w1 = 0;
+	if (w2 < 0) w2 = 0;
+	if (w3 < 0) w3 = 0;
+
+	weights->m_x = w1;
+	weights->m_y = w2;
+	weights->m_z = w3;
+}
+
 /********************/
 
 CProjection::CProjection(float fnear, float ffar, float fov, float aspectRatio) :
@@ -749,7 +776,7 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
     HDC hdcMem = CreateCompatibleDC(hdc);
     SelectObject(hdcMem, hbm);
 
-    BitBlt(hdc, 0, 0, width, height, hdcMem, 0, 0, SRCCOPY);
+    BitBlt(hdc, 1, 1, width, height, hdcMem, 0, 0, SRCCOPY);
     
     ReleaseDC(hwnd, hdc);
     DeleteDC(hdcMem);
