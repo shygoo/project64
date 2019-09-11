@@ -402,7 +402,7 @@ CDrawBuffers::CDrawBuffers(int width, int height):
     m_ClippingPlanes[0] = topPlane;
     m_ClippingPlanes[1] = bottomPlane;
     m_ClippingPlanes[2] = leftPlane;
-    m_ClippingPlanes[3] = topPlane;
+    m_ClippingPlanes[3] = rightPlane;
 
     m_ColorBuffer = new uint32_t[width * height];
     m_SelectBuffer = new int[width * height];
@@ -475,13 +475,13 @@ COLORREF Highlight(COLORREF in, int adjust)
     return RGB(r, g, b);
 }
 
-void RasterRect(CDrawBuffers *db, int x, int y, int w, int h, uint32_t color)
+void CDrawBuffers::FillRect(int x, int y, int w, int h, uint32_t color)
 {
 	for (int cy = y; cy < y + h; cy++)
 	{
 		for (int cx = x; cx < x + w; cx++)
 		{
-			db->SetPixel(cx, cy, color);
+			SetPixel(cx, cy, color);
 		}
 	}
 }
@@ -521,10 +521,10 @@ void CDrawBuffers::DrawLine(int x0, int y0, int x1, int y1, uint32_t color)
     }
 }
 
-void ClipTriangle(CTri *tri, CPlane clippingPlanes[4], std::vector<CTri>& trisDst)
+void CTri::Clip(CPlane clippingPlanes[], int numPlanes, std::vector<CTri>& trisOut)
 {
     std::vector<CTri> outputTris;
-    outputTris.push_back(*tri);
+    outputTris.push_back(*this);
 
     for (int nPlane = 0; nPlane < 4; nPlane++)
     {
@@ -557,7 +557,7 @@ void ClipTriangle(CTri *tri, CPlane clippingPlanes[4], std::vector<CTri>& trisDs
             if (insideIndeces.size() == 2)
             {
                 // two new triangles
-                CTri newTriA = *tri, newTriB = *tri;
+                CTri newTriA = inputTris[nTri], newTriB = inputTris[nTri];
                 CVec3 intersectA, intersectB;
 
                 CVec3 outsidePoint = inputTris[nTri].m_v[outsideIndeces[0]];
@@ -581,7 +581,7 @@ void ClipTriangle(CTri *tri, CPlane clippingPlanes[4], std::vector<CTri>& trisDs
             else if (insideIndeces.size() == 1)
             {
                 // new triangle
-                CTri newTri = *tri;
+                CTri newTri = inputTris[nTri];
                 CVec3 intersectA, intersectB;
 
                 CVec3 insidePoint = inputTris[nTri].m_v[insideIndeces[0]];
@@ -602,14 +602,14 @@ void ClipTriangle(CTri *tri, CPlane clippingPlanes[4], std::vector<CTri>& trisDs
 
     for (size_t i = 0; i < outputTris.size(); i++)
     {
-        trisDst.push_back(outputTris[i]);
+        trisOut.push_back(outputTris[i]);
     }
 }
 
 void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
 {
     std::vector<CTri> clippedTris;
-    ClipTriangle(&tri, m_ClippingPlanes, clippedTris);
+    tri.Clip(m_ClippingPlanes, 4, clippedTris);
     
     for (int i = 0; i < clippedTris.size(); i++)
     {
@@ -676,9 +676,9 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
 	//RasterLine(db, tv[0].m_x, tv[0].m_y, tv[1].m_x, tv[1].m_y, 0x44444444);
 	//RasterLine(db, tv[1].m_x, tv[1].m_y, tv[2].m_x, tv[2].m_y, 0x44444444);
 	//RasterLine(db, tv[2].m_x, tv[2].m_y, tv[0].m_x, tv[0].m_y, 0x44444444);
-	//RasterRect(db, tv[0].m_x - 1, tv[0].m_y - 1, 2, 2, 0x22222222);
-	//RasterRect(db, tv[1].m_x - 1, tv[1].m_y - 1, 2, 2, 0x22222222);
-	//RasterRect(db, tv[2].m_x - 1, tv[2].m_y - 1, 2, 2, 0x22222222);
+	FillRect(tri.m_v[0].m_x - 1, tri.m_v[0].m_y - 1, 2, 2, 0x22222222);
+    FillRect(tri.m_v[1].m_x - 1, tri.m_v[1].m_y - 1, 2, 2, 0x22222222);
+    FillRect(tri.m_v[2].m_x - 1, tri.m_v[2].m_y - 1, 2, 2, 0x22222222);
 }
 
 void CPlane::Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *out)
@@ -706,21 +706,28 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
     CMtx projectionMtx;
     projection.GetMtx(&projectionMtx);
 
+    CPlane nearPlane(0, 0, 0, 0, -1, 0);
+    CPlane farPlane(0, 0, 1000.0f, 0, 0, 1);
+    CPlane nearAndFarPlanes[2] = { farPlane, farPlane };
+
     CVec3 lightDirection = { 0.0f, 0.0f, -1.0f };
 
     CVec3 cameraPos(0, 0, 0);
     std::vector<CTri> projectedTris;
+    std::vector<CTri> clippedTris;
 
 	float zDistFromCam = 3.0f;
 
 	static float yrot = 0.0f; // test
 	yrot += 0.5f;
 
-	size_t numTris = geom->GetNumTriangles();
+    size_t numTris = geom->GetNumTriangles();
+
 	for (size_t i = 0; i < numTris; i++)
 	{
-		CTri tri;
-		geom->GetTriangle(&tri, i);
+        CTri tri;
+        geom->GetTriangle(&tri, i);
+
         tri.index = i;
 
         tri.RotateY(&tri, yrot); // rotate at origin
@@ -744,7 +751,7 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
 
         if (geom->m_TriangleRefs[tri.index].bSelected)
         {
-            tri.m_Color = RGB(0xFF, 0xFF, 0);
+            tri.m_Color = RGB(intensity, intensity, 0);
         }
         else
         {
@@ -752,23 +759,20 @@ void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db)
         }
 
 		tri.Mult(&tri, &projectionMtx);
-
         projectedTris.push_back(tri);
 	}
 
     // zsort projectedTris
     std::sort(projectedTris.begin(), projectedTris.end(), CTri::CompareDepth);
 
-    // screen-space clip projectedTris to clippedTris
+    // generate bitmap
     for (size_t i = 0; i < projectedTris.size(); i++)
     {
-        CTri triSc = projectedTris[i];
-
         // map 0->1 to screen center->screen right edge
-        triSc.Scale(&triSc, width, height, 1);
-        triSc.Translate(&triSc, width/2, height/2, 0);
-
-        db->DrawTriangle(triSc, triSc.index);
+        CTri screenTri = projectedTris[i];
+        screenTri.Scale(&screenTri, width, height, 1);
+        screenTri.Translate(&screenTri, width/2, height/2, 0);
+        db->DrawTriangle(screenTri, screenTri.index);
     }
 
     HDC hdc = GetDC(hwnd);

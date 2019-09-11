@@ -7,6 +7,13 @@
 #define M_PI 3.14159f
 #endif
 
+class CMtx;
+class CVec3;
+class CTri;
+class CPlane;
+class CProjection;
+class CBasicMeshGeometry;
+
 class CMtx
 {
 public:
@@ -52,6 +59,7 @@ public:
     void Center(CVec3 *out);
     static bool CompareDepth(CTri& tri1, CTri& tri2);
 	void Weigh2d(float x, float y, CVec3 *weights);
+    void Clip(CPlane clippingPlanes[], int numPlanes, std::vector<CTri>& trisOut);
 };
 
 class CPlane
@@ -137,7 +145,7 @@ public:
     void Clear(void);
     void DrawTriangle(CTri &tri, uint32_t clickIndex);
     void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
-    
+    void FillRect(int x, int y, int w, int h, uint32_t color);
 };
 
 void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db);
