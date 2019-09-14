@@ -71,6 +71,7 @@ private:
     void    OnTimer(UINT_PTR nIDEvent);
 
     CDrawBuffers *m_DrawBuffers;
+	CCamera m_Camera;
 
 	//LRESULT OnListDblClicked(NMHDR* pNMHDR);
 	//void    OnExitSizeMove(void);

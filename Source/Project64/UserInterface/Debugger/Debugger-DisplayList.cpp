@@ -12,7 +12,8 @@ CDebugDisplayList* CDebugDisplayList::_this = NULL;
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
 	CDebugDialog<CDebugDisplayList>(debugger),
 	m_bRefreshPending(false),
-    m_DrawBuffers(NULL)
+    m_DrawBuffers(NULL),
+	m_Camera(0, 0, -5.0f)
 {
 }
 
@@ -437,8 +438,36 @@ void CDebugDisplayList::OnTimer(UINT_PTR nIDEvent)
 {
     if (nIDEvent == TIMER_ID_DRAW)
     {
-        HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
-        Test_3d(texWnd, &m_GfxParser.testGeom, m_DrawBuffers);
+		CVec3 camForward, camUp, camRight;
+		m_Camera.GetDirections(&camForward, &camUp, &camRight);
+
+		camForward.Multiply(0.25f, &camForward);
+		camRight.Multiply(0.25f, &camRight);
+		//camRight.Multiply(0.25f, &camRight);
+
+		if (GetKeyState('W') & 0x8000) m_Camera.m_Pos.Add(&camForward, &m_Camera.m_Pos);
+		if (GetKeyState('S') & 0x8000) m_Camera.m_Pos.Subtract(&camForward, &m_Camera.m_Pos);
+		if (GetKeyState('D') & 0x8000) m_Camera.m_Pos.Add(&camRight, &m_Camera.m_Pos);
+		if (GetKeyState('A') & 0x8000) m_Camera.m_Pos.Subtract(&camRight, &m_Camera.m_Pos);
+
+		if (GetKeyState(VK_LEFT) & 0x8000) m_Camera.m_Yaw += 3.0f;
+		if (GetKeyState(VK_RIGHT) & 0x8000) m_Camera.m_Yaw -= 3.0f;
+		if (GetKeyState(VK_UP) & 0x8000) m_Camera.m_Pitch += 3.0f;
+		if (GetKeyState(VK_DOWN) & 0x8000) m_Camera.m_Pitch -= 3.0f;
+		
+		m_DrawBuffers->Render(&m_GfxParser.testGeom, &m_Camera);
+
+		HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
+		HDC hdc = ::GetDC(texWnd);
+		HBITMAP hbm = CreateBitmap(m_DrawBuffers->m_Width, m_DrawBuffers->m_Height, 1, 32, m_DrawBuffers->m_ColorBuffer);
+		HDC hdcMem = CreateCompatibleDC(hdc);
+		SelectObject(hdcMem, hbm);
+		BitBlt(hdc, 1, 1, m_DrawBuffers->m_Width, m_DrawBuffers->m_Height, hdcMem, 0, 0, SRCCOPY);
+		::ReleaseDC(texWnd, hdc);
+		DeleteDC(hdcMem);
+		DeleteObject(hbm);
+
+        //Test_3d(texWnd, &m_GfxParser.testGeom, m_DrawBuffers, &m_Camera);
     }
 }
 

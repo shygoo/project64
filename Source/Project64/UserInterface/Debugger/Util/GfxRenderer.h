@@ -27,39 +27,42 @@ public:
 	float m_x, m_y, m_z;
 	CVec3(void);
 	CVec3(float x, float y, float z);
-    void Mult(CVec3 *out, CMtx* mtx);
-    void Mult(CVec3 *out, float val);
-	void Translate(CVec3 *out, float x, float y, float z);
-    void Scale(CVec3 *out, float x, float y, float z);
-	void RotateX(CVec3 *out, float degrees);
-	void RotateY(CVec3 *out, float degrees);
-	void RotateZ(CVec3 *out, float degrees);
-    void Subtract(CVec3 *in, CVec3 *out);
-    void Add(CVec3 *in, CVec3 *out);
+    void Multiply(CMtx* mtx, CVec3 *result);
+    void Multiply(float val, CVec3 *result);
+	void Translate(float x, float y, float z, CVec3 *result);
+    void Scale(float x, float y, float z, CVec3 *result);
+	void RotateX(float degrees, CVec3 *result);
+	void RotateY(float degrees, CVec3 *result);
+	void RotateZ(float degrees, CVec3 *result);
+    void Subtract(CVec3 *otherVec, CVec3 *result);
+    void Add(CVec3 *otherVec, CVec3 *result);
     float DotProduct(CVec3 *otherVec);
-    void Normalize(CVec3 *out);
+	void CrossProduct(CVec3 *otherVec, CVec3 *result);
+    void Normalize(CVec3 *result);
 };
 
 class CTri
 {
 public:
+	
     CTri(void);
 	CVec3 m_v[3];
     COLORREF m_Color;
     bool m_Selected;
     int index;
-	void Mult(CTri *out, CMtx *mtx);
-	void Translate(CTri *out, float x, float y, float z);
-    void Scale(CTri *out, float x, float y, float z);
-	void RotateX(CTri *out, float degrees);
-	void RotateY(CTri *out, float degrees);
-	void RotateZ(CTri *out, float degrees);
-    void YSort(CTri *out);
-    void CalculateNormal(CVec3 *out);
-    void Center(CVec3 *out);
-    static bool CompareDepth(CTri& tri1, CTri& tri2);
+	void Multiply(CMtx *mtx, CTri *result);
+	void Translate(float x, float y, float z, CTri *result);
+    void Scale(float x, float y, float z, CTri *result);
+	void RotateX(float degrees, CTri *result);
+	void RotateY(float degrees, CTri *result);
+	void RotateZ(float degrees, CTri *result);
+    void YSortPoints(CTri *result);
+    void CalculateNormal(CVec3 *result);
+    void Center(CVec3 *result);
 	void Weigh2d(float x, float y, CVec3 *weights);
     void Clip(CPlane clippingPlanes[], int numPlanes, std::vector<CTri>& trisOut);
+
+	static bool ZSortBackToFrontCompare(CTri& tri1, CTri& tri2);
 };
 
 class CPlane
@@ -70,7 +73,7 @@ public:
     CVec3 m_Point;
     CVec3 m_Normal;
     float DistanceToPoint(CVec3 &point);
-    void Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *point);
+    float Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *point);
 };
 
 class CProjection
@@ -84,6 +87,20 @@ public:
 	float m_AspectRatio;
 	CProjection(float fnear, float ffar, float fov, float aspectRatio);
 	void GetMtx(CMtx *out);
+};
+
+class CCamera
+{
+private:
+	CVec3 m_Up;
+	CVec3 m_Right;
+public:
+	CCamera(void);
+	CCamera(float x, float y, float z);
+	CVec3 m_Pos;
+	float m_Yaw, m_Pitch, m_Roll;
+	void GetViewMatrix(CMtx *out);
+	void GetDirections(CVec3 *forward, CVec3 *up, CVec3 *right);
 };
 
 typedef struct
@@ -146,6 +163,5 @@ public:
     void DrawTriangle(CTri &tri, uint32_t clickIndex);
     void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
     void FillRect(int x, int y, int w, int h, uint32_t color);
+	void Render(CBasicMeshGeometry *geom, CCamera *camera);
 };
-
-void Test_3d(HWND hwnd, CBasicMeshGeometry *geom, CDrawBuffers *db);
