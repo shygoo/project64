@@ -8,7 +8,7 @@
 #endif
 
 class CMtx;
-class CVec3;
+class CVec4;
 class CTri;
 class CPlane;
 class CProjection;
@@ -17,112 +17,111 @@ class CBasicMeshGeometry;
 class CMtx
 {
 public:
-	float m_m[4][4];
-	CMtx(void);
+    float m[4][4];
+    CMtx(void);
 };
 
-class CVec3
+class CVec4
 {
 public:
-	float m_x, m_y, m_z;
-	CVec3(void);
-	CVec3(float x, float y, float z);
-    void Multiply(CMtx* mtx, CVec3 *result);
-    void Multiply(float val, CVec3 *result);
-	void Translate(float x, float y, float z, CVec3 *result);
-    void Scale(float x, float y, float z, CVec3 *result);
-	void RotateX(float degrees, CVec3 *result);
-	void RotateY(float degrees, CVec3 *result);
-	void RotateZ(float degrees, CVec3 *result);
-    void Subtract(CVec3 *otherVec, CVec3 *result);
-    void Add(CVec3 *otherVec, CVec3 *result);
-    float DotProduct(CVec3 *otherVec);
-	void CrossProduct(CVec3 *otherVec, CVec3 *result);
-    void Normalize(CVec3 *result);
+    float x, y, z, w;
+    CVec4(void);
+    CVec4(float x, float y, float z, float w = 1.0f);
+    void Multiply(CMtx* mtx, CVec4 *result);
+    void Multiply(CVec4* otherVec, CVec4 *result);
+    void Multiply(float val, CVec4 *result);
+    void Divide(float val, CVec4 *result);
+    void PerspectiveDivide(CVec4 *result);
+    void Translate(float x, float y, float z, CVec4 *result);
+    void Scale(float x, float y, float z, CVec4 *result);
+    void RotateX(float degrees, CVec4 *result);
+    void RotateY(float degrees, CVec4 *result);
+    void RotateZ(float degrees, CVec4 *result);
+    void Subtract(CVec4 *otherVec, CVec4 *result);
+    void Add(CVec4 *otherVec, CVec4 *result);
+    float DotProduct(CVec4 *otherVec);
+    void CrossProduct(CVec4 *otherVec, CVec4 *result);
+    void Normalize(CVec4 *result);
 };
 
 class CTri
 {
 public:
-	
+    CVec4 v[3];
+
     CTri(void);
-	CVec3 m_v[3];
+ 
     COLORREF m_Color;
     bool m_Selected;
-    int index;
-	void Multiply(CMtx *mtx, CTri *result);
-	void Translate(float x, float y, float z, CTri *result);
-    void Scale(float x, float y, float z, CTri *result);
-	void RotateX(float degrees, CTri *result);
-	void RotateY(float degrees, CTri *result);
-	void RotateZ(float degrees, CTri *result);
-    void YSortPoints(CTri *result);
-    void CalculateNormal(CVec3 *result);
-    void Center(CVec3 *result);
-	void Weigh2d(float x, float y, CVec3 *weights);
-    void Clip(CPlane clippingPlanes[], int numPlanes, std::vector<CTri>& trisOut);
+    int m_ClickIndex;
 
-	static bool ZSortBackToFrontCompare(CTri& tri1, CTri& tri2);
+    void Multiply(CMtx *mtx, CTri *result);
+    void Multiply(CVec4 *vec, CTri *result);
+    void PerspectiveDivide(CTri *result);
+    void Translate(float x, float y, float z, CTri *result);
+    void RotateX(float degrees, CTri *result);
+    void RotateY(float degrees, CTri *result);
+    void RotateZ(float degrees, CTri *result);
+    void YSortPoints(CTri *result);
+    void CalculateNormal(CVec4 *result);
+    void Center(CVec4 *result);
+    void Weigh2d(float x, float y, CVec4 *weights);
+    void Clip(std::vector<CPlane>& clippingPlanes, std::vector<CTri>& trisOut);
+
+    static bool ZSortBackToFrontCompare(CTri& tri1, CTri& tri2);
 };
 
 class CPlane
 {
 public:
-    CPlane();
+    CPlane(void);
     CPlane(float pointX, float pointY, float pointZ, float normalX, float normalY, float normalZ);
-    CVec3 m_Point;
-    CVec3 m_Normal;
-    float DistanceToPoint(CVec3 &point);
-    float Intersect(CVec3 lineStart, CVec3 lineEnd, CVec3 *point);
+    CVec4 m_Point, m_Normal;
+    float DistanceToPoint(CVec4 &point);
+    float Intersect(CVec4 lineStart, CVec4 lineEnd, CVec4 *point);
 };
 
 class CProjection
 {
 private:
-	CProjection(void);
+    CProjection(void);
+    float m_Near, m_Far, m_Fov, m_AspectRatio;
+    std::vector<CPlane> m_ClippingPlanes;
 public:
-	float m_Near;
-	float m_Far;
-	float m_Fov;
-	float m_AspectRatio;
-	CProjection(float fnear, float ffar, float fov, float aspectRatio);
-	void GetMtx(CMtx *out);
+    CProjection(float fnear, float ffar, float fov, float aspectRatio);
+    void GetMtx(CMtx *out);
+    std::vector<CPlane>& GetClippingPlanes(void);
 };
 
 class CCamera
 {
-private:
-	CVec3 m_Up;
-	CVec3 m_Right;
 public:
-	CCamera(void);
-	CCamera(float x, float y, float z);
-	CVec3 m_Pos;
-	float m_Yaw, m_Pitch, m_Roll;
-	void GetViewMatrix(CMtx *out);
-	void GetDirections(CVec3 *forward, CVec3 *up, CVec3 *right);
+    CCamera(void);
+    CVec4 m_Pos, m_Rot;
+    void GetViewMatrix(CMtx *out);
+    void GetDirections(CVec4 *forward, CVec4 *up, CVec4 *right);
 };
 
 typedef struct
 {
-	size_t vidx0, vidx1, vidx2;
+    size_t vidx0, vidx1, vidx2;
     bool bSelected;
-    int index;
+    int clickIndex;
 } geom_tri_ref_t;
 
 class CBasicMeshGeometry
 {
 public:
-    std::vector<CVec3> m_Vertices;
+    std::vector<CVec4> m_Vertices;
     std::vector<geom_tri_ref_t> m_TriangleRefs;
-    void AddVertex(CVec3 vertex);
-    size_t AddVertexUnique(CVec3 vertex);
-	void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2);
-	void AddTriangleRef(geom_tri_ref_t triref);
-	void AddVertices(CVec3 vertices[], size_t count);
-	void AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count);
-	size_t GetNumTriangles(void);
-	bool GetTriangle(CTri *out, size_t index);
+    void AddVertex(CVec4 vertex);
+    size_t AddVertexUnique(CVec4 vertex);
+    void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2);
+    void AddTriangleRef(geom_tri_ref_t triref);
+    void AddVertices(CVec4 vertices[], size_t count);
+    void AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count);
+    size_t GetNumTriangles(void);
+    bool GetTriangle(CTri *out, size_t index);
     void Clear(void);
 };
 
@@ -148,12 +147,11 @@ class CDrawBuffers
 private:
     
 public:
-    CPlane m_ClippingPlanes[4];
+    std::vector<CPlane> m_ClippingPlanes;
     int m_Width, m_Height;
-    //uint32_t m_SelectionIdx;
-    uint32_t *m_ColorBuffer; // todo
+    uint32_t *m_ColorBuffer;
     //uint32_t *m_DepthBuffer;
-    int *m_SelectBuffer;
+    int *m_ClickBuffer;
     CDrawBuffers(int width, int height);
     ~CDrawBuffers(void);
     void SetPixel(int x, int y, uint32_t color);
@@ -163,5 +161,5 @@ public:
     void DrawTriangle(CTri &tri, uint32_t clickIndex);
     void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
     void FillRect(int x, int y, int w, int h, uint32_t color);
-	void Render(CBasicMeshGeometry *geom, CCamera *camera);
+    void Render(CBasicMeshGeometry *geom, CCamera *camera);
 };

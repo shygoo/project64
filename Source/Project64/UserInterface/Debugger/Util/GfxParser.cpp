@@ -175,7 +175,7 @@ void CGfxParser::Step(void)
     {
         for (int i = 0; i < dc.numTris; i++)
         {
-            CVec3 v0, v1, v2;
+            CVec4 v0, v1, v2;
             // N64VertexToVec3
             v0 = { (float)dc.tris[i].v0.x * 50 / 0x7FFF, (float)dc.tris[i].v0.y * 50 / 0x7FFF, (float)dc.tris[i].v0.z * 50 / 0x7FFF };
             v1 = { (float)dc.tris[i].v1.x * 50 / 0x7FFF, (float)dc.tris[i].v1.y * 50 / 0x7FFF, (float)dc.tris[i].v1.z * 50 / 0x7FFF };

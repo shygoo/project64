@@ -6,25 +6,25 @@
 #include "Util/GfxRenderer.h"
 
 class CDebugDisplayList :
-	public CDebugDialog<CDebugDisplayList>,
-	public CDialogResize<CDebugDisplayList>,
-	public CToolTipDialog<CDebugDisplayList>
+    public CDebugDialog<CDebugDisplayList>,
+    public CDialogResize<CDebugDisplayList>,
+    public CToolTipDialog<CDebugDisplayList>
 {
 public:
-	enum { IDD = IDD_Debugger_DisplayList };
+    enum { IDD = IDD_Debugger_DisplayList };
     enum { TIMER_ID_DRAW };
-	enum {
-		DisplayListCtrl_Col_VAddr,
-		DisplayListCtrl_Col_SegOffset,
-		DisplayListCtrl_Col_RawCommand,
-		DisplayListCtrl_Col_Command,
-		DisplayListCtrl_Col_Parameters
-	};
+    enum {
+        DisplayListCtrl_Col_VAddr,
+        DisplayListCtrl_Col_SegOffset,
+        DisplayListCtrl_Col_RawCommand,
+        DisplayListCtrl_Col_Command,
+        DisplayListCtrl_Col_Parameters
+    };
 
-	CDebugDisplayList(CDebuggerUI * debugger);
-	virtual ~CDebugDisplayList(void);
+    CDebugDisplayList(CDebuggerUI * debugger);
+    virtual ~CDebugDisplayList(void);
 
-	void Refresh(void);
+    void Refresh(void);
 
 private:
     bool m_bRefreshPending;
@@ -33,14 +33,14 @@ private:
     static HHOOK hWinMessageHook;
     static CDebugDisplayList* _this;
     static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
-	
-	CGfxParser    m_GfxParser;
+    
+    CGfxParser    m_GfxParser;
 
-	CListViewCtrl m_DisplayListCtrl;
+    CListViewCtrl m_DisplayListCtrl;
     CEdit         m_StateTextbox;
-	CStatic       m_StatusText;
-	CTreeViewCtrl m_ResourceTreeCtrl;
-	CImageList    m_TreeImageList;
+    CStatic       m_StatusText;
+    CTreeViewCtrl m_ResourceTreeCtrl;
+    CImageList    m_TreeImageList;
 
     //CScene m_Scene;
     //CBasicMeshGeometry geom; // TEMPORARY
@@ -53,53 +53,53 @@ private:
     HTREEITEM m_hTreeViewports;
     HTREEITEM m_hTreeLights;
 
-	CRect m_OrgTexPreviewRect;
-	CRect m_OrgResInfoRect;
+    CRect m_OrgTexPreviewRect;
+    CRect m_OrgResInfoRect;
     
     void ResetResourceTreeCtrl(void);
-	void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
+    void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
 
-	void PreviewImageResource(dram_resource_t* res);
+    void PreviewImageResource(dram_resource_t* res);
 
-	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-	LRESULT OnDestroy(void);
-	LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
+    LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+    LRESULT OnDestroy(void);
+    LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
     LRESULT OnListItemChanged(NMHDR* pNMHDR);
     LRESULT OnResourceTreeSelChanged(NMHDR* pNMHDR);
-	LRESULT OnCustomDrawList(NMHDR* pNMHDR);
-	LRESULT OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
+    LRESULT OnCustomDrawList(NMHDR* pNMHDR);
+    LRESULT OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
     void    OnTimer(UINT_PTR nIDEvent);
 
     CDrawBuffers *m_DrawBuffers;
-	CCamera m_Camera;
+    CCamera m_Camera;
 
-	//LRESULT OnListDblClicked(NMHDR* pNMHDR);
-	//void    OnExitSizeMove(void);
-	//void ShowRegStates(size_t stateIndex);
-	//void Export(void);
+    //LRESULT OnListDblClicked(NMHDR* pNMHDR);
+    //void    OnExitSizeMove(void);
+    //void ShowRegStates(size_t stateIndex);
+    //void Export(void);
 
-	BEGIN_MSG_MAP_EX(CDebugDisplayList)
-		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-		COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
+    BEGIN_MSG_MAP_EX(CDebugDisplayList)
+        MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+        COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
         NOTIFY_HANDLER_EX(IDC_LST_DLIST, LVN_ITEMCHANGED, OnListItemChanged)
         NOTIFY_HANDLER_EX(IDC_TREE_RESOURCES, TVN_SELCHANGED, OnResourceTreeSelChanged)
-		NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_CUSTOMDRAW, OnCustomDrawList)
-		MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
+        NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_CUSTOMDRAW, OnCustomDrawList)
+        MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
         MSG_WM_TIMER(OnTimer)
         //MESSAGE_HANDLER(WM_MOUSEMOVE(OnMouseMove)
-		//NOTIFY_HANDLER_EX(IDC_CPU_LIST, NM_DBLCLK, OnListDblClicked)
-		//MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
-		CHAIN_MSG_MAP(CDialogResize<CDebugDisplayList>)
-	END_MSG_MAP()
+        //NOTIFY_HANDLER_EX(IDC_CPU_LIST, NM_DBLCLK, OnListDblClicked)
+        //MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
+        CHAIN_MSG_MAP(CDialogResize<CDebugDisplayList>)
+    END_MSG_MAP()
 
-	BEGIN_DLGRESIZE_MAP(CDebugDisplayList)
+    BEGIN_DLGRESIZE_MAP(CDebugDisplayList)
         DLGRESIZE_CONTROL(IDC_LST_DLIST, DLSZ_SIZE_X | DLSZ_SIZE_Y)
         DLGRESIZE_CONTROL(IDC_BTN_REFRESH, DLSZ_MOVE_X)
         DLGRESIZE_CONTROL(IDC_GRP_STATE, DLSZ_SIZE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_EDIT_STATE, DLSZ_SIZE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_GRP_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
         DLGRESIZE_CONTROL(IDC_TREE_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
-		DLGRESIZE_CONTROL(IDC_EDIT_RESINFO, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_EDIT_RESINFO, DLSZ_MOVE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_TEX_PREVIEW, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDC_GRP_GEOMODE, DLSZ_MOVE_Y)
@@ -182,8 +182,8 @@ private:
         DLGRESIZE_CONTROL(IDC_LBL_BLEND, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_LBL_PRIM, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_LBL_ENV, DLSZ_MOVE_Y)
-	END_DLGRESIZE_MAP()
+    END_DLGRESIZE_MAP()
 
-	BEGIN_TOOLTIP_MAP()
-	END_TOOLTIP_MAP()
+    BEGIN_TOOLTIP_MAP()
+    END_TOOLTIP_MAP()
 };
