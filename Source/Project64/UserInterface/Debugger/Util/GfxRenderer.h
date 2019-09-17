@@ -100,6 +100,13 @@ public:
     CVec4 m_Pos, m_Rot;
     void GetViewMatrix(CMtx *out);
     void GetDirections(CVec4 *forward, CVec4 *up, CVec4 *right);
+    void RotateY(float y);
+    void RotateX(float x);
+    void TranslateX(float x);
+    void TranslateY(float y);
+    void TranslateZ(float z);
+    void SetPos(float x, float y, float z);
+    void SetRot(float x, float y, float z);
 };
 
 typedef struct
@@ -107,16 +114,19 @@ typedef struct
     size_t vidx0, vidx1, vidx2;
     bool bSelected;
     int clickIndex;
+    size_t nCommand;
 } geom_tri_ref_t;
 
 class CBasicMeshGeometry
 {
 public:
+    CBasicMeshGeometry(void);
+    int m_SelectedTriIdx;
     std::vector<CVec4> m_Vertices;
     std::vector<geom_tri_ref_t> m_TriangleRefs;
     void AddVertex(CVec4 vertex);
     size_t AddVertexUnique(CVec4 vertex);
-    void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2);
+    void AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2, size_t nCommand);
     void AddTriangleRef(geom_tri_ref_t triref);
     void AddVertices(CVec4 vertices[], size_t count);
     void AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count);
@@ -150,7 +160,7 @@ public:
     std::vector<CPlane> m_ClippingPlanes;
     int m_Width, m_Height;
     uint32_t *m_ColorBuffer;
-    //uint32_t *m_DepthBuffer;
+    float *m_DepthBuffer;
     int *m_ClickBuffer;
     CDrawBuffers(int width, int height);
     ~CDrawBuffers(void);

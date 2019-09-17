@@ -5,16 +5,151 @@
 #include "Util/GfxRenderer.h"
 #include "Util/GfxLabels.h"
 
-HHOOK CDebugDisplayList::hWinMessageHook = NULL;
-CDebugDisplayList* CDebugDisplayList::_this = NULL;
+CRenderView::CRenderView() :
+    m_bRButtonDown(false),
+    m_CursorX(0),
+    m_CursorY(0)
+{
+}
+
+bool CRenderView::KeyDown(int vkey)
+{
+    return m_KeysDown.count(vkey);
+}
+
+bool CRenderView::RButtonDown(void)
+{
+    return m_bRButtonDown;
+}
+
+void CRenderView::RegisterClass()
+{
+    this->GetWndClassInfo().m_wc.lpfnWndProc = m_pfnSuperWindowProc;
+    this->GetWndClassInfo().Register(&m_pfnSuperWindowProc);
+}
+
+void CRenderView::DrawImage(CDrawBuffers *db)
+{
+    HDC hdc = GetDC();
+    HBITMAP hbm = CreateBitmap(db->m_Width, db->m_Height, 1, 32, db->m_ColorBuffer);
+    HDC hdcMem = CreateCompatibleDC(hdc);
+    SelectObject(hdcMem, hbm);
+    BitBlt(hdc, 1, 1, db->m_Width, db->m_Height, hdcMem, 0, 0, SRCCOPY);
+    ReleaseDC(hdc);
+    DeleteDC(hdcMem);
+    DeleteObject(hbm);
+}
+
+LRESULT CRenderView::OnGetDlgCode(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    return DLGC_WANTALLKEYS;
+}
+
+LRESULT CRenderView::OnKeyUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_KeysDown.erase(wParam);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_KeysDown.insert(wParam);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    if (GetFocus() != m_hWnd)
+    {
+        SetFocus();
+    }
+
+    int x, y;
+    x = GET_X_LPARAM(lParam);
+    y = GET_Y_LPARAM(lParam);
+
+    NMRVCLICK rvnm;
+    rvnm.nmh.code = RVN_LCLICK;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = x;
+    rvnm.y = y;
+
+    m_CursorX = x;
+    m_CursorY = y;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    if (GetFocus() != m_hWnd)
+    {
+        SetFocus();
+    }
+
+    NMRVCLICK rvnm;
+    rvnm.nmh.code = RVN_RCLICK;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = GET_X_LPARAM(lParam);
+    rvnm.y = GET_Y_LPARAM(lParam);
+
+    m_bRButtonDown = true;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_bRButtonDown = false;
+    return FALSE;
+}
+
+LRESULT CRenderView::OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    int x, y;
+    x = GET_X_LPARAM(lParam);
+    y = GET_Y_LPARAM(lParam);
+
+    NMRVMOUSEMOVE rvnm;
+    rvnm.nmh.code = RVN_MOUSEMOVE;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = x;
+    rvnm.y = y;
+    rvnm.deltaX = x - m_CursorX;
+    rvnm.deltaY = y - m_CursorY;
+    rvnm.buttons = wParam;
+
+    m_CursorX = x;
+    m_CursorY = y;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
+}
+
+///////////////
+
+//HHOOK CDebugDisplayList::hWinMessageHook = NULL;
+//CDebugDisplayList* CDebugDisplayList::_this = NULL;
 //static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     CDebugDialog<CDebugDisplayList>(debugger),
     m_bRefreshPending(false),
-    m_DrawBuffers(NULL)
+    m_DrawBuffers(NULL),
+    m_RenderView(NULL)
 {
 	m_Camera.m_Pos.z = -5.0f;
+
+    m_RenderView = new CRenderView;
+    m_RenderView->RegisterClass();
 }
 
 CDebugDisplayList::~CDebugDisplayList()
@@ -44,6 +179,14 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     DlgToolTip_Init();
     DlgSavePos_Init(DebuggerUI_DisplayListPos);
 
+    if (m_RenderView == NULL)
+    {
+        m_RenderView = new CRenderView;
+        m_RenderView->RegisterClass();
+    }
+
+    m_RenderView->SubclassWindow(GetDlgItem(IDC_CUSTOM1));
+
     m_DisplayListCtrl.Attach(GetDlgItem(IDC_LST_DLIST));
     m_ResourceTreeCtrl.Attach(GetDlgItem(IDC_TREE_RESOURCES));
     m_StateTextbox.Attach(GetDlgItem(IDC_EDIT_STATE));
@@ -69,7 +212,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     ResetResourceTreeCtrl();
 
-    ::GetWindowRect(GetDlgItem(IDC_TEX_PREVIEW), &m_OrgTexPreviewRect);
+    ::GetWindowRect(GetDlgItem(IDC_CUSTOM1), &m_OrgTexPreviewRect);
     ::GetWindowRect(GetDlgItem(IDC_EDIT_RESINFO), &m_OrgResInfoRect);
 
     ScreenToClient(m_OrgTexPreviewRect);
@@ -80,55 +223,55 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);
 
-    _this = this;
-    m_ThreadId = ::GetCurrentThreadId();
-    hWinMessageHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)HookProc, NULL, m_ThreadId);
+    //_this = this;
+    //m_ThreadId = ::GetCurrentThreadId();
+    //hWinMessageHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)HookProc, NULL, m_ThreadId);
 
     LoadWindowPos();
     WindowCreated();
     return TRUE;
 }
 
-LRESULT CALLBACK CDebugDisplayList::HookProc(int nCode, WPARAM wParam, LPARAM lParam)
-{
-    MSG *pMsg = (MSG*)lParam;
-
-    POINT pointerPos;
-    CRect ctrlRect;
-
-    switch (pMsg->message)
-    {
-    case WM_MOUSEWHEEL:
-        //_this->OnInterceptMouseWheel(pMsg->wParam, pMsg->lParam);
-        break;
-    case WM_LBUTTONDOWN:
-        ::GetCursorPos(&pointerPos);
-        ::GetWindowRect(_this->GetDlgItem(IDC_TEX_PREVIEW), &ctrlRect);
-        if (ctrlRect.PtInRect(pointerPos))
-        {
-            int x = pointerPos.x - ctrlRect.left;
-            int y = pointerPos.y - ctrlRect.top;
-            //_this->m_GfxParser.m
-            int triIndex = _this->m_DrawBuffers->GetSelect(x, y);
-            _this->m_GfxParser.testGeom.m_TriangleRefs[triIndex].bSelected = true;
-            //_this->m_GfxParser.testGeom.GetTriangle()
-            //_this->m_GfxParser.testGeom.m_Vertices[];
-            //printf("%d %d -> %d\n", x, y, );
-        }
-        break;
-    case WM_MOUSEMOVE:
-        {
-        }
-        break;
-    }
-
-    if (nCode < 0)
-    {
-        return CallNextHookEx(hWinMessageHook, nCode, wParam, lParam);
-    }
-
-    return 0;
-}
+//LRESULT CALLBACK CDebugDisplayList::HookProc(int nCode, WPARAM wParam, LPARAM lParam)
+//{
+//    MSG *pMsg = (MSG*)lParam;
+//
+//    POINT pointerPos;
+//    CRect ctrlRect;
+//
+//    switch (pMsg->message)
+//    {
+//    case WM_MOUSEWHEEL:
+//        //_this->OnInterceptMouseWheel(pMsg->wParam, pMsg->lParam);
+//        break;
+//    //case WM_LBUTTONDOWN:
+//    //    ::GetCursorPos(&pointerPos);
+//    //    ::GetWindowRect(_this->GetDlgItem(IDC_CUSTOM1), &ctrlRect);
+//    //    if (ctrlRect.PtInRect(pointerPos))
+//    //    {
+//    //        int x = pointerPos.x - ctrlRect.left;
+//    //        int y = pointerPos.y - ctrlRect.top;
+//    //        //_this->m_GfxParser.m
+//    //        int triIndex = _this->m_DrawBuffers->GetSelect(x, y);
+//    //        _this->m_GfxParser.testGeom.m_TriangleRefs[triIndex].bSelected = true;
+//    //        //_this->m_GfxParser.testGeom.GetTriangle()
+//    //        //_this->m_GfxParser.testGeom.m_Vertices[];
+//    //        //printf("%d %d -> %d\n", x, y, );
+//    //    }
+//    //    break;
+//    case WM_MOUSEMOVE:
+//        {
+//        }
+//        break;
+//    }
+//
+//    if (nCode < 0)
+//    {
+//        return CallNextHookEx(hWinMessageHook, nCode, wParam, lParam);
+//    }
+//
+//    return 0;
+//}
 
 LRESULT CDebugDisplayList::OnDestroy(void)
 {
@@ -434,40 +577,81 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     return FALSE;
 }
 
+LRESULT CDebugDisplayList::OnListDblClicked(NMHDR* pNMHDR)
+{
+    int nItem = m_DisplayListCtrl.GetSelectedIndex();
+    CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
+
+    if (state == NULL)
+    {
+        return FALSE;
+    }
+
+    uint32_t cmdAddress = state->SegmentedToVirtual(state->m_Address);
+    m_Debugger->Debug_ShowMemoryLocation(cmdAddress, true);
+    return FALSE;
+}
+
 void CDebugDisplayList::OnTimer(UINT_PTR nIDEvent)
 {
     if (nIDEvent == TIMER_ID_DRAW)
     {
-        CVec4 camForward, camUp, camRight;
-        m_Camera.GetDirections(&camForward, &camUp, &camRight);
+        if (m_RenderView->KeyDown('W')) m_Camera.TranslateZ(0.25f);
+        if (m_RenderView->KeyDown('S')) m_Camera.TranslateZ(-0.25f);
+        if (m_RenderView->KeyDown('D')) m_Camera.TranslateX(0.25f);
+        if (m_RenderView->KeyDown('A')) m_Camera.TranslateX(-0.25f);
 
-        camForward.Multiply(0.25f, &camForward);
-        camRight.Multiply(0.25f, &camRight);
+        if (m_RenderView->KeyDown(VK_LEFT)) m_Camera.RotateY(4.0f);
+        if (m_RenderView->KeyDown(VK_RIGHT)) m_Camera.RotateY(-4.0f);
+        if (m_RenderView->KeyDown(VK_UP)) m_Camera.RotateX(4.0f);
+        if (m_RenderView->KeyDown(VK_DOWN)) m_Camera.RotateX(-4.0f);
 
-        if (GetKeyState('W') & 0x8000) m_Camera.m_Pos.Add(&camForward, &m_Camera.m_Pos);
-        if (GetKeyState('S') & 0x8000) m_Camera.m_Pos.Subtract(&camForward, &m_Camera.m_Pos);
-        if (GetKeyState('D') & 0x8000) m_Camera.m_Pos.Add(&camRight, &m_Camera.m_Pos);
-        if (GetKeyState('A') & 0x8000) m_Camera.m_Pos.Subtract(&camRight, &m_Camera.m_Pos);
-
-        if (GetKeyState(VK_LEFT) & 0x8000) m_Camera.m_Rot.y = fmod(m_Camera.m_Rot.y + 3.0f, 360.0f);
-        if (GetKeyState(VK_RIGHT) & 0x8000) m_Camera.m_Rot.y = fmod(m_Camera.m_Rot.y - 3.0f, 360.0f);
-        if (GetKeyState(VK_UP) & 0x8000) m_Camera.m_Rot.x += 3.0f;
-        if (GetKeyState(VK_DOWN) & 0x8000) m_Camera.m_Rot.x -= 3.0f;
+        if (m_RenderView->KeyDown(VK_SPACE))
+        {
+            m_Camera.SetPos(0, 0, -5.0f);
+            m_Camera.SetRot(0, 0, 0);
+        }
         
         m_DrawBuffers->Render(&m_GfxParser.testGeom, &m_Camera);
-
-        HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
-        HDC hdc = ::GetDC(texWnd);
-        HBITMAP hbm = CreateBitmap(m_DrawBuffers->m_Width, m_DrawBuffers->m_Height, 1, 32, m_DrawBuffers->m_ColorBuffer);
-        HDC hdcMem = CreateCompatibleDC(hdc);
-        SelectObject(hdcMem, hbm);
-        BitBlt(hdc, 1, 1, m_DrawBuffers->m_Width, m_DrawBuffers->m_Height, hdcMem, 0, 0, SRCCOPY);
-        ::ReleaseDC(texWnd, hdc);
-        DeleteDC(hdcMem);
-        DeleteObject(hbm);
-
-        //Test_3d(texWnd, &m_GfxParser.testGeom, m_DrawBuffers, &m_Camera);
+        m_RenderView->DrawImage(m_DrawBuffers);
     }
+}
+
+LRESULT CDebugDisplayList::OnRenderViewClicked(NMHDR* pNMHDR)
+{
+    NMRVCLICK *pnmrv = (NMRVCLICK*)pNMHDR;
+
+    int clickIndex = m_DrawBuffers->GetSelect(pnmrv->x, pnmrv->y);
+
+    if (clickIndex == -1)
+    {
+        return FALSE;
+    }
+
+    geom_tri_ref_t *triangle = &m_GfxParser.testGeom.m_TriangleRefs[clickIndex];
+    m_GfxParser.testGeom.m_SelectedTriIdx = clickIndex;
+
+    m_DisplayListCtrl.SelectItem(triangle->nCommand);
+    //m_DisplayListCtrl.SetFocus();
+    return FALSE;
+}
+
+LRESULT CDebugDisplayList::OnRenderViewMouseMove(NMHDR* pNMHDR)
+{
+    NMRVMOUSEMOVE *pnmrv = (NMRVMOUSEMOVE*)pNMHDR;
+
+    if (pnmrv->buttons & MK_MBUTTON)
+    {
+        m_Camera.TranslateX(-0.05f * pnmrv->deltaX);
+        m_Camera.TranslateY(-0.05f * pnmrv->deltaY);
+    }
+    else if (pnmrv->buttons & MK_RBUTTON)
+    {
+        m_Camera.RotateX(-1.0f * pnmrv->deltaY);
+        m_Camera.RotateY(-1.0f * pnmrv->deltaX);
+    }
+
+    return FALSE;
 }
 
 LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
@@ -495,14 +679,14 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
 
     if (res->type == RES_TEXTURE || res->type == RES_DL)
     {
-        ::ShowWindow(GetDlgItem(IDC_TEX_PREVIEW), SW_SHOW);
+        ::ShowWindow(GetDlgItem(IDC_CUSTOM1), SW_SHOW);
         ::MoveWindow(GetDlgItem(IDC_EDIT_RESINFO),
             resInfoRc.left, resInfoRc.top,
             resInfoRc.Width(), resInfoRc.Height(), TRUE);
     }
     else
     {
-        ::ShowWindow(GetDlgItem(IDC_TEX_PREVIEW), SW_HIDE);
+        ::ShowWindow(GetDlgItem(IDC_CUSTOM1), SW_HIDE);
         ::MoveWindow(GetDlgItem(IDC_EDIT_RESINFO),
             texPrevRc.left, texPrevRc.top,
             texPrevRc.Width(), texPrevRc.Height(), TRUE);
@@ -600,7 +784,7 @@ void CDebugDisplayList::PreviewImageResource(dram_resource_t* res)
     // handle proper repainting etc
     // should decode images in gfxparser
 
-    HWND texWnd = GetDlgItem(IDC_TEX_PREVIEW);
+    HWND texWnd = GetDlgItem(IDC_CUSTOM1);
     HDC hDC = ::GetDC(texWnd);
 
     int width = (res->imageWidth != 0) ? res->imageWidth : 32;

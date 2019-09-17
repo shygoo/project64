@@ -108,6 +108,7 @@ typedef struct
 class CHleGfxState
 {
 public:
+    uint32_t m_nCommand;
 	uint32_t m_Address;
 	dl_cmd_t m_Command;
 

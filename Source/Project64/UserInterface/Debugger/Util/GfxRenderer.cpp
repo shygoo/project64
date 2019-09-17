@@ -448,25 +448,83 @@ CCamera::CCamera(void) :
 {
 }
 
+void CCamera::RotateY(float y)
+{
+    m_Rot.y = fmod(m_Rot.y + y, 360.0f);
+}
+
+void CCamera::RotateX(float x)
+{
+    m_Rot.x += x;
+
+    if (m_Rot.x > 90.0f) m_Rot.x = 90.0f;
+    if (m_Rot.x < -90.0f) m_Rot.x = -90.0f;
+}
+
+void CCamera::TranslateX(float x)
+{
+    CVec4 right;
+    GetDirections(NULL, NULL, &right);
+    right.Multiply(x, &right);
+    m_Pos.Add(&right, &m_Pos);
+}
+
+void CCamera::TranslateY(float y)
+{
+    CVec4 up;
+    GetDirections(NULL, &up, NULL);
+    up.Multiply(y, &up);
+    m_Pos.Add(&up, &m_Pos);
+}
+
+void CCamera::TranslateZ(float z)
+{
+    CVec4 forward;
+    GetDirections(&forward, NULL, NULL);
+    forward.Multiply(z, &forward);
+    m_Pos.Add(&forward, &m_Pos);
+}
+
+void CCamera::SetPos(float x, float y, float z)
+{
+    m_Pos = {x, y, z};
+}
+
+void CCamera::SetRot(float x, float y, float z)
+{
+    m_Rot = { x, y, z };
+}
+
 void CCamera::GetDirections(CVec4 *_forward, CVec4 *_up, CVec4 *_right)
 {
     CVec4 forward(0, 0, 1);
     CVec4 up(0, 1, 0);
     CVec4 right;
 
-    forward.RotateY(m_Rot.y, &forward);
     forward.RotateX(m_Rot.x, &forward);
+    forward.RotateY(m_Rot.y, &forward);
     forward.RotateZ(m_Rot.z, &forward);
+
+    if (_forward != NULL)
+    {
+        forward.Normalize(_forward);
+    }
 
     CVec4 a;
     forward.Multiply(up.DotProduct(&forward), &a);
     up.Subtract(&a, &up);
 
+    if (_up != NULL)
+    {
+        up.Normalize(_up);
+    }
+
     up.CrossProduct(&forward, &right);
 
-    *_forward = forward;
-    *_up = up;
-    *_right = right;
+    if (_right != NULL)
+    {
+        right.Normalize(_right);
+    }
 }
 
 void CCamera::GetViewMatrix(CMtx *out)
@@ -497,6 +555,11 @@ void CCamera::GetViewMatrix(CMtx *out)
 
 /********************/
 
+CBasicMeshGeometry::CBasicMeshGeometry(void):
+    m_SelectedTriIdx(-1)
+{
+}
+
 void CBasicMeshGeometry::AddVertex(CVec4 vertex)
 {
     m_Vertices.push_back(vertex);
@@ -524,9 +587,9 @@ void CBasicMeshGeometry::AddTriangleRef(geom_tri_ref_t triref)
     m_TriangleRefs.push_back(triref);
 }
 
-void CBasicMeshGeometry::AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2)
+void CBasicMeshGeometry::AddTriangleRef(size_t vidx0, size_t vidx1, size_t vidx2, size_t nCommand)
 {
-    AddTriangleRef({ vidx0, vidx1, vidx2 });
+    AddTriangleRef({ vidx0, vidx1, vidx2, false, 0, nCommand });
 }
 
 void CBasicMeshGeometry::AddTriangleRefs(geom_tri_ref_t trirefs[], size_t count)
@@ -580,6 +643,7 @@ void CBasicMeshGeometry::Clear(void)
 {
     m_TriangleRefs.clear();
     m_Vertices.clear();
+    m_SelectedTriIdx = -1;
 }
 
 /********************/
@@ -604,12 +668,15 @@ CDrawBuffers::CDrawBuffers(int width, int height):
 
     m_ColorBuffer = new uint32_t[width * height];
     m_ClickBuffer = new int[width * height];
+    m_DepthBuffer = new float[width * height];
     Clear();
 }
 
 CDrawBuffers::~CDrawBuffers(void)
 {
     delete[] m_ColorBuffer;
+    delete[] m_ClickBuffer;
+    delete[] m_DepthBuffer;
 }
 
 void CDrawBuffers::SetPixel(int x, int y, uint32_t color)
@@ -643,7 +710,14 @@ void CDrawBuffers::Clear(void)
     {
         m_ColorBuffer[i] = 0x44444444;
     }
+
+    for (size_t i = 0; i < m_Width * m_Height; i++)
+    {
+        m_DepthBuffer[i] = INFINITY;
+    }
+
     memset(m_ClickBuffer, 0, bufferSize);
+    //memset(m_DepthBuffer, 0, bufferSize);
 }
 
 void CDrawBuffers::FillRect(int x, int y, int w, int h, uint32_t color)
@@ -707,6 +781,8 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         double invslope2 = (v[2].x - v[0].x) / (v[2].y - v[0].y);
         double invslope3 = (v[2].x - v[1].x) / (v[2].y - v[1].y);
 
+        //printf("%f %f %f\n", v[0].w, v[1].w, v[2].w);
+
         // top tri, flat bottom
         if (v[0].y != v[1].y)
         {
@@ -735,7 +811,7 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
             double x1 = v[2].x;
             double x2 = v[2].x;
 
-            for (double y = v[2].y; y >= v[1].y; y--)
+            for (int y = v[2].y; y >= v[1].y; y--)
             {
                 int cx1 = (x1 < x2) ? x1 : x2;
                 int cx2 = (x1 > x2) ? x1 : x2;
@@ -752,12 +828,12 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         }
     }
 
-    //DrawLine(tri.v[0].x, tri.v[0].y, tri.v[1].x, tri.v[1].y, 0x44444444);
-    //DrawLine(tri.v[1].x, tri.v[1].y, tri.v[2].x, tri.v[2].y, 0x44444444);
-    //DrawLine(tri.v[1].x, tri.v[2].y, tri.v[0].x, tri.v[0].y, 0x44444444);
-    //FillRect(tri.v[0].x - 1, tri.v[0].y - 1, 2, 2, 0x22222222);
-    //FillRect(tri.v[1].x - 1, tri.v[1].y - 1, 2, 2, 0x22222222);
-    //FillRect(tri.v[2].x - 1, tri.v[2].y - 1, 2, 2, 0x22222222);
+    DrawLine(tri.v[0].x, tri.v[0].y, tri.v[1].x, tri.v[1].y, 0x44444444);
+    DrawLine(tri.v[1].x, tri.v[1].y, tri.v[2].x, tri.v[2].y, 0x44444444);
+    DrawLine(tri.v[1].x, tri.v[2].y, tri.v[0].x, tri.v[0].y, 0x44444444);
+    FillRect(tri.v[0].x - 1, tri.v[0].y - 1, 2, 2, 0x22222222);
+    FillRect(tri.v[1].x - 1, tri.v[1].y - 1, 2, 2, 0x22222222);
+    FillRect(tri.v[2].x - 1, tri.v[2].y - 1, 2, 2, 0x22222222);
 }
 
 /********************/
@@ -797,22 +873,32 @@ void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
         CVec4 temp;
         tri.v[0].Subtract(&camera->m_Pos, &temp);
         float d = triNormal.DotProduct(&temp);
+        bool bBackface = d > 0.0f;
 
-        if (d > 0.0f) // cull backface
-        {
-            continue;
-        }
-        
         float dpLight = -triNormal.DotProduct(&lightDirection);
         uint8_t intensity = (dpLight + 1.0f) * (200.0f / 2); // map -1:1 to 0:200
 
-        if (geom->m_TriangleRefs[tri.m_ClickIndex].bSelected)
+        if (bBackface)
         {
+            intensity = 200 - intensity;
+        }
+
+        if (tri.m_ClickIndex == geom->m_SelectedTriIdx)
+        {
+            // highlight selected triangle in yellow
             tri.m_Color = (intensity << 16) | (intensity << 8) | 0;
         }
         else
         {
-            tri.m_Color = (intensity << 16) | (intensity << 8) | intensity;
+            if (d > 0.0f) // backface
+            {
+                tri.m_Color = ((intensity/2) << 16) | (intensity << 8) | intensity;
+            }
+            else
+            {
+                tri.m_Color = (intensity << 16) | (intensity << 8) | intensity;
+            }
+            
         }
 
         tri.Multiply(&viewMtx, &tri);

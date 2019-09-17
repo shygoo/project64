@@ -183,7 +183,7 @@ void CGfxParser::Step(void)
             int v0idx = testGeom.AddVertexUnique(v0);
             int v1idx = testGeom.AddVertexUnique(v1);
             int v2idx = testGeom.AddVertexUnique(v2);
-            testGeom.AddTriangleRef(v0idx, v1idx, v2idx);
+            testGeom.AddTriangleRef(v0idx, v1idx, v2idx, m_CommandLog.size());
         }
 
         m_TriangleCount += dc.numTris;

@@ -5,6 +5,64 @@
 #include "Util/GfxParser.h"
 #include "Util/GfxRenderer.h"
 
+enum
+{
+    RVN_LCLICK,
+    RVN_RCLICK,
+    RVN_MOUSEMOVE
+};
+
+typedef struct
+{
+    NMHDR nmh;
+    int x, y;
+} NMRVCLICK;
+
+typedef struct
+{
+    NMHDR nmh;
+    int x, y;
+    int deltaX, deltaY;
+    WORD buttons;
+} NMRVMOUSEMOVE;
+
+class CRenderView :
+    public CWindowImpl<CRenderView>
+{
+private:
+    std::set<int> m_KeysDown;
+    bool m_bRButtonDown;
+    int m_CursorX;
+    int m_CursorY;
+public:
+    CRenderView(void);
+
+    DECLARE_WND_CLASS(_T("RenderView"))
+    void RegisterClass();
+    
+    LRESULT OnGetDlgCode(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnKeyUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+    void DrawImage(CDrawBuffers *db);
+    bool KeyDown(int vkey);
+    bool RButtonDown(void);
+    
+    BEGIN_MSG_MAP(CRenderView)
+        MESSAGE_HANDLER(WM_GETDLGCODE, OnGetDlgCode)
+        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
+        MESSAGE_HANDLER(WM_KEYUP, OnKeyUp)
+        MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown)
+        MESSAGE_HANDLER(WM_RBUTTONDOWN, OnRButtonDown)
+        MESSAGE_HANDLER(WM_RBUTTONUP, OnRButtonUp)
+        MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
+    END_MSG_MAP()
+};
+
 class CDebugDisplayList :
     public CDebugDialog<CDebugDisplayList>,
     public CDialogResize<CDebugDisplayList>,
@@ -29,13 +87,14 @@ public:
 private:
     bool m_bRefreshPending;
 
-    DWORD m_ThreadId;
-    static HHOOK hWinMessageHook;
-    static CDebugDisplayList* _this;
-    static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
+    //DWORD m_ThreadId;
+    //static HHOOK hWinMessageHook;
+    //static CDebugDisplayList* _this;
+    //static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
     
     CGfxParser    m_GfxParser;
 
+    CRenderView*  m_RenderView;
     CListViewCtrl m_DisplayListCtrl;
     CEdit         m_StateTextbox;
     CStatic       m_StatusText;
@@ -65,10 +124,14 @@ private:
     LRESULT OnDestroy(void);
     LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
     LRESULT OnListItemChanged(NMHDR* pNMHDR);
+    LRESULT OnListDblClicked(NMHDR* pNMHDR);
     LRESULT OnResourceTreeSelChanged(NMHDR* pNMHDR);
     LRESULT OnCustomDrawList(NMHDR* pNMHDR);
     LRESULT OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/);
     void    OnTimer(UINT_PTR nIDEvent);
+
+    LRESULT OnRenderViewClicked(NMHDR* pNMHDR);
+    LRESULT OnRenderViewMouseMove(NMHDR* pNMHDR);
 
     CDrawBuffers *m_DrawBuffers;
     CCamera m_Camera;
@@ -82,12 +145,15 @@ private:
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
         NOTIFY_HANDLER_EX(IDC_LST_DLIST, LVN_ITEMCHANGED, OnListItemChanged)
+        NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_DBLCLK, OnListDblClicked)
         NOTIFY_HANDLER_EX(IDC_TREE_RESOURCES, TVN_SELCHANGED, OnResourceTreeSelChanged)
         NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_CUSTOMDRAW, OnCustomDrawList)
         MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
         MSG_WM_TIMER(OnTimer)
-        //MESSAGE_HANDLER(WM_MOUSEMOVE(OnMouseMove)
-        //NOTIFY_HANDLER_EX(IDC_CPU_LIST, NM_DBLCLK, OnListDblClicked)
+
+        NOTIFY_HANDLER_EX(IDC_CUSTOM1, RVN_LCLICK, OnRenderViewClicked)
+        NOTIFY_HANDLER_EX(IDC_CUSTOM1, RVN_MOUSEMOVE, OnRenderViewMouseMove)
+
         //MSG_WM_EXITSIZEMOVE(OnExitSizeMove)
         CHAIN_MSG_MAP(CDialogResize<CDebugDisplayList>)
     END_MSG_MAP()
