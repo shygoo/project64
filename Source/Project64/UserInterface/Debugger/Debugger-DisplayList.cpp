@@ -219,59 +219,13 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     ScreenToClient(m_OrgResInfoRect);
 
     m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width()-2, m_OrgTexPreviewRect.Height()-2);
-    printf("drawbuffers %d %d\n", m_OrgTexPreviewRect.Width(), m_OrgTexPreviewRect.Height());
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);
-
-    //_this = this;
-    //m_ThreadId = ::GetCurrentThreadId();
-    //hWinMessageHook = SetWindowsHookEx(WH_GETMESSAGE, (HOOKPROC)HookProc, NULL, m_ThreadId);
 
     LoadWindowPos();
     WindowCreated();
     return TRUE;
 }
-
-//LRESULT CALLBACK CDebugDisplayList::HookProc(int nCode, WPARAM wParam, LPARAM lParam)
-//{
-//    MSG *pMsg = (MSG*)lParam;
-//
-//    POINT pointerPos;
-//    CRect ctrlRect;
-//
-//    switch (pMsg->message)
-//    {
-//    case WM_MOUSEWHEEL:
-//        //_this->OnInterceptMouseWheel(pMsg->wParam, pMsg->lParam);
-//        break;
-//    //case WM_LBUTTONDOWN:
-//    //    ::GetCursorPos(&pointerPos);
-//    //    ::GetWindowRect(_this->GetDlgItem(IDC_CUSTOM1), &ctrlRect);
-//    //    if (ctrlRect.PtInRect(pointerPos))
-//    //    {
-//    //        int x = pointerPos.x - ctrlRect.left;
-//    //        int y = pointerPos.y - ctrlRect.top;
-//    //        //_this->m_GfxParser.m
-//    //        int triIndex = _this->m_DrawBuffers->GetSelect(x, y);
-//    //        _this->m_GfxParser.testGeom.m_TriangleRefs[triIndex].bSelected = true;
-//    //        //_this->m_GfxParser.testGeom.GetTriangle()
-//    //        //_this->m_GfxParser.testGeom.m_Vertices[];
-//    //        //printf("%d %d -> %d\n", x, y, );
-//    //    }
-//    //    break;
-//    case WM_MOUSEMOVE:
-//        {
-//        }
-//        break;
-//    }
-//
-//    if (nCode < 0)
-//    {
-//        return CallNextHookEx(hWinMessageHook, nCode, wParam, lParam);
-//    }
-//
-//    return 0;
-//}
 
 LRESULT CDebugDisplayList::OnDestroy(void)
 {

@@ -294,14 +294,6 @@ void CTri::Center(CVec4 *out)
     out->z = z;
 }
 
-bool CTri::ZSortBackToFrontCompare(CTri& tri1, CTri& tri2)
-{
-    CVec4 c1, c2;
-    tri1.Center(&c1);
-    tri2.Center(&c2);
-    return c1.z > c2.z;
-}
-
 void CTri::Weigh2d(float x, float y, CVec4 *weights)
 {
     float t0 = (v[1].y - v[2].y);
@@ -667,7 +659,7 @@ CDrawBuffers::CDrawBuffers(int width, int height):
     m_ClippingPlanes.push_back({ (float)width - 1, 0, 0, -1, 0, 0 }); // right
 
     m_ColorBuffer = new uint32_t[width * height];
-    m_ClickBuffer = new int[width * height];
+    m_SelectBuffer = new int[width * height];
     m_DepthBuffer = new float[width * height];
     Clear();
 }
@@ -675,32 +667,48 @@ CDrawBuffers::CDrawBuffers(int width, int height):
 CDrawBuffers::~CDrawBuffers(void)
 {
     delete[] m_ColorBuffer;
-    delete[] m_ClickBuffer;
+    delete[] m_SelectBuffer;
     delete[] m_DepthBuffer;
 }
 
-void CDrawBuffers::SetPixel(int x, int y, uint32_t color)
+bool CDrawBuffers::Inside(int x, int y)
 {
-    if (x >= m_Width || x < 0) return;
-    if (y >= m_Height || y < 0) return;
+    return (x > 0 && x < m_Width && y > 0 && y < m_Height);
+}
 
-    m_ColorBuffer[y * m_Width + x] = color;
+int CDrawBuffers::Index(int x, int y)
+{
+    return (y * m_Width + x);
+}
+
+void CDrawBuffers::SetColor(int x, int y, uint32_t color)
+{
+    if (!Inside(x, y)) return;
+    m_ColorBuffer[Index(x, y)] = color;
 }
 
 void CDrawBuffers::SetSelect(int x, int y, int key)
 {
-    if (x >= m_Width || x < 0) return;
-    if (y >= m_Height || y < 0) return;
-
-    m_ClickBuffer[y * m_Width + x] = key;
+    if (!Inside(x, y)) return;
+    m_SelectBuffer[Index(x, y)] = key;
 }
 
 int CDrawBuffers::GetSelect(int x, int y)
 {
-    if (x >= m_Width || x < 0) return -1;
-    if (y >= m_Height || y < 0) return -1;
+    if (!Inside(x, y)) return -1;
+    return m_SelectBuffer[Index(x, y)];
+}
 
-    return m_ClickBuffer[y * m_Width + x];
+float CDrawBuffers::GetDepth(int x, int y)
+{
+    if (!Inside(x, y)) return -1;
+    return m_DepthBuffer[Index(x, y)];
+}
+
+void CDrawBuffers::SetDepth(int x, int y, float w)
+{
+    if (!Inside(x, y)) return;
+    m_DepthBuffer[Index(x, y)] = w;
 }
 
 void CDrawBuffers::Clear(void)
@@ -716,8 +724,12 @@ void CDrawBuffers::Clear(void)
         m_DepthBuffer[i] = INFINITY;
     }
 
-    memset(m_ClickBuffer, 0, bufferSize);
-    //memset(m_DepthBuffer, 0, bufferSize);
+    memset(m_SelectBuffer, 0, bufferSize);
+}
+
+uint32_t CDrawBuffers::Color(uint8_t r, uint8_t g, uint8_t b)
+{
+    return (r << 16) | (g << 8) | b;
 }
 
 void CDrawBuffers::FillRect(int x, int y, int w, int h, uint32_t color)
@@ -726,36 +738,39 @@ void CDrawBuffers::FillRect(int x, int y, int w, int h, uint32_t color)
     {
         for (int cx = x; cx < x + w; cx++)
         {
-            SetPixel(cx, cy, color);
+            SetColor(cx, cy, color);
         }
     }
 }
 
-void CDrawBuffers::DrawLine(int x0, int y0, int x1, int y1, uint32_t color)
+void CDrawBuffers::DrawLine(CVec4& p0, CVec4& p1, uint32_t color)
 {
-    int deltaX = abs(x1 - x0);
-    int deltaY = -abs(y1 - y0);
-    int signX = x0 < x1 ? 1 : -1;
-    int signY = y0 < y1 ? 1 : -1;
+    int deltaX = abs((int)p1.x - (int)p0.x);
+    int deltaY = -abs((int)p1.y - (int)p0.y);
+    int signX = (int)p0.x < (int)p1.x ? 1 : -1;
+    int signY = (int)p0.y < (int)p1.y ? 1 : -1;
     int error = deltaX + deltaY;
 
-    while (!(x0 == x1 && y0 == y1))
+    int x = (int)p0.x;
+    int y = (int)p0.y;
+
+    while (!(x == (int)p1.x && y == (int)p1.y))
     {
         int e2 = 2 * error;
 
         if (e2 >= deltaY)
         {
             error += deltaY;
-            x0 += signX;
+            x += signX;
         }
 
         if (e2 <= deltaX)
         {
             error += deltaX;
-            y0 += signY;
+            y += signY;
         }
 
-        SetPixel(x0, y0, color);
+        SetColor(x, y, color);
     }
 }
 
@@ -781,13 +796,11 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         double invslope2 = (v[2].x - v[0].x) / (v[2].y - v[0].y);
         double invslope3 = (v[2].x - v[1].x) / (v[2].y - v[1].y);
 
-        //printf("%f %f %f\n", v[0].w, v[1].w, v[2].w);
-
         // top tri, flat bottom
         if (v[0].y != v[1].y)
         {
-            double x1 = v[0].x;
-            double x2 = v[0].x;
+            float x1 = v[0].x;
+            float x2 = v[0].x;
 
             for (int y = v[0].y; y <= v[1].y; y++)
             {
@@ -796,8 +809,16 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
 
                 for (int x = cx1; x <= cx2; x++)
                 {
-                    SetPixel(x, y, tri.m_Color);
-                    SetSelect(x, y, clickIndex);
+                    CVec4 weights;
+                    tri.Weigh2d(x, y, &weights);
+                    float w = (tri.v[0].w * weights.x + tri.v[1].w * weights.y + tri.v[2].w * weights.z);
+
+                    if (w < GetDepth(x, y))
+                    {
+                        SetDepth(x, y, w);
+                        SetColor(x, y, tri.m_Color);
+                        SetSelect(x, y, clickIndex);
+                    }
                 }
 
                 x1 += invslope1;
@@ -808,8 +829,8 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         // bottom tri, flat top
         if (v[1].y != v[2].y)
         {
-            double x1 = v[2].x;
-            double x2 = v[2].x;
+            float x1 = v[2].x;
+            float x2 = v[2].x;
 
             for (int y = v[2].y; y >= v[1].y; y--)
             {
@@ -818,8 +839,16 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
 
                 for (int x = cx1; x <= cx2; x++)
                 {
-                    SetPixel(x, y, tri.m_Color);
-                    SetSelect(x, y, clickIndex);
+                    CVec4 weights;
+                    tri.Weigh2d(x, y, &weights);
+                    float w = (tri.v[0].w * weights.x + tri.v[1].w * weights.y + tri.v[2].w * weights.z);
+
+                    if (w < GetDepth(x, y))
+                    {
+                        SetDepth(x, y, w);
+                        SetColor(x, y, tri.m_Color);
+                        SetSelect(x, y, clickIndex);
+                    }
                 }
 
                 x1 -= invslope2;
@@ -828,15 +857,14 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         }
     }
 
-    DrawLine(tri.v[0].x, tri.v[0].y, tri.v[1].x, tri.v[1].y, 0x44444444);
-    DrawLine(tri.v[1].x, tri.v[1].y, tri.v[2].x, tri.v[2].y, 0x44444444);
-    DrawLine(tri.v[1].x, tri.v[2].y, tri.v[0].x, tri.v[0].y, 0x44444444);
-    FillRect(tri.v[0].x - 1, tri.v[0].y - 1, 2, 2, 0x22222222);
-    FillRect(tri.v[1].x - 1, tri.v[1].y - 1, 2, 2, 0x22222222);
-    FillRect(tri.v[2].x - 1, tri.v[2].y - 1, 2, 2, 0x22222222);
-}
+    //DrawLine(tri.v[0], tri.v[1], 0x44444444);
+    //DrawLine(tri.v[1], tri.v[2], 0x44444444);
+    //DrawLine(tri.v[2], tri.v[0], 0x44444444);
 
-/********************/
+    //FillRect(tri.v[0].x - 1, tri.v[0].y - 1, 2, 2, 0x22222222);
+    //FillRect(tri.v[1].x - 1, tri.v[1].y - 1, 2, 2, 0x22222222);
+    //FillRect(tri.v[2].x - 1, tri.v[2].y - 1, 2, 2, 0x22222222);
+}
 
 void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
 {
@@ -848,8 +876,7 @@ void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
     CVec4 scaleFlipYZ(1.0f, -1.0f, -1.0f);
     CVec4 scaleScreenSpace(m_Width, m_Height, 1.0f);
 
-    std::vector<CTri> projectedTris;
-    std::vector<CTri> clippedTris;
+    std::vector<CTri> projectedTris, clippedTris;
 
     projection.GetMtx(&projectionMtx);
     camera->GetViewMatrix(&viewMtx);
@@ -881,22 +908,23 @@ void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
         if (bBackface)
         {
             intensity = 200 - intensity;
+            //continue;
         }
 
         if (tri.m_ClickIndex == geom->m_SelectedTriIdx)
         {
             // highlight selected triangle in yellow
-            tri.m_Color = (intensity << 16) | (intensity << 8) | 0;
+            tri.m_Color = Color(intensity, intensity, 0);
         }
         else
         {
             if (d > 0.0f) // backface
             {
-                tri.m_Color = ((intensity/2) << 16) | (intensity << 8) | intensity;
+                tri.m_Color = Color(intensity/2, intensity, intensity);
             }
             else
             {
-                tri.m_Color = (intensity << 16) | (intensity << 8) | intensity;
+                tri.m_Color = Color(intensity, intensity, intensity);
             }
             
         }
@@ -912,9 +940,6 @@ void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
         tri.PerspectiveDivide(&tri);
         projectedTris.push_back(tri);
     }
-
-    // zsort projectedTris
-    std::sort(projectedTris.begin(), projectedTris.end(), CTri::ZSortBackToFrontCompare);
 
     // generate bitmap
     for (size_t i = 0; i < projectedTris.size(); i++)

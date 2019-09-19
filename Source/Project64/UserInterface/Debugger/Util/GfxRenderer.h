@@ -67,8 +67,6 @@ public:
     void Center(CVec4 *result);
     void Weigh2d(float x, float y, CVec4 *weights);
     void Clip(std::vector<CPlane>& clippingPlanes, std::vector<CTri>& trisOut);
-
-    static bool ZSortBackToFrontCompare(CTri& tri1, CTri& tri2);
 };
 
 class CPlane
@@ -155,21 +153,29 @@ public:
 class CDrawBuffers
 {
 private:
-    
-public:
     std::vector<CPlane> m_ClippingPlanes;
-    int m_Width, m_Height;
-    uint32_t *m_ColorBuffer;
-    float *m_DepthBuffer;
-    int *m_ClickBuffer;
+    bool Inside(int x, int y);
+    int Index(int x, int y);
+public:
     CDrawBuffers(int width, int height);
     ~CDrawBuffers(void);
-    void SetPixel(int x, int y, uint32_t color);
-    void SetSelect(int x, int y, int key);
+
+    uint32_t *m_ColorBuffer;
+    float *m_DepthBuffer;
+    int *m_SelectBuffer;
+    int m_Width, m_Height;
+
+    void SetColor(int x, int y, uint32_t color);
+    float GetDepth(int x, int y);
+    void SetDepth(int x, int y, float w);
     int GetSelect(int x, int y);
+    void SetSelect(int x, int y, int key);
+    
     void Clear(void);
     void DrawTriangle(CTri &tri, uint32_t clickIndex);
-    void DrawLine(int x0, int y0, int x1, int y1, uint32_t color);
+    void DrawLine(CVec4& p0, CVec4& p1, uint32_t color);
     void FillRect(int x, int y, int w, int h, uint32_t color);
     void Render(CBasicMeshGeometry *geom, CCamera *camera);
+
+    inline static uint32_t Color(uint8_t r, uint8_t g, uint8_t b);
 };
