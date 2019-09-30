@@ -86,7 +86,7 @@ public:
 
 private:
     bool m_bRefreshPending;
-
+    bool m_bShowRender;
     //DWORD m_ThreadId;
     //static HHOOK hWinMessageHook;
     //static CDebugDisplayList* _this;

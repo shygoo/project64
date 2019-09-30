@@ -144,7 +144,8 @@ CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     CDebugDialog<CDebugDisplayList>(debugger),
     m_bRefreshPending(false),
     m_DrawBuffers(NULL),
-    m_RenderView(NULL)
+    m_RenderView(NULL),
+    m_bShowRender(true)
 {
 	m_Camera.m_Pos.z = -5.0f;
 
@@ -528,6 +529,8 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     
     m_StateTextbox.SetWindowTextA(strStateSummary.c_str());
 
+    m_bShowRender = true;
+
     return FALSE;
 }
 
@@ -548,6 +551,11 @@ LRESULT CDebugDisplayList::OnListDblClicked(NMHDR* pNMHDR)
 
 void CDebugDisplayList::OnTimer(UINT_PTR nIDEvent)
 {
+    if (!m_bShowRender)
+    {
+        return;
+    }
+
     if (nIDEvent == TIMER_ID_DRAW)
     {
         if (m_RenderView->KeyDown('W')) m_Camera.TranslateZ(0.25f);
@@ -651,9 +659,11 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
     switch (res->type)
     {
     case RES_TEXTURE:
+        m_bShowRender = false;
         PreviewImageResource(res);
         break;
     case RES_DL:
+        m_bShowRender = true;
         break;
     default:
         ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strDefaultInfo.c_str());
