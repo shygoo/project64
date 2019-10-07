@@ -115,6 +115,12 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t _u1 : 12, count : 12, tile : 4, _u2 : 4; };
+} dl_cmd_loadtlut_t;
+
+typedef struct
+{
 	struct { uint32_t tmem : 9, line : 9, _u0: 1, siz : 2, fmt : 3, _c : 8; };
 	struct { uint32_t shifts : 4, masks : 4, cms : 2, shiftt : 4, maskt : 4, cmt : 2, palette : 4, tile : 3, _u1: 5; };
 } dl_cmd_settile_t;
@@ -189,6 +195,7 @@ typedef union
 	dl_cmd_settile_t     settile;
 	dl_cmd_loadblock_t   loadblock;
     dl_cmd_loadtile_t    loadtile;
+    dl_cmd_loadtlut_t    loadtlut;
 	dl_cmd_settilesize_t settilesize;
     dl_cmd_setcombine_t  setcombine;
 

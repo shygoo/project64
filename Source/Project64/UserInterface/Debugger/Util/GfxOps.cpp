@@ -195,10 +195,10 @@ dl_cmd_info_t CGfxOps::Commands_RDP[] = {
     { 0xED, "gsDPSetScissor",        op_gsDPSetScissor },
     { 0xEE, "gsDPSetPrimDepth",      NULL },
     { 0xEF, "gsDPSetOtherMode",      NULL },
-    { 0xF0, "gsDPLoadTLUT",          NULL },
+    { 0xF0, "gsDPLoadTLUT",          op_gsDPLoadTLUT },
     { 0xF2, "gsDPSetTileSize",       op_gsDPSetTileSize },
     { 0xF3, "gsDPLoadBlock",         op_gsDPLoadBlock },
-    { 0xF4, "gsDPLoadTile",          NULL },
+    { 0xF4, "gsDPLoadTile",          op_gsDPLoadTile },
     { 0xF5, "gsDPSetTile",           op_gsDPSetTile },
     { 0xF6, "gsDPFillRectangle",     op_gsDPFillRectangle },
     { 0xF7, "gsDPSetFillColor",      op_gsDPSetFillColor },
@@ -235,7 +235,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
     { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
-    { 0xBC, "gsSPMoveWord",          op_gsSPMoveWord_f3d },
+    { 0xBC, "gsMoveWd",              op_gsSPMoveWord_f3d },
     { 0xBD, "gsSPPopMatrix",         NULL },
     { 0xBE, "gsSPCullDisplayList",   NULL },
     { 0xBF, "gsSP1Triangle",         op_gsSP1Triangle_f3d },
@@ -256,7 +256,7 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
     { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
     { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
-    { 0xBC, "gsSPMoveWord",          op_gsSPMoveWord_f3d },
+    { 0xBC, "gsMoveWd",              op_gsSPMoveWord_f3d },
     { 0xBD, "gsSPPopMatrix",         NULL },
     { 0xBF, "gsSP1Triangle",         op_gsSP1Triangle_f3dex },
     { 0, NULL, NULL }
@@ -270,7 +270,7 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX2[] = {
     { 0xD7, "gsSPTexture",        op_gsSPTexture_f3d }, // may be wrong
     { 0xD9, "gsSPGeometryMode",   op_gsSPGeometryMode_f3dex2 },
     { 0xDA, "gsSPMatrix",         op_gsSPMatrix_f3dex2 },
-    { 0xDB, "gsSPMoveWord",       op_gsSPMoveWord_f3dex2 },
+    { 0xDB, "gsMoveWd",           op_gsSPMoveWord_f3dex2 },
     { 0xDC, "gsSPMoveMem",        op_gsSPMoveMem_f3dex2 },
     { 0xDE, "gsSPDisplayList",    op_gsSPDisplayList },
     { 0xDF, "gsSPEndDisplayList", op_gsSPEndDisplayList },
@@ -559,8 +559,7 @@ void CGfxOps::op_gsSPMoveWord_f3d(CHleGfxState* state, decoded_cmd_t* dc)
         dc->params = stdstr_f("%d", state->m_NumLights);
         dc->overrideName = "gsSPNumLights";
     }
-
-    if (cmd->index == 0x06) // MW_SEGMENT
+    else if (cmd->index == 0x06) // MW_SEGMENT
     {
         int segno = cmd->offset / 4;
         uint32_t physAddress = cmd->data;
@@ -988,6 +987,12 @@ void CGfxOps::op_gsDPSetEnvColor(CHleGfxState* state, decoded_cmd_t* dc)
     dc->params = stdstr_f("0x%08X", state->m_Command.w1);
 }
 
+void CGfxOps::op_gsDPLoadTLUT(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_loadtlut_t* cmd = &state->m_Command.loadtlut;
+    dc->params = stdstr_f("tile:%d, count:%d", cmd->tile, cmd->count);
+}
+
 void CGfxOps::op_gsDPSetTileSize(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_settilesize_t* cmd = &state->m_Command.settilesize;
@@ -1034,14 +1039,14 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_movemem_f3dex2_t* cmd = &state->m_Command.movemem_f3dex2;
 
-    if (cmd->i == 0x08) // viewport
+    if (cmd->i == 0x08) // G_MV_VIEWPORT
     {
         dc->overrideName = "gsSPViewport";
         dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
             state->SegmentedToVirtual(cmd->address));
         return;
     }
-    else if (cmd->i == 0x0A)
+    else if (cmd->i == 0x0A) // G_MV_LIGHT
     {
         int light = cmd->o / 24;
 
@@ -1057,6 +1062,13 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
         {
             dc->overrideName = "gsSPLight";
         }
+
+        dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
+            state->SegmentedToVirtual(cmd->address));
+    }
+    else if (cmd->i == 0x0E) // G_MV_MATRIX
+    {
+        dc->overrideName = "gsSPForceMatrix";
     }
 
     /*
@@ -1142,6 +1154,14 @@ void CGfxOps::op_gsDPLoadBlock(CHleGfxState* state, decoded_cmd_t* dc)
     dc->dramResource.imageFmt = state->m_TextureImageFmt;
 
     dc->listFgColor = COLOR_DMA;
+}
+
+void CGfxOps::op_gsDPLoadTile(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_loadtile_t* cmd = &state->m_Command.loadtile;
+    dc->params = stdstr_f("tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d",
+        cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
+    //todo
 }
 
 void CGfxOps::op_gsDPSetScissor(CHleGfxState* state, decoded_cmd_t* dc)

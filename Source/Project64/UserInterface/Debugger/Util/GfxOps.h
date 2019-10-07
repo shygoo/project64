@@ -148,8 +148,10 @@ private:
 
 	// RDP
 	static void op_gsDPSetScissor(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsDPLoadTLUT(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsDPSetTileSize(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsDPLoadBlock(CHleGfxState*, decoded_cmd_t*);
+    static void op_gsDPLoadTile(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsDPSetTile(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsDPFillRectangle(CHleGfxState*, decoded_cmd_t*);
 	static void op_gsDPSetFillColor(CHleGfxState*, decoded_cmd_t*);
