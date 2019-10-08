@@ -182,11 +182,18 @@ typedef struct
     struct { uint32_t Ad1 : 3, Ab1 : 3, d1 : 3, Ad0 : 3, Ab0 : 3, d0 : 3, Ac1 : 3, Aa1 : 3, b1 : 4, b0 : 4; };
 } dl_cmd_setcombine_t;
 
+typedef struct
+{
+    struct { uint32_t yh : 12, xh : 12, _c : 8; };
+    struct { uint32_t yl : 12, xl : 12, tile : 4, _u0 : 4; };
+} dl_cmd_texrect_t;
+
 typedef union
 {
 	struct { uint32_t w0, w1; };
 
     /* shared rdp commands */
+    dl_cmd_texrect_t     texrect;
 	dl_cmd_fillrect_t    fillrect;
 	dl_cmd_setscissor_t  setscissor;
     dl_cmd_settimg_t     settimg;

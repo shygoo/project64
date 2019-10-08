@@ -639,13 +639,13 @@ void CBasicMeshGeometry::Clear(void)
 }
 
 /********************/
-
+/*
 bool CScene::AddGeometry(uint32_t dlAddr)
 {
     std::pair<uint32_t, CBasicMeshGeometry> ret;
     CBasicMeshGeometry geom;
     return m_Geometries.insert(std::pair<uint32_t, CBasicMeshGeometry>(dlAddr, geom)).second;
-}
+}*/
 
 /********************/
 

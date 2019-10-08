@@ -5,7 +5,7 @@
 #include "GfxOps.h"
 #include "GfxState.h"
 
-class CGfxParser
+class CGfxParser : CHleGfxState
 {
 public:
     CGfxParser(void);
@@ -31,9 +31,7 @@ private:
     void Step();
 
     uint8_t* m_RamSnapshot;
-    CScene   m_Scene;
-
-    CHleGfxState m_State; 
+    //CScene   m_Scene;
 
     std::vector<CHleGfxState>    m_StateLog;
     std::vector<decoded_cmd_t>   m_CommandLog;

@@ -38,7 +38,10 @@ public:
 	static const char* OtherMode_cyc[];
 	static const char* OtherMode_cd[];
 	static const char* OtherMode_pm[];
-
+    
+    static gfx_label_t LightColorOffsets[];
+    static gfx_label_t ClipDirections[];
+    static gfx_label_t ClipRatios[];
 	static gfx_label_t GeometryModes[];
 	static gfx_label_t GeometryModes_F3DEX2[];
 	static cc_preset_lut_entry_t CombineModes[];

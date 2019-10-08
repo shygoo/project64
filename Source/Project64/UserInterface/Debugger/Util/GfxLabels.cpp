@@ -30,6 +30,50 @@ const char* CGfxLabels::OtherMode_cyc[] = { "G_CYC_1CYCLE", "G_CYC_2CYCLE", "G_C
 const char* CGfxLabels::OtherMode_cd[] = { "0", "1", "G_CD_DISABLE", "G_CD_ENABLE" };
 const char* CGfxLabels::OtherMode_pm[] = { "G_PM_NPRIMITIVE", "G_PM_1PRIMITIVE" };
 
+gfx_label_t CGfxLabels::ClipDirections[] = {
+    { 0x04, "G_MWO_CLIP_RNX"},
+    { 0x0C, "G_MWO_CLIP_RNY"},
+    { 0x14, "G_MWO_CLIP_RPX"},
+    { 0x1C, "G_MWO_CLIP_RPY"},
+    { 0, NULL }
+};
+
+gfx_label_t CGfxLabels::LightColorOffsets[] = {
+    { 0x00, "G_MWO_aLIGHT_1" },
+    { 0x18, "G_MWO_aLIGHT_2" },
+    { 0x30, "G_MWO_aLIGHT_3" },
+    { 0x48, "G_MWO_aLIGHT_4" },
+    { 0x60, "G_MWO_aLIGHT_5" },
+    { 0x78, "G_MWO_aLIGHT_6" },
+    { 0x90, "G_MWO_aLIGHT_7" },
+    { 0xa8, "G_MWO_aLIGHT_8" },
+    { 0x04, "G_MWO_bLIGHT_1" },
+    { 0x1c, "G_MWO_bLIGHT_2" },
+    { 0x34, "G_MWO_bLIGHT_3" },
+    { 0x4c, "G_MWO_bLIGHT_4" },
+    { 0x64, "G_MWO_bLIGHT_5" },
+    { 0x7c, "G_MWO_bLIGHT_6" },
+    { 0x94, "G_MWO_bLIGHT_7" },
+    { 0xac, "G_MWO_bLIGHT_8" },
+    { 0, NULL }
+};
+
+gfx_label_t CGfxLabels::ClipRatios[] = {
+      { 0x00000000, "FR_NEG_FRUSTRATIO_1" },
+      { 0x0000FFFF, "FR_POS_FRUSTRATIO_1" },
+      { 0x00000002, "FR_NEG_FRUSTRATIO_2" },
+      { 0x0000FFFE, "FR_POS_FRUSTRATIO_2" },
+      { 0x00000003, "FR_NEG_FRUSTRATIO_3" },
+      { 0x0000FFFD, "FR_POS_FRUSTRATIO_3" },
+      { 0x00000004, "FR_NEG_FRUSTRATIO_4" },
+      { 0x0000FFFC, "FR_POS_FRUSTRATIO_4" },
+      { 0x00000005, "FR_NEG_FRUSTRATIO_5" },
+      { 0x0000FFFB, "FR_POS_FRUSTRATIO_5" },
+      { 0x00000006, "FR_NEG_FRUSTRATIO_6" },
+      { 0x0000FFFA, "FR_POS_FRUSTRATIO_6" },
+      { 0, NULL }
+};
+
 gfx_label_t CGfxLabels::GeometryModes[] = {
 	{ 0x00000001, "G_ZBUFFER" },
 	{ 0x00000004, "G_SHADE" },
@@ -161,7 +205,6 @@ gfx_label_t CGfxLabels::RenderModesCycle2[] = {
 	{ 0, NULL }
 };
 
-// TODO clean this up
 cc_preset_lut_entry_t CGfxLabels::CombineModes[] = {
 	{ "G_CC_PRIMITIVE",             15, 15, 31,  3, 7, 7, 7, 3 },
 	{ "G_CC_SHADE",                 15, 15, 31,  4, 7, 7, 7, 4 },

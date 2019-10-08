@@ -141,6 +141,7 @@ class CGeometryInstance
     std::vector<CGeometryInstance> m_Children;
 };
 
+/*
 class CScene
 {
     // use dl address
@@ -148,7 +149,7 @@ class CScene
     //CGeometryInstance m_RootInstance;
 public:
     bool AddGeometry(uint32_t dlAddr);
-};
+};*/
 
 class CDrawBuffers
 {

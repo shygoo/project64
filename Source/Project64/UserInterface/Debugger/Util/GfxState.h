@@ -140,8 +140,11 @@ public:
 
 	uint8_t lastBlockLoadTexelSize;
 	uint16_t lastBlockLoadSize;
-	bool bDone;
 
+	bool m_bDone;
+
+    CHleGfxState(void);
 	uint32_t SegmentedToPhysical(uint32_t segaddr);
 	uint32_t SegmentedToVirtual(uint32_t segaddr);
+    bool LoadVertices(uint32_t address, int index, int numv);
 };

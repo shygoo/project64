@@ -174,42 +174,42 @@ ucode_info_t CGfxOps::Microcodes[] = {
 
 // ucode-independent rdp commands
 dl_cmd_info_t CGfxOps::Commands_RDP[] = {
-    { 0xC0, "gsDPNoop",              op_Nop },
-    { 0xC8, "gsDPTriFill",           NULL },
-    { 0xC9, "gsDPTriFillZ",          NULL },
-    { 0xCA, "gsDPTriTxtr",           NULL },
-    { 0xCB, "gsDPTriTxtrZ",          NULL },
-    { 0xCC, "gsDPTriShade",          NULL },
-    { 0xCD, "gsDPTriShadeZ",         NULL },
-    { 0xCE, "gsDPTriShadeTxtr",      NULL },
-    { 0xCF, "gsDPTriShadeTxtrZ",     NULL },
-    { 0xE4, "gsDPTextureRectangle",  NULL },
-    { 0xE5, "gsDPTextureRectangle2", NULL },
-    { 0xE6, "gsDPLoadSync",          op_Nop },
-    { 0xE7, "gsDPPipeSync",          op_Nop },
-    { 0xE8, "gsDPTileSync",          op_Nop },
-    { 0xE9, "gsDPFullSync",          op_Nop },
-    { 0xEA, "gsDPSetKeyGB",          NULL },
-    { 0xEB, "gsDPSetKeyR",           NULL },
-    { 0xEC, "gsDPSetConvert",        NULL },
-    { 0xED, "gsDPSetScissor",        op_gsDPSetScissor },
-    { 0xEE, "gsDPSetPrimDepth",      NULL },
-    { 0xEF, "gsDPSetOtherMode",      NULL },
-    { 0xF0, "gsDPLoadTLUT",          op_gsDPLoadTLUT },
-    { 0xF2, "gsDPSetTileSize",       op_gsDPSetTileSize },
-    { 0xF3, "gsDPLoadBlock",         op_gsDPLoadBlock },
-    { 0xF4, "gsDPLoadTile",          op_gsDPLoadTile },
-    { 0xF5, "gsDPSetTile",           op_gsDPSetTile },
-    { 0xF6, "gsDPFillRectangle",     op_gsDPFillRectangle },
-    { 0xF7, "gsDPSetFillColor",      op_gsDPSetFillColor },
-    { 0xF8, "gsDPSetFogColor",       op_gsDPSetFogColor },
-    { 0xF9, "gsDPSetBlendColor",     op_gsDPSetBlendColor },
-    { 0xFA, "gsDPSetPrimColor",      op_gsDPSetPrimColor },
-    { 0xFB, "gsDPSetEnvColor",       op_gsDPSetEnvColor },
-    { 0xFC, "gsDPSetCombineLERP",    op_gsDPSetCombineLERP },
-    { 0xFD, "gsDPSetTextureImage",   op_gsDPSetTextureImage },
-    { 0xFE, "gsDPSetDepthImage",     op_gsDPSetDepthImage },
-    { 0xFF, "gsDPSetColorImage",     op_gsDPSetColorImage },
+    { 0xC0, "gsDPNoop",                 op_Nop },
+    { 0xC8, "gsDPTriFill",              NULL },
+    { 0xC9, "gsDPTriFillZ",             NULL },
+    { 0xCA, "gsDPTriTxtr",              NULL },
+    { 0xCB, "gsDPTriTxtrZ",             NULL },
+    { 0xCC, "gsDPTriShade",             NULL },
+    { 0xCD, "gsDPTriShadeZ",            NULL },
+    { 0xCE, "gsDPTriShadeTxtr",         NULL },
+    { 0xCF, "gsDPTriShadeTxtrZ",        NULL },
+    { 0xE4, "gsSPTextureRectangle",     op_gsSPTextureRectangle },
+    { 0xE5, "gsSPTextureRectangleFlip", op_gsSPTextureRectangleFlip },
+    { 0xE6, "gsDPLoadSync",             op_Nop },
+    { 0xE7, "gsDPPipeSync",             op_Nop },
+    { 0xE8, "gsDPTileSync",             op_Nop },
+    { 0xE9, "gsDPFullSync",             op_Nop },
+    { 0xEA, "gsDPSetKeyGB",             NULL },
+    { 0xEB, "gsDPSetKeyR",              NULL },
+    { 0xEC, "gsDPSetConvert",           NULL },
+    { 0xED, "gsDPSetScissor",           op_gsDPSetScissor },
+    { 0xEE, "gsDPSetPrimDepth",         NULL },
+    { 0xEF, "gsDPSetOtherMode",         NULL },
+    { 0xF0, "gsDPLoadTLUT",             op_gsDPLoadTLUT },
+    { 0xF2, "gsDPSetTileSize",          op_gsDPSetTileSize },
+    { 0xF3, "gsDPLoadBlock",            op_gsDPLoadBlock },
+    { 0xF4, "gsDPLoadTile",             op_gsDPLoadTile },
+    { 0xF5, "gsDPSetTile",              op_gsDPSetTile },
+    { 0xF6, "gsDPFillRectangle",        op_gsDPFillRectangle },
+    { 0xF7, "gsDPSetFillColor",         op_gsDPSetFillColor },
+    { 0xF8, "gsDPSetFogColor",          op_gsDPSetFogColor },
+    { 0xF9, "gsDPSetBlendColor",        op_gsDPSetBlendColor },
+    { 0xFA, "gsDPSetPrimColor",         op_gsDPSetPrimColor },
+    { 0xFB, "gsDPSetEnvColor",          op_gsDPSetEnvColor },
+    { 0xFC, "gsDPSetCombineLERP",       op_gsDPSetCombineLERP },
+    { 0xFD, "gsDPSetTextureImage",      op_gsDPSetTextureImage },
+    { 0xFE, "gsDPSetDepthImage",        op_gsDPSetDepthImage },
+    { 0xFF, "gsDPSetColorImage",        op_gsDPSetColorImage },
     { 0, NULL, NULL }
 };
 
@@ -220,7 +220,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     { 0x03, "gsSPMoveMem",           op_gsSPMoveMem_f3d },
     { 0x04, "gsSPVertex",            op_gsSPVertex_f3d },
     //{ 0x05, "gsSPNoop", NULL, NULL },
-    { 0x06, "gsSPDisplayList",       op_gsSPDisplayList },
+    { 0x06, "gsSPDisplayList",       op_gsSPDisplayList_f3d },
     //{ 0x07, "gsSPNoop", NULL, NULL },
     //{ 0x08, "gsSPNoop", NULL, NULL },
     //{ 0x09, "gsSPSprite2D", NULL, NULL },
@@ -231,11 +231,11 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     // { 0xB5, "line3d", NULL, NULL },
     { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d },
     { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d },
-    { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList },
+    { 0xB8, "gsSPEndDisplayList",    op_gsSPDisplayList_f3d },
     { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
     { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
-    { 0xBC, "gsMoveWd",              op_gsSPMoveWord_f3d },
+    { 0xBC, "gsMoveWd",              op_gsMoveWd_f3d },
     { 0xBD, "gsSPPopMatrix",         NULL },
     { 0xBE, "gsSPCullDisplayList",   NULL },
     { 0xBF, "gsSP1Triangle",         op_gsSP1Triangle_f3d },
@@ -244,19 +244,19 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
 
 dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
     { 0x00, "gsSPNoop",              op_Nop },
-    { 0x01, "gsSPMatrix",            op_gsSPMatrix_f3d },
-    { 0x03, "gsSPMoveMem",           op_gsSPMoveMem_f3d },
+    { 0x01, "gsSPMatrix",            op_gsSPMatrix_f3dex },
+    { 0x03, "gsSPMoveMem",           op_gsSPMoveMem_f3dex },
     { 0x04, "gsSPVertex",            op_gsSPVertex_f3dex },
-    { 0x06, "gsSPDisplayList",       op_gsSPDisplayList },
+    { 0x06, "gsSPDisplayList",       op_gsSPDisplayList_f3dex },
     { 0xB1, "gsSP2Triangles",        op_gsSP2Triangles_f3dex },
     { 0xB5, "gsSP1Quadrangle",       op_gsSP1Quadrangle_f3dex },
-    { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d },
-    { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d },
-    { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList },
-    { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
-    { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
-    { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
-    { 0xBC, "gsMoveWd",              op_gsSPMoveWord_f3d },
+    { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3dex },
+    { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3dex },
+    { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList_f3dex },
+    { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3dex },
+    { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3dex },
+    { 0xBB, "gsSPTexture",           op_gsSPTexture_f3dex },
+    { 0xBC, "gsMoveWd",              op_gsMoveWd_f3dex },
     { 0xBD, "gsSPPopMatrix",         NULL },
     { 0xBF, "gsSP1Triangle",         op_gsSP1Triangle_f3dex },
     { 0, NULL, NULL }
@@ -266,18 +266,35 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX2[] = {
     { 0x00, "gsSPNoop",           op_Nop },
     { 0x01, "gsSPVertex",         op_gsSPVertex_f3dex2 },
     { 0x05, "gsSP1Triangle",      op_gsSP1Triangle_f3dex2 },
-    { 0x06, "gsSP2Triangles",     op_gsSP2Triangles_f3dex },
-    { 0xD7, "gsSPTexture",        op_gsSPTexture_f3d }, // may be wrong
+    { 0x06, "gsSP2Triangles",     op_gsSP2Triangles_f3dex2 },
+    { 0xD7, "gsSPTexture",        op_gsSPTexture_f3d }, // todo
     { 0xD9, "gsSPGeometryMode",   op_gsSPGeometryMode_f3dex2 },
     { 0xDA, "gsSPMatrix",         op_gsSPMatrix_f3dex2 },
-    { 0xDB, "gsMoveWd",           op_gsSPMoveWord_f3dex2 },
+    { 0xDB, "gsMoveWd",           op_gsMoveWd_f3dex2 },
     { 0xDC, "gsSPMoveMem",        op_gsSPMoveMem_f3dex2 },
-    { 0xDE, "gsSPDisplayList",    op_gsSPDisplayList },
-    { 0xDF, "gsSPEndDisplayList", op_gsSPEndDisplayList },
+    { 0xDE, "gsSPDisplayList",    op_gsSPDisplayList_f3dex2 },
+    { 0xDF, "gsSPEndDisplayList", op_gsSPEndDisplayList_f3dex2 },
     { 0xE2, "gsSPSetOtherMode_l", op_gsSPSetOtherMode_l_f3dex2 },
     { 0xE3, "gsSPSetOtherMode_h", op_gsSPSetOtherMode_h_f3dex2 },
+    { 0xE1, "rdphalf_1",          NULL },
+    { 0xF1, "rdphalf_2",          NULL },
     { 0, NULL, NULL }
 };
+
+/**********************************/
+
+void decoded_cmd_t::Rename(const char* _name)
+{
+    name = _name;
+}
+
+void decoded_cmd_t::SetDramResource(CHleGfxState* state, resource_type_t resType, uint32_t param)
+{
+    dramResource.type = resType;
+    dramResource.address = state->m_Command.w1;
+    dramResource.virtAddress = state->SegmentedToVirtual(state->m_Command.w1);
+    dramResource.param = param;
+}
 
 /**********************************/
 
@@ -324,20 +341,24 @@ const ucode_info_t* CGfxOps::LookupMicrocode(uint32_t checksum)
 
 /**********************************/
 
-void CGfxOps::ReportDramResource(decoded_cmd_t* dc, CHleGfxState* state, resource_type_t resType, uint32_t param)
-{
-    dc->dramResource.type = resType;
-    dc->dramResource.address = state->m_Command.w1;
-    dc->dramResource.virtAddress = state->SegmentedToVirtual(state->m_Command.w1);
-    dc->dramResource.param = param;
-}
-
 void CGfxOps::op_Nop(CHleGfxState*, decoded_cmd_t* dc)
 {
     dc->params = "";
+    dc->listFgColor = COLOR_NOP;
 }
 
-void CGfxOps::op_gsSPDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
+void CGfxOps::op_gsSPTextureRectangle(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_texrect_t* cmd = &state->m_Command.texrect;
+    // note: assuming no frac bits
+    dc->params = stdstr_f("ulx:(%d << 2), uly:(%d << 2), lrx:(%d << 2), lry:(%d << 2), tile:%d",
+        (cmd->xl >> 2), (cmd->yl >> 2), (cmd->xh >> 2), (cmd->yh >> 2), cmd->tile);
+    // todo: lookahead for dphalf1, dphalf2 for complete command
+
+    dc->listFgColor = COLOR_PRIMITIVE;
+}
+
+void CGfxOps::op_gsSPDisplayList_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_dl_t* cmd = &state->m_Command.dl;
 
@@ -345,12 +366,12 @@ void CGfxOps::op_gsSPDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
     {
         state->m_Stack[state->m_StackIndex++] = state->m_Address;
 
-        ReportDramResource(dc, state, RES_DL);
+        dc->SetDramResource(state, RES_DL);
         dc->listFgColor = COLOR_JUMP;
     }
     else
     {
-        dc->overrideName = "gsSPBranchList";
+        dc->Rename("gsSPBranchList");
         dc->listFgColor = COLOR_BRANCH;
     }
 
@@ -360,7 +381,7 @@ void CGfxOps::op_gsSPDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
         state->SegmentedToVirtual(cmd->address));
 }
 
-void CGfxOps::op_gsSPEndDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
+void CGfxOps::op_gsSPEndDisplayList_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     if (state->m_StackIndex > 0)
     {
@@ -368,7 +389,7 @@ void CGfxOps::op_gsSPEndDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
     }
     else
     {
-        state->bDone = true;
+        state->m_bDone = true;
     }
 
     dc->params = "";
@@ -378,7 +399,7 @@ void CGfxOps::op_gsSPEndDisplayList(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Triangle_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->m_Command.tri1_f3d;
-    dc->params = stdstr_f("v0:%d, v1:%d, v2:%d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
+    dc->params = stdstr_f("%d, %d, %d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
 
     // report triangle for the mesh builder
     dc->numTris = 1;
@@ -394,7 +415,7 @@ void CGfxOps::op_gsSP1Triangle_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Triangle_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri1_f3dex2_t *cmd = &state->m_Command.tri1_f3dex2;
-    dc->params = stdstr_f("v0:%d, v1:%d, v2:%d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
+    dc->params = stdstr_f("%d, %d, %d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
 
     // report triangle for the mesh builder
     dc->numTris = 1;
@@ -410,7 +431,7 @@ void CGfxOps::op_gsSP1Triangle_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Triangle_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->m_Command.tri1_f3d;
-    dc->params = stdstr_f("v0:%d, v1:%d, v2:%d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
+    dc->params = stdstr_f("%d, %d, %d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
 
     // report triangle for the mesh builder
     dc->numTris = 1;
@@ -426,7 +447,7 @@ void CGfxOps::op_gsSP1Triangle_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP2Triangles_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri2_f3dex_t *cmd = &state->m_Command.tri2_f3dex;
-    dc->params = stdstr_f("v0:%d, v1:%d, v2:%d, v3:%d, v4:%d, v5:%d",
+    dc->params = stdstr_f("%d, %d, %d, %d, %d, %d",
         cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2, cmd->v3 / 2, cmd->v4 / 2, cmd->v5 / 2);
 
     // report triangle for the mesh builder
@@ -449,7 +470,7 @@ void CGfxOps::op_gsSP2Triangles_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Quadrangle_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_quad_f3dex_t *cmd = &state->m_Command.quad_f3dex;
-    dc->params = stdstr_f("v0:%d, v1:%d, v2:%d, v3:%d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2, cmd->v3 / 2);
+    dc->params = stdstr_f("%d, %d, %d, %d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2, cmd->v3 / 2);
 
     // todo
     dc->listFgColor = COLOR_PRIMITIVE;
@@ -458,88 +479,42 @@ void CGfxOps::op_gsSP1Quadrangle_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSPVertex_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_vtx_f3dex2_t* cmd = &state->m_Command.vtx_f3dex2;
-
-    uint32_t physAddr = state->SegmentedToPhysical(cmd->address);
-
     int idx = (cmd->idx - (cmd->num * 2)) / 2;
+    state->LoadVertices(cmd->address, idx, cmd->num);
 
     dc->params = stdstr_f("addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num, idx,
         state->SegmentedToVirtual(cmd->address));
+
+    dc->listFgColor = COLOR_DMA;
 }
 
 void CGfxOps::op_gsSPVertex_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_vtx_f3dex_t* cmd = &state->m_Command.vtx_f3dex;
 
-    uint32_t physAddr = state->SegmentedToPhysical(cmd->address);
-
-    if (physAddr + cmd->num * 16 >= g_MMU->RdramSize())
-    {
-        return;
-    }
+    state->LoadVertices(cmd->address, cmd->idx, cmd->num + 1);
     
-    if (cmd->idx + cmd->num >= sizeof(state->m_Vertices) / sizeof(state->m_Vertices[0]))
-    {
-        return;
-    }
-    
-    uint8_t* ptr = g_MMU->Rdram() + physAddr;
-    
-    for (uint32_t i = 0; i < cmd->num; i++)
-    {
-        vertex_t* vtx = &state->m_Vertices[cmd->idx + i];
-        uint32_t offs = i * 16;
-    
-        vtx->x = *(int16_t*)&ptr[(offs + 0) ^ 2];
-        vtx->y = *(int16_t*)&ptr[(offs + 2) ^ 2];
-        vtx->z = *(int16_t*)&ptr[(offs + 4) ^ 2];
-        // todo the rest
-    }
-
-    dc->listFgColor = COLOR_DMA;
     dc->params = stdstr_f("addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num, cmd->idx,
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, RES_VERTICES, cmd->num + 1);
+    dc->SetDramResource(state, RES_VERTICES, cmd->num + 1);
+    dc->listFgColor = COLOR_DMA;
 }
 
 void CGfxOps::op_gsSPVertex_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_vtx_f3d_t* cmd = &state->m_Command.vtx_f3d;
 
-    uint32_t physAddr = state->SegmentedToPhysical(cmd->address);
+    state->LoadVertices(cmd->address, cmd->idx, cmd->num + 1);
 
-    if (physAddr + cmd->num*16 >= g_MMU->RdramSize())
-    {
-        return;
-    }
-
-    if (cmd->idx + (cmd->num+1) >= sizeof(state->m_Vertices) / sizeof(state->m_Vertices[0]))
-    {
-        return;
-    }
-
-    uint8_t* ptr = g_MMU->Rdram() + physAddr;
-
-    for (uint32_t i = 0; i < cmd->num + 1; i++)
-    {
-        vertex_t* vtx = &state->m_Vertices[cmd->idx + i];
-        uint32_t offs = i * 16;
-
-        vtx->x = *(int16_t*)&ptr[(offs+0) ^ 2];
-        vtx->y = *(int16_t*)&ptr[(offs+2) ^ 2];
-        vtx->z = *(int16_t*)&ptr[(offs+4) ^ 2];
-        // todo the rest
-    }
-
-    dc->listFgColor = COLOR_DMA;
     dc->params = stdstr_f("addr:0x%08X, numv:%d, vidx:%d // 0x%08X", cmd->address, cmd->num + 1, cmd->idx,
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, RES_VERTICES, cmd->num + 1);
+    dc->SetDramResource(state, RES_VERTICES, cmd->num + 1);
+    dc->listFgColor = COLOR_DMA;
 }
 
-void CGfxOps::op_gsSPMoveWord_f3d(CHleGfxState* state, decoded_cmd_t* dc)
+void CGfxOps::op_gsMoveWd_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_moveword_f3d_t* cmd = &state->m_Command.moveword_f3d;
 
@@ -557,7 +532,7 @@ void CGfxOps::op_gsSPMoveWord_f3d(CHleGfxState* state, decoded_cmd_t* dc)
         state->m_NumLights = (uint8_t)((cmd->data - 0x80000000) / 32) - 1;
 
         dc->params = stdstr_f("%d", state->m_NumLights);
-        dc->overrideName = "gsSPNumLights";
+        dc->Rename("gsSPNumLights");
     }
     else if (cmd->index == 0x06) // MW_SEGMENT
     {
@@ -565,29 +540,53 @@ void CGfxOps::op_gsSPMoveWord_f3d(CHleGfxState* state, decoded_cmd_t* dc)
         uint32_t physAddress = cmd->data;
         state->m_Segments[segno] = physAddress;
 
-        dc->params = stdstr_f("0x%02X, 0x%08X", cmd->offset / 4, cmd->data);
-        dc->overrideName = "gsSPSegment";
-        ReportDramResource(dc, state, RES_SEGMENT, cmd->offset / 4);
+        dc->params = stdstr_f("segment:0x%02X, address:0x%08X", cmd->offset / 4, cmd->data);
+        dc->Rename("gsSPSegment");
+        dc->SetDramResource(state, RES_SEGMENT, cmd->offset / 4);
     }
-
-
 
     dc->listFgColor = COLOR_DMA;
 }
 
-void CGfxOps::op_gsSPMoveWord_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+void CGfxOps::op_gsMoveWd_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_moveword_f3dex2_t* cmd = &state->m_Command.moveword_f3dex2;
 
     if (cmd->index == 0x06) // MW_SEGMENT
     {
-        int segno = cmd->offset / 4;
-        uint32_t physAddress = cmd->data;
-        state->m_Segments[segno] = physAddress;
+        dc->Rename("gsSPSegment");
+        dc->params = stdstr_f("segment:0x%02X, address:0x%08X", cmd->offset / 4, cmd->data);
 
-        dc->params = stdstr_f("segment:0x%02X, data:0x%08X", cmd->offset / 4, cmd->data);
-        dc->overrideName = "gsSPSegment";
-        ReportDramResource(dc, state, RES_SEGMENT);
+        state->m_Segments[cmd->offset / 4] = cmd->data;
+        dc->SetDramResource(state, RES_SEGMENT);
+    }
+    else if (cmd->index == 0x02) // MW_NUMLIGHT
+    {
+        dc->Rename("gsSPNumLights");
+        dc->params = stdstr_f("%d", cmd->data / 24);
+    }
+    else if (cmd->index == 0x04) // MW_CLIP
+    {
+        // todo: lookahead for 3 more MW_CLIP for gSPClipRatio
+        const char* szClipDir = CGfxLabels::LookupName(CGfxLabels::ClipDirections, cmd->offset);
+        const char* szClipRatio = CGfxLabels::LookupName(CGfxLabels::ClipRatios, cmd->data);
+        dc->params = stdstr_f("G_MW_CLIP, %s, %s", szClipDir, szClipRatio);
+    }
+    else if (cmd->index == 0x08 && cmd->offset == 0) // MW_FOG, MWO_FOG
+    {
+        dc->Rename("gsSPFogFactor");
+        dc->params = stdstr_f("0x%04X, 0x%04X", (cmd->data >> 16), (cmd->data & 0xFFFF));
+    }
+    else if (cmd->index == 0x0A)
+    {
+        // todo: lookahead for another G_MW_LIGHTCOL for gSPLightColor
+        const char* szLight = CGfxLabels::LookupName(CGfxLabels::LightColorOffsets, cmd->offset);
+        dc->params = stdstr_f("G_MW_LIGHTCOL, %s, 0x%08X", szLight, cmd->data);
+    }
+    else if (cmd->index = 0x0e && cmd->offset == 0)
+    {
+        dc->Rename("gsSPPerspNormalize");
+        dc->params = stdstr_f("%d", cmd->data);
     }
 }
 
@@ -663,7 +662,7 @@ void CGfxOps::op_gsDPSetDepthImage(CHleGfxState* state, decoded_cmd_t* dc)
     dc->params = stdstr_f("fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, RES_DEPTHBUFFER);
+    dc->SetDramResource(state, RES_DEPTHBUFFER);
 }
 
 void CGfxOps::op_gsDPSetColorImage(CHleGfxState* state, decoded_cmd_t* dc)
@@ -680,7 +679,7 @@ void CGfxOps::op_gsDPSetColorImage(CHleGfxState* state, decoded_cmd_t* dc)
     dc->params = stdstr_f("fmt:%s, siz:%s, w:%d, addr:0x%08X // 0x%08X", fmtName, sizName, cmd->width + 1, cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, RES_COLORBUFFER);
+    dc->SetDramResource(state, RES_COLORBUFFER);
     dc->dramResource.imageWidth = 320;
     dc->dramResource.imageHeight = 240;
 }
@@ -722,7 +721,7 @@ void CGfxOps::op_gsDPSetCombineLERP(CHleGfxState* state, decoded_cmd_t* dc)
     if (cycle1Preset != NULL && cycle2Preset != NULL)
     {
         dc->params = stdstr_f("%s, %s", cycle1Preset, cycle2Preset);
-        dc->overrideName = "gsDPSetCombineMode";
+        dc->Rename("gsDPSetCombineMode");
         return;
     }
 
@@ -803,11 +802,11 @@ void CGfxOps::op_gsSPGeometryMode_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 
     if (cmd->c == 0xFFFFFF)
     {
-        dc->overrideName = "gsSPSetGeometryMode";
+        dc->Rename("gsSPSetGeometryMode");
     }
     else if (cmd->s == 0)
     {
-        dc->overrideName = "gsSPClearGeometryMode";
+        dc->Rename("gsSPClearGeometryMode");
     }
 
     // TODO clear bits
@@ -842,18 +841,18 @@ void CGfxOps::op_gsSPSetOtherMode_h_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 
     switch (field)
     {
-    case 4:  dc->params = stdstr_f(CGfxLabels::OtherMode_ad[omh.ad]); dc->overrideName = "gsDPSetAlphaDither"; break; // hw2 only
-    case 6:  dc->params = stdstr_f(CGfxLabels::OtherMode_rd[omh.rd]); dc->overrideName = "gsDPSetColorDither"; break; // hw2 only
-    case 8:  dc->params = stdstr_f(CGfxLabels::OtherMode_ck[omh.ck]); dc->overrideName = "gsDPSetCombineKey"; break;
-    case 9:  dc->params = stdstr_f(CGfxLabels::OtherMode_tc[omh.tc]); dc->overrideName = "gsDPSetTextureConvert"; break;
-    case 12: dc->params = stdstr_f(CGfxLabels::OtherMode_tf[omh.tf]); dc->overrideName = "gsDPSetTextureFilter"; break;
-    case 14: dc->params = stdstr_f(CGfxLabels::OtherMode_tt[omh.tt]); dc->overrideName = "gsDPSetTextureLUT"; break;
-    case 16: dc->params = stdstr_f(CGfxLabels::OtherMode_tl[omh.tl]); dc->overrideName = "gsDPSetTextureLOD"; break;
-    case 17: dc->params = stdstr_f(CGfxLabels::OtherMode_td[omh.td]); dc->overrideName = "gsDPSetTextureDetail"; break;
-    case 19: dc->params = stdstr_f(CGfxLabels::OtherMode_tp[omh.tp]); dc->overrideName = "gsDPSetTexturePersp"; break;
-    case 20: dc->params = stdstr_f(CGfxLabels::OtherMode_cyc[omh.cyc]); dc->overrideName = "gsDPSetCycleType"; break;
-    case 22: dc->params = stdstr_f(CGfxLabels::OtherMode_cd[omh.cd]); dc->overrideName = "gsDPSetColorDither"; break; // hw1 only
-    case 23: dc->params = stdstr_f(CGfxLabels::OtherMode_pm[omh.pm]); dc->overrideName = "gsDPPipelineMode"; break;
+    case 4:  dc->params = stdstr_f(CGfxLabels::OtherMode_ad[omh.ad]); dc->Rename("gsDPSetAlphaDither"); break; // hw2 only
+    case 6:  dc->params = stdstr_f(CGfxLabels::OtherMode_rd[omh.rd]); dc->Rename("gsDPSetColorDither"); break; // hw2 only
+    case 8:  dc->params = stdstr_f(CGfxLabels::OtherMode_ck[omh.ck]); dc->Rename("gsDPSetCombineKey"); break;
+    case 9:  dc->params = stdstr_f(CGfxLabels::OtherMode_tc[omh.tc]); dc->Rename("gsDPSetTextureConvert"); break;
+    case 12: dc->params = stdstr_f(CGfxLabels::OtherMode_tf[omh.tf]); dc->Rename("gsDPSetTextureFilter"); break;
+    case 14: dc->params = stdstr_f(CGfxLabels::OtherMode_tt[omh.tt]); dc->Rename("gsDPSetTextureLUT"); break;
+    case 16: dc->params = stdstr_f(CGfxLabels::OtherMode_tl[omh.tl]); dc->Rename("gsDPSetTextureLOD"); break;
+    case 17: dc->params = stdstr_f(CGfxLabels::OtherMode_td[omh.td]); dc->Rename("gsDPSetTextureDetail"); break;
+    case 19: dc->params = stdstr_f(CGfxLabels::OtherMode_tp[omh.tp]); dc->Rename("gsDPSetTexturePersp"); break;
+    case 20: dc->params = stdstr_f(CGfxLabels::OtherMode_cyc[omh.cyc]); dc->Rename("gsDPSetCycleType"); break;
+    case 22: dc->params = stdstr_f(CGfxLabels::OtherMode_cd[omh.cd]); dc->Rename("gsDPSetColorDither"); break; // hw1 only
+    case 23: dc->params = stdstr_f(CGfxLabels::OtherMode_pm[omh.pm]); dc->Rename("gsDPPipelineMode"); break;
     }
 }
 
@@ -870,18 +869,18 @@ void CGfxOps::op_gsSPSetOtherMode_h_f3dex2(CHleGfxState* state, decoded_cmd_t* d
 
     switch (field)
     {
-    case 4:  dc->params = stdstr_f(CGfxLabels::OtherMode_ad[omh.ad]); dc->overrideName = "gsDPSetAlphaDither"; break; // hw2 only
-    case 6:  dc->params = stdstr_f(CGfxLabels::OtherMode_rd[omh.rd]); dc->overrideName = "gsDPSetColorDither"; break; // hw2 only
-    case 8:  dc->params = stdstr_f(CGfxLabels::OtherMode_ck[omh.ck]); dc->overrideName = "gsDPSetCombineKey"; break;
-    case 9:  dc->params = stdstr_f(CGfxLabels::OtherMode_tc[omh.tc]); dc->overrideName = "gsDPSetTextureConvert"; break;
-    case 12: dc->params = stdstr_f(CGfxLabels::OtherMode_tf[omh.tf]); dc->overrideName = "gsDPSetTextureFilter"; break;
-    case 14: dc->params = stdstr_f(CGfxLabels::OtherMode_tt[omh.tt]); dc->overrideName = "gsDPSetTextureLUT"; break;
-    case 16: dc->params = stdstr_f(CGfxLabels::OtherMode_tl[omh.tl]); dc->overrideName = "gsDPSetTextureLOD"; break;
-    case 17: dc->params = stdstr_f(CGfxLabels::OtherMode_td[omh.td]); dc->overrideName = "gsDPSetTextureDetail"; break;
-    case 19: dc->params = stdstr_f(CGfxLabels::OtherMode_tp[omh.tp]); dc->overrideName = "gsDPSetTexturePersp"; break;
-    case 20: dc->params = stdstr_f(CGfxLabels::OtherMode_cyc[omh.cyc]); dc->overrideName = "gsDPSetCycleType"; break;
-    case 22: dc->params = stdstr_f(CGfxLabels::OtherMode_cd[omh.cd]); dc->overrideName = "gsDPSetColorDither"; break; // hw1 only
-    case 23: dc->params = stdstr_f(CGfxLabels::OtherMode_pm[omh.pm]); dc->overrideName = "gsDPPipelineMode"; break;
+    case 4:  dc->params = stdstr_f(CGfxLabels::OtherMode_ad[omh.ad]); dc->Rename("gsDPSetAlphaDither"); break; // hw2 only
+    case 6:  dc->params = stdstr_f(CGfxLabels::OtherMode_rd[omh.rd]); dc->Rename("gsDPSetColorDither"); break; // hw2 only
+    case 8:  dc->params = stdstr_f(CGfxLabels::OtherMode_ck[omh.ck]); dc->Rename("gsDPSetCombineKey"); break;
+    case 9:  dc->params = stdstr_f(CGfxLabels::OtherMode_tc[omh.tc]); dc->Rename("gsDPSetTextureConvert"); break;
+    case 12: dc->params = stdstr_f(CGfxLabels::OtherMode_tf[omh.tf]); dc->Rename("gsDPSetTextureFilter"); break;
+    case 14: dc->params = stdstr_f(CGfxLabels::OtherMode_tt[omh.tt]); dc->Rename("gsDPSetTextureLUT"); break;
+    case 16: dc->params = stdstr_f(CGfxLabels::OtherMode_tl[omh.tl]); dc->Rename("gsDPSetTextureLOD"); break;
+    case 17: dc->params = stdstr_f(CGfxLabels::OtherMode_td[omh.td]); dc->Rename("gsDPSetTextureDetail"); break;
+    case 19: dc->params = stdstr_f(CGfxLabels::OtherMode_tp[omh.tp]); dc->Rename("gsDPSetTexturePersp"); break;
+    case 20: dc->params = stdstr_f(CGfxLabels::OtherMode_cyc[omh.cyc]); dc->Rename("gsDPSetCycleType"); break;
+    case 22: dc->params = stdstr_f(CGfxLabels::OtherMode_cd[omh.cd]); dc->Rename("gsDPSetColorDither"); break; // hw1 only
+    case 23: dc->params = stdstr_f(CGfxLabels::OtherMode_pm[omh.pm]); dc->Rename("gsDPPipelineMode"); break;
     }
 }
 
@@ -903,7 +902,7 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3d(CHleGfxState* state, decoded_cmd_t* dc)
             dc->params = stdstr_f("%s, %s", szPresetC1, szPresetC2);
         }
 
-        dc->overrideName = "gsDPSetRenderMode";
+        dc->Rename("gsDPSetRenderMode");
         // todo fallback if no presets
         return;
     }
@@ -911,13 +910,13 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3d(CHleGfxState* state, decoded_cmd_t* dc)
     if (field == 0)
     {
         //todo
-        dc->overrideName = "gsDPSetAlphaCompare";
+        dc->Rename("gsDPSetAlphaCompare");
     }
 
     if (field == 2)
     {
         //todo
-        dc->overrideName = "gsDPSetDepthSource";
+        dc->Rename("gsDPSetDepthSource");
     }
 }
 
@@ -939,7 +938,7 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3dex2(CHleGfxState* state, decoded_cmd_t* d
             dc->params = stdstr_f("%s, %s", szPresetC1, szPresetC2);
         }
 
-        dc->overrideName = "gsDPSetRenderMode";
+        dc->Rename("gsDPSetRenderMode");
         // todo fallback if no presets
         return;
     }
@@ -947,13 +946,13 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3dex2(CHleGfxState* state, decoded_cmd_t* d
     if (field == 0)
     {
         //todo
-        dc->overrideName = "gsDPSetAlphaCompare";
+        dc->Rename("gsDPSetAlphaCompare");
     }
 
     if (field == 2)
     {
         //todo
-        dc->overrideName = "gsDPSetDepthSource";
+        dc->Rename("gsDPSetDepthSource");
     }
 }
 
@@ -1000,7 +999,6 @@ void CGfxOps::op_gsDPSetTileSize(CHleGfxState* state, decoded_cmd_t* dc)
     if ((cmd->lrs & 3) == 0 && (cmd->lrt & 3) == 0)
     {
         dc->params = stdstr_f("tile:%d, uls:%d, ult:%d, lrs:(%d << 2), lrt:(%d << 2)", cmd->tile, cmd->uls, cmd->ult, cmd->lrs >> 2, cmd->lrt >> 2);
-
     }
 
     dc->params = stdstr_f("tile:%d, uls:%d, ult:%d, lrs:%d, lrt:%d", cmd->tile, cmd->uls, cmd->ult, cmd->lrs, cmd->lrt);
@@ -1008,28 +1006,26 @@ void CGfxOps::op_gsDPSetTileSize(CHleGfxState* state, decoded_cmd_t* dc)
 
 void CGfxOps::op_gsSPMoveMem_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    // gsDma2p G_MOVEMEM adrs len idx ofs 
-
     dl_cmd_movemem_f3d_t* cmd = &state->m_Command.movemem_f3d;
 
     if (cmd->p == 0x80) // G_MV_VIEWPORT
     {
-        dc->overrideName = "gsSPViewport";
+        dc->Rename("gsSPViewport");
         // todo params
         dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
             state->SegmentedToVirtual(cmd->address));
 
-        ReportDramResource(dc, state, RES_VIEWPORT);
+        dc->SetDramResource(state, RES_VIEWPORT);
     }
     else if (cmd->p >= 0x86 && cmd->p <= 0x94) // G_MV_L0:7
     {
-        dc->overrideName = "gsSPLight";
+        dc->Rename("gsSPLight");
 
         int lightNumber = (cmd->p - 0x86) / 2;
         dc->params = stdstr_f("addr:0x%08X, lightnum:%d // 0x%08X", cmd->address, lightNumber,
             state->SegmentedToVirtual(cmd->address));
 
-        ReportDramResource(dc, state, RES_AMBIENT_LIGHT);
+        dc->SetDramResource(state, RES_AMBIENT_LIGHT);
     }
 
     dc->listFgColor = COLOR_DMA;
@@ -1041,10 +1037,9 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 
     if (cmd->i == 0x08) // G_MV_VIEWPORT
     {
-        dc->overrideName = "gsSPViewport";
+        dc->Rename("gsSPViewport");
         dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
             state->SegmentedToVirtual(cmd->address));
-        return;
     }
     else if (cmd->i == 0x0A) // G_MV_LIGHT
     {
@@ -1052,15 +1047,15 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 
         if (light == 0)
         {
-            dc->overrideName = "gsSPLookAtX";
+            dc->Rename("gsSPLookAtX");
         }
         else if (light == 1)
         {
-            dc->overrideName = "gsSPLookAtY";
+            dc->Rename("gsSPLookAtY");
         }
         else
         {
-            dc->overrideName = "gsSPLight";
+            dc->Rename("gsSPLight");
         }
 
         dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
@@ -1068,50 +1063,8 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
     }
     else if (cmd->i == 0x0E) // G_MV_MATRIX
     {
-        dc->overrideName = "gsSPForceMatrix";
+        dc->Rename("gsSPForceMatrix");
     }
-
-    /*
-    # define G_MV_MMTX	2
-    # define G_MV_PMTX	6
-    # define G_MV_VIEWPORT	8
-    # define G_MV_LIGHT	10
-    # define G_MV_POINT	12
-    # define G_MV_MATRIX	14		// NOTE: this is in moveword table
-    # define G_MVO_LOOKATX	(0*24)
-    # define G_MVO_LOOKATY	(1*24)
-    # define G_MVO_L0	(2*24)
-    # define G_MVO_L1	(3*24)
-    # define G_MVO_L2	(4*24)
-    # define G_MVO_L3	(5*24)
-    # define G_MVO_L4	(6*24)
-    # define G_MVO_L5	(7*24)
-    # define G_MVO_L6	(8*24)
-    # define G_MVO_L7	(9*24)
-    */
-
-//#define	gsDma2p(c, adrs, len, idx, ofs)					\
-//{									\
-//	(_SHIFTL((c),24,8)|_SHIFTL(((len)-1)/8,19,5)|			\
-//	 _SHIFTL((ofs)/8,8,8)|_SHIFTL((idx),0,8)),			\
-//        (unsigned int)(adrs)						\
-//}
-
-//# define gsSPViewport(v)	\
-//		gsDma2p(      G_MOVEMEM, (v), sizeof(Vp), G_MV_VIEWPORT, 0)
-//
-//# define gsSPLight(l, n)	\
-//	 gsDma2p(      G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,(n)*24+24)
-//
-//# define gsSPLookAtX(l)		\
-//	 gsDma2p(     G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,G_MVO_LOOKATX)
-//
-//# define gsSPLookAtY(l)		\
-//	 gsDma2p(     G_MOVEMEM,(l),sizeof(Light),G_MV_LIGHT,G_MVO_LOOKATY)
-//
-//#define	gsSPForceMatrix(mptr)						\
-//	gsDma2p(G_MOVEMEM,(mptr),sizeof(Mtx),G_MV_MATRIX,0),		\
-//	gsMoveWd(G_MW_FORCEMTX,0,0x00010000)
 }
 
 void CGfxOps::op_gsDPLoadBlock(CHleGfxState* state, decoded_cmd_t* dc)
@@ -1186,7 +1139,10 @@ void CGfxOps::op_gsDPSetScissor(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsDPFillRectangle(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_fillrect_t* cmd = &state->m_Command.fillrect;
-    dc->params = stdstr_f("ulx:%d, uly:%d, lrx:%d, lry:%d", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+    // note: ignoring frac bits
+    dc->params = stdstr_f("ulx:(%d << 2), uly:(%d << 2), lrx:(%d << 2), lry:(%d << 2)", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+
+    dc->listFgColor = COLOR_PRIMITIVE;
 }
 
 void CGfxOps::op_gsSPMatrix_f3d(CHleGfxState* state, decoded_cmd_t* dc)
@@ -1199,8 +1155,7 @@ void CGfxOps::op_gsSPMatrix_f3d(CHleGfxState* state, decoded_cmd_t* dc)
         (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
-
+    dc->SetDramResource(state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
     dc->listFgColor = COLOR_DMA;
 }
 
@@ -1214,7 +1169,6 @@ void CGfxOps::op_gsSPMatrix_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
         (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         state->SegmentedToVirtual(cmd->address));
 
-    ReportDramResource(dc, state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
-
+    dc->SetDramResource(state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
     dc->listFgColor = COLOR_DMA;
 }

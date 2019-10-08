@@ -68,6 +68,8 @@ size_t CGfxParser::GetTriangleCount(void)
 
 void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
+    new((CHleGfxState*)this) CHleGfxState();
+
 	m_UCodeChecksum = 0;
 	m_UCodeVersion = UCODE_UNKNOWN;
 	m_UCodeName = "unknown microcode";
@@ -83,17 +85,16 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
 
 	if (m_RamSnapshot != NULL)
 	{
-		free(m_RamSnapshot);
+        delete[] m_RamSnapshot;
 	}
 
 	uint32_t ramSize = g_MMU->RdramSize();
-	m_RamSnapshot = (uint8_t*)malloc(ramSize);
+    m_RamSnapshot = new uint8_t[ramSize];
 	memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
 
-	memset(&m_State, 0, sizeof(m_State));
-	m_State.m_Address = dlistAddr;
+    m_Address = dlistAddr;
 
-    uint8_t* ucode = m_RamSnapshot + ucodeAddr;
+    uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
 
     for (int i = 0; i < 3072; i += sizeof(uint32_t))
     {
@@ -115,7 +116,7 @@ void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
     testGeom.Clear();
 	Setup(ucodeAddr, dlistAddr, dlistSize);
 
-    while (!m_State.bDone)
+    while (!m_bDone)
     {
         Step();
     }
@@ -124,15 +125,25 @@ void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 // decode and execute command
 void CGfxParser::Step(void)
 {
-    uint32_t physAddress = m_State.SegmentedToPhysical(m_State.m_Address);
+    uint32_t physAddress = SegmentedToPhysical(m_Address);
 
-    g_MMU->LW_PAddr(physAddress, m_State.m_Command.w0);
-    g_MMU->LW_PAddr(physAddress + 4, m_State.m_Command.w1);
+    bool bRead0 = g_MMU->LW_PAddr(physAddress, m_Command.w0);
+    bool bRead1 = g_MMU->LW_PAddr(physAddress + 4, m_Command.w1);
+
+    //printf("%08X (%08X): %08X %08X\n",
+    //    m_State.m_Address, physAddress, m_State.m_Command.w0, m_State.m_Command.w1);
+
+    if (!bRead0 || !bRead1)
+    {
+        // invalid command address
+        m_bDone = true;
+        return;
+    }
 
 	// todo dump states to file instead?
-    m_StateLog.push_back(m_State);
+    m_StateLog.push_back(*(CHleGfxState*)this);
     
-    uint8_t commandByte = m_State.m_Command.w0 >> 24;
+    uint8_t commandByte = m_Command.w0 >> 24;
 
     const dl_cmd_info_t *commandInfo;
     decoded_cmd_t dc;
@@ -140,13 +151,13 @@ void CGfxParser::Step(void)
 	memset(&dc, 0, sizeof(decoded_cmd_t));
 
     dc.dramResource.nCommand = m_CommandLog.size();
-	dc.address = m_State.m_Address;
-	dc.rawCommand = m_State.m_Command;
-	dc.virtualAddress = m_State.SegmentedToVirtual(dc.address);
+	dc.address = m_Address;
+	dc.rawCommand = m_Command;
+	dc.virtualAddress = SegmentedToVirtual(dc.address);
 	dc.name = "?";
 	dc.params = "?";
 
-	m_State.m_Address += 8;
+	m_Address += 8;
 
     commandInfo = CGfxOps::LookupCommand(CGfxOps::Commands_RDP, commandByte);
 
@@ -162,13 +173,13 @@ void CGfxParser::Step(void)
 		// execute command
 		if (commandInfo->opFunc != NULL)
 		{
-			commandInfo->opFunc(&m_State, &dc);
+			commandInfo->opFunc(this, &dc);
 		}
     }
 	
-	if (m_UCodeVersion == UCODE_UNKNOWN && m_State.m_Address >= m_RootDListEndAddress)
+	if (m_UCodeVersion == UCODE_UNKNOWN && m_Address >= m_RootDListEndAddress)
 	{
-		m_State.bDone = true;
+		m_bDone = true;
 	}
     
     if (dc.numTris != 0)
