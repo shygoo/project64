@@ -136,9 +136,7 @@ private:
     CDrawBuffers *m_DrawBuffers;
     CCamera m_Camera;
 
-    //LRESULT OnListDblClicked(NMHDR* pNMHDR);
     //void    OnExitSizeMove(void);
-    //void ShowRegStates(size_t stateIndex);
     //void Export(void);
 
     BEGIN_MSG_MAP_EX(CDebugDisplayList)
@@ -166,7 +164,7 @@ private:
         DLGRESIZE_CONTROL(IDC_GRP_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
         DLGRESIZE_CONTROL(IDC_TREE_RESOURCES, DLSZ_MOVE_X | DLSZ_SIZE_Y)
         DLGRESIZE_CONTROL(IDC_EDIT_RESINFO, DLSZ_MOVE_X | DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_TEX_PREVIEW, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+        DLGRESIZE_CONTROL(IDC_CUSTOM1, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 
         DLGRESIZE_CONTROL(IDC_GRP_GEOMODE, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_GRP_OTHERMODEH, DLSZ_MOVE_Y)

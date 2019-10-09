@@ -231,7 +231,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     // { 0xB5, "line3d", NULL, NULL },
     { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d },
     { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d },
-    { 0xB8, "gsSPEndDisplayList",    op_gsSPDisplayList_f3d },
+    { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList_f3d },
     { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
     { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
@@ -1035,31 +1035,31 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_movemem_f3dex2_t* cmd = &state->m_Command.movemem_f3dex2;
 
+	dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
+		state->SegmentedToVirtual(cmd->address));
+
     if (cmd->i == 0x08) // G_MV_VIEWPORT
     {
         dc->Rename("gsSPViewport");
-        dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
-            state->SegmentedToVirtual(cmd->address));
     }
     else if (cmd->i == 0x0A) // G_MV_LIGHT
     {
-        int light = cmd->o / 24;
+        int offs = cmd->o / 3;
 
-        if (light == 0)
+        if (offs == 0)
         {
             dc->Rename("gsSPLookAtX");
         }
-        else if (light == 1)
+        else if (offs == 1)
         {
             dc->Rename("gsSPLookAtY");
         }
-        else
+        else if(offs >= 2 && offs <= 10)
         {
             dc->Rename("gsSPLight");
+			dc->params = stdstr_f("addr:0x%08X, LIGHT_%d // 0x%08X", cmd->address, (offs-2),
+				state->SegmentedToVirtual(cmd->address));
         }
-
-        dc->params = stdstr_f("addr:0x%08X // 0x%08X", cmd->address,
-            state->SegmentedToVirtual(cmd->address));
     }
     else if (cmd->i == 0x0E) // G_MV_MATRIX
     {

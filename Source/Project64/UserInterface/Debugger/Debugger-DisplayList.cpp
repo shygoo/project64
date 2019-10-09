@@ -267,6 +267,8 @@ void CDebugDisplayList::Refresh(void)
         return;
     }
 
+	m_bShowRender = false;
+
     uint32_t ucodeAddr, dlistAddr, dlistSize;
 
     g_MMU->LW_VAddr(0xA4000FD0, ucodeAddr);
@@ -358,6 +360,7 @@ void CDebugDisplayList::Refresh(void)
 
     ::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), TRUE);
     m_bRefreshPending = false;
+	m_bShowRender = true;
 }
 
 void CDebugDisplayList::SetPreviewColor(WORD ctrlId, uint32_t colorPair)

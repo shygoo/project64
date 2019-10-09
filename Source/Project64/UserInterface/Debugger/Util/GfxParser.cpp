@@ -131,7 +131,7 @@ void CGfxParser::Step(void)
     bool bRead1 = g_MMU->LW_PAddr(physAddress + 4, m_Command.w1);
 
     //printf("%08X (%08X): %08X %08X\n",
-    //    m_State.m_Address, physAddress, m_State.m_Command.w0, m_State.m_Command.w1);
+    //    m_Address, physAddress, m_Command.w0, m_Command.w1);
 
     if (!bRead0 || !bRead1)
     {
