@@ -36,6 +36,7 @@ private:
     std::vector<CHleGfxState>    m_StateLog;
     std::vector<decoded_cmd_t>   m_CommandLog;
 	std::vector<dram_resource_t> m_RamResources;
+    int m_CurrentMacroLength;
 
 	size_t          m_TriangleCount;
 

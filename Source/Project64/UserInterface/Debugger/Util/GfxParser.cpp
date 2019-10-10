@@ -12,7 +12,8 @@ CGfxParser::CGfxParser(void) :
 	m_RootDListEndAddress(0),
 	m_VertexBufferSize(16),
 	m_RamSnapshot(NULL),
-	m_TriangleCount(0)
+	m_TriangleCount(0),
+    m_CurrentMacroLength(0)
 {
 }
 
@@ -92,7 +93,7 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
     m_RamSnapshot = new uint8_t[ramSize];
 	memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
 
-    m_Address = dlistAddr;
+    m_spCommandAddress = dlistAddr;
 
     uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
 
@@ -120,30 +121,34 @@ void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
     {
         Step();
     }
+
+    // debug test
+    FILE* fp = fopen("dl_export.c", "wb");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        if (strcmp("...", m_CommandLog[i].name) == 0)
+        {
+            continue;
+        }
+
+        fprintf(fp, "%s(%s),\n", m_CommandLog[i].name, m_CommandLog[i].params.c_str());
+    }
+    fclose(fp);
 }
 
 // decode and execute command
 void CGfxParser::Step(void)
 {
-    uint32_t physAddress = SegmentedToPhysical(m_Address);
+    bool bRead = GetCommand(m_spCommandAddress, &m_spCommand);
 
-    bool bRead0 = g_MMU->LW_PAddr(physAddress, m_Command.w0);
-    bool bRead1 = g_MMU->LW_PAddr(physAddress + 4, m_Command.w1);
-
-    //printf("%08X (%08X): %08X %08X\n",
-    //    m_Address, physAddress, m_Command.w0, m_Command.w1);
-
-    if (!bRead0 || !bRead1)
+    if (!bRead)
     {
         // invalid command address
         m_bDone = true;
         return;
     }
 
-	// todo dump states to file instead?
     m_StateLog.push_back(*(CHleGfxState*)this);
-    
-    uint8_t commandByte = m_Command.w0 >> 24;
 
     const dl_cmd_info_t *commandInfo;
     decoded_cmd_t dc;
@@ -151,19 +156,19 @@ void CGfxParser::Step(void)
 	memset(&dc, 0, sizeof(decoded_cmd_t));
 
     dc.dramResource.nCommand = m_CommandLog.size();
-	dc.address = m_Address;
-	dc.rawCommand = m_Command;
+	dc.address = m_spCommandAddress;
+	dc.rawCommand = m_spCommand;
 	dc.virtualAddress = SegmentedToVirtual(dc.address);
 	dc.name = "?";
 	dc.params = "?";
 
-	m_Address += 8;
+	m_spCommandAddress += 8;
 
-    commandInfo = CGfxOps::LookupCommand(CGfxOps::Commands_RDP, commandByte);
+    commandInfo = CGfxOps::LookupCommand(CGfxOps::Commands_RDP, m_spCommand.commandByte);
 
     if (commandInfo == NULL && m_CommandTable != NULL)
     {
-        commandInfo = CGfxOps::LookupCommand(m_CommandTable, commandByte);
+        commandInfo = CGfxOps::LookupCommand(m_CommandTable, m_spCommand.commandByte);
     }
 
     if (commandInfo != NULL)
@@ -177,8 +182,9 @@ void CGfxParser::Step(void)
 		}
     }
 	
-	if (m_UCodeVersion == UCODE_UNKNOWN && m_Address >= m_RootDListEndAddress)
+	if (m_UCodeVersion == UCODE_UNKNOWN && m_spCommandAddress >= m_RootDListEndAddress)
 	{
+        // if the ucode is unknown, only parse the root display list
 		m_bDone = true;
 	}
     
@@ -204,6 +210,18 @@ void CGfxParser::Step(void)
 	{
 		m_RamResources.push_back(dc.dramResource);
 	}
+
+    if (m_CurrentMacroLength > 0)
+    {
+        dc.name = "...";
+        dc.params = "...";
+        m_CurrentMacroLength--;
+    }
+
+    if (dc.macroLength > 0)
+    {
+        m_CurrentMacroLength = dc.macroLength;
+    }
 
     m_CommandLog.push_back(dc);
 }

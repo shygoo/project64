@@ -116,7 +116,7 @@ typedef struct
 typedef struct
 {
     struct { uint32_t _u0 : 24, _c : 8; };
-    struct { uint32_t _u1 : 12, count : 12, tile : 4, _u2 : 4; };
+    struct { uint32_t _u1 : 14, count : 10, tile : 3, _u2 : 5; };
 } dl_cmd_loadtlut_t;
 
 typedef struct
@@ -188,12 +188,32 @@ typedef struct
     struct { uint32_t yl : 12, xl : 12, tile : 4, _u0 : 4; };
 } dl_cmd_texrect_t;
 
+typedef struct
+{
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t t : 16, s : 16; };
+} dl_cmd_rdphalf1_texrect_t;
+
+typedef struct
+{
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t dsdy : 16, dsdx : 16; };
+} dl_cmd_rdphalf2_texrect_t;
+
 typedef union
 {
-	struct { uint32_t w0, w1; };
+	struct {
+        union {
+            uint32_t w0;
+            struct { uint32_t: 24, commandByte : 8; };
+        };
+        uint32_t w1;
+    };
 
     /* shared rdp commands */
     dl_cmd_texrect_t     texrect;
+    dl_cmd_rdphalf1_texrect_t texrect_half1;
+    dl_cmd_rdphalf2_texrect_t texrect_half2;
 	dl_cmd_fillrect_t    fillrect;
 	dl_cmd_setscissor_t  setscissor;
     dl_cmd_settimg_t     settimg;

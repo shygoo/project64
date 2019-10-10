@@ -98,6 +98,7 @@ typedef struct
 	int             numTris;
 	vbuf_tri_t      tris[4];
 	COLORREF        listBgColor, listFgColor;
+    int             macroLength;
 
 public:
     void SetDramResource(CHleGfxState* state, resource_type_t resType, uint32_t param = 0);
@@ -146,7 +147,7 @@ private:
     /*E4*/ static void op_gsSPTextureRectangle(CHleGfxState*, decoded_cmd_t*);
     /*E5*/ #define     op_gsSPTextureRectangleFlip op_gsSPTextureRectangle
 	/*ED*/ static void op_gsDPSetScissor(CHleGfxState*, decoded_cmd_t*);
-    /*F0*/ static void op_gsDPLoadTLUT(CHleGfxState*, decoded_cmd_t*);
+    /*F0*/ static void op_gsDPLoadTLUTCmd(CHleGfxState*, decoded_cmd_t*);
 	/*F2*/ static void op_gsDPSetTileSize(CHleGfxState*, decoded_cmd_t*);
 	/*F3*/ static void op_gsDPLoadBlock(CHleGfxState*, decoded_cmd_t*);
     /*F4*/ static void op_gsDPLoadTile(CHleGfxState*, decoded_cmd_t*);

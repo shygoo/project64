@@ -396,28 +396,28 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     // Geometry mode
 
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->m_GeometryMode.f3d.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->m_GeometryMode.f3d.shade ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->m_GeometryMode.f3d.fog ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->m_GeometryMode.f3d.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->m_GeometryMode.f3d.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->m_GeometryMode.f3d.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->m_GeometryMode.f3d.lod ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->m_GeometryMode.f3d.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->m_spGeometryMode.f3d.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->m_spGeometryMode.f3d.shade ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->m_spGeometryMode.f3d.fog ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->m_spGeometryMode.f3d.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->m_spGeometryMode.f3d.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->m_spGeometryMode.f3d.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->m_spGeometryMode.f3d.lod ? BST_CHECKED : BST_UNCHECKED, 0);
+    ::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->m_spGeometryMode.f3d.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
 
     bool shading_smooth, cull_front, cull_back;
 
     if (m_GfxParser.GetUCodeVersion() == UCODE_F3DEX2)
     {
-        shading_smooth = state->m_GeometryMode.f3dex2.shading_smooth;
-        cull_front = state->m_GeometryMode.f3dex2.cull_front;
-        cull_back = state->m_GeometryMode.f3dex2.cull_back;
+        shading_smooth = state->m_spGeometryMode.f3dex2.shading_smooth;
+        cull_front = state->m_spGeometryMode.f3dex2.cull_front;
+        cull_back = state->m_spGeometryMode.f3dex2.cull_back;
     }
     else
     {
-        shading_smooth = state->m_GeometryMode.f3d.shading_smooth;
-        cull_front = state->m_GeometryMode.f3d.cull_front;
-        cull_back = state->m_GeometryMode.f3d.cull_back;
+        shading_smooth = state->m_spGeometryMode.f3d.shading_smooth;
+        cull_front = state->m_spGeometryMode.f3d.cull_front;
+        cull_back = state->m_spGeometryMode.f3d.cull_back;
     }
 
     ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADING_SMOOTH), BM_SETCHECK, shading_smooth ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -427,23 +427,23 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     // Texture address
 
-    ::SetWindowText(GetDlgItem(IDC_EDIT_TEXTUREIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_TextureImage, state->SegmentedToVirtual(state->m_TextureImage)).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_DEPTHIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_DepthImage, state->SegmentedToVirtual(state->m_DepthImage)).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_COLORIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_ColorImage, state->SegmentedToVirtual(state->m_ColorImage)).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_TEXTUREIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_DEPTHIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_COLORIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str());
 
     // rdp colors
 
-    ::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->m_FillColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->m_FogColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->m_BlendColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->m_PrimColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->m_EnvColor).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->m_dpFillColor).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->m_dpFogColor).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->m_dpBlendColor).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->m_dpPrimColor).c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->m_dpEnvColor).c_str());
 
-    SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->m_FillColor);
-    SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->m_FogColor);
-    SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->m_BlendColor);
-    SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->m_PrimColor);
-    SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->m_EnvColor);
+    SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->m_dpFillColor);
+    SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->m_dpFogColor);
+    SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->m_dpBlendColor);
+    SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->m_dpPrimColor);
+    SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->m_dpEnvColor);
 
     // tiles
 
@@ -451,7 +451,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     for (int i = 0; i <= 7; i++)
     {
-        tile_t* t = &state->m_Tiles[i];
+        tile_t* t = &state->m_dpTileDescriptors[i];
     
         if (t->enabled == 0 && i != 7)
         {
@@ -480,7 +480,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     // othermode_h
 
-    othermode_h_t* omh = &state->m_OtherMode_h;
+    othermode_h_t* omh = &state->m_dpOtherMode_h;
 
     ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_PIPELINE), CGfxLabels::OtherMode_pm[omh->pm]);
     ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_COLORDITHER), CGfxLabels::OtherMode_cd[omh->cd]);
@@ -498,28 +498,28 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     /////////////
 
     stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_Combiner.a0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_Combiner.b0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_Combiner.c0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_Combiner.d0));
+        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d0));
 
     stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Aa0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Ab0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_Combiner.Ac0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Ad0));
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad0));
 
     stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_Combiner.a1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_Combiner.b1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_Combiner.c1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_Combiner.d1));
+        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d1));
 
     stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Aa1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Ab1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_Combiner.Ac1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_Combiner.Ad1));
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
 
     ::SetWindowText(GetDlgItem(IDC_EDIT_CC_1C), strCycle1Color.c_str());
     ::SetWindowText(GetDlgItem(IDC_EDIT_CC_1A), strCycle1Alpha.c_str());
@@ -537,7 +537,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     return FALSE;
 }
 
-LRESULT CDebugDisplayList::OnListDblClicked(NMHDR* pNMHDR)
+LRESULT CDebugDisplayList::OnListDblClicked(NMHDR* /*pNMHDR*/)
 {
     int nItem = m_DisplayListCtrl.GetSelectedIndex();
     CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
@@ -547,7 +547,7 @@ LRESULT CDebugDisplayList::OnListDblClicked(NMHDR* pNMHDR)
         return FALSE;
     }
 
-    uint32_t cmdAddress = state->SegmentedToVirtual(state->m_Address);
+    uint32_t cmdAddress = state->SegmentedToVirtual(state->m_spCommandAddress);
     m_Debugger->Debug_ShowMemoryLocation(cmdAddress, true);
     return FALSE;
 }
@@ -704,9 +704,9 @@ LRESULT CDebugDisplayList::OnCustomDrawList(NMHDR* pNMHDR)
     uint32_t nSubItem = pLVCD->iSubItem;
 
     decoded_cmd_t* dc = m_GfxParser.GetLoggedCommand(nItem);
-    CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
+    //CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
 
-    int depth = state->m_StackIndex * 10;
+    //int depth = state->m_spStackIndex * 10;
 
     switch (nSubItem)
     {
@@ -761,7 +761,7 @@ void CDebugDisplayList::PreviewImageResource(dram_resource_t* res)
     uint32_t* imageBuffer = new uint32_t[numTexels];
     uint8_t* imgSrc = m_GfxParser.GetRamSnapshot() + (res->virtAddress - 0x80000000);
 
-    bool valid = CGfxParser::ConvertImage(imageBuffer, imgSrc, res->imageFmt, res->imageSiz, numTexels);
+    CGfxParser::ConvertImage(imageBuffer, imgSrc, res->imageFmt, res->imageSiz, numTexels);
 
     CRect rc;
     ::GetWindowRect(texWnd, &rc);
@@ -782,8 +782,8 @@ void CDebugDisplayList::PreviewImageResource(dram_resource_t* res)
 
     SelectObject(hTempDC, hBitmap);
 
-    int xoffs = rc.Width() / 2 - (width*scale / 2);
-    int yoffs = rc.Height() / 2 - (height*scale / 2);
+    int xoffs = (int)(rc.Width() / 2 - (width*scale / 2));
+    int yoffs = (int)(rc.Height() / 2 - (height*scale / 2));
 
     FillRect(hDC, &rcFill, hBrush);
     StretchBlt(hDC, xoffs, yoffs, width*scale, height*scale,

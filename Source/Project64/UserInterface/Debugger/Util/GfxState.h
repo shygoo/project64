@@ -108,43 +108,48 @@ typedef struct
 class CHleGfxState
 {
 public:
-    uint32_t m_nCommand;
-	uint32_t m_Address;
-	dl_cmd_t m_Command;
+    CHleGfxState(void);
+    uint32_t SegmentedToPhysical(uint32_t segaddr);
+    uint32_t SegmentedToVirtual(uint32_t segaddr);
+    bool     LoadVertices(uint32_t address, int index, int numv);
+    bool     GetCommand(uint32_t address, dl_cmd_t *command);
+    int      GetCommands(uint32_t address, int numCommands, dl_cmd_t commands[]);
 
-	uint32_t m_Segments[16];
-	uint32_t m_Stack[16];
-	uint32_t m_StackIndex;
-	vertex_t m_Vertices[64];
-	tile_t   m_Tiles[8];
-	othermode_h_t m_OtherMode_h;
-	othermode_l_t m_OtherMode_l;
-	dl_cmd_setcombine_t m_Combiner;
+    bool     m_bDone;
+    uint32_t m_nCommand;
+
+    uint8_t  lastBlockLoadTexelSize;
+    uint16_t lastBlockLoadSize;
+
+    // RSP registers/dmem variables
+	uint32_t m_spCommandAddress;
+	dl_cmd_t m_spCommand;
+	uint32_t m_spSegments[16];
+	uint32_t m_spStack[16];
+	uint32_t m_spStackIndex;
+	vertex_t m_spVertices[64];
+    uint8_t  m_spNumLights;
+
     union
     {
         geometrymode_f3d_t f3d;
         geometrymode_f3dex2_t f3dex2;
         uint32_t data;
-    } m_GeometryMode;
-	uint8_t  m_NumLights;
-	uint32_t m_TextureImage;
-	uint32_t m_DepthImage;
-	uint32_t m_ColorImage;
-	im_fmt_t m_TextureImageFmt;
-	im_siz_t m_TextureImageSiz;
-	uint32_t m_FillColor;
-	uint32_t m_FogColor;
-	uint32_t m_BlendColor;
-	uint32_t m_PrimColor;
-	uint32_t m_EnvColor;
+    } m_spGeometryMode;
 
-	uint8_t lastBlockLoadTexelSize;
-	uint16_t lastBlockLoadSize;
-
-	bool m_bDone;
-
-    CHleGfxState(void);
-	uint32_t SegmentedToPhysical(uint32_t segaddr);
-	uint32_t SegmentedToVirtual(uint32_t segaddr);
-    bool LoadVertices(uint32_t address, int index, int numv);
+    // RDP registers
+	tile_t m_dpTileDescriptors[8];
+	othermode_h_t m_dpOtherMode_h;
+	othermode_l_t m_dpOtherMode_l;
+	dl_cmd_setcombine_t m_dpCombiner;
+	uint32_t m_dpTextureImage;
+    im_fmt_t m_dpTextureImageFmt;
+    im_siz_t m_dpTextureImageSiz;
+	uint32_t m_dpDepthImage;
+	uint32_t m_dpColorImage;
+	uint32_t m_dpFillColor;
+	uint32_t m_dpFogColor;
+	uint32_t m_dpBlendColor;
+	uint32_t m_dpPrimColor;
+	uint32_t m_dpEnvColor;
 };
