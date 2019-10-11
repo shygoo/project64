@@ -13,12 +13,39 @@ const char* CGfxLabels::LookupName(gfx_label_t* set, uint32_t value)
 	return NULL;
 }
 
+stdstr CGfxLabels::GeometryModeString(uint32_t bits)
+{
+    bool havePrev = false;
+    stdstr param = "";
+    
+    if (bits == 0)
+    {
+        return "0";
+    }
+
+    for (int i = 0; GeometryModes_F3DEX2[i].name != NULL; i++)
+    {
+        if (bits & GeometryModes_F3DEX2[i].value)
+        {
+            if (havePrev)
+            {
+                param += " | ";
+            }
+    
+            param += GeometryModes_F3DEX2[i].name;
+            havePrev = true;
+        }
+    }
+    
+    return param;
+}
+
 const char* CGfxLabels::TexelSizes[] = { "G_IM_SIZ_4b", "G_IM_SIZ_8b", "G_IM_SIZ_16b", "G_IM_SIZ_32b" };
 const char* CGfxLabels::ImageFormats[] = { "G_IM_FMT_RGBA", "G_IM_FMT_YUV", "G_IM_FMT_CI", "G_IM_FMT_IA", "G_IM_FMT_I" };
 const char* CGfxLabels::TexelSizesShort[] = { "4b", "8b", "16b", "32b" };
 const char* CGfxLabels::ImageFormatsShort[] = { "RGBA", "YUV", "CI", "IA", "I" };
 const char* CGfxLabels::OtherMode_ad[] = { "G_AD_PATTERN", "G_AD_NOTPATTERN", "G_AD_NOISE", "G_AD_DISABLE" };
-const char* CGfxLabels::OtherMode_rd[] = { "G_CD_MAGICSQ", "G_CD_BAYER", "G_CD_NOISE" };
+const char* CGfxLabels::OtherMode_rd[] = { "G_CD_MAGICSQ", "G_CD_BAYER", "G_CD_NOISE", "G_CD_DISABLE" };
 const char* CGfxLabels::OtherMode_ck[] = { "G_CK_NONE", "G_CK_KEY" };
 const char* CGfxLabels::OtherMode_tc[] = { "G_TC_CONV", "1", "2", "3", "G_TC_INVALID_4", "G_TC_FILTCONV", "G_TC_FILT" };
 const char* CGfxLabels::OtherMode_tf[] = { "G_TF_POINT", "1", "G_TF_BILERP", "G_TF_AVERAGE" };
@@ -98,6 +125,7 @@ gfx_label_t CGfxLabels::GeometryModes_F3DEX2[] = {
 	{ 0x00020000, "G_LIGHTING" },
 	{ 0x00040000, "G_TEXTURE_GEN" },
 	{ 0x00080000, "G_TEXTURE_GEN_LINEAR" },
+    { 0x00100000, "G_LOD" },
 	{ 0x00200000, "G_SHADING_SMOOTH" },
 	{ 0x00800000, "G_CLIPPING" },
 	{ 0, NULL }
@@ -258,15 +286,15 @@ cc_preset_lut_entry_t CGfxLabels::CombineModes[] = {
 
 gfx_label_t CGfxLabels::CCMuxA[] = {
 	{ 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
-	{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },{ 7,  "NOISE" },
-	{ 15, "ZERO" },
+	{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "1" },{ 7,  "NOISE" },
+	{ 15, "0" },
 	{ 0 , NULL },
 };
 
 gfx_label_t CGfxLabels::CCMuxB[] = {
 	{ 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
 	{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "CENTER" },{ 7,  "K4" },
-	{ 15, "ZERO" },
+	{ 15, "0" },
 	{ 0 , NULL }
 };
 
@@ -276,27 +304,27 @@ gfx_label_t CGfxLabels::CCMuxC[] = {
 	{ 8,  "TEXEL0_ALPHA" },{ 9,  "TEXEL1_ALPHA" },{ 10, "PRIMITIVE_ALPHA" },
 	{ 11, "SHADE_ALPHA" },{ 12, "ENV_ALPHA" },{ 13, "LOD_FRACTION" },
 	{ 14, "PRIM_LOD_FRAC" },{ 15, "K5" },
-	{ 31, "ZERO" },
+	{ 31, "0" },
 	{ 0 , NULL }
 };
 
 gfx_label_t CGfxLabels::CCMuxD[] = {
 	{ 0,  "COMBINED" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },{ 3,  "PRIMITIVE" },
-	{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },
-	{ 7,  "ZERO" },
+	{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "1" },
+	{ 7,  "0" },
 	{ 0 , NULL }
 };
 
 gfx_label_t CGfxLabels::ACMuxA_B_D[] = {
 	{ 0, "COMBINED" },{ 1,  "TEXEL0" },{ 2, "TEXEL1" },{ 3,  "PRIMITIVE" },
-	{ 4, "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "ONE" },
-	{ 7, "ZERO" },
+	{ 4, "SHADE" },{ 5,  "ENVIRONMENT" },{ 6,  "1" },
+	{ 7, "0" },
 	{ 0 , NULL }
 };
 
 gfx_label_t CGfxLabels::ACMuxC[] = {
 	{ 0,  "LOD_FRACTION" },{ 1,  "TEXEL0" },{ 2,  "TEXEL1" },
 	{ 3,  "PRIMITIVE" },{ 4,  "SHADE" },{ 5,  "ENVIRONMENT" },{ 6, "PRIM_LOD_FRAC" },
-	{ 7,  "ZERO" },
+	{ 7,  "0" },
 	{ 0 , NULL }
 };

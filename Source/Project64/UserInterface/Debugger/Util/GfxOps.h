@@ -197,6 +197,8 @@ private:
     /*01*/ static void op_gsSPVertex_f3dex2(CHleGfxState*, decoded_cmd_t*);
     /*05*/ static void op_gsSP1Triangle_f3dex2(CHleGfxState*, decoded_cmd_t*);
     /*06*/ #define     op_gsSP2Triangles_f3dex2 op_gsSP2Triangles_f3dex
+    /*D7*/ static void op_gsSPTexture_f3dex2(CHleGfxState*, decoded_cmd_t*);
+    /*D8*/ static void op_gsSPPopMatrix_f3dex2(CHleGfxState*, decoded_cmd_t*);
     /*D9*/ static void op_gsSPGeometryMode_f3dex2(CHleGfxState*, decoded_cmd_t*);
     /*DA*/ static void op_gsSPMatrix_f3dex2(CHleGfxState*, decoded_cmd_t*);
     /*DB*/ static void op_gsMoveWd_f3dex2(CHleGfxState*, decoded_cmd_t*);

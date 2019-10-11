@@ -14,6 +14,28 @@ typedef struct
 
 typedef struct
 {
+    struct { uint32_t _u0 : 24, _c : 8; };
+    union {
+        uint32_t color;
+        struct { uint32_t a : 8, b : 8, g : 8, r : 8; };
+    };
+} dl_cmd_setfillcolor_t;
+
+#define dl_cmd_setfogcolor_t   dl_cmd_setfillcolor_t
+#define dl_cmd_setblendcolor_t dl_cmd_setfillcolor_t
+#define dl_cmd_setenvcolor_t   dl_cmd_setfillcolor_t
+
+typedef struct
+{
+    struct { uint32_t l : 8, m : 8, _u0 : 8, _c : 8; };
+    union {
+        struct { uint32_t a : 8, b : 8, g : 8, r : 8; };
+        uint32_t data;
+    };
+} dl_cmd_setprimcolor_t;
+
+typedef struct
+{
 	struct { uint32_t offset : 16, index : 8, _c : 8; }; // w0
 	uint32_t data; // w1
 } dl_cmd_moveword_f3dex2_t;
@@ -127,9 +149,17 @@ typedef struct
 
 typedef struct
 {
-	struct { uint32_t on : 8, tile : 3, level : 3, _u0: 2, bowtie : 8, _c : 8; };
+	struct { uint32_t on : 8, tile : 3, level : 3, _u1: 2, bowtie : 8, _c : 8; };
 	struct { uint32_t t : 16, s : 16; };
 } dl_cmd_texture_f3d_t;
+
+#define dl_cmd_f3dex2_t dl_cmd_texture_f3d_t
+
+typedef struct
+{
+    struct { uint32_t _u0: 1, on : 7, tile : 3, level : 3, _u2 : 2, bowtie : 8, _c : 8; };
+    struct { uint32_t t : 16, s : 16; };
+} dl_cmd_texture_f3dex2_t;
 
 typedef struct
 {
@@ -140,8 +170,10 @@ typedef struct
 typedef struct
 {
     struct { uint32_t i : 8, o : 8, l : 8, _c : 8; };
-    uint32_t address;
+    union { uint32_t address; uint32_t data; };
 } dl_cmd_movemem_f3dex2_t;
+
+#define dl_cmd_popmtx_f3dex2_t dl_cmd_movemem_f3dex2_t
 
 typedef struct
 {
@@ -211,20 +243,25 @@ typedef union
     };
 
     /* shared rdp commands */
-    dl_cmd_texrect_t     texrect;
+    dl_cmd_texrect_t        texrect;
     dl_cmd_rdphalf1_texrect_t texrect_half1;
     dl_cmd_rdphalf2_texrect_t texrect_half2;
-	dl_cmd_fillrect_t    fillrect;
-	dl_cmd_setscissor_t  setscissor;
-    dl_cmd_settimg_t     settimg;
-    dl_cmd_setzimg_t     setzimg;
-    dl_cmd_setcimg_t     setcimg;
-	dl_cmd_settile_t     settile;
-	dl_cmd_loadblock_t   loadblock;
-    dl_cmd_loadtile_t    loadtile;
-    dl_cmd_loadtlut_t    loadtlut;
-	dl_cmd_settilesize_t settilesize;
-    dl_cmd_setcombine_t  setcombine;
+	dl_cmd_fillrect_t       fillrect;
+	dl_cmd_setscissor_t     setscissor;
+    dl_cmd_settimg_t        settimg;
+    dl_cmd_setzimg_t        setzimg;
+    dl_cmd_setcimg_t        setcimg;
+	dl_cmd_settile_t        settile;
+	dl_cmd_loadblock_t      loadblock;
+    dl_cmd_loadtile_t       loadtile;
+    dl_cmd_loadtlut_t       loadtlut;
+	dl_cmd_settilesize_t    settilesize;
+    dl_cmd_setcombine_t     setcombine;
+    dl_cmd_setfillcolor_t   setfillcolor;
+    dl_cmd_setfogcolor_t    setfogcolor;
+    dl_cmd_setblendcolor_t  setblendcolor;
+    dl_cmd_setprimcolor_t   setprimcolor;
+    dl_cmd_setenvcolor_t    setenvcolor;
 
     /* shared rsp commands */
     dl_cmd_dl_t dl;
@@ -253,5 +290,7 @@ typedef union
     dl_cmd_tri1_f3dex2_t     tri1_f3dex2;
     dl_cmd_movemem_f3dex2_t  movemem_f3dex2;
     dl_cmd_mtx_f3dex2_t      mtx_f3dex2;
+    dl_cmd_popmtx_f3dex2_t   popmtx_f3dex2;
     dl_cmd_geometrymode_f3dex2_t geometrymode_f3dex2;
+    dl_cmd_texture_f3dex2_t texture_f3dex2;
 } dl_cmd_t;

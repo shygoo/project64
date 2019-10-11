@@ -174,7 +174,7 @@ ucode_info_t CGfxOps::Microcodes[] = {
 
 // ucode-independent rdp commands
 dl_cmd_info_t CGfxOps::Commands_RDP[] = {
-    { 0xC0, "gsDPNoop",                 op_Nop },
+    { 0xC0, "gsDPNoOp",                 op_Nop },
     { 0xC8, "gsDPTriFill",              NULL },
     { 0xC9, "gsDPTriFillZ",             NULL },
     { 0xCA, "gsDPTriTxtr",              NULL },
@@ -214,7 +214,7 @@ dl_cmd_info_t CGfxOps::Commands_RDP[] = {
 };
 
 dl_cmd_info_t CGfxOps::Commands_F3D[] = {
-    { 0x00, "gsSPNoop",              op_Nop },
+    { 0x00, "gsSPNoOp",              op_Nop },
     { 0x01, "gsSPMatrix",            op_gsSPMatrix_f3d },
     //{ 0x02, "gsSPNoop", NULL, NULL }, ?
     { 0x03, "gsSPMoveMem",           op_gsSPMoveMem_f3d },
@@ -243,7 +243,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
 };
 
 dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
-    { 0x00, "gsSPNoop",              op_Nop },
+    { 0x00, "gsSPNoOp",              op_Nop },
     { 0x01, "gsSPMatrix",            op_gsSPMatrix_f3dex },
     { 0x03, "gsSPMoveMem",           op_gsSPMoveMem_f3dex },
     { 0x04, "gsSPVertex",            op_gsSPVertex_f3dex },
@@ -263,11 +263,13 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
 };
 
 dl_cmd_info_t CGfxOps::Commands_F3DEX2[] = {
-    { 0x00, "gsSPNoop",           op_Nop },
+    { 0x00, "gsDPNoOp",           op_Nop },
     { 0x01, "gsSPVertex",         op_gsSPVertex_f3dex2 },
     { 0x05, "gsSP1Triangle",      op_gsSP1Triangle_f3dex2 },
     { 0x06, "gsSP2Triangles",     op_gsSP2Triangles_f3dex2 },
-    { 0xD7, "gsSPTexture",        op_gsSPTexture_f3d }, // todo
+    { 0x0E, "gsSPNoOp",           op_Nop },
+    { 0xD7, "gsSPTexture",        op_gsSPTexture_f3dex2 }, // todo
+    { 0xD8, "gsSPPopMatrix",      op_gsSPPopMatrix_f3dex2 },
     { 0xD9, "gsSPGeometryMode",   op_gsSPGeometryMode_f3dex2 },
     { 0xDA, "gsSPMatrix",         op_gsSPMatrix_f3dex2 },
     { 0xDB, "gsMoveWd",           op_gsMoveWd_f3dex2 },
@@ -347,12 +349,18 @@ void CGfxOps::op_Nop(CHleGfxState*, decoded_cmd_t* dc)
     dc->listFgColor = COLOR_NOP;
 }
 
+void CGfxOps::op_gsSPPopMatrix_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_popmtx_f3dex2_t* cmd = &state->m_spCommand.popmtx_f3dex2;
+    dc->params = stdstr_f("%d", cmd->data / 64);
+}
+
 void CGfxOps::op_gsSPTextureRectangle(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_texrect_t* cmd = &state->m_spCommand.texrect;
     // note: assuming no frac bits
-    dc->params = stdstr_f("/*ulx*/  (%d << 2), /*uly*/  (%d << 2), /*lrx*/  (%d << 2), /*lry*/  (%d << 2), /*tile*/  %d",
-        (cmd->xl >> 2), (cmd->yl >> 2), (cmd->xh >> 2), (cmd->yh >> 2), cmd->tile);
+    dc->params = stdstr_f("/*ulx*/ %d, /*uly*/ %d, /*lrx*/ %d, /*lry*/ %d, /*tile*/ %d",
+        cmd->xl, cmd->yl, cmd->xh, cmd->yh, cmd->tile);
     
     // lookahead for dphalf1, dphalf2 for complete command
     dl_cmd_t cmd0, cmd1;
@@ -365,7 +373,7 @@ void CGfxOps::op_gsSPTextureRectangle(CHleGfxState* state, decoded_cmd_t* dc)
 
         // skip dphalf1, dphalf2 commands
         // todo make this optional
-        state->m_spCommandAddress += 16;
+        dc->macroLength = 2;
     }
 
     dc->listFgColor = COLOR_PRIMITIVE;
@@ -428,7 +436,7 @@ void CGfxOps::op_gsSP1Triangle_f3d(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Triangle_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri1_f3dex2_t *cmd = &state->m_spCommand.tri1_f3dex2;
-    dc->params = stdstr_f("%d, %d, %d", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
+    dc->params = stdstr_f("%d, %d, %d, /*flag*/ 0", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2);
 
     // report triangle for the mesh builder
     dc->numTris = 1;
@@ -460,7 +468,7 @@ void CGfxOps::op_gsSP1Triangle_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP2Triangles_f3dex(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri2_f3dex_t *cmd = &state->m_spCommand.tri2_f3dex;
-    dc->params = stdstr_f("%d, %d, %d, %d, %d, %d",
+    dc->params = stdstr_f("%d, %d, %d, /*flag0*/ 0, %d, %d, %d, /*flag1*/ 0",
         cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2, cmd->v3 / 2, cmd->v4 / 2, cmd->v5 / 2);
 
     // report triangle for the mesh builder
@@ -581,26 +589,23 @@ void CGfxOps::op_gsMoveWd_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
     else if (cmd->index == 0x04) // MW_CLIP
     {
         // lookahead for 3 more MW_CLIP for gSPClipRatio
-        dl_cmd_t cmd0, cmd1, cmd2;
-        bool bRead0, bRead1, bRead2;
-        state->GetCommand(state->m_spCommandAddress + 0, &cmd0);
-        state->GetCommand(state->m_spCommandAddress + 8, &cmd1);
-        state->GetCommand(state->m_spCommandAddress + 16, &cmd2);
+        dl_cmd_t cmds[3];
+        state->GetCommands(state->m_spCommandAddress, 3, cmds);
 
-        if (cmd0.commandByte == 0xDB &&
-            cmd1.commandByte == 0xDB &&
-            cmd2.commandByte == 0xDB &&
-            cmd0.moveword_f3dex2.index == 0x04 &&
-            cmd1.moveword_f3dex2.index == 0x04 &&
-            cmd2.moveword_f3dex2.index == 0x04)
+        if (cmds[0].commandByte == 0xDB &&
+            cmds[1].commandByte == 0xDB &&
+            cmds[2].commandByte == 0xDB &&
+            cmds[0].moveword_f3dex2.index == 0x04 &&
+            cmds[1].moveword_f3dex2.index == 0x04 &&
+            cmds[2].moveword_f3dex2.index == 0x04)
         {
             // note: assuming ratio is valid and equal for each command
-            dc->Rename("gSPClipRatio");
-            dc->params = stdstr_f("FRUSTRATIO_%d", cmd0.moveword_f3dex2.data);
+            dc->Rename("gsSPClipRatio");
+            dc->params = stdstr_f("FRUSTRATIO_%d", cmds[0].moveword_f3dex2.data);
 
-            // skip the additional movewd commands
+            // hide the additional movewd commands
             // todo make this optional
-            state->m_spCommandAddress += 24;
+            dc->macroLength = 3;
         }
         else
         {
@@ -636,7 +641,21 @@ void CGfxOps::op_gsSPTexture_f3d(CHleGfxState* state, decoded_cmd_t* dc)
     td->enabled = cmd->on;
     td->mipmapLevels = cmd->level;
 
-    dc->params = stdstr_f("/*scaleS*/ 0x%04X, /*scaleT*/ 0x%04X, /*levels*/ %d, /*tile*/ %d, /*on*/ %d", cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
+    dc->params = stdstr_f("/*scaleS*/ 0x%04X, /*scaleT*/ 0x%04X, /*levels*/ %d, /*tile*/ %d, /*on*/ %d",
+        cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
+}
+
+void CGfxOps::op_gsSPTexture_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
+{
+    dl_cmd_texture_f3dex2_t* cmd = &state->m_spCommand.texture_f3dex2;
+    tile_t* td = &state->m_dpTileDescriptors[cmd->tile];
+    td->scaleS = cmd->s;
+    td->scaleT = cmd->t;
+    td->enabled = cmd->on;
+    td->mipmapLevels = cmd->level;
+
+    dc->params = stdstr_f("/*scaleS*/ 0x%04X, /*scaleT*/ 0x%04X, /*levels*/ %d, /*tile*/ %d, /*on*/ %d",
+        cmd->s, cmd->t, cmd->level, cmd->tile, cmd->on);
 }
 
 void CGfxOps::op_gsDPSetTile(CHleGfxState* state, decoded_cmd_t* dc)
@@ -698,7 +717,7 @@ void CGfxOps::op_gsDPSetTextureImage(CHleGfxState* state, decoded_cmd_t* dc)
         {
             // TODO
             dc->listBgColor = RGB(255, 200, 200);
-            dc->macroLength = 6;
+            //dc->macroLength = 6;
             /*
             loadtextureblock or loadmultiblock macro
             gDPLoadTextureBlock
@@ -725,7 +744,7 @@ void CGfxOps::op_gsDPSetTextureImage(CHleGfxState* state, decoded_cmd_t* dc)
         {
             // TODO
             dc->listBgColor = RGB(255, 255, 200);
-            dc->macroLength = 6;
+            //dc->macroLength = 6;
             /*
             loadtexturetile or loadmultitile macro
             gDPLoadTextureTile
@@ -751,18 +770,18 @@ void CGfxOps::op_gsDPSetTextureImage(CHleGfxState* state, decoded_cmd_t* dc)
                 dc->params = stdstr_f("/*addr*/ 0x%08X /*0x%08X*/", cmd->address,
                     state->SegmentedToVirtual(cmd->address));
 
-                //state->m_spCommandAddress += 8 * 5; // skip
+                // hide
                 dc->macroLength = 5;
             }
             else if (count == 16 && tmem >= 256 && ((tmem-256)%16) == 0)
             {
                 dc->listBgColor = RGB(255, 255, 200);
                 int pal = (tmem - 256) / 16;
-                dc->Rename("gDPLoadTLUT_pal16");
+                dc->Rename("gsDPLoadTLUT_pal16");
                 dc->params = stdstr_f("/*pal*/ %d, /*addr*/ 0x%08X /*0x%08X*/", pal, cmd->address,
                     state->SegmentedToVirtual(cmd->address));
 
-                //state->m_spCommandAddress += 8 * 5; // skip
+                // hide
                 dc->macroLength = 5;
             }
             else
@@ -773,7 +792,7 @@ void CGfxOps::op_gsDPSetTextureImage(CHleGfxState* state, decoded_cmd_t* dc)
                     tmem, cmd->address,
                     state->SegmentedToVirtual(cmd->address));
 
-                //state->m_spCommandAddress += 8 * 5; // skip
+                // hide
                 dc->macroLength = 5;
             }
         }
@@ -783,7 +802,7 @@ void CGfxOps::op_gsDPSetTextureImage(CHleGfxState* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsDPSetDepthImage(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_settimg_t* cmd = &state->m_spCommand.settimg;
-    state->m_dpDepthImage = cmd->address; // todo other params
+    state->m_dpDepthImage = cmd->address;
 
     const char* fmtName = "?";
     const char* sizName = "?";
@@ -791,7 +810,7 @@ void CGfxOps::op_gsDPSetDepthImage(CHleGfxState* state, decoded_cmd_t* dc)
     fmtName = CGfxLabels::ImageFormats[cmd->fmt];
     sizName = CGfxLabels::TexelSizes[cmd->siz];
 
-    dc->params = stdstr_f("/*fmt*/ %s, /*siz*/ %s, /*w*/ %d, /*addr*/ 0x%08X /*0x%08X*/", fmtName, sizName, cmd->width + 1, cmd->address,
+    dc->params = stdstr_f("/*addr*/ 0x%08X /*0x%08X*/", cmd->address,
         state->SegmentedToVirtual(cmd->address));
 
     dc->SetDramResource(state, RES_DEPTHBUFFER);
@@ -932,31 +951,27 @@ void CGfxOps::op_gsSPGeometryMode_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
     state->m_spGeometryMode.data &= ~cmd->c;
     state->m_spGeometryMode.data |= cmd->s;
 
-    if (cmd->c == 0xFFFFFF)
+    stdstr strSetParam = CGfxLabels::GeometryModeString(cmd->s);
+    stdstr strClrParam = CGfxLabels::GeometryModeString(~cmd->c);
+
+    if (cmd->c == 0 && cmd->s == 0)
+    {
+        dc->Rename("gsSPClearGeometryMode");
+        dc->params = "0xFFFFFF";
+    }
+    else if (cmd->c == 0xFFFFFF)
     {
         dc->Rename("gsSPSetGeometryMode");
+        dc->params = strSetParam;
     }
     else if (cmd->s == 0)
     {
         dc->Rename("gsSPClearGeometryMode");
+        dc->params = strClrParam;
     }
-
-    // TODO clear bits
-    bool havePrev = false;
-    dc->params = "";
-
-    for (int i = 0; CGfxLabels::GeometryModes_F3DEX2[i].name != NULL; i++)
+    else
     {
-        if (cmd->s & CGfxLabels::GeometryModes_F3DEX2[i].value)
-        {
-            if (havePrev)
-            {
-                dc->params += " | ";
-            }
-
-            dc->params += CGfxLabels::GeometryModes_F3DEX2[i].name;
-            havePrev = true;
-        }
+        dc->params = "(" + strSetParam + "), (" + strClrParam + ")";
     }
 }
 
@@ -1069,53 +1084,77 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3dex2(CHleGfxState* state, decoded_cmd_t* d
         {
             dc->params = stdstr_f("%s, %s", szPresetC1, szPresetC2);
         }
+        else
+        {
+            // todo use names
+            dc->params = stdstr_f("0x%08X, 0x%08X", cmd->mode & RM_C1_MASK, cmd->mode & RM_C2_MASK);
+        }
 
         dc->Rename("gsDPSetRenderMode");
-        // todo fallback if no presets
         return;
     }
 
     if (field == 0)
     {
-        //todo
         dc->Rename("gsDPSetAlphaCompare");
+        switch (cmd->mode)
+        {
+        case 0: dc->params = "G_AC_NONE"; break;
+        case 1: dc->params = "G_AC_NONE"; break;
+        case 3: dc->params = "G_AC_NONE"; break;
+        default: dc->params = stdstr_f("%08X", cmd->mode);
+        }
     }
 
     if (field == 2)
     {
-        //todo
         dc->Rename("gsDPSetDepthSource");
+        switch (cmd->mode)
+        {
+        case 0: dc->params = "G_ZS_PIXEL"; break;
+        case 4: dc->params = "G_SZ_PRIM"; break;
+        default: dc->params = stdstr_f("%08X", cmd->mode);
+        }
     }
 }
 
 void CGfxOps::op_gsDPSetFillColor(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    state->m_dpFillColor = state->m_spCommand.w1;
-    dc->params = stdstr_f("0x%08X", state->m_spCommand.w1);
+    dl_cmd_setfillcolor_t* cmd = &state->m_spCommand.setfillcolor;
+    state->m_dpFillColor = cmd->color;
+    dc->params = stdstr_f("0x%08X", cmd->color);
 }
 
 void CGfxOps::op_gsDPSetFogColor(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    state->m_dpFogColor = state->m_spCommand.w1;
-    dc->params = stdstr_f("0x%08X", state->m_spCommand.w1);
+    dl_cmd_setfogcolor_t* cmd = &state->m_spCommand.setfogcolor;
+    state->m_dpFogColor = cmd->color;
+    dc->params = stdstr_f("/*r*/ %d, /*g*/ %d, /*b*/ %d, /*a*/ %d",
+        cmd->r, cmd->g, cmd->b, cmd->a);
 }
 
 void CGfxOps::op_gsDPSetBlendColor(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    state->m_dpBlendColor = state->m_spCommand.w1;
-    dc->params = stdstr_f("0x%08X", state->m_spCommand.w1);
+    dl_cmd_setblendcolor_t* cmd = &state->m_spCommand.setblendcolor;
+    state->m_dpBlendColor = cmd->color;
+    dc->params = stdstr_f("/*r*/ %d, /*g*/ %d, /*b*/ %d, /*a*/ %d",
+        cmd->r, cmd->g, cmd->b, cmd->a);
 }
 
 void CGfxOps::op_gsDPSetPrimColor(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    state->m_dpPrimColor = state->m_spCommand.w1;
-    dc->params = stdstr_f("0x%08X", state->m_spCommand.w1);
+    dl_cmd_setprimcolor_t* cmd = &state->m_spCommand.setprimcolor;
+    state->m_dpPrimColor = cmd->data;
+    dc->params = stdstr_f("/*m*/ %d, /*l*/ %d, /*r*/ %d, /*g*/ %d, /*b*/ %d, /*a*/ %d",
+        cmd->m, cmd->l, cmd->r, cmd->g, cmd->b, cmd->a);
 }
 
 void CGfxOps::op_gsDPSetEnvColor(CHleGfxState* state, decoded_cmd_t* dc)
 {
-    state->m_dpEnvColor = state->m_spCommand.w1;
-    dc->params = stdstr_f("0x%08X", state->m_spCommand.w1);
+    dl_cmd_setenvcolor_t* cmd = &state->m_spCommand.setenvcolor;
+    state->m_dpEnvColor = cmd->color;
+    dc->params = stdstr_f("/*r*/ %d, /*g*/ %d, /*b*/ %d, /*a*/ %d",
+        cmd->r, cmd->g, cmd->b, cmd->a);
 }
 
 void CGfxOps::op_gsDPLoadTLUTCmd(CHleGfxState* state, decoded_cmd_t* dc)
@@ -1189,7 +1228,7 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
         else if(offs >= 2 && offs <= 10)
         {
             dc->Rename("gsSPLight");
-			dc->params = stdstr_f("/*addr*/ 0x%08X, LIGHT_%d /*0x%08X*/", cmd->address, (offs-2),
+			dc->params = stdstr_f("/*addr*/ 0x%08X, LIGHT_%d /*0x%08X*/", cmd->address, (offs-1),
 				state->SegmentedToVirtual(cmd->address));
         }
     }
@@ -1272,7 +1311,8 @@ void CGfxOps::op_gsDPFillRectangle(CHleGfxState* state, decoded_cmd_t* dc)
 {
     dl_cmd_fillrect_t* cmd = &state->m_spCommand.fillrect;
     // note: ignoring frac bits
-    dc->params = stdstr_f("/*ulx*/ (%d << 2), /*uly*/ (%d << 2), /*lrx*/ (%d << 2), /*lry*/ (%d << 2)", cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
+    dc->params = stdstr_f("/*ulx*/ %d, /*uly*/ %d, /*lrx*/ %d, /*lry*/ %d", 
+       cmd->ulx >> 2, cmd->uly >> 2, cmd->lrx >> 2, cmd->lry >> 2);
 
     dc->listFgColor = COLOR_PRIMITIVE;
 }
@@ -1296,9 +1336,9 @@ void CGfxOps::op_gsSPMatrix_f3dex2(CHleGfxState* state, decoded_cmd_t* dc)
     dl_cmd_mtx_f3dex2_t* cmd = &state->m_spCommand.mtx_f3dex2;
 
     dc->params = stdstr_f("/*addr*/ 0x%08X, (%s | %s | %s) /*0x%08X*/", cmd->address,
-        (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
+        ((cmd->params^1) & 1) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
-        (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
+        (cmd->params & 4) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
         state->SegmentedToVirtual(cmd->address));
 
     dc->SetDramResource(state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);

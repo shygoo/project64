@@ -122,18 +122,111 @@ void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
         Step();
     }
 
-    // debug test
-    FILE* fp = fopen("dl_export.c", "wb");
+    VerifyCommands();
+}
+
+void CGfxParser::VerifyCommands(void)
+{
+    const char *szCompilerPath = "gcc";
+    const char *szGbiHeaderPath = "gbi.h";
+    const char *szSrcPath = "dl_export.c";
+    const char *szDstPath = "dl_export";
+    const char *szGbiVersion = "F3DEX_GBI_2";
+
+    int status;
+
+    FILE* fp = fopen(szSrcPath, "wb");
+
+    fprintf(fp,
+        "#include <stdio.h>\n"
+        "#include <strings.h>\n"
+        "#define %s\n"
+        "#define _LANGUAGE_C\n"
+        "#define _SHIFTL(v, s, w) (((unsigned int)(v) & ((1 << (w)) - 1)) << (s))\n"
+        "typedef unsigned int u32;\n"
+        "#include \"%s\"\n\n"
+        "int length = %d;\n\n",
+        szGbiVersion,
+        szGbiHeaderPath,
+        m_CommandLog.size()
+    );
+
+    // macros
+    fprintf(fp, "Gfx dlist[] = {\n\t/*vaddr    segoffs   command             macro*/\n");
     for (int i = 0; i < m_CommandLog.size(); i++)
     {
-        if (strcmp("...", m_CommandLog[i].name) == 0)
-        {
-            continue;
-        }
+        decoded_cmd_t dc = m_CommandLog[i];
 
-        fprintf(fp, "%s(%s),\n", m_CommandLog[i].name, m_CommandLog[i].params.c_str());
+        fprintf(fp, "\t/*%08X %08X: %08X %08X*/",
+            dc.virtualAddress, dc.address,
+            dc.rawCommand.w0, dc.rawCommand.w1);
+
+        if (strcmp("...", m_CommandLog[i].name) != 0)
+        {
+            fprintf(fp, " %s(%s),",
+                dc.name, dc.params.c_str());
+        }
+        fprintf(fp, "\n");
     }
+    fprintf(fp, "};\n\n");
+
+    // strings
+    fprintf(fp, "const char *dlist_strs[] = {\n");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+        if (strcmp("...", m_CommandLog[i].name) != 0)
+        {
+            fprintf(fp, "\"%s(%s)\",",
+                dc.name, dc.params.c_str());
+        }
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "};\n\n");
+
+    // raw numbers
+    fprintf(fp, "Gfx dlist_raw[] = {\n");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+        fprintf(fp, "\t/*%08X %08X*/ { 0x%08X, 0x%08X },\n",
+            dc.virtualAddress, dc.address,
+            dc.rawCommand.w0, dc.rawCommand.w1);
+    }
+    fprintf(fp, "};\n\n");
+
+    // main
+    fprintf(fp,
+        "int main(void) {"
+            "int dlistOk = 1;"
+            "for (int i = 0; i < length; i++) {"
+                "if (memcmp(&dlist[i], &dlist_raw[i], sizeof(Gfx)) != 0) {"
+                        "printf(\"generated: %%08X %%08X, actual: %%08X %%08X\\n\", "
+                        "dlist[i].words.w0, dlist[i].words.w1, dlist_raw[i].words.w0, dlist_raw[i].words.w1);"
+                    "dlistOk = 0;"
+                    "break;"
+                "}"
+            "}"
+            "if(dlistOk) printf(\"dlist OK\\n\");"
+            "return 0;"
+        "}");
+    
+    stdstr strCommand = stdstr_f("%s %s -o %s", szCompilerPath, szSrcPath, szDstPath);
+
     fclose(fp);
+    system("cls");
+    printf("%s\n", strCommand.c_str());
+    status = system(strCommand.c_str());
+
+    if (status != 0)
+    {
+        printf("error: compilation failed\n");
+    }
+    else
+    {
+        printf("%s\n", szDstPath);
+        status = system(szDstPath);
+    }
 }
 
 // decode and execute command

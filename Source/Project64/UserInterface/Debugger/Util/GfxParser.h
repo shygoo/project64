@@ -15,6 +15,7 @@ public:
 
 public:
     void             Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
+    void             VerifyCommands(void);
 	uint8_t*         GetRamSnapshot(void);
 	ucode_version_t  GetUCodeVersion(void);
 	const char*      GetUCodeName(void);

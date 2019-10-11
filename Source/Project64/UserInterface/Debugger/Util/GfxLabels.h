@@ -21,6 +21,7 @@ class CGfxLabels
 {
 public:
 	static const char* LookupName(gfx_label_t* set, uint32_t value);
+    static stdstr GeometryModeString(uint32_t bits);
 
 	static const char* TexelSizes[];
 	static const char* ImageFormats[];
