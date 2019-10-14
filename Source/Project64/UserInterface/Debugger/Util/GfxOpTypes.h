@@ -60,6 +60,12 @@ typedef struct
 
 typedef struct
 {
+	struct { uint32_t idx : 16, field : 8, _c : 8; };
+	uint32_t value;
+} dl_cmd_modifyvtx_f3dex2_t;
+
+typedef struct
+{
     struct { uint32_t _u0 : 24, _c : 8; };
     struct { uint32_t v2 : 8, v1 : 8, v0 : 8, _u1 : 8; };
 } dl_cmd_tri1_f3d_t;
@@ -78,7 +84,8 @@ typedef struct
     struct { uint32_t v5 : 8, v4 : 8, v3 : 8, _u1 : 8; };
 } dl_cmd_tri2_f3dex_t;
 
-#define dl_cmd_tri2_f3dex2_t dl_cmd_tri2_f3dex_t;
+#define dl_cmd_tri2_f3dex2_t dl_cmd_tri2_f3dex_t
+#define dl_cmd_quad_f3dex2_t dl_cmd_tri2_f3dex2_t
 
 typedef struct
 {
@@ -232,6 +239,12 @@ typedef struct
     struct { uint32_t dsdy : 16, dsdx : 16; };
 } dl_cmd_rdphalf2_texrect_t;
 
+typedef struct
+{
+	struct { uint32_t vstart : 16, _u0 : 8, _c : 8; };
+	struct { uint32_t vend : 16, _u1 : 16; };
+} dl_cmd_culldl_f3dex2_t;
+
 typedef union
 {
 	struct {
@@ -243,54 +256,57 @@ typedef union
     };
 
     /* shared rdp commands */
-    dl_cmd_texrect_t        texrect;
-    dl_cmd_rdphalf1_texrect_t texrect_half1;
-    dl_cmd_rdphalf2_texrect_t texrect_half2;
-	dl_cmd_fillrect_t       fillrect;
-	dl_cmd_setscissor_t     setscissor;
-    dl_cmd_settimg_t        settimg;
-    dl_cmd_setzimg_t        setzimg;
-    dl_cmd_setcimg_t        setcimg;
-	dl_cmd_settile_t        settile;
-	dl_cmd_loadblock_t      loadblock;
-    dl_cmd_loadtile_t       loadtile;
-    dl_cmd_loadtlut_t       loadtlut;
-	dl_cmd_settilesize_t    settilesize;
-    dl_cmd_setcombine_t     setcombine;
-    dl_cmd_setfillcolor_t   setfillcolor;
-    dl_cmd_setfogcolor_t    setfogcolor;
-    dl_cmd_setblendcolor_t  setblendcolor;
-    dl_cmd_setprimcolor_t   setprimcolor;
-    dl_cmd_setenvcolor_t    setenvcolor;
+    dl_cmd_texrect_t             texrect;
+    dl_cmd_rdphalf1_texrect_t    texrect_half1;
+    dl_cmd_rdphalf2_texrect_t    texrect_half2;
+	dl_cmd_fillrect_t            fillrect;
+	dl_cmd_setscissor_t          setscissor;
+    dl_cmd_settimg_t             settimg;
+    dl_cmd_setzimg_t             setzimg;
+    dl_cmd_setcimg_t             setcimg;
+	dl_cmd_settile_t             settile;
+	dl_cmd_loadblock_t           loadblock;
+    dl_cmd_loadtile_t            loadtile;
+    dl_cmd_loadtlut_t            loadtlut;
+	dl_cmd_settilesize_t         settilesize;
+    dl_cmd_setcombine_t          setcombine;
+    dl_cmd_setfillcolor_t        setfillcolor;
+    dl_cmd_setfogcolor_t         setfogcolor;
+    dl_cmd_setblendcolor_t       setblendcolor;
+    dl_cmd_setprimcolor_t        setprimcolor;
+    dl_cmd_setenvcolor_t         setenvcolor;
 
-    /* shared rsp commands */
-    dl_cmd_dl_t dl;
-    dl_cmd_setothermode_h_t setothermode_h;
-    dl_cmd_setothermode_l_t setothermode_l;
+    /* common rsp commands */
+    dl_cmd_dl_t                  dl;
+    dl_cmd_setothermode_h_t      setothermode_h;
+    dl_cmd_setothermode_l_t      setothermode_l;
 
     /* fast3d commands */
-	dl_cmd_moveword_f3d_t moveword_f3d;
-	dl_cmd_movemem_f3d_t  movemem_f3d;
-	dl_cmd_tri1_f3d_t     tri1_f3d;
-	dl_cmd_mtx_f3d_t      mtx_f3d;
-	dl_cmd_vtx_f3d_t      vtx_f3d;
-	dl_cmd_texture_f3d_t  texture_f3d;
-    dl_cmd_geometrymode_f3d_t geometrymode_f3d;
+	dl_cmd_moveword_f3d_t        moveword_f3d;
+	dl_cmd_movemem_f3d_t         movemem_f3d;
+	dl_cmd_tri1_f3d_t            tri1_f3d;
+	dl_cmd_mtx_f3d_t             mtx_f3d;
+	dl_cmd_vtx_f3d_t             vtx_f3d;
+	dl_cmd_texture_f3d_t         texture_f3d;
+    dl_cmd_geometrymode_f3d_t    geometrymode_f3d;
 
     /* f3dex commands */
-    dl_cmd_mtx_f3dex_t  mtx_f3dex;
-    dl_cmd_vtx_f3dex_t  vtx_f3dex;
-    dl_cmd_tri1_f3dex_t tri1_f3dex;
-    dl_cmd_quad_f3dex_t quad_f3dex;
-    dl_cmd_tri2_f3dex_t tri2_f3dex;
+    dl_cmd_mtx_f3dex_t           mtx_f3dex;
+    dl_cmd_vtx_f3dex_t           vtx_f3dex;
+    dl_cmd_tri1_f3dex_t          tri1_f3dex;
+    dl_cmd_quad_f3dex_t          quad_f3dex;
+    dl_cmd_tri2_f3dex_t          tri2_f3dex;
 
     /* f3dex2 commands */
-    dl_cmd_moveword_f3dex2_t moveword_f3dex2;
-    dl_cmd_vtx_f3dex2_t      vtx_f3dex2;
-    dl_cmd_tri1_f3dex2_t     tri1_f3dex2;
-    dl_cmd_movemem_f3dex2_t  movemem_f3dex2;
-    dl_cmd_mtx_f3dex2_t      mtx_f3dex2;
-    dl_cmd_popmtx_f3dex2_t   popmtx_f3dex2;
+	dl_cmd_vtx_f3dex2_t          vtx_f3dex2;
+	dl_cmd_modifyvtx_f3dex2_t    modifyvtx_f3dex2;
+	dl_cmd_culldl_f3dex2_t       culldl_f3dex2;
+    dl_cmd_moveword_f3dex2_t     moveword_f3dex2;
+    dl_cmd_tri1_f3dex2_t         tri1_f3dex2;
+	dl_cmd_quad_f3dex2_t         quad_f3dex2;
+    dl_cmd_movemem_f3dex2_t      movemem_f3dex2;
+    dl_cmd_mtx_f3dex2_t          mtx_f3dex2;
+    dl_cmd_popmtx_f3dex2_t       popmtx_f3dex2;
     dl_cmd_geometrymode_f3dex2_t geometrymode_f3dex2;
-    dl_cmd_texture_f3dex2_t texture_f3dex2;
+    dl_cmd_texture_f3dex2_t      texture_f3dex2;
 } dl_cmd_t;

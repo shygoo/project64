@@ -57,6 +57,11 @@ const char* CGfxLabels::OtherMode_cyc[] = { "G_CYC_1CYCLE", "G_CYC_2CYCLE", "G_C
 const char* CGfxLabels::OtherMode_cd[] = { "0", "1", "G_CD_DISABLE", "G_CD_ENABLE" };
 const char* CGfxLabels::OtherMode_pm[] = { "G_PM_NPRIMITIVE", "G_PM_1PRIMITIVE" };
 
+const char* CGfxLabels::OtherMode_ac[] = { "G_AC_NONE", "G_AC_THRESHOLD", "2", "G_AC_DITHER" };
+const char* CGfxLabels::OtherMode_zs[] = { "G_ZS_PIXEL", "G_ZS_PRIM" };
+//const char* CGfxLabels::OtherMode_rm[] = {};
+//const char* CGfxLabels::OtherMode_rm2[] = {};
+
 gfx_label_t CGfxLabels::ClipDirections[] = {
     { 0x04, "G_MWO_CLIP_RNX"},
     { 0x0C, "G_MWO_CLIP_RNY"},

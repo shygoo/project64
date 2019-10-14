@@ -250,6 +250,7 @@ LRESULT CDebugDisplayList::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
         EndDialog(0);
         break;
     case IDC_BTN_REFRESH:
+		//g_Settings->SaveBool(Debugger_SteppingOps, false);
         m_bRefreshPending = true;
         m_StatusText.SetWindowTextA("Waiting for RSP task...");
         ::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), false);
@@ -267,10 +268,13 @@ void CDebugDisplayList::Refresh(void)
         return;
     }
 
+	//g_Settings->SaveBool(Debugger_SteppingOps, true);
+
 	m_bShowRender = false;
 
     uint32_t ucodeAddr, dlistAddr, dlistSize;
 
+	// not thread safe
     g_MMU->LW_VAddr(0xA4000FD0, ucodeAddr);
     g_MMU->LW_VAddr(0xA4000FF0, dlistAddr);
     g_MMU->LW_VAddr(0xA4000FF4, dlistSize);

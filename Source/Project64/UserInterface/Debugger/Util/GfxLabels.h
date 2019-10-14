@@ -40,6 +40,14 @@ public:
 	static const char* OtherMode_cd[];
 	static const char* OtherMode_pm[];
     
+	static const char* OtherMode_ac[];
+	static const char* OtherMode_zs[];
+	//static const char* OtherMode_rm[];
+	//static const char* OtherMode_rm2[];
+
+	//static gfx_label_t OtherModeA;
+	//static gfx_label_t OtherModeB;
+
     static gfx_label_t LightColorOffsets[];
     static gfx_label_t ClipDirections[];
     static gfx_label_t ClipRatios[];

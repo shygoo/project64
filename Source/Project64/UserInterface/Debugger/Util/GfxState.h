@@ -125,7 +125,7 @@ public:
 	uint32_t m_spCommandAddress;
 	dl_cmd_t m_spCommand;
 	uint32_t m_spSegments[16];
-	uint32_t m_spStack[16];
+	uint32_t m_spStack[32]; // larger than necessary
 	uint32_t m_spStackIndex;
 	vertex_t m_spVertices[64];
     uint8_t  m_spNumLights;

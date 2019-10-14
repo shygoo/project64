@@ -4,9 +4,11 @@
 #include "GfxOpTypes.h"
 #include "GfxOps.h"
 #include "GfxState.h"
+#include "GfxMicrocode.h"
 
-class CGfxParser : CHleGfxState
+class CGfxParser : public CHleGfxState
 {
+	//friend class CGfxOps;
 public:
     CGfxParser(void);
 	static bool ConvertImage(uint32_t* dst, uint8_t *src, im_fmt_t fmt, im_siz_t siz, int numTexels);
@@ -41,10 +43,12 @@ private:
 
 	size_t          m_TriangleCount;
 
-	dl_cmd_info_t*  m_CommandTable;
-    uint32_t        m_UCodeChecksum;
-    ucode_version_t m_UCodeVersion;
-    const char*     m_UCodeName;
+	//dl_cmd_info_t*  m_CommandTable;
+    //uint32_t        m_UCodeChecksum;
+    //ucode_version_t m_UCodeVersion;
+	ucode_info_t      m_MicrocodeInfo;
+	uint32_t          m_MicrocodeChecksum;
+    //const char*     m_UCodeName;
     uint32_t        m_RootDListSize;
     uint32_t        m_RootDListEndAddress;
 	uint32_t        m_VertexBufferSize;

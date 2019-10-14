@@ -258,6 +258,9 @@
     <ClCompile Include="UserInterface\Debugger\Util\GfxState.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\Util\GfxMicrocode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -493,6 +496,9 @@
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\Util\GfxState.h">
       <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Util\GfxMicrocode.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

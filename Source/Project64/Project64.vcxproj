@@ -100,6 +100,7 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-TLB.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger.cpp" />
+    <ClCompile Include="UserInterface\Debugger\Util\GfxMicrocode.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\GfxOps.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\GfxParser.cpp" />
     <ClCompile Include="UserInterface\Debugger\Util\DMALog.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-ViewMemory.h" />
     <ClInclude Include="UserInterface\Debugger\debugger.h" />
     <ClInclude Include="UserInterface\Debugger\DebuggerUI.h" />
+    <ClInclude Include="UserInterface\Debugger\Util\GfxMicrocode.h" />
     <ClInclude Include="UserInterface\Debugger\Util\GfxOpTypes.h" />
     <ClInclude Include="UserInterface\Debugger\Util\GfxOps.h" />
     <ClInclude Include="UserInterface\Debugger\Util\GfxParser.h" />

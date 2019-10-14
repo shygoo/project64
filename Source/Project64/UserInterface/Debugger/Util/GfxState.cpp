@@ -36,7 +36,7 @@ uint32_t CHleGfxState::SegmentedToPhysical(uint32_t segaddr)
 {
 	uint32_t segment = (segaddr >> 24) & 0x0F;
 	uint32_t offset = segaddr & 0x00FFFFFF;
-	return m_spSegments[segment] + offset;
+	return (m_spSegments[segment] & 0x1FFFFFFF) + offset;
 }
 
 uint32_t CHleGfxState::SegmentedToVirtual(uint32_t segaddr)
