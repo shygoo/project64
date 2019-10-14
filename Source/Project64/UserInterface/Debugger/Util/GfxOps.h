@@ -111,8 +111,6 @@ private:
     static void op_Nop(CGfxParser*, decoded_cmd_t*);
 
     // RDP commands
-    /*E4*/ static void op_gsSPTextureRectangle(CGfxParser*, decoded_cmd_t*);
-    /*E5*/ #define     op_gsSPTextureRectangleFlip op_gsSPTextureRectangle
     /*ED*/ static void op_gsDPSetScissor(CGfxParser*, decoded_cmd_t*);
     /*EF*/ static void op_gsDPSetOtherMode(CGfxParser*, decoded_cmd_t*);
     /*F0*/ static void op_gsDPLoadTLUTCmd(CGfxParser*, decoded_cmd_t*);
@@ -160,6 +158,8 @@ private:
     /*BB*/ #define     op_gsSPTexture_f3dex op_gsSPTexture_f3d
     /*BC*/ #define     op_gsMoveWd_f3dex op_gsMoveWd_f3d
     /*BF*/ static void op_gsSP1Triangle_f3dex(CGfxParser*, decoded_cmd_t*);
+    /*E4*/ static void op_gsSPTextureRectangle_f3dex(CGfxParser*, decoded_cmd_t*);
+    /*E5*/ #define     op_gsSPTextureRectangleFlip_f3dex op_gsSPTextureRectangle_f3dex
     
     // Fast3DEX2 RSP commands
     /*01*/ static void op_gsSPVertex_f3dex2(CGfxParser*, decoded_cmd_t*);
@@ -178,6 +178,8 @@ private:
     /*DF*/ #define     op_gsSPEndDisplayList_f3dex2 op_gsSPEndDisplayList_f3d
     /*E2*/ static void op_gsSPSetOtherMode_l_f3dex2(CGfxParser*, decoded_cmd_t*);
     /*E3*/ static void op_gsSPSetOtherMode_h_f3dex2(CGfxParser*, decoded_cmd_t*);
+    /*E4*/ static void op_gsSPTextureRectangle_f3dex2(CGfxParser*, decoded_cmd_t*);
+    /*E5*/ #define     op_gsSPTextureRectangleFlip_f3dex2 op_gsSPTextureRectangle_f3dex2
 };
 
 
