@@ -20,24 +20,44 @@ enum ucode_version_t
 	UCODE_F3DTEXA
 };
 
+enum ucode_patch_t
+{
+    PATCH_NONE,
+    PATCH_F3DEX_095 // MK64
+};
+
 typedef struct
 {
-	uint32_t checksum;
-	ucode_version_t version;
+	uint32_t        checksum;
+	ucode_version_t ucodeId;
+    ucode_patch_t   patchId;
 } ucode_checksum_t;
 
 typedef struct
 {
-	ucode_version_t version;
-	const char*     name;
-	dl_cmd_info_t*  commandTable;
+	int            id;
+	const char*    name;
+	dl_cmd_info_t* commandTable;
+} ucode_cmd_lut_t;
+
+typedef struct
+{
+    uint32_t        checksum;
+    ucode_version_t ucodeId;
+    const char*     ucodeName;
+    dl_cmd_info_t*  ucodeCommandTable;
+    ucode_patch_t   patchId;
+    const char*     patchName;
+    dl_cmd_info_t*  patchCommandTable;
 } ucode_info_t;
 
-class GfxMicrocode
+class CGfxMicrocode
 {
 public:
-	static uint32_t Identify(uint8_t* ucode, ucode_info_t *info);
+	static void Identify(uint8_t* ucode, ucode_info_t *info);
+    //static void BuildArray(ucode_info_t* info, dl_cmd_info_t* arr);
 private:
 	static ucode_checksum_t     Checksums[];
-	static ucode_info_t         Microcodes[];
+    static ucode_cmd_lut_t      Microcodes[];
+    static ucode_cmd_lut_t      Patches[];
 };

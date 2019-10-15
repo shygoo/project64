@@ -31,24 +31,20 @@ public:
 
 private:
 	void Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
-    void Step();
-
-    uint8_t* m_RamSnapshot;
-    //CScene   m_Scene;
+    void BuildArray(void);
+    void Step(void);
 
     std::vector<CHleGfxState>    m_StateLog;
     std::vector<decoded_cmd_t>   m_CommandLog;
 	std::vector<dram_resource_t> m_RamResources;
     int m_CurrentMacroLength;
 
+    dl_cmd_info_t m_CommandArray[256];
+    uint8_t* m_RamSnapshot;
+
 	size_t          m_TriangleCount;
 
-	//dl_cmd_info_t*  m_CommandTable;
-    //uint32_t        m_UCodeChecksum;
-    //ucode_version_t m_UCodeVersion;
-	ucode_info_t      m_MicrocodeInfo;
-	uint32_t          m_MicrocodeChecksum;
-    //const char*     m_UCodeName;
+	ucode_info_t    m_MicrocodeInfo;
     uint32_t        m_RootDListSize;
     uint32_t        m_RootDListEndAddress;
 	uint32_t        m_VertexBufferSize;

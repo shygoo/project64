@@ -100,12 +100,14 @@ typedef struct
 class CGfxOps
 {
 public:
-    static const dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
+    //static const dl_cmd_info_t* LookupCommand(dl_cmd_info_t* commands, uint8_t cmdByte);
 
     static dl_cmd_info_t Commands_RDP[];
     static dl_cmd_info_t Commands_F3D[];
     static dl_cmd_info_t Commands_F3DEX[];
     static dl_cmd_info_t Commands_F3DEX2[];
+
+    static dl_cmd_info_t Patch_F3DEX_BETA[];
 
 private:
     static void op_Nop(CGfxParser*, decoded_cmd_t*);
@@ -141,6 +143,7 @@ private:
     /*BA*/ static void op_gsSPSetOtherMode_h_f3d(CGfxParser*, decoded_cmd_t*);
     /*BB*/ static void op_gsSPTexture_f3d(CGfxParser*, decoded_cmd_t*);
     /*BC*/ static void op_gsMoveWd_f3d(CGfxParser*, decoded_cmd_t*);
+    /*BD*/ static void op_gsSPPopMatrix_f3d(CGfxParser*, decoded_cmd_t*);
     /*BF*/ static void op_gsSP1Triangle_f3d(CGfxParser*, decoded_cmd_t*);
 
     // Fast3DEX RSP commands
@@ -149,7 +152,6 @@ private:
     /*04*/ static void op_gsSPVertex_f3dex(CGfxParser*, decoded_cmd_t*);
     /*06*/ #define     op_gsSPDisplayList_f3dex op_gsSPDisplayList_f3d
     /*B1*/ static void op_gsSP2Triangles_f3dex(CGfxParser*, decoded_cmd_t*);
-    /*B5*/ static void op_gsSP1Quadrangle_f3dex(CGfxParser*, decoded_cmd_t*);
     /*B6*/ #define     op_gsSPClearGeometryMode_f3dex op_gsSPClearGeometryMode_f3d
     /*B7*/ #define     op_gsSPSetGeometryMode_f3dex op_gsSPSetGeometryMode_f3d
     /*B8*/ #define     op_gsSPEndDisplayList_f3dex op_gsSPEndDisplayList_f3d
@@ -157,10 +159,14 @@ private:
     /*BA*/ #define     op_gsSPSetOtherMode_h_f3dex op_gsSPSetOtherMode_h_f3d
     /*BB*/ #define     op_gsSPTexture_f3dex op_gsSPTexture_f3d
     /*BC*/ #define     op_gsMoveWd_f3dex op_gsMoveWd_f3d
+    /*BD*/ #define     op_gsSPPopMatrix_f3dex op_gsSPPopMatrix_f3d
     /*BF*/ static void op_gsSP1Triangle_f3dex(CGfxParser*, decoded_cmd_t*);
     /*E4*/ static void op_gsSPTextureRectangle_f3dex(CGfxParser*, decoded_cmd_t*);
     /*E5*/ #define     op_gsSPTextureRectangleFlip_f3dex op_gsSPTextureRectangle_f3dex
     
+    // Fast3DEX RSP commands (beta patch)
+    /*B5*/ static void op_gsSP1Quadrangle_f3dex_beta(CGfxParser*, decoded_cmd_t*);
+
     // Fast3DEX2 RSP commands
     /*01*/ static void op_gsSPVertex_f3dex2(CGfxParser*, decoded_cmd_t*);
     /*02*/ static void op_gsSPModifyVertex_f3dex2(CGfxParser*, decoded_cmd_t*);

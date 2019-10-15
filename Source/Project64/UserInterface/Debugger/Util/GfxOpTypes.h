@@ -245,6 +245,14 @@ typedef struct
 	struct { uint32_t vend : 16, _u1 : 16; };
 } dl_cmd_culldl_f3dex2_t;
 
+typedef struct
+{
+    struct { uint32_t _u0 : 24, _c : 8; };
+    struct { uint32_t p0; };
+} dl_cmd_immp1_t;
+
+#define dl_cmd_popmtx_f3d_t dl_cmd_immp1_t
+
 typedef union
 {
 	struct {
@@ -283,6 +291,7 @@ typedef union
 
     /* fast3d commands */
 	dl_cmd_moveword_f3d_t        moveword_f3d;
+    dl_cmd_popmtx_f3d_t          popmtx_f3d;
 	dl_cmd_movemem_f3d_t         movemem_f3d;
 	dl_cmd_tri1_f3d_t            tri1_f3d;
 	dl_cmd_mtx_f3d_t             mtx_f3d;

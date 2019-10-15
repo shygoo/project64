@@ -5,20 +5,19 @@
 #include "GfxMicrocode.h"
 
 CGfxParser::CGfxParser(void) :
-	m_MicrocodeChecksum(0),
-	m_MicrocodeInfo({ UCODE_UNKNOWN, NULL, NULL }),
-	m_RootDListSize(0),
-	m_RootDListEndAddress(0),
-	m_VertexBufferSize(16),
-	m_RamSnapshot(NULL),
-	m_TriangleCount(0),
+    m_MicrocodeInfo({ 0 }),
+    m_RootDListSize(0),
+    m_RootDListEndAddress(0),
+    m_VertexBufferSize(16),
+    m_RamSnapshot(NULL),
+    m_TriangleCount(0),
     m_CurrentMacroLength(0)
 {
 }
 
 uint8_t* CGfxParser::GetRamSnapshot(void)
 {
-	return m_RamSnapshot;
+    return m_RamSnapshot;
 }
 
 CHleGfxState* CGfxParser::GetLoggedState(size_t index)
@@ -33,70 +32,104 @@ CHleGfxState* CGfxParser::GetLoggedState(size_t index)
 
 decoded_cmd_t* CGfxParser::GetLoggedCommand(size_t index)
 {
-	if (index >= m_CommandLog.size())
-	{
-		return NULL;
-	}
+    if (index >= m_CommandLog.size())
+    {
+        return NULL;
+    }
 
-	return &m_CommandLog[index];
+    return &m_CommandLog[index];
 }
 
 dram_resource_t* CGfxParser::GetRamResource(size_t index)
 {
-	if (index >= m_RamResources.size())
-	{
-		return NULL;
-	}
+    if (index >= m_RamResources.size())
+    {
+        return NULL;
+    }
 
-	return &m_RamResources[index];
+    return &m_RamResources[index];
 }
 
 size_t CGfxParser::GetCommandCount(void)
 {
-	return m_CommandLog.size();
+    return m_CommandLog.size();
 }
 
 size_t CGfxParser::GetRamResourceCount(void)
 {
-	return m_RamResources.size();
+    return m_RamResources.size();
 }
 
 size_t CGfxParser::GetTriangleCount(void)
 {
-	return m_TriangleCount;
+    return m_TriangleCount;
 }
 
 void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
-    new((CHleGfxState*)this) CHleGfxState();
+    new((CHleGfxState*)this) CHleGfxState;
 
-	m_spCommandAddress = dlistAddr;
-	m_RootDListSize = dlistSize;
-	m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
-	m_VertexBufferSize = 16;
-	m_TriangleCount = 0;
+    m_spCommandAddress = dlistAddr;
+    m_RootDListSize = dlistSize;
+    m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
+    m_VertexBufferSize = 16;
+    m_TriangleCount = 0;
 
-	m_StateLog.clear();
-	m_CommandLog.clear();
-	m_RamResources.clear();
+    m_StateLog.clear();
+    m_CommandLog.clear();
+    m_RamResources.clear();
 
-	if (m_RamSnapshot != NULL)
-	{
+    if (m_RamSnapshot != NULL)
+    {
         delete[] m_RamSnapshot;
-	}
+    }
 
-	uint32_t ramSize = g_MMU->RdramSize();
+    uint32_t ramSize = g_MMU->RdramSize();
     m_RamSnapshot = new uint8_t[ramSize];
-	memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
+    memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
 
-	uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
-	m_MicrocodeChecksum = GfxMicrocode::Identify(ucode, &m_MicrocodeInfo);
+    uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
+    CGfxMicrocode::Identify(ucode, &m_MicrocodeInfo);
+    BuildArray();
+}
+
+void CGfxParser::BuildArray()
+{
+    for (uint8_t i = 0; i < 256; i++)
+    {
+        m_CommandArray[i] = {0};
+    }
+
+    // import RDP commands
+    for (int i = 0; CGfxOps::Commands_RDP[i].commandName != NULL; i++)
+    {
+        uint8_t index = CGfxOps::Commands_RDP[i].commandByte;
+        m_CommandArray[index] = CGfxOps::Commands_RDP[i];
+    }
+
+    // import base RSP commands
+    if (m_MicrocodeInfo.ucodeCommandTable != NULL)
+    {
+        for (int i = 0; m_MicrocodeInfo.ucodeCommandTable[i].commandName != NULL; i++)
+        {
+            m_CommandArray[m_MicrocodeInfo.ucodeCommandTable[i].commandByte] = m_MicrocodeInfo.ucodeCommandTable[i];
+        }
+    }
+
+    // import patched commands
+    if (m_MicrocodeInfo.patchCommandTable != NULL)
+    {
+        for (int i = 0; m_MicrocodeInfo.patchCommandTable[i].commandName != NULL; i++)
+        {
+            m_CommandArray[m_MicrocodeInfo.patchCommandTable[i].commandByte] = m_MicrocodeInfo.patchCommandTable[i];
+        }
+    }
 }
 
 void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
     testGeom.Clear();
-	Setup(ucodeAddr, dlistAddr, dlistSize);
+    Setup(ucodeAddr, dlistAddr, dlistSize);
 
     while (!m_bDone)
     {
@@ -113,50 +146,45 @@ void CGfxParser::Step(void)
 
     if (!bRead)
     {
-		printf("invalid command address? %08X %08X\n", m_spCommandAddress, SegmentedToPhysical(m_spCommandAddress));
+        printf("invalid command address? %08X %08X\n", m_spCommandAddress, SegmentedToPhysical(m_spCommandAddress));
         m_bDone = true;
         return;
     }
 
     m_StateLog.push_back(*(CHleGfxState*)this);
 
-    const dl_cmd_info_t *commandInfo;
+    dl_cmd_info_t* commandInfo;
     decoded_cmd_t dc;
 
-	memset(&dc, 0, sizeof(decoded_cmd_t));
+    memset(&dc, 0, sizeof(decoded_cmd_t));
 
     dc.dramResource.nCommand = m_CommandLog.size();
-	dc.address = m_spCommandAddress;
-	dc.rawCommand = m_spCommand;
-	dc.virtualAddress = SegmentedToVirtual(dc.address);
-	dc.name = "?";
-	dc.params = "?";
+    dc.address = m_spCommandAddress;
+    dc.rawCommand = m_spCommand;
+    dc.virtualAddress = SegmentedToVirtual(dc.address);
+    dc.name = "?";
+    dc.params = "?";
 
-	m_spCommandAddress += 8;
+    m_spCommandAddress += 8;
+    commandInfo = &m_CommandArray[m_spCommand.commandByte];
 
-    commandInfo = CGfxOps::LookupCommand(CGfxOps::Commands_RDP, m_spCommand.commandByte);
-
-    if (commandInfo == NULL && m_MicrocodeInfo.commandTable != NULL)
+    if (commandInfo->commandName != NULL && commandInfo->opFunc != NULL)
     {
-        commandInfo = CGfxOps::LookupCommand(m_MicrocodeInfo.commandTable, m_spCommand.commandByte);
+        dc.name = commandInfo->commandName;
+        commandInfo->opFunc(this, &dc);
+    }
+    else
+    {
+        dc.name = "gsUnknown";
+        dc.params = stdstr_f("0x%08X, 0x%08X", m_spCommand.w0, m_spCommand.w1);
+        dc.listBgColor = RGB(0xFF, 0xCC, 0xCC);
     }
 
-    if (commandInfo != NULL)
+    if (m_MicrocodeInfo.ucodeId == UCODE_UNKNOWN && m_spCommandAddress >= m_RootDListEndAddress)
     {
-		dc.name = commandInfo->commandName;
-
-		// execute command
-		if (commandInfo->opFunc != NULL)
-		{
-			commandInfo->opFunc(this, &dc);
-		}
-    }
-	
-	if (m_MicrocodeInfo.version == UCODE_UNKNOWN && m_spCommandAddress >= m_RootDListEndAddress)
-	{
         // if the ucode is unknown, only parse the root display list
-		m_bDone = true;
-	}
+        m_bDone = true;
+    }
     
     if (dc.numTris != 0)
     {
@@ -176,10 +204,10 @@ void CGfxParser::Step(void)
         m_TriangleCount += dc.numTris;
     }
 
-	if (dc.dramResource.type != RES_NONE)
-	{
-		m_RamResources.push_back(dc.dramResource);
-	}
+    if (dc.dramResource.type != RES_NONE)
+    {
+        m_RamResources.push_back(dc.dramResource);
+    }
 
     if (m_CurrentMacroLength > 0)
     {
@@ -198,71 +226,71 @@ void CGfxParser::Step(void)
 
 ucode_version_t CGfxParser::GetUCodeVersion(void)
 {
-	return m_MicrocodeInfo.version;
+    return m_MicrocodeInfo.ucodeId;
 }
 
 const char* CGfxParser::GetUCodeName(void)
 {
-	return m_MicrocodeInfo.name;
+    return m_MicrocodeInfo.ucodeName;
 }
 
 uint32_t CGfxParser::GetUCodeChecksum(void)
 {
-	return m_MicrocodeChecksum;
+    return m_MicrocodeInfo.checksum;
 }
 
 bool CGfxParser::ConvertImage(uint32_t* dst, uint8_t* src, im_fmt_t fmt, im_siz_t siz, int numTexels)
 {
-	if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_16b)
-	{
-		for (int i = 0; i < numTexels; i++)
-		{
-			uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
-			uint8_t r = (uint8_t)((px >> 11) & 0x1F) * (255.0f / 32.0f);
-			uint8_t g = (uint8_t)((px >> 6) & 0x1F) * (255.0f / 32.0f);
-			uint8_t b = (uint8_t)((px >> 1) & 0x1F) * (255.0f / 32.0f);
-			uint8_t alpha = (px & 1) * 255;
-			dst[i] = alpha << 24 | (r << 16) | (g << 8) | (b << 0);
-		}
-	}
-	else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_16b)
-	{
-		for (int i = 0; i < numTexels; i++)
-		{
-			uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
-			uint8_t intensity = (px >> 8);
-			uint8_t alpha = px & 0xFF;
-			dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
-		}
-	}
-	else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_8b)
-	{
-		for (int i = 0; i < numTexels; i++)
-		{
-			uint8_t px = src[i ^ 3];
-			uint8_t intensity = (px >> 4) * 0x11;
-			uint8_t alpha = (px & 0xF) * 0x11;
-			dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
-		}
-	}
-	else if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_8b)
-	{
-		for (int i = 0; i < numTexels; i++)
-		{
-			uint8_t intensity = src[i ^ 3];
-			dst[i] = (0xFF << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
-		}
-	}
-	else
-	{
-		return false;
-		//MessageBox(NULL, stdstr_f("unhandled image texel/fmt combo fmt:%d siz:%d", res->imageFmt, res->imageSiz).c_str(), MB_OK);
-	}
+    if (fmt == G_IM_FMT_RGBA && siz == G_IM_SIZ_16b)
+    {
+        for (int i = 0; i < numTexels; i++)
+        {
+            uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
+            uint8_t r = (uint8_t)((px >> 11) & 0x1F) * (255.0f / 32.0f);
+            uint8_t g = (uint8_t)((px >> 6) & 0x1F) * (255.0f / 32.0f);
+            uint8_t b = (uint8_t)((px >> 1) & 0x1F) * (255.0f / 32.0f);
+            uint8_t alpha = (px & 1) * 255;
+            dst[i] = alpha << 24 | (r << 16) | (g << 8) | (b << 0);
+        }
+    }
+    else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_16b)
+    {
+        for (int i = 0; i < numTexels; i++)
+        {
+            uint16_t px = *(uint16_t*)&src[(i * 2) ^ 2];
+            uint8_t intensity = (px >> 8);
+            uint8_t alpha = px & 0xFF;
+            dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+        }
+    }
+    else if (fmt == G_IM_FMT_IA && siz == G_IM_SIZ_8b)
+    {
+        for (int i = 0; i < numTexels; i++)
+        {
+            uint8_t px = src[i ^ 3];
+            uint8_t intensity = (px >> 4) * 0x11;
+            uint8_t alpha = (px & 0xF) * 0x11;
+            dst[i] = (alpha << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+        }
+    }
+    else if (fmt == G_IM_FMT_I && siz == G_IM_SIZ_8b)
+    {
+        for (int i = 0; i < numTexels; i++)
+        {
+            uint8_t intensity = src[i ^ 3];
+            dst[i] = (0xFF << 24) | (intensity << 16) | (intensity << 8) | (intensity << 0);
+        }
+    }
+    else
+    {
+        return false;
+        //MessageBox(NULL, stdstr_f("unhandled image texel/fmt combo fmt:%d siz:%d", res->imageFmt, res->imageSiz).c_str(), MB_OK);
+    }
 
-	return true;
+    return true;
 }
 
-#define VERIFIER_GBI_VERSION     "F3DEX_GBI_2"
+#define VERIFIER_GBI_VERSION     "F3DEX_GBI"
 #define VERIFIER_COMPILER_PATH   "gcc"
 #define VERIFIER_GBI_HEADER_PATH "gbi.h"
 #define VERIFIER_SRC_PATH        "dl_verify.c"
@@ -272,105 +300,105 @@ bool CGfxParser::ConvertImage(uint32_t* dst, uint8_t* src, im_fmt_t fmt, im_siz_
 #define VERIFIER_SRC_MAIN STRINGIZE(\
 int main(void) \
 { \
-	int dlistOk = 1;\
-	for(int i = 0; i < length; i++)\
-	{ \
-		if (memcmp(&dlist[i], &dlist_raw[i], sizeof(Gfx)) != 0) \
-		{ \
-			printf("#%%d: generated: %%08X %%08X, actual: %%08X %%08X\n", \
-				i, dlist[i].words.w0, dlist[i].words.w1, dlist_raw[i].words.w0, dlist_raw[i].words.w1); \
-			return 1; \
-		} \
-	} \
-	return 0; \
+    int dlistOk = 1;\
+    for(int i = 0; i < length; i++)\
+    { \
+        if (memcmp(&dlist[i], &dlist_raw[i], sizeof(Gfx)) != 0) \
+        { \
+            printf("#%%d: generated: %%08X %%08X, actual: %%08X %%08X\n", \
+                i, dlist[i].words.w0, dlist[i].words.w1, dlist_raw[i].words.w0, dlist_raw[i].words.w1); \
+            return 1; \
+        } \
+    } \
+    return 0; \
 })
 
 // recompile the decoded display list to check if the binary matches
 void CGfxParser::VerifyCommands(void)
 {
-	int status;
+    int status;
 
-	//system("cls");
-	printf("writing dlist verification source to %s...\n", VERIFIER_SRC_PATH);
+    //system("cls");
+    printf("writing dlist verification source to %s...\n", VERIFIER_SRC_PATH);
 
-	FILE* fp = fopen(VERIFIER_SRC_PATH, "wb");
+    FILE* fp = fopen(VERIFIER_SRC_PATH, "wb");
 
-	fprintf(fp,
-		"#include <stdio.h>\n"
-		"#include <strings.h>\n"
-		"#define %s\n"
-		"#define _LANGUAGE_C\n"
-		"#define _SHIFTL(v, s, w) (((unsigned int)(v) & ((1 << (w)) - 1)) << (s))\n"
-		"typedef unsigned int u32;\n"
-		"#include \"%s\"\n\n"
-		"int length = %d;\n\n",
-		VERIFIER_GBI_VERSION,
-		VERIFIER_GBI_HEADER_PATH,
-		m_CommandLog.size()
-	);
+    fprintf(fp,
+        "#include <stdio.h>\n"
+        "#include <strings.h>\n"
+        "#define %s\n"
+        "#define _LANGUAGE_C\n"
+        "#define _SHIFTL(v, s, w) (((unsigned int)(v) & ((1 << (w)) - 1)) << (s))\n"
+        "typedef unsigned int u32;\n"
+        "#include \"%s\"\n\n"
+        "int length = %d;\n\n",
+        VERIFIER_GBI_VERSION,
+        VERIFIER_GBI_HEADER_PATH,
+        m_CommandLog.size()
+    );
 
-	// macros
-	fprintf(fp, "Gfx dlist[] = {\n\t/*vaddr    segoffs   command             macro*/\n");
-	for (int i = 0; i < m_CommandLog.size(); i++)
-	{
-		decoded_cmd_t dc = m_CommandLog[i];
+    // macros
+    fprintf(fp, "Gfx dlist[] = {\n\t/*vaddr    segoffs   command             macro*/\n");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
 
-		fprintf(fp, "\t/* #%d: %08X %08X: %08X %08X*/",
-			i, dc.virtualAddress, dc.address,
-			dc.rawCommand.w0, dc.rawCommand.w1);
+        fprintf(fp, "\t/* #%d: %08X %08X: %08X %08X*/",
+            i, dc.virtualAddress, dc.address,
+            dc.rawCommand.w0, dc.rawCommand.w1);
 
-		if (strcmp("...", m_CommandLog[i].name) != 0)
-		{
-			fprintf(fp, " %s(%s),",
-				dc.name, dc.params.c_str());
-		}
-		fprintf(fp, "\n");
-	}
-	fprintf(fp, "};\n\n");
+        if (strcmp("...", m_CommandLog[i].name) != 0)
+        {
+            fprintf(fp, " %s(%s),",
+                dc.name, dc.params.c_str());
+        }
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "};\n\n");
 
-	// strings
-	fprintf(fp, "const char *dlist_strs[] = {\n");
-	for (int i = 0; i < m_CommandLog.size(); i++)
-	{
-		decoded_cmd_t dc = m_CommandLog[i];
-		if (strcmp("...", m_CommandLog[i].name) != 0)
-		{
-			fprintf(fp, "\"%s(%s)\",",
-				dc.name, dc.params.c_str());
-		}
-		fprintf(fp, "\n");
-	}
-	fprintf(fp, "};\n\n");
+    // strings
+    fprintf(fp, "const char *dlist_strs[] = {\n");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+        if (strcmp("...", m_CommandLog[i].name) != 0)
+        {
+            fprintf(fp, "\"%s(%s)\",",
+                dc.name, dc.params.c_str());
+        }
+        fprintf(fp, "\n");
+    }
+    fprintf(fp, "};\n\n");
 
-	// raw numbers
-	fprintf(fp, "Gfx dlist_raw[] = {\n");
-	for (int i = 0; i < m_CommandLog.size(); i++)
-	{
-		decoded_cmd_t dc = m_CommandLog[i];
-		fprintf(fp, "\t/*%08X %08X*/ { 0x%08X, 0x%08X },\n",
-			dc.virtualAddress, dc.address,
-			dc.rawCommand.w0, dc.rawCommand.w1);
-	}
-	fprintf(fp, "};\n\n");
+    // raw numbers
+    fprintf(fp, "Gfx dlist_raw[] = {\n");
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+        fprintf(fp, "\t/*%08X %08X*/ { 0x%08X, 0x%08X },\n",
+            dc.virtualAddress, dc.address,
+            dc.rawCommand.w0, dc.rawCommand.w1);
+    }
+    fprintf(fp, "};\n\n");
 
-	// main
-	fprintf(fp, VERIFIER_SRC_MAIN);
+    // main
+    fprintf(fp, VERIFIER_SRC_MAIN);
 
-	stdstr strCommand = stdstr_f("%s %s -o %s",
-		VERIFIER_COMPILER_PATH, VERIFIER_SRC_PATH, VERIFIER_DST_PATH);
+    stdstr strCommand = stdstr_f("%s %s -o %s",
+        VERIFIER_COMPILER_PATH, VERIFIER_SRC_PATH, VERIFIER_DST_PATH);
 
-	fclose(fp);
-	printf("compiling (%s)...\n", strCommand.c_str());
-	status = system(strCommand.c_str());
+    fclose(fp);
+    printf("compiling (%s)...\n", strCommand.c_str());
+    status = system(strCommand.c_str());
 
-	if (status != 0)
-	{
-		printf("error: compilation failed\n");
-		return;
-	}
+    if (status != 0)
+    {
+        printf("error: compilation failed\n");
+        return;
+    }
 
-	printf("running (%s)...\n", VERIFIER_DST_PATH);
-	status = system(VERIFIER_DST_PATH);
+    printf("running (%s)...\n", VERIFIER_DST_PATH);
+    status = system(VERIFIER_DST_PATH);
 
-	printf(status == 0 ? "dlist OK\n" : "dlist does not match\n");
+    printf(status == 0 ? "dlist OK\n" : "dlist does not match\n");
 }
