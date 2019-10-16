@@ -19,9 +19,13 @@ public:
     void             Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
     void             VerifyCommands(void);
 	uint8_t*         GetRamSnapshot(void);
-	ucode_version_t  GetUCodeVersion(void);
-	const char*      GetUCodeName(void);
-	uint32_t         GetUCodeChecksum(void);
+
+	ucode_info_t*    GetMicrocodeInfo(void);
+
+	//ucode_version_t  GetUCodeVersion(void);
+	//const char*      GetUCodeName(void);
+	//uint32_t         GetUCodeChecksum(void);
+
     CHleGfxState*    GetLoggedState(size_t index);
 	decoded_cmd_t*   GetLoggedCommand(size_t index);
 	dram_resource_t* GetRamResource(size_t index);
@@ -31,7 +35,6 @@ public:
 
 private:
 	void Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
-    void BuildArray(void);
     void Step(void);
 
     std::vector<CHleGfxState>    m_StateLog;

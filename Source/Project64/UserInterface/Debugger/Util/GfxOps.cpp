@@ -668,7 +668,6 @@ void CGfxOps::op_gsSPEndDisplayList_f3d(CGfxParser* state, decoded_cmd_t* dc)
     }
     else
     {
-        printf("exit OK\n");
         state->m_bDone = true;
     }
 

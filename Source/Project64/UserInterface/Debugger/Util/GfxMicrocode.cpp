@@ -2,7 +2,7 @@
 #include "GfxMicrocode.h"
 #include "GfxOps.h"
 
-void CGfxMicrocode::Identify(uint8_t* ucode, ucode_info_t* info)
+void CGfxMicrocode::BuildArray(uint8_t* ucode, ucode_info_t* info, dl_cmd_info_t arr[256])
 {
     info->ucodeId = UCODE_UNKNOWN;
     info->ucodeName = "Unknown microcode";
@@ -59,6 +59,38 @@ void CGfxMicrocode::Identify(uint8_t* ucode, ucode_info_t* info)
             info->patchCommandTable = Patches[i].commandTable;
         }
     }
+
+	for (int i = 0; i < 256; i++)
+	{
+		arr[i] = { 0 };
+	}
+	
+	// import RDP commands
+	for (int i = 0; CGfxOps::Commands_RDP[i].commandName != NULL; i++)
+	{
+		uint8_t index = CGfxOps::Commands_RDP[i].commandByte;
+		arr[index] = CGfxOps::Commands_RDP[i];
+	}
+	
+	// import base RSP commands
+	if (info->ucodeCommandTable != NULL)
+	{
+		for (int i = 0; info->ucodeCommandTable[i].commandName != NULL; i++)
+		{
+			uint8_t index = info->ucodeCommandTable[i].commandByte;
+			arr[index] = info->ucodeCommandTable[i];
+		}
+	}
+	
+	// import patched commands
+	if (info->patchCommandTable != NULL)
+	{
+		for (int i = 0; info->patchCommandTable[i].commandName != NULL; i++)
+		{
+			uint8_t index = info->patchCommandTable[i].commandByte;
+			arr[index] = info->patchCommandTable[i];
+		}
+	}
 }
 
 ucode_cmd_lut_t CGfxMicrocode::Microcodes[] = {

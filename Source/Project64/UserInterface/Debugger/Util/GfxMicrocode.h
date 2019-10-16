@@ -54,8 +54,7 @@ typedef struct
 class CGfxMicrocode
 {
 public:
-	static void Identify(uint8_t* ucode, ucode_info_t *info);
-    //static void BuildArray(ucode_info_t* info, dl_cmd_info_t* arr);
+	static void BuildArray(uint8_t* ucode, ucode_info_t *info, dl_cmd_info_t arr[256]);
 private:
 	static ucode_checksum_t     Checksums[];
     static ucode_cmd_lut_t      Microcodes[];

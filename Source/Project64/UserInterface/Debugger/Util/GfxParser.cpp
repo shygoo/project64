@@ -1,4 +1,7 @@
 #include <stdafx.h>
+#include <iostream>
+#include <fstream>
+
 #include "GfxOps.h"
 #include "GfxParser.h"
 #include "GfxState.h"
@@ -89,41 +92,8 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
     memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
 
     uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
-    CGfxMicrocode::Identify(ucode, &m_MicrocodeInfo);
-    BuildArray();
-}
-
-void CGfxParser::BuildArray()
-{
-    for (uint8_t i = 0; i < 256; i++)
-    {
-        m_CommandArray[i] = {0};
-    }
-
-    // import RDP commands
-    for (int i = 0; CGfxOps::Commands_RDP[i].commandName != NULL; i++)
-    {
-        uint8_t index = CGfxOps::Commands_RDP[i].commandByte;
-        m_CommandArray[index] = CGfxOps::Commands_RDP[i];
-    }
-
-    // import base RSP commands
-    if (m_MicrocodeInfo.ucodeCommandTable != NULL)
-    {
-        for (int i = 0; m_MicrocodeInfo.ucodeCommandTable[i].commandName != NULL; i++)
-        {
-            m_CommandArray[m_MicrocodeInfo.ucodeCommandTable[i].commandByte] = m_MicrocodeInfo.ucodeCommandTable[i];
-        }
-    }
-
-    // import patched commands
-    if (m_MicrocodeInfo.patchCommandTable != NULL)
-    {
-        for (int i = 0; m_MicrocodeInfo.patchCommandTable[i].commandName != NULL; i++)
-        {
-            m_CommandArray[m_MicrocodeInfo.patchCommandTable[i].commandByte] = m_MicrocodeInfo.patchCommandTable[i];
-        }
-    }
+    CGfxMicrocode::BuildArray(ucode, &m_MicrocodeInfo, m_CommandArray);
+    //CGfxMicrocode::BuildArray(&m_CommandArray);
 }
 
 void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
@@ -224,19 +194,10 @@ void CGfxParser::Step(void)
     m_CommandLog.push_back(dc);
 }
 
-ucode_version_t CGfxParser::GetUCodeVersion(void)
-{
-    return m_MicrocodeInfo.ucodeId;
-}
 
-const char* CGfxParser::GetUCodeName(void)
+ucode_info_t* CGfxParser::GetMicrocodeInfo(void)
 {
-    return m_MicrocodeInfo.ucodeName;
-}
-
-uint32_t CGfxParser::GetUCodeChecksum(void)
-{
-    return m_MicrocodeInfo.checksum;
+	return &m_MicrocodeInfo;
 }
 
 bool CGfxParser::ConvertImage(uint32_t* dst, uint8_t* src, im_fmt_t fmt, im_siz_t siz, int numTexels)
@@ -290,104 +251,92 @@ bool CGfxParser::ConvertImage(uint32_t* dst, uint8_t* src, im_fmt_t fmt, im_siz_
     return true;
 }
 
-#define VERIFIER_GBI_VERSION     "F3DEX_GBI"
-#define VERIFIER_COMPILER_PATH   "gcc"
-#define VERIFIER_GBI_HEADER_PATH "gbi.h"
-#define VERIFIER_SRC_PATH        "dl_verify.c"
-#define VERIFIER_DST_PATH        "dl_verify"
+/*
+dlist_verifier.c
+------------------------------------
+#include <stdio.h>
+#include <strings.h>
 
-#define STRINGIZE(text) #text
-#define VERIFIER_SRC_MAIN STRINGIZE(\
-int main(void) \
-{ \
-    int dlistOk = 1;\
-    for(int i = 0; i < length; i++)\
-    { \
-        if (memcmp(&dlist[i], &dlist_raw[i], sizeof(Gfx)) != 0) \
-        { \
-            printf("#%%d: generated: %%08X %%08X, actual: %%08X %%08X\n", \
-                i, dlist[i].words.w0, dlist[i].words.w1, dlist_raw[i].words.w0, dlist_raw[i].words.w1); \
-            return 1; \
-        } \
-    } \
-    return 0; \
-})
+#define _LANGUAGE_C
+#define gsUnknown(w0, w1) {(w0), (w1)}
+#define _SHIFTL(v, s, w) (((unsigned int)(v) & ((1 << (w)) - 1)) << (s))
+typedef unsigned int u32;
+
+#include "gbi_version_def.inc.c"
+#include "gbi.h"
+#include "gbi_redefs.h"
+
+Gfx dlistMacros[] = {
+#include "dlist_macros.inc.c"
+};
+
+Gfx dlistRaw[] = {
+#include "dlist_raw.inc.c"
+};
+
+int main(void)
+{
+	int dlistOk = 1;
+	
+	int rawLength = sizeof(dlistRaw) / sizeof(Gfx);
+	int macroLength = sizeof(dlistRaw) / sizeof(Gfx);
+	
+	for(int i = 0; i < rawLength; i++)
+	{
+		if(memcmp(&dlistRaw[i], &dlistMacros[i], sizeof(Gfx)) != 0)
+		{
+			printf("#%d: generated: %08X %08X, actual: %08X %08X\n",
+				i, dlistMacros[i].words.w0, dlistMacros[i].words.w1, dlistRaw[i].words.w0, dlistRaw[i].words.w1);
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+*/
 
 // recompile the decoded display list to check if the binary matches
 void CGfxParser::VerifyCommands(void)
 {
     int status;
 
-    //system("cls");
-    printf("writing dlist verification source to %s...\n", VERIFIER_SRC_PATH);
+	std::ofstream dlistMacrosFile;
+	std::ofstream dlistRawFile;
+	std::ofstream gbiVersionFile;
 
-    FILE* fp = fopen(VERIFIER_SRC_PATH, "wb");
+	dlistMacrosFile.open("dlist_macros.inc.c", std::ios::out | std::ios::binary);
+	dlistRawFile.open("dlist_raw.inc.c", std::ios::out | std::ios::binary);
+	gbiVersionFile.open("gbi_version_def.inc.c", std::ios::out | std::ios::binary);
 
-    fprintf(fp,
-        "#include <stdio.h>\n"
-        "#include <strings.h>\n"
-        "#define %s\n"
-        "#define _LANGUAGE_C\n"
-        "#define _SHIFTL(v, s, w) (((unsigned int)(v) & ((1 << (w)) - 1)) << (s))\n"
-        "typedef unsigned int u32;\n"
-        "#include \"%s\"\n\n"
-        "int length = %d;\n\n",
-        VERIFIER_GBI_VERSION,
-        VERIFIER_GBI_HEADER_PATH,
-        m_CommandLog.size()
-    );
+	gbiVersionFile << "#define F3DEX_GBI\n";
 
     // macros
-    fprintf(fp, "Gfx dlist[] = {\n\t/*vaddr    segoffs   command             macro*/\n");
     for (int i = 0; i < m_CommandLog.size(); i++)
     {
         decoded_cmd_t dc = m_CommandLog[i];
 
-        fprintf(fp, "\t/* #%d: %08X %08X: %08X %08X*/",
-            i, dc.virtualAddress, dc.address,
-            dc.rawCommand.w0, dc.rawCommand.w1);
+		dlistMacrosFile << stdstr_f("\t/* #%d: %08X %08X: %08X %08X*/",
+			i, dc.virtualAddress, dc.address, dc.rawCommand.w0, dc.rawCommand.w1);
 
         if (strcmp("...", m_CommandLog[i].name) != 0)
         {
-            fprintf(fp, " %s(%s),",
-                dc.name, dc.params.c_str());
+			dlistMacrosFile << stdstr_f(" %s(%s),", dc.name, dc.params.c_str());
         }
-        fprintf(fp, "\n");
+
+		dlistMacrosFile << "\n";
+
+		dlistRawFile << stdstr_f("\t/*%08X %08X*/{ 0x%08X, 0x%08X },\n",
+			dc.virtualAddress, dc.address,
+			dc.rawCommand.w0, dc.rawCommand.w1);
     }
-    fprintf(fp, "};\n\n");
 
-    // strings
-    fprintf(fp, "const char *dlist_strs[] = {\n");
-    for (int i = 0; i < m_CommandLog.size(); i++)
-    {
-        decoded_cmd_t dc = m_CommandLog[i];
-        if (strcmp("...", m_CommandLog[i].name) != 0)
-        {
-            fprintf(fp, "\"%s(%s)\",",
-                dc.name, dc.params.c_str());
-        }
-        fprintf(fp, "\n");
-    }
-    fprintf(fp, "};\n\n");
+	dlistMacrosFile.close();
+	dlistRawFile.close();
+	gbiVersionFile.close();
 
-    // raw numbers
-    fprintf(fp, "Gfx dlist_raw[] = {\n");
-    for (int i = 0; i < m_CommandLog.size(); i++)
-    {
-        decoded_cmd_t dc = m_CommandLog[i];
-        fprintf(fp, "\t/*%08X %08X*/ { 0x%08X, 0x%08X },\n",
-            dc.virtualAddress, dc.address,
-            dc.rawCommand.w0, dc.rawCommand.w1);
-    }
-    fprintf(fp, "};\n\n");
+	stdstr strCommand = stdstr_f("gcc dlist_verifier.c -o dlist_verifier");
 
-    // main
-    fprintf(fp, VERIFIER_SRC_MAIN);
-
-    stdstr strCommand = stdstr_f("%s %s -o %s",
-        VERIFIER_COMPILER_PATH, VERIFIER_SRC_PATH, VERIFIER_DST_PATH);
-
-    fclose(fp);
     printf("compiling (%s)...\n", strCommand.c_str());
     status = system(strCommand.c_str());
 
@@ -397,8 +346,8 @@ void CGfxParser::VerifyCommands(void)
         return;
     }
 
-    printf("running (%s)...\n", VERIFIER_DST_PATH);
-    status = system(VERIFIER_DST_PATH);
+    printf("running (%s)...\n", "dlist_verifier");
+    status = system("dlist_verifier");
 
     printf(status == 0 ? "dlist OK\n" : "dlist does not match\n");
 }

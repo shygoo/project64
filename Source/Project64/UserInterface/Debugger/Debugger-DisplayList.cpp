@@ -281,15 +281,17 @@ void CDebugDisplayList::Refresh(void)
 
     m_GfxParser.Run(ucodeAddr, dlistAddr, dlistSize);
 
+	ucode_info_t* ucodeInfo = m_GfxParser.GetMicrocodeInfo();
+
     size_t numCommands = m_GfxParser.GetCommandCount();
     size_t numResources = m_GfxParser.GetRamResourceCount();
     size_t numTriangles = m_GfxParser.GetTriangleCount();
 
-    ucode_version_t ucodeVersion = m_GfxParser.GetUCodeVersion();
-    uint32_t ucodeChecksum = m_GfxParser.GetUCodeChecksum();
+    //ucode_version_t ucodeVersion = m_GfxParser.GetUCodeVersion();
+    //uint32_t ucodeChecksum = m_GfxParser.GetUCodeChecksum();
 
-    stdstr strStatus = (ucodeVersion != UCODE_UNKNOWN) ? m_GfxParser.GetUCodeName() : "Unknown microcode";
-    strStatus += stdstr_f(" (Checksum: 0x%08X) - %d commands, %d triangles", ucodeChecksum, numCommands, numTriangles);
+    stdstr strStatus = ucodeInfo->ucodeName;
+    strStatus += stdstr_f(" (Checksum: 0x%08X) - %d commands, %d triangles", ucodeInfo->checksum, numCommands, numTriangles);
     m_StatusText.SetWindowText(strStatus.c_str());
 
     m_DisplayListCtrl.SetRedraw(FALSE);
@@ -392,6 +394,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
     int nItem = pIA->iItem;
 
     CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
+	ucode_info_t* ucodeInfo = m_GfxParser.GetMicrocodeInfo();
 
     if (state == NULL)
     {
@@ -411,7 +414,7 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 
     bool shading_smooth, cull_front, cull_back;
 
-    if (m_GfxParser.GetUCodeVersion() == UCODE_F3DEX2)
+    if (ucodeInfo->ucodeId == UCODE_F3DEX2)
     {
         shading_smooth = state->m_spGeometryMode.f3dex2.shading_smooth;
         cull_front = state->m_spGeometryMode.f3dex2.cull_front;
