@@ -22,10 +22,6 @@ public:
 
 	ucode_info_t*    GetMicrocodeInfo(void);
 
-	//ucode_version_t  GetUCodeVersion(void);
-	//const char*      GetUCodeName(void);
-	//uint32_t         GetUCodeChecksum(void);
-
     CHleGfxState*    GetLoggedState(size_t index);
 	decoded_cmd_t*   GetLoggedCommand(size_t index);
 	dram_resource_t* GetRamResource(size_t index);

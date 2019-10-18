@@ -770,7 +770,14 @@ void CDrawBuffers::DrawLine(CVec4& p0, CVec4& p1, uint32_t color)
             y += signY;
         }
 
-        SetColor(x, y, color);
+        float t = (p1.x - x) / (p1.x - p0.x);
+        float w = p0.w + t * (p1.w - p0.w);
+        w -= 0.2;
+
+        if (w < GetDepth(x, y))
+        {
+            SetColor(x, y, color);
+        }
     }
 }
 
@@ -857,9 +864,9 @@ void CDrawBuffers::DrawTriangle(CTri &tri, uint32_t clickIndex)
         }
     }
 
-    //DrawLine(tri.v[0], tri.v[1], 0x44444444);
-    //DrawLine(tri.v[1], tri.v[2], 0x44444444);
-    //DrawLine(tri.v[2], tri.v[0], 0x44444444);
+    //DrawLine(tri.v[0], tri.v[1], 0);
+    //DrawLine(tri.v[1], tri.v[2], 0);
+    //DrawLine(tri.v[2], tri.v[0], 0);
 
     //FillRect(tri.v[0].x - 1, tri.v[0].y - 1, 2, 2, 0x22222222);
     //FillRect(tri.v[1].x - 1, tri.v[1].y - 1, 2, 2, 0x22222222);

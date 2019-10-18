@@ -31,23 +31,26 @@ typedef struct
 	uint32_t        checksum;
 	ucode_version_t ucodeId;
     ucode_patch_t   patchId;
-} ucode_checksum_t;
+} ucode_checksum_lut_t;
 
 typedef struct
 {
 	int            id;
 	const char*    name;
+    const char*    versionDef;
 	dl_cmd_info_t* commandTable;
-} ucode_cmd_lut_t;
+} ucode_lut_t;
 
 typedef struct
 {
     uint32_t        checksum;
     ucode_version_t ucodeId;
     const char*     ucodeName;
+    const char*     ucodeVersionDef;
     dl_cmd_info_t*  ucodeCommandTable;
     ucode_patch_t   patchId;
     const char*     patchName;
+    const char*     patchVersionDef;
     dl_cmd_info_t*  patchCommandTable;
 } ucode_info_t;
 
@@ -56,7 +59,7 @@ class CGfxMicrocode
 public:
 	static void BuildArray(uint8_t* ucode, ucode_info_t *info, dl_cmd_info_t arr[256]);
 private:
-	static ucode_checksum_t     Checksums[];
-    static ucode_cmd_lut_t      Microcodes[];
-    static ucode_cmd_lut_t      Patches[];
+	static ucode_checksum_lut_t Checksums[];
+    static ucode_lut_t          Microcodes[];
+    static ucode_lut_t          Patches[];
 };

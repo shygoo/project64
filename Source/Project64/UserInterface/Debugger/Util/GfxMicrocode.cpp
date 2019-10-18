@@ -6,9 +6,11 @@ void CGfxMicrocode::BuildArray(uint8_t* ucode, ucode_info_t* info, dl_cmd_info_t
 {
     info->ucodeId = UCODE_UNKNOWN;
     info->ucodeName = "Unknown microcode";
+    info->ucodeVersionDef = NULL;
     info->ucodeCommandTable = NULL;
     info->patchId = PATCH_NONE;
     info->patchName = "";
+    info->patchVersionDef = NULL;
     info->patchCommandTable = NULL;
 	info->checksum = 0;
 
@@ -29,34 +31,34 @@ void CGfxMicrocode::BuildArray(uint8_t* ucode, ucode_info_t* info, dl_cmd_info_t
 		}
 	}
 
-	if (info->ucodeId == UCODE_UNKNOWN)
+	if (info->ucodeId != UCODE_UNKNOWN)
 	{
-        return;
+        // lookup ucode name and command table
+        for (int i = 0; Microcodes[i].id != UCODE_UNKNOWN; i++)
+        {
+            if (Microcodes[i].id == info->ucodeId)
+            {
+                info->ucodeName = Microcodes[i].name;
+                info->ucodeVersionDef = Microcodes[i].versionDef;
+                info->ucodeCommandTable = Microcodes[i].commandTable;
+                break;
+            }
+        }
 	}
 
-    // lookup ucode name and command table
-    for (int i = 0; Microcodes[i].id != UCODE_UNKNOWN; i++)
+    if (info->patchId != PATCH_NONE)
     {
-        if (Microcodes[i].id == info->ucodeId)
+        // lookup patch name and command table
+        for (int i = 0; Patches[i].id != PATCH_NONE; i++)
         {
-            info->ucodeName = Microcodes[i].name;
-            info->ucodeCommandTable = Microcodes[i].commandTable;
-            break;
-        }
-    }
-
-    if (info->patchId == PATCH_NONE)
-    {
-        return;
-    }
-
-    // lookup patch name and command table
-    for (int i = 0; Patches[i].id != PATCH_NONE; i++)
-    {
-        if (Patches[i].id == info->patchId)
-        {
-            info->patchName = Patches[i].name;
-            info->patchCommandTable = Patches[i].commandTable;
+            if (Patches[i].id == info->patchId)
+            {
+                info->patchName = Patches[i].name;
+                info->patchVersionDef = Patches[i].versionDef;
+                info->patchCommandTable = Patches[i].commandTable;
+                printf("%s %s\n", info->patchName, info->patchVersionDef);
+                break;
+            }
         }
     }
 
@@ -93,21 +95,22 @@ void CGfxMicrocode::BuildArray(uint8_t* ucode, ucode_info_t* info, dl_cmd_info_t
 	}
 }
 
-ucode_cmd_lut_t CGfxMicrocode::Microcodes[] = {
-	//version       name      op functions
-	{ UCODE_F3D,    "Fast3D", CGfxOps::Commands_F3D },   // sm64
-	{ UCODE_F3DEX,  "F3DEX",  CGfxOps::Commands_F3DEX }, // mk64
-	{ UCODE_F3DEX2, "F3DEX2", CGfxOps::Commands_F3DEX2 }, // zelda, kirby
-	{ UCODE_UNKNOWN, NULL,    NULL }
+ucode_lut_t CGfxMicrocode::Microcodes[] = {
+	//ucode id      name      gbi def        op functions
+	{ UCODE_F3D,    "Fast3D", "F3D_GBI",     CGfxOps::Commands_F3D },    // sm64
+	{ UCODE_F3DEX,  "F3DEX",  "F3DEX_GBI",   CGfxOps::Commands_F3DEX },  // mk64
+	{ UCODE_F3DEX2, "F3DEX2", "F3DEX_GBI_2", CGfxOps::Commands_F3DEX2 }, // zelda, kirby
+	{ UCODE_UNKNOWN, NULL,    NULL,          NULL }
 };
 
-ucode_cmd_lut_t CGfxMicrocode::Patches[] = {
-    { PATCH_F3DEX_095, "(Beta v0.95)", CGfxOps::Patch_F3DEX_BETA },
-    { PATCH_NONE, NULL, NULL}
+ucode_lut_t CGfxMicrocode::Patches[] = {
+    //patch id         name            gbi def            op functions
+    { PATCH_F3DEX_095, "(Beta v0.95)", "F3DEX_PATCH_095", CGfxOps::Patch_F3DEX_BETA },
+    { PATCH_NONE,      NULL,           NULL,              NULL}
 };
 
-ucode_checksum_t CGfxMicrocode::Checksums[] = {
-	//checksum    ucode num       patch num
+ucode_checksum_lut_t CGfxMicrocode::Checksums[] = {
+	//checksum    ucode id        patch id
 	{ 0x0D7CBFFB, UCODE_DKR,      PATCH_NONE },
 	{ 0x63BE08B1, UCODE_DKR,      PATCH_NONE },
 	{ 0x63BE08B3, UCODE_DKR,      PATCH_NONE },
@@ -254,5 +257,5 @@ ucode_checksum_t CGfxMicrocode::Checksums[] = {
 	{ 0x8EC3E124, UCODE_UNKNOWN,  PATCH_NONE },
 	{ 0xD5C4DC96, UCODE_UNKNOWN,  PATCH_NONE },
 	{ 0x0BF36D36, UCODE_ZSORT,    PATCH_NONE },
-	{ 0, UCODE_UNKNOWN }
+	{ 0,          UCODE_UNKNOWN,  PATCH_NONE }
 };

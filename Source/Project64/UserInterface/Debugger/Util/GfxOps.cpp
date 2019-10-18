@@ -65,7 +65,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     // { 0xB1, "gsSPTri4", NULL, NULL },
     { 0xB2, "G_RDPHALF_CONT",          NULL },
     { 0xB3, "G_RDPHALF_2",             NULL },
-    { 0xB4, "G_RDPHALF_1",             NULL },
+    { 0xB4, "gsSPPerspNormalize",     op_gsSPPerspNormalize_f3d },
     // { 0xB5, "line3d", NULL, NULL },
     { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d },
     { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d },
@@ -77,6 +77,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     { 0xBD, "gsSPPopMatrix",         op_gsSPPopMatrix_f3d },
     { 0xBE, "gsSPCullDisplayList",   NULL },
     { 0xBF, "gsSP1Triangle",         op_gsSP1Triangle_f3d },
+    { 0xE4, "gsSPTextureRectangle",  op_gsSPTextureRectangle_f3d },
     { 0, NULL, NULL }
 };
 
@@ -104,6 +105,7 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
 
 dl_cmd_info_t CGfxOps::Patch_F3DEX_BETA[] = {
     { 0xB5, "gsSP1Quadrangle",          op_gsSP1Quadrangle_f3dex_beta },
+    { 0xE4, "gsSPTextureRectangle",     op_gsSPTextureRectangle_f3d },
     { 0, NULL, NULL }
 };
 
@@ -134,9 +136,6 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX2[] = {
 };
 
 /**********************************/
-
-// # define gsSPPopMatrix(n)		gsImmp1(    G_POPMTX, n)
-
 
 void decoded_cmd_t::Rename(const char* newName)
 {
@@ -660,6 +659,12 @@ void CGfxOps::op_gsSPDisplayList_f3d(CGfxParser* state, decoded_cmd_t* dc)
         state->SegmentedToVirtual(cmd->address));
 }
 
+void CGfxOps::op_gsSPPerspNormalize_f3d(CGfxParser* state, decoded_cmd_t* dc)
+{
+    dl_cmd_t* cmd = &state->m_spCommand;
+    dc->params = stdstr_f("%d", (int16_t)cmd->w1);
+}
+
 void CGfxOps::op_gsSPEndDisplayList_f3d(CGfxParser* state, decoded_cmd_t* dc)
 {
     if (state->m_spStackIndex > 0)
@@ -888,7 +893,7 @@ void CGfxOps::op_gsSPPopMatrix_f3d(CGfxParser* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSP1Triangle_f3d(CGfxParser* state, decoded_cmd_t* dc)
 {
     dl_cmd_tri1_f3d_t *cmd = &state->m_spCommand.tri1_f3d;
-    dc->params = stdstr_f("%d, %d, %d", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
+    dc->params = stdstr_f("%d, %d, %d, /*flag*/ 0", cmd->v0 / 10, cmd->v1 / 10, cmd->v2 / 10);
 
     // report triangle for the mesh builder
     dc->numTris = 1;
@@ -897,6 +902,36 @@ void CGfxOps::op_gsSP1Triangle_f3d(CGfxParser* state, decoded_cmd_t* dc)
         state->m_spVertices[cmd->v1 / 10],
         state->m_spVertices[cmd->v2 / 10]
     };
+
+    dc->listFgColor = COLOR_PRIMITIVE;
+}
+
+void CGfxOps::op_gsSPTextureRectangle_f3d(CGfxParser* state, decoded_cmd_t* dc)
+{
+    dl_cmd_texrect_t* cmd = &state->m_spCommand.texrect;
+    // note: assuming no frac bits
+    dc->params = stdstr_f("/*ulx*/ %d, /*uly*/ %d, /*lrx*/ %d, /*lry*/ %d, /*tile*/ %d",
+        cmd->xl, cmd->yl, cmd->xh, cmd->yh, cmd->tile);
+
+    // lookahead for dphalf1, dphalf2 for complete command
+
+    dl_cmd_t cmds[2];
+    bool bRead = state->GetCommands(state->m_spCommandAddress, 2, cmds);
+
+    if (bRead)
+    {
+        bool bValid = (cmds[0].commandByte == 0xB3 && cmds[1].commandByte == 0xB2);
+
+        if (bValid)
+        {
+            dc->params += stdstr_f(", %d, %d, %d, %d", cmds[0].texrect_half1.s, cmds[0].texrect_half1.t,
+                cmds[1].texrect_half2.dsdx, cmds[1].texrect_half2.dsdy);
+
+            // skip dphalf1, dphalf2 commands
+            // todo make this optional
+            dc->macroLength = 2;
+        }
+    }
 
     dc->listFgColor = COLOR_PRIMITIVE;
 }
@@ -944,6 +979,21 @@ void CGfxOps::op_gsSP1Quadrangle_f3dex_beta(CGfxParser* state, decoded_cmd_t* dc
     dl_cmd_quad_f3dex_t *cmd = &state->m_spCommand.quad_f3dex;
     dc->params = stdstr_f("%d, %d, %d, %d, /*flag*/ 0", cmd->v0 / 2, cmd->v1 / 2, cmd->v2 / 2, cmd->v3 / 2);
 
+    // 0,1,2  0,2,3
+    dc->numTris = 2;
+    dc->tris[0] = {
+        state->m_spVertices[cmd->v0 / 2],
+        state->m_spVertices[cmd->v1 / 2],
+        state->m_spVertices[cmd->v2 / 2]
+    };
+
+    dc->tris[1] = {
+        state->m_spVertices[cmd->v0 / 2],
+        state->m_spVertices[cmd->v2 / 2],
+        state->m_spVertices[cmd->v3 / 2]
+    };
+
+
     // todo
     dc->listFgColor = COLOR_PRIMITIVE;
 }
@@ -979,8 +1029,7 @@ void CGfxOps::op_gsSPTextureRectangle_f3dex(CGfxParser* state, decoded_cmd_t* dc
     
     if (bRead)
     {
-        bool bValid = (cmds[0].commandByte == 0xB4 && cmds[1].commandByte == 0xB3) || // public gbi
-            (cmds[0].commandByte == 0xB3 && cmds[1].commandByte == 0xB2);   // mk64's beta gbi
+        bool bValid = (cmds[0].commandByte == 0xB4 && cmds[1].commandByte == 0xB3);
 
         if (bValid)
         {

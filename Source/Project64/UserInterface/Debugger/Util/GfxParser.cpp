@@ -93,7 +93,6 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
 
     uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
     CGfxMicrocode::BuildArray(ucode, &m_MicrocodeInfo, m_CommandArray);
-    //CGfxMicrocode::BuildArray(&m_CommandArray);
 }
 
 void CGfxParser::Run(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
@@ -300,6 +299,7 @@ int main(void)
 void CGfxParser::VerifyCommands(void)
 {
     int status;
+    ucode_info_t& info = m_MicrocodeInfo;
 
 	std::ofstream dlistMacrosFile;
 	std::ofstream dlistRawFile;
@@ -309,9 +309,18 @@ void CGfxParser::VerifyCommands(void)
 	dlistRawFile.open("dlist_raw.inc.c", std::ios::out | std::ios::binary);
 	gbiVersionFile.open("gbi_version_def.inc.c", std::ios::out | std::ios::binary);
 
-	gbiVersionFile << "#define F3DEX_GBI\n";
+    if (info.ucodeVersionDef != NULL)
+    {
+        gbiVersionFile << "#define " << info.ucodeVersionDef << "\n";
+        dlistMacrosFile << "// " << info.ucodeVersionDef << "\n";
+    }
 
-    // macros
+    if (info.patchVersionDef != NULL)
+    {
+        gbiVersionFile << "#define " << info.patchVersionDef << "\n";
+        dlistMacrosFile << "// " << info.patchVersionDef << "\n";
+    }
+
     for (int i = 0; i < m_CommandLog.size(); i++)
     {
         decoded_cmd_t dc = m_CommandLog[i];
@@ -348,6 +357,9 @@ void CGfxParser::VerifyCommands(void)
 
     printf("running (%s)...\n", "dlist_verifier");
     status = system("dlist_verifier");
+
+    std::remove("dlist_verifier.exe");
+    std::remove("gbi_version_def.inc.c");
 
     printf(status == 0 ? "dlist OK\n" : "dlist does not match\n");
 }

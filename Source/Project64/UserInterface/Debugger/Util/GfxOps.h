@@ -136,6 +136,7 @@ private:
     /*03*/ static void op_gsSPMoveMem_f3d(CGfxParser*, decoded_cmd_t*);
     /*04*/ static void op_gsSPVertex_f3d(CGfxParser*, decoded_cmd_t*);
     /*06*/ static void op_gsSPDisplayList_f3d(CGfxParser*, decoded_cmd_t*);
+    /*B4*/ static void op_gsSPPerspNormalize_f3d(CGfxParser*, decoded_cmd_t*);
     /*B8*/ static void op_gsSPEndDisplayList_f3d(CGfxParser*, decoded_cmd_t*);
     /*B6*/ static void op_gsSPClearGeometryMode_f3d(CGfxParser*, decoded_cmd_t*);
     /*B7*/ static void op_gsSPSetGeometryMode_f3d(CGfxParser*, decoded_cmd_t*);
@@ -145,6 +146,7 @@ private:
     /*BC*/ static void op_gsMoveWd_f3d(CGfxParser*, decoded_cmd_t*);
     /*BD*/ static void op_gsSPPopMatrix_f3d(CGfxParser*, decoded_cmd_t*);
     /*BF*/ static void op_gsSP1Triangle_f3d(CGfxParser*, decoded_cmd_t*);
+    /*E4*/ static void op_gsSPTextureRectangle_f3d(CGfxParser*, decoded_cmd_t*);
 
     // Fast3DEX RSP commands
     /*01*/ #define     op_gsSPMatrix_f3dex op_gsSPMatrix_f3d
