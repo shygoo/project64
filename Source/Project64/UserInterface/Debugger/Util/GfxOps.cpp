@@ -960,16 +960,18 @@ void CGfxOps::op_gsSP2Triangles_f3dex(CGfxParser* state, decoded_cmd_t* dc)
     // report triangle for the mesh builder
     dc->numTris = 2;
     dc->tris[0] = {
-        state->m_spVertices[cmd->v0 / 2],
-        state->m_spVertices[cmd->v1 / 2],
-        state->m_spVertices[cmd->v2 / 2]
+        state->Transform(&state->m_spVertices[cmd->v0 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v1 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v2 / 2]),
     };
 
     dc->tris[1] = {
-        state->m_spVertices[cmd->v3 / 2],
-        state->m_spVertices[cmd->v4 / 2],
-        state->m_spVertices[cmd->v5 / 2]
+        state->Transform(&state->m_spVertices[cmd->v3 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v4 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v5 / 2]),
     };
+
+    //state->testGeom.
 
     dc->listFgColor = COLOR_PRIMITIVE;
 }
@@ -1092,9 +1094,9 @@ void CGfxOps::op_gsSP1Triangle_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     // report triangle for the mesh builder
     dc->numTris = 1;
     dc->tris[0] = {
-        state->m_spVertices[cmd->v0 / 2],
-        state->m_spVertices[cmd->v1 / 2],
-        state->m_spVertices[cmd->v2 / 2]
+        state->Transform(&state->m_spVertices[cmd->v0 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v1 / 2]),
+        state->Transform(&state->m_spVertices[cmd->v2 / 2])
     };
 
     dc->listFgColor = COLOR_PRIMITIVE;
@@ -1129,6 +1131,8 @@ void CGfxOps::op_gsSPPopMatrix_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
 {
     dl_cmd_popmtx_f3dex2_t* cmd = &state->m_spCommand.popmtx_f3dex2;
     dc->params = stdstr_f("%d", cmd->data / 64);
+    state->m_spMatrixIndex--;
+    printf("pop\n");
 }
 
 void CGfxOps::op_gsSPGeometryMode_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
@@ -1170,13 +1174,19 @@ void CGfxOps::op_gsSPMatrix_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
 {
     dl_cmd_mtx_f3dex2_t* cmd = &state->m_spCommand.mtx_f3dex2;
 
+    bool bPush = ((cmd->params ^ 1) & 1);
+    bool bLoad = (cmd->params & 2);
+    bool bProj = (cmd->params & 4);
+
     dc->params = stdstr_f("/*addr*/ 0x%08X, (%s | %s | %s) /*0x%08X*/", cmd->address,
-        ((cmd->params ^ 1) & 1) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
-        (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
-        (cmd->params & 4) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
+        bPush ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
+        bLoad ? "G_MTX_LOAD" : "G_MTX_MUL",
+        bProj ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
         state->SegmentedToVirtual(cmd->address));
 
-    dc->SetDramResource(state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
+    state->LoadMatrix(cmd->address, bPush, bLoad, bProj);
+
+    dc->SetDramResource(state, bProj ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
     dc->listFgColor = COLOR_DMA;
 }
 

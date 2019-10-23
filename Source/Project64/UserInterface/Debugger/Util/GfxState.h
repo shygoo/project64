@@ -105,6 +105,18 @@ typedef struct
 	uint8_t  enabled;
 } tile_t;
 
+class rsp_mtx_t
+{
+public:
+    int16_t intpart[4][4];
+    uint16_t fracpart[4][4];
+
+    float GetF(int row, int col);
+    int32_t Get(int row, int col);
+    static int32_t MtxDotProduct(rsp_mtx_t* a, int rowA, rsp_mtx_t* b, int colB);
+    rsp_mtx_t Mul(rsp_mtx_t* b);
+};
+
 class CHleGfxState
 {
 public:
@@ -112,9 +124,11 @@ public:
     uint32_t SegmentedToPhysical(uint32_t segaddr);
     uint32_t SegmentedToVirtual(uint32_t segaddr);
     bool     LoadVertices(uint32_t address, int index, int numv);
+    void     LoadMatrix(uint32_t address, bool bPush, bool bLoad, bool bProjection);
     bool     GetCommand(uint32_t address, dl_cmd_t *command);
     int      GetCommands(uint32_t address, int numCommands, dl_cmd_t commands[]);
-
+    vertex_t Transform(vertex_t* vertex);
+    
     bool     m_bDone;
     uint32_t m_nCommand;
 
@@ -129,6 +143,10 @@ public:
 	uint32_t m_spStackIndex;
 	vertex_t m_spVertices[64];
     uint8_t  m_spNumLights;
+
+    int       m_spMatrixIndex;
+    rsp_mtx_t m_spMatrixStack[10];
+    rsp_mtx_t m_spProjectionMatrix;
 
     union
     {

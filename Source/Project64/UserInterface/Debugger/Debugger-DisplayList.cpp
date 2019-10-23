@@ -568,10 +568,14 @@ void CDebugDisplayList::OnTimer(UINT_PTR nIDEvent)
 
     if (nIDEvent == TIMER_ID_DRAW)
     {
-        if (m_RenderView->KeyDown('W')) m_Camera.TranslateZ(0.25f);
-        if (m_RenderView->KeyDown('S')) m_Camera.TranslateZ(-0.25f);
-        if (m_RenderView->KeyDown('D')) m_Camera.TranslateX(0.25f);
-        if (m_RenderView->KeyDown('A')) m_Camera.TranslateX(-0.25f);
+        float moveSpeed = 0.25f;
+
+        if (m_RenderView->KeyDown(VK_SHIFT)) moveSpeed /= 8;
+
+        if (m_RenderView->KeyDown('W')) m_Camera.TranslateZ(moveSpeed);
+        if (m_RenderView->KeyDown('S')) m_Camera.TranslateZ(-moveSpeed);
+        if (m_RenderView->KeyDown('D')) m_Camera.TranslateX(moveSpeed);
+        if (m_RenderView->KeyDown('A')) m_Camera.TranslateX(-moveSpeed);
 
         if (m_RenderView->KeyDown(VK_LEFT)) m_Camera.RotateY(4.0f);
         if (m_RenderView->KeyDown(VK_RIGHT)) m_Camera.RotateY(-4.0f);

@@ -412,8 +412,8 @@ CProjection::CProjection(float fnear, float ffar, float fov, float aspectRatio) 
     m_Fov(fov),
     m_AspectRatio(aspectRatio)
 {
-    m_ClippingPlanes.push_back({ 0, 0, 0.5f,     0, 0, 1.0f }); // near plane
-    m_ClippingPlanes.push_back({ 0, 0, 1000.0f,  0, 0, -1.0f }); // far plane
+    m_ClippingPlanes.push_back({ 0, 0, fnear,  0, 0, 1.0f }); // near plane
+    m_ClippingPlanes.push_back({ 0, 0, ffar,   0, 0, -1.0f }); // far plane
 }
 
 void CProjection::GetMtx(CMtx *out)
@@ -878,7 +878,7 @@ void CDrawBuffers::Render(CBasicMeshGeometry *geom, CCamera *camera)
     Clear();
 
     CMtx projectionMtx, viewMtx;
-    CProjection projection(0.5f, 1000.0f, 90.0f, (float)m_Height / (float)m_Width);
+    CProjection projection(0.05f, 1000.0f, 90.0f, (float)m_Height / (float)m_Width);
     CVec4 camForward, camUp, camRight, lightDirection;
     CVec4 scaleFlipYZ(1.0f, -1.0f, -1.0f);
     CVec4 scaleScreenSpace(m_Width, m_Height, 1.0f);
