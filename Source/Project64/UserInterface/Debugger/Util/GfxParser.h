@@ -29,6 +29,11 @@ public:
 	size_t           GetRamResourceCount(void);
 	size_t           GetTriangleCount(void);
 
+    bool             ExportDisplayListSource(const char* path);
+    bool             ExportRawDisplayListSource(const char* path);
+    bool             ExportSnapshot(const char* path);
+    bool             ExportMicrocode(const char* path);
+
 private:
 	void Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize);
     void Step(void);
@@ -37,14 +42,18 @@ private:
     std::vector<decoded_cmd_t>   m_CommandLog;
 	std::vector<dram_resource_t> m_RamResources;
     int m_CurrentMacroLength;
+    size_t m_TriangleCount;
+     
+    dl_cmd_info_t   m_CommandArray[256];
 
-    dl_cmd_info_t m_CommandArray[256];
-    uint8_t* m_RamSnapshot;
-
-	size_t          m_TriangleCount;
+    uint8_t*        m_RamSnapshot;
+    size_t          m_RamSnapshotSize;
 
 	ucode_info_t    m_MicrocodeInfo;
-    uint32_t        m_RootDListSize;
-    uint32_t        m_RootDListEndAddress;
+
+    uint32_t        m_MicrocodeAddress;
+    uint32_t        m_RootDisplayListAddress;
+    uint32_t        m_RootDisplayListSize;
+    uint32_t        m_RootDisplayListEndAddress;
 	uint32_t        m_VertexBufferSize;
 };

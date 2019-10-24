@@ -255,6 +255,9 @@ LRESULT CDebugDisplayList::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
         m_StatusText.SetWindowTextA("Waiting for RSP task...");
         ::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), false);
         break;
+    case IDC_BTN_EXPORT:
+        Export();
+        break;
     }
 
     return FALSE;
@@ -364,6 +367,7 @@ void CDebugDisplayList::Refresh(void)
 
     m_ResourceTreeCtrl.SetRedraw(TRUE);
 
+    ::EnableWindow(GetDlgItem(IDC_BTN_EXPORT), TRUE);
     ::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), TRUE);
     m_bRefreshPending = false;
 	m_bShowRender = true;
@@ -817,4 +821,50 @@ void CDebugDisplayList::PreviewImageResource(dram_resource_t* res)
         res->address, res->virtAddress);
 
     ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strImageInfo.c_str());
+}
+
+void CDebugDisplayList::Export(void)
+{
+    OPENFILENAME openfilename;
+    char filePath[_MAX_PATH];
+
+    memset(&filePath, 0, sizeof(filePath));
+    memset(&openfilename, 0, sizeof(openfilename));
+
+    sprintf(filePath, "*.c");
+
+    const char* filters = (
+        /*1*/ "Display List Source (*.c)\0*.c;\0"
+        /*2*/ "Raw Display List Source (*.c)\0*.c;\0"
+        /*3*/ "Microcode binary (*.bin)\0*.bin;\0"
+        /*4*/ "RAM GFX Snapshot (*.bin)\0*.bin;\0"
+    );
+
+    const char *defaultExtensions[] = { "", ".c", ".c", ".bin", ".bin" };
+
+    openfilename.lStructSize = sizeof(openfilename);
+    openfilename.hwndOwner = (HWND)m_hWnd;
+    openfilename.lpstrFilter = filters;
+    openfilename.lpstrFile = filePath;
+    openfilename.lpstrInitialDir = ".";
+    openfilename.nMaxFile = MAX_PATH;
+    openfilename.Flags = OFN_HIDEREADONLY;
+
+    if (GetSaveFileName(&openfilename))
+    {
+        stdstr path = filePath;
+
+        if (openfilename.nFileExtension == 0)
+        {
+            path += defaultExtensions[openfilename.nFilterIndex];
+        }
+
+        switch (openfilename.nFilterIndex)
+        {
+        case 1: m_GfxParser.ExportDisplayListSource(path.c_str()); break;
+        case 2: m_GfxParser.ExportRawDisplayListSource(path.c_str()); break;
+        case 3: m_GfxParser.ExportMicrocode(path.c_str()); break;
+        case 4: m_GfxParser.ExportSnapshot(path.c_str()); break;
+        }
+    }
 }

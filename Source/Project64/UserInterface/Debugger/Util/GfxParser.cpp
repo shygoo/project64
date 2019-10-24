@@ -9,8 +9,10 @@
 
 CGfxParser::CGfxParser(void) :
     m_MicrocodeInfo({ 0 }),
-    m_RootDListSize(0),
-    m_RootDListEndAddress(0),
+    m_MicrocodeAddress(0),
+    m_RootDisplayListSize(0),
+    m_RootDisplayListAddress(0),
+    m_RootDisplayListEndAddress(0),
     m_VertexBufferSize(16),
     m_RamSnapshot(NULL),
     m_TriangleCount(0),
@@ -73,8 +75,11 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
     new((CHleGfxState*)this) CHleGfxState;
 
     m_spCommandAddress = dlistAddr;
-    m_RootDListSize = dlistSize;
-    m_RootDListEndAddress = dlistAddr + dlistSize; // use as endpoint if ucode is unknown
+
+    m_MicrocodeAddress = ucodeAddr;
+    m_RootDisplayListAddress = dlistAddr;
+    m_RootDisplayListSize = dlistSize;
+    m_RootDisplayListEndAddress = dlistAddr + dlistSize; // use as endpoint if microcode is unknown
     m_VertexBufferSize = 16;
     m_TriangleCount = 0;
 
@@ -87,9 +92,9 @@ void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSiz
         delete[] m_RamSnapshot;
     }
 
-    uint32_t ramSize = g_MMU->RdramSize();
-    m_RamSnapshot = new uint8_t[ramSize];
-    memcpy(m_RamSnapshot, g_MMU->Rdram(), ramSize);
+    m_RamSnapshotSize = g_MMU->RdramSize();
+    m_RamSnapshot = new uint8_t[m_RamSnapshotSize];
+    memcpy(m_RamSnapshot, g_MMU->Rdram(), m_RamSnapshotSize);
 
     uint8_t* ucode = &m_RamSnapshot[ucodeAddr];
     CGfxMicrocode::BuildArray(ucode, &m_MicrocodeInfo, m_CommandArray);
@@ -149,9 +154,10 @@ void CGfxParser::Step(void)
         dc.listBgColor = RGB(0xFF, 0xCC, 0xCC);
     }
 
-    if (m_MicrocodeInfo.ucodeId == UCODE_UNKNOWN && m_spCommandAddress >= m_RootDListEndAddress)
+    if (m_MicrocodeInfo.ucodeId == UCODE_UNKNOWN &&
+        m_spCommandAddress >= m_RootDisplayListEndAddress)
     {
-        // if the ucode is unknown, only parse the root display list
+        // if the ucode is unknown, only parse the rdp commands from the root display list
         m_bDone = true;
     }
     
@@ -301,47 +307,22 @@ void CGfxParser::VerifyCommands(void)
     int status;
     ucode_info_t& info = m_MicrocodeInfo;
 
-	std::ofstream dlistMacrosFile;
-	std::ofstream dlistRawFile;
-	std::ofstream gbiVersionFile;
+    ExportDisplayListSource("dlist_macros.inc.c");
+    ExportRawDisplayListSource("dlist_raw.inc.c");
 
-	dlistMacrosFile.open("dlist_macros.inc.c", std::ios::out | std::ios::binary);
-	dlistRawFile.open("dlist_raw.inc.c", std::ios::out | std::ios::binary);
+    std::ofstream gbiVersionFile;
 	gbiVersionFile.open("gbi_version_def.inc.c", std::ios::out | std::ios::binary);
 
     if (info.ucodeVersionDef != NULL)
     {
         gbiVersionFile << "#define " << info.ucodeVersionDef << "\n";
-        dlistMacrosFile << "// " << info.ucodeVersionDef << "\n";
     }
 
     if (info.patchVersionDef != NULL)
     {
         gbiVersionFile << "#define " << info.patchVersionDef << "\n";
-        dlistMacrosFile << "// " << info.patchVersionDef << "\n";
     }
 
-    for (int i = 0; i < m_CommandLog.size(); i++)
-    {
-        decoded_cmd_t dc = m_CommandLog[i];
-
-		dlistMacrosFile << stdstr_f("\t/* #%d: %08X %08X: %08X %08X*/",
-			i, dc.virtualAddress, dc.address, dc.rawCommand.w0, dc.rawCommand.w1);
-
-        if (strcmp("...", m_CommandLog[i].name) != 0)
-        {
-			dlistMacrosFile << stdstr_f(" %s(%s),", dc.name, dc.params.c_str());
-        }
-
-		dlistMacrosFile << "\n";
-
-		dlistRawFile << stdstr_f("\t/*%08X %08X*/{ 0x%08X, 0x%08X },\n",
-			dc.virtualAddress, dc.address,
-			dc.rawCommand.w0, dc.rawCommand.w1);
-    }
-
-	dlistMacrosFile.close();
-	dlistRawFile.close();
 	gbiVersionFile.close();
 
 	stdstr strCommand = stdstr_f("gcc dlist_verifier.c -o dlist_verifier");
@@ -362,4 +343,131 @@ void CGfxParser::VerifyCommands(void)
     std::remove("gbi_version_def.inc.c");
 
     printf(status == 0 ? "dlist OK\n" : "dlist does not match\n");
+}
+
+bool CGfxParser::ExportDisplayListSource(const char* path)
+{
+    ucode_info_t& info = m_MicrocodeInfo;
+
+    std::ofstream file;
+    file.open(path, std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    if (info.ucodeVersionDef != NULL)
+    {
+        file << "// " << info.ucodeVersionDef << "\n";
+    }
+
+    if (info.patchVersionDef != NULL)
+    {
+        file << "// " << info.patchVersionDef << "\n";
+    }
+
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+
+        file << stdstr_f("\t/* #%d: %08X %08X: %08X %08X*/",
+            i, dc.virtualAddress, dc.address, dc.rawCommand.w0, dc.rawCommand.w1);
+
+        if (strcmp("...", m_CommandLog[i].name) != 0)
+        {
+            file << stdstr_f(" %s(%s),", dc.name, dc.params.c_str());
+        }
+
+        file << "\n";
+    }
+
+    file.close();
+}
+
+bool CGfxParser::ExportRawDisplayListSource(const char* path)
+{
+    std::ofstream file;
+    file.open(path, std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < m_CommandLog.size(); i++)
+    {
+        decoded_cmd_t dc = m_CommandLog[i];
+
+        file << stdstr_f("\t/*%08X %08X*/{ 0x%08X, 0x%08X },\n",
+            dc.virtualAddress, dc.address,
+            dc.rawCommand.w0, dc.rawCommand.w1);
+    }
+
+    file.close();
+}
+
+bool CGfxParser::ExportSnapshot(const char* path)
+{
+    struct
+    {
+        uint32_t microcodeAddress;
+        uint32_t microcodeChecksum;
+        uint32_t rootDisplayListAddress;
+        uint32_t rootDisplayListSize;
+    } footer;
+
+    footer.microcodeAddress = m_MicrocodeAddress;
+    footer.microcodeChecksum = m_MicrocodeInfo.checksum;
+    footer.rootDisplayListAddress = m_RootDisplayListAddress;
+    footer.rootDisplayListSize = m_RootDisplayListSize;
+
+    std::ofstream file;
+    file.open(path, std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    char* ramSnapshotBE = new char[m_RamSnapshotSize];
+
+    for (size_t i = 0; i < m_RamSnapshotSize; i += sizeof(uint32_t))
+    {
+        *(uint32_t*)&ramSnapshotBE[i] = _byteswap_ulong(*(uint32_t*)&m_RamSnapshot[i]);
+    }
+
+    file.write(ramSnapshotBE, m_RamSnapshotSize);
+    file.write("GINF", 4);
+    file.write((const char*)&footer, sizeof(footer));
+    file.close();
+
+    delete[] ramSnapshotBE;
+}
+
+bool CGfxParser::ExportMicrocode(const char* path)
+{
+    std::ofstream file;
+    file.open(path, std::ios::out | std::ios::binary);
+
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    if (m_MicrocodeAddress + 4096 >= m_RamSnapshotSize)
+    {
+        return false;
+    }
+
+    char* ucodeBE = new char[4096];
+
+    for (size_t i = 0; i < 4096; i += sizeof(uint32_t))
+    {
+        *(uint32_t*)&ucodeBE[i] = _byteswap_ulong(*(uint32_t*)&m_RamSnapshot[m_MicrocodeAddress + i]);
+    }
+
+    file.write(ucodeBE, 4096);
+    file.close();
+    delete[] ucodeBE;
 }

@@ -698,6 +698,7 @@
 #define IDC_EDIT_STATE                  1540
 #define IDC_TEX_PREVIEW                 1541
 #define IDC_THUMBNAIL                   1541
+#define IDC_BTN_REFRESH2                1541
 #define IDC_LST_RESOURCES               1543
 #define IDC_TREE_RESOURCES              1544
 #define IDC_GRP_RESOURCES               1545
