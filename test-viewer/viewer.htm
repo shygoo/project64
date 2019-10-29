@@ -7,88 +7,105 @@
 <script src="GfxOps.js"></script>
 </head>
 <body>
-<input type="file" id="file">
+<input type="file" id="file"><br><br>
 <div id="container"></div>
+<pre id="ginf"></pre>
 <script>
 
-var gfx;
-
-var scene = new THREE.Scene();
-var renderer = new THREE.WebGLRenderer();
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(800, 600);
-renderer.setScissorTest(true);
-renderer.alpha = true;
-renderer.setClearColor(0x222222, 1.0);
-renderer.setViewport(0, 0, 800, 600);
-renderer.setScissor(0, 0, 800, 600);
-document.querySelector('#container').appendChild(renderer.domElement);
-
-renderer.domElement.tabIndex = '0'
-
-var keysDown = {};
-
-var keyEvents = {
-	//27: function(){ _this.resetCamera() }, // esc - reset camera position
-	87: function(){ camera.translateZ(-10); }, // w - move forward
-	65: function(){ camera.translateX(-10); }, // a - pan left
-	83: function(){ camera.translateZ( 10); }, // s - move backward
-	68: function(){ camera.translateX( 10); }, // d - pan right
-	90: function(){ camera.translateY(-10); }, // z - move down
-	88: function(){ camera.translateY( 10); }, // x - move up
-	40: function(){ camera.rotateX( -0.05); }, // down - rotate down
-	38: function(){ camera.rotateX(  0.05); }, // up - rotate up
-	37: function(){ camera.rotateY(  0.05); camera.rotation.z = 0;}, // left - rotate left
-	39: function(){ camera.rotateY( -0.05); camera.rotation.z = 0;}  // right - rotate right
-}
-
-renderer.domElement.onkeydown = function(e)
-{
-    keysDown[e.keyCode] = true;
-	e.preventDefault();
-	return false;
-}
-
-renderer.domElement.onkeyup = function(e)
-{
-	delete keysDown[e.keyCode];
-	e.preventDefault();
-	return false;
-}
-
-var camera = new THREE.PerspectiveCamera(60, 800/600, 1, 15000);
-camera.rotation.order = "YXZ";
-
-//renderer.domElement.width = 800;
-//renderer.domElement.height = 600;
-
 var domFile = document.querySelector('#file');
-
 domFile.onchange = function(e)
 {
     var reader = new FileReader();
     reader.onloadend = function(e)
     {
-        load(reader.result)
+        viewer.load(reader.result)
     }
     reader.readAsArrayBuffer(this.files[0]);
 }
 
-function load(ab)
+function Viewer(containerDomSelector)
 {
+    this.gfx = new GfxState();
+    this.keysDown = {};
+
+    this.scene = new THREE.Scene();
+
+    this.renderer = new THREE.WebGLRenderer();
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    
+    this.renderer.setScissorTest(true);
+    this.renderer.alpha = true;
+    this.renderer.setClearColor(0x222222, 1.0);
+    this.renderer.setViewport(0, 0, 800, 600);
+    this.renderer.setScissor(0, 0, 800, 600);
+    this.renderer.domElement.tabIndex = '0'
+    this.renderer.domElement.viewer = this;
+
+    this.renderer.domElement.onkeydown = function(e)
+    {
+        this.viewer.keysDown[e.keyCode] = true;
+    	e.preventDefault();
+    	return false;
+    }
+
+    this.renderer.domElement.onkeyup = function(e)
+    {
+    	delete this.viewer.keysDown[e.keyCode];
+    	e.preventDefault();
+    	return false;
+    }
+
+    this.keyEvents = {
+	    //27: function(){ _this.resetCamera() }, // esc - reset camera position
+	    87: function(viewer){ viewer.camera.translateZ(-10); }, // w - move forward
+	    65: function(viewer){ viewer.camera.translateX(-10); }, // a - pan left
+	    83: function(viewer){ viewer.camera.translateZ( 10); }, // s - move backward
+	    68: function(viewer){ viewer.camera.translateX( 10); }, // d - pan right
+	    90: function(viewer){ viewer.camera.translateY(-10); }, // z - move down
+	    88: function(viewer){ viewer.camera.translateY( 10); }, // x - move up
+	    40: function(viewer){ viewer.camera.rotateX( -0.05); }, // down - rotate down
+	    38: function(viewer){ viewer.camera.rotateX(  0.05); }, // up - rotate up
+	    37: function(viewer){ viewer.camera.rotateY(  0.05); viewer.camera.rotation.z = 0;}, // left - rotate left
+	    39: function(viewer){ viewer.camera.rotateY( -0.05); viewer.camera.rotation.z = 0;}  // right - rotate right
+    }
+
+    document.querySelector(containerDomSelector).appendChild(this.renderer.domElement);
+
+    this.camera = new THREE.PerspectiveCamera(60, 800/600, 1, 15000);
+    this.camera.rotation.order = "YXZ";
+}
+
+Viewer.prototype.animate = function()
+{
+    for(var k in this.keysDown)
+    {
+        if(k in this.keyEvents) this.keyEvents[k](this);
+    }
+
+    this.renderer.render(this.scene, this.camera)
+    requestAnimationFrame(this.animate.bind(this));
+}
+
+Viewer.prototype.setSize = function(width, height)
+{
+    this.renderer.setSize(width, height);
+}
+
+Viewer.prototype.load = function(ab)
+{
+    this.clearScene();
     var dv = new DataView(ab);
-    gfx = new GfxState(dv);
-    gfx.run();
+    this.gfx.run(dv);
 
     var geometry = new THREE.Geometry();
-    var material = new THREE.MeshBasicMaterial({ color: 0x00ffff, opacity: 0.2, transparent: true, wireframe: true });
+    var material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
+    var material2 = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
     
     var faceidx = 0;
 
-    for(var i = 0; i < gfx.triangles.length; i++)
+    for(var i = 0; i < this.gfx.triangles.length; i++)
     {
-        var tri = gfx.triangles[i];
-        //var triangle = new THREE.Triangle(tri[0], tri[1], tri[2]);
+        var tri = this.gfx.triangles[i];
         geometry.vertices.push(tri[0]);
         geometry.vertices.push(tri[1]);
         geometry.vertices.push(tri[2]);
@@ -96,21 +113,38 @@ function load(ab)
         faceidx += 3;
     }
 
-    //var line = new THREE.Line(geometry, lineMaterial);
     var mesh = new THREE.Mesh(geometry, material)
-    scene.add(mesh);
+    var mesh2 = new THREE.Mesh(geometry, material2)
 
-    function animate()
-    {
-        for(var k in keysDown) if(k in keyEvents) keyEvents[k]();
-        renderer.render(scene, camera)
-        requestAnimationFrame(animate);
-        //camera.translateY(10);
-    }
+    this.scene.add(mesh);
+    this.scene.add(mesh2);
 
-    animate();
-    
+    document.querySelector('#ginf').innerHTML = (
+        "ucode address:  " + hex(this.gfx.meta.microcodeAddress) + "\n" +
+        "ucode checksum: " + hex(this.gfx.meta.microcodeChecksum) + "\n" +
+        "dlist address:  " + hex(this.gfx.meta.rootDisplayListAddress) + "\n"
+    );
 }
+
+Viewer.prototype.clearScene = function()
+{
+    while(this.scene.children.length > 0)
+    {
+        this.scene.remove(this.scene.children[0]); 
+    }
+}
+
+function hex(n)
+{
+    var s = n.toString(16).toUpperCase();
+    while(s.length < 8) s = "0" + s;
+    return s;
+}
+
+var viewer = new Viewer('#container');
+viewer.setSize(800, 600);
+viewer.animate();
+
 
 </script>
 </body>

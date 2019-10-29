@@ -71,6 +71,8 @@ bool CHleGfxState::LoadVertices(uint32_t address, int index, int numv)
         vtx->x = *(int16_t*)&ptr[(offs + 0) ^ 2];
         vtx->y = *(int16_t*)&ptr[(offs + 2) ^ 2];
         vtx->z = *(int16_t*)&ptr[(offs + 4) ^ 2];
+
+        *vtx = Transform(vtx);
         // todo the rest
     }
 

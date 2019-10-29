@@ -30,9 +30,7 @@ GfxOps.gsSPVertex = function(gfx)
 {
     var numVertices = (gfx.command.w0 >> 12 & 0xFF);
     var index = ((gfx.command.w0 & 0xFF) - numVertices * 2) / 2;
-    //console.log("numv", numVertices, "index", index);
-
-    gfx.loadVertices(gfx.command.w1, index, numVertices);
+    gfx.loadVertices(gfx.command.w1, index, numVertices+1);
 }
 
 GfxOps.gsSPMatrix = function(gfx)
@@ -48,36 +46,38 @@ GfxOps.gsSPMatrix = function(gfx)
 
 GfxOps.gsSPPopMatrix = function(gfx)
 {
-    //console.log("POP")
     gfx.spMatrixIndex--;
 }
 
 GfxOps.gsSP2Triangles = function(gfx)
 {
-    var mat4 = gfx.spMatrixStack[gfx.spMatrixIndex];
-
     var v = new Array(6);
-    var vtrans = new Array(6);
+    var w0 = gfx.command.w0;
+    var w1 = gfx.command.w1;
+    v[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2].position;
+    v[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2].position;
+    v[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2].position;
+    v[3] = gfx.spVertices[((w1 >> 16) & 0xFF) / 2].position;
+    v[4] = gfx.spVertices[((w1 >> 8) & 0xFF) / 2].position;
+    v[5] = gfx.spVertices[((w1 >> 0) & 0xFF) / 2].position;
+    gfx.triangles.push([v[0], v[1], v[2]]);
+    gfx.triangles.push([v[3], v[4], v[5]]);
+}
 
-    v[0] = gfx.spVertices[((gfx.command.w0 >> 16) & 0xFF) / 2];
-    v[1] = gfx.spVertices[((gfx.command.w0 >> 8) & 0xFF) / 2];
-    v[2] = gfx.spVertices[((gfx.command.w0 >> 0) & 0xFF) / 2];
-    v[3] = gfx.spVertices[((gfx.command.w1 >> 16) & 0xFF) / 2];
-    v[4] = gfx.spVertices[((gfx.command.w1 >> 8) & 0xFF) / 2];
-    v[5] = gfx.spVertices[((gfx.command.w1 >> 0) & 0xFF) / 2];
-
-    for(var i = 0; i < 6; i++)
-    {
-        vtrans[i] = v[i].clone();
-        vtrans[i].applyMatrix4(mat4);
-    }
-
-    gfx.triangles.push([vtrans[0], vtrans[1], vtrans[2]]);
-    gfx.triangles.push([vtrans[3], vtrans[4], vtrans[5]]);
+GfxOps.gsSP1Triangle = function(gfx)
+{
+    var v = new Array(3);
+    var w0 = gfx.command.w0;
+    v[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2].position;
+    v[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2].position;
+    v[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2].position;
+    gfx.triangles.push([v[0], v[1], v[2]]);
 }
 
 GfxOps.F3DEX2 = [
+    [ 0x05, GfxOps.gsSP1Triangle ],
     [ 0x06, GfxOps.gsSP2Triangles ],
+    [ 0x07, GfxOps.gsSP2Triangles ],
     [ 0x01, GfxOps.gsSPVertex ],
     [ 0xD8, GfxOps.gsSPPopMatrix],
     [ 0xDA, GfxOps.gsSPMatrix ],

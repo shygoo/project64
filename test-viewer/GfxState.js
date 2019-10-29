@@ -1,28 +1,33 @@
 
 
-function getMeta(dv)
+
+function DmemVertex(position, texcoords, colors, matrixIndex)
 {
-    var offset = dv.byteLength - 0x14;
-
-    var meta = {
-        signature:              dv.getUint32(offset + 0x00, false),
-        microcodeAddress:       dv.getUint32(offset + 0x04, true),
-        microcodeChecksum:      dv.getUint32(offset + 0x08, true),
-        rootDisplayListAddress: dv.getUint32(offset + 0x0C, true),
-        rootDisplayListSize:    dv.getUint32(offset + 0x10, true)
-    };
-    
-    //console.log(meta);
-
-    return meta;
+    this.position = position;
+    this.texcoords = texcoords;
+    this.colors = colors;
 }
+
 
 /////////////
 
-function GfxState(dv)
+function GfxState()
+{
+}
+
+GfxState.prototype.setup = function(dv)
 {
     this.dv = dv;
-    this.meta = getMeta(dv);
+
+    var metaOffset = dv.byteLength - 0x14;
+    this.meta = {
+        signature:              dv.getUint32(metaOffset + 0x00, false),
+        microcodeAddress:       dv.getUint32(metaOffset + 0x04, true),
+        microcodeChecksum:      dv.getUint32(metaOffset + 0x08, true),
+        rootDisplayListAddress: dv.getUint32(metaOffset + 0x0C, true),
+        rootDisplayListSize:    dv.getUint32(metaOffset + 0x10, true)
+    };
+    
     this.commandFunctions = new Array(256).fill(null);
     this.command = null;
     
@@ -32,29 +37,46 @@ function GfxState(dv)
     this.spSegments = new Array(16).fill(0);
     this.spReturnStack = new Array(16).fill(0);
     this.spReturnIndex = 0;
-    this.spVertices = new Array(32).fill(null);
-    this.spMatrixStack = new Array(16);
+    this.spVertices = new Array(32);
+    this.spMatrixStack = new Array(10);
     this.spMatrixIndex = 0;
     this.spProjectionMatrix = new THREE.Matrix4();
-    //this.spProjectionMatrix.elements.fill(0);
 
-    for(var i = 0; i < 16; i++)
+    for(var i = 0; i < this.spMatrixStack.length; i++)
     {
         this.spMatrixStack[i] = new THREE.Matrix4();
-        //this.spMatrixStack[i].elements.fill(0);
-        //console.log(this.spMatrixStack[i])
     }
 
-    //console.log(GfxOps.F3DEX2)
+    for(var i = 0; i < this.spVertices.length; i++)
+    {
+        this.spVertices[i] = new DmemVertex();
+    }
 
     this.importCommandFunctions(GfxOps.F3DEX2);
+}
 
-    //for(var i = 0; i < this.commandFunctions.length; i++)
-    //{
-    //    console.log(this.commandFunctions[i])
-    //}
+GfxState.prototype.run = function(dv)
+{
+    this.setup(dv);
 
-    console.log(this.spCommandAddress.toString(16))
+    var numCommands = 0;
+
+    while(this.spReturnIndex >= 0 && numCommands < 20000)
+    {
+        this.command = this.getCommand(this.spCommandAddress);
+        this.spCommandAddress += 8;
+
+        //this.debugLogStep();
+
+        var commandFunction = this.commandFunctions[this.command.commandByte()];
+
+        if(commandFunction != null)
+        {
+            commandFunction(this);
+        }
+        
+        numCommands++;
+    }
 }
 
 GfxState.prototype.segmentedToPhysical = function(segmentOffset)
@@ -82,35 +104,19 @@ GfxState.prototype.importCommandFunctions = function(arr)
     }
 }
 
-GfxState.prototype.run = function()
+GfxState.prototype.debugLogStep = function()
 {
-    //var debugCount = 0;
-
-    while(this.spReturnIndex >= 0)
+    switch(this.command.commandByte())
     {
-        this.command = this.getCommand(this.spCommandAddress);
-        this.spCommandAddress += 8;
-
-        var commandFunction = this.commandFunctions[this.command.commandByte()];
-
-        if(commandFunction != null)
-        {
-            commandFunction(this);
-        }
-        
-        //console.log(this.command.w0.toString(16), this.command.w1.toString(16))
-
-        //if(debugCount > 20)
-        //{
-        //    break;
-        //}
-        //debugCount++;
+    case 0x01: console.log("vertex"); break;
+    case 0x02: console.log("modvertex"); break;
+    case 0x05: console.log("tri1"); break;
+    case 0x06: console.log("tri2"); break;
+    case 0x07: console.log("quad7"); break;
+    case 0x04: console.log("branch_z"); break;
+    case 0x03: console.log("culldl"); break;
     }
-
-    //console.log("done");
-    //console.log(debugCount)
 }
-
 
 GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
 {
@@ -118,13 +124,17 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
 
     for(var i = 0; i < numVertices; i++)
     {
-        var offs = paddr + i * 16;
+        var offset = paddr + (i * 16);
 
-        var x = this.dv.getInt16(offs + 0x00);
-        var y = this.dv.getInt16(offs + 0x02);
-        var z = this.dv.getInt16(offs + 0x04);
+        var x = this.dv.getInt16(offset + 0x00);
+        var y = this.dv.getInt16(offset + 0x02);
+        var z = this.dv.getInt16(offset + 0x04);
 
-        this.spVertices[index + i] = new THREE.Vector3(x, y, z);
+        var position = new THREE.Vector3(x, y, z);
+        position.applyMatrix4(this.spMatrixStack[this.spMatrixIndex]);
+
+        //var vertex 
+        this.spVertices[index + i] = new DmemVertex(position, null, null);
     }
 }
 
@@ -139,18 +149,14 @@ GfxState.prototype.loadMatrix = function(segmentOffset, flags)
     var dmemSrcMtx = null;
     var dmemDstMtx = null;
     var dramSrcMtx = new THREE.Matrix4();
-    //dramSrcMtx.elements.fill(0);
 
     for(var i = 0; i < 16; i++)
     {
-        var offs = paddr + i*2;
-
-        var intpart = this.dv.getUint16(offs);
-        var fracpart = this.dv.getUint16(offs + 32);
-
+        var offset = paddr + (i * 2);
+        var intpart = this.dv.getUint16(offset);
+        var fracpart = this.dv.getUint16(offset + 32);
         var fixed = (intpart << 16) | fracpart; // signed
-        var f = fixed / 65536;
-        dramSrcMtx.elements[i] = f;
+        dramSrcMtx.elements[i] = fixed / 65536;
     }
 
     if(bProj)
@@ -172,15 +178,10 @@ GfxState.prototype.loadMatrix = function(segmentOffset, flags)
 
     if(bLoad)
     {
-        //console.log("load", dmemSrcMtx, dramSrcMtx)
-        //glMatrix.mat4.copy(dmemDstMtx, dramSrcMtx);
         dmemDstMtx.copy(dramSrcMtx)
     }
     else
     {
-        //glMatrix.mat4.multiply(dmemDstMtx, dmemSrcMtx, dramSrcMtx);
         dmemDstMtx.multiplyMatrices(dmemSrcMtx, dramSrcMtx);
     }
-
-    //console.log(dramMtx.toString())
 }

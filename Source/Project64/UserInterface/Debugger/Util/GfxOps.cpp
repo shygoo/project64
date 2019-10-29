@@ -586,11 +586,17 @@ void CGfxOps::op_gsSPMatrix_f3d(CGfxParser* state, decoded_cmd_t* dc)
 {
     dl_cmd_mtx_f3d_t* cmd = &state->m_spCommand.mtx_f3d;
 
+    bool bProj = (cmd->params & 1);
+    bool bLoad = (cmd->params & 2);
+    bool bPush = (cmd->params & 4);
+
     dc->params = stdstr_f("/*addr*/ 0x%08X, (%s | %s | %s) /*0x%08X*/", cmd->address,
-        (cmd->params & 1) ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
-        (cmd->params & 2) ? "G_MTX_LOAD" : "G_MTX_MUL",
-        (cmd->params & 4) ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
+        bProj ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
+        bLoad ? "G_MTX_LOAD" : "G_MTX_MUL",
+        bPush ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         state->SegmentedToVirtual(cmd->address));
+
+    state->LoadMatrix(cmd->address, bPush, bLoad, bProj);
 
     dc->SetDramResource(state, (cmd->params & 1) ? RES_PROJECTION_MATRIX : RES_MODELVIEW_MATRIX);
     dc->listFgColor = COLOR_DMA;
@@ -960,15 +966,15 @@ void CGfxOps::op_gsSP2Triangles_f3dex(CGfxParser* state, decoded_cmd_t* dc)
     // report triangle for the mesh builder
     dc->numTris = 2;
     dc->tris[0] = {
-        state->Transform(&state->m_spVertices[cmd->v0 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v1 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v2 / 2]),
+        state->m_spVertices[cmd->v0 / 2],
+        state->m_spVertices[cmd->v1 / 2],
+        state->m_spVertices[cmd->v2 / 2],
     };
 
     dc->tris[1] = {
-        state->Transform(&state->m_spVertices[cmd->v3 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v4 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v5 / 2]),
+        state->m_spVertices[cmd->v3 / 2],
+        state->m_spVertices[cmd->v4 / 2],
+        state->m_spVertices[cmd->v5 / 2],
     };
 
     //state->testGeom.
@@ -1094,9 +1100,9 @@ void CGfxOps::op_gsSP1Triangle_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     // report triangle for the mesh builder
     dc->numTris = 1;
     dc->tris[0] = {
-        state->Transform(&state->m_spVertices[cmd->v0 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v1 / 2]),
-        state->Transform(&state->m_spVertices[cmd->v2 / 2])
+        state->m_spVertices[cmd->v0 / 2],
+        state->m_spVertices[cmd->v1 / 2],
+        state->m_spVertices[cmd->v2 / 2]
     };
 
     dc->listFgColor = COLOR_PRIMITIVE;
