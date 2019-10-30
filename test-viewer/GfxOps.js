@@ -22,7 +22,8 @@ GfxOps.gsMoveWd = function(gfx)
     if((gfx.command.w0 & 0x00FF0000) == 0x00060000) // setsegment
     {
         var segment = (gfx.command.w0 & 0xFFFF) / 4;
-        gfx.spSegments[segment] = gfx.command.w1;
+        gfx.setSegmentAddress(segment, gfx.command.w1);
+        //gfx.spSegments[segment] = gfx.command.w1;
     }
 }
 
@@ -30,7 +31,7 @@ GfxOps.gsSPVertex = function(gfx)
 {
     var numVertices = (gfx.command.w0 >> 12 & 0xFF);
     var index = ((gfx.command.w0 & 0xFF) - numVertices * 2) / 2;
-    gfx.loadVertices(gfx.command.w1, index, numVertices+1);
+    gfx.loadVertices(gfx.command.w1, index, numVertices);
 }
 
 GfxOps.gsSPMatrix = function(gfx)
@@ -74,6 +75,85 @@ GfxOps.gsSP1Triangle = function(gfx)
     gfx.triangles.push([v[0], v[1], v[2]]);
 }
 
+GfxOps.gsDPSetTextureImage = function(gfx)
+{
+    gfx.dpImageAddress = gfx.command.w1;
+}
+
+GfxOps.gsDPLoadBlock = function(gfx)
+{
+    var cmd = gfx.command;
+
+    var uls = cmd.w0f(12, 12);
+    var ult = cmd.w0f(0, 12);
+    var tile = cmd.w1f(24, 3);
+    var lrs = cmd.w1f(12, 12);
+    var dxt = cmd.w1f(0, 12);
+
+    var tileDesc = gfx.dpTileDescriptors[tile];
+
+    // test
+    var numTexels = lrs;
+    var numBytesPerTexel = TileDescriptor.bytesPerTexel(tileDesc.siz);
+    var numBytes;
+
+    if(numBytesPerTexel == 0) // 4b
+    {
+        numBytes = numTexels / 2;
+    }
+    else
+    {
+        numBytes = numTexels * numBytesPerTexel;
+    }
+}
+
+GfxOps.gsSPTexture = function(gfx)
+{
+    var cmd = gfx.command;
+    var tile = cmd.w0f(8, 3);
+    var tileDesc = gfx.dpTileDescriptors[tile];
+
+    tileDesc.levels = cmd.w0f(11,3);
+    tileDesc.on = cmd.w0f(0, 8);
+    tileDesc.scaleS = cmd.w1f(16, 16);
+    tileDesc.scaleT = cmd.w1f(0, 16);
+}
+
+GfxOps.gsDPSetTile = function(gfx)
+{
+    var cmd = gfx.command;
+    var tile = cmd.w0f(24, 3);
+    var tileDesc = gfx.dpTileDescriptors[tile];
+
+    tileDesc.fmt = cmd.w0f(21, 3);
+    tileDesc.siz = cmd.w0f(19, 2);
+    tileDesc.line = cmd.w0f(9, 9);
+    tileDesc.tmem = cmd.w0f(0, 9);
+    tileDesc.palette = cmd.w1f(20, 4);
+    tileDesc.cmT = cmd.w1f(18, 2);
+    tileDesc.maskT = cmd.w1f(14, 4);
+    tileDesc.shiftT = cmd.w1f(10, 4);
+    tileDesc.cmS = cmd.w1f(8, 2);
+    tileDesc.maskS = cmd.w1f(4, 4);
+    tileDesc.shiftS = cmd.w1f(0, 4);
+}
+
+GfxOps.gsDPSetTileSize = function(gfx)
+{
+    var cmd = gfx.command;
+    var tile = cmd.w1f(24, 3);
+    var tileDesc = gfx.dpTileDescriptors[tile];
+
+    tileDesc.ulS = cmd.w1f(12, 12);
+    tileDesc.ulT = cmd.w1f(0, 12);
+    tileDesc.lrS = cmd.w1f(12, 12);
+    tileDesc.lrT = cmd.w1f(0, 12);
+}
+
+GfxOps.RDP = [
+    [0xFD, GfxOps.gsDPSetTextureImage ]
+];
+
 GfxOps.F3DEX2 = [
     [ 0x05, GfxOps.gsSP1Triangle ],
     [ 0x06, GfxOps.gsSP2Triangles ],
@@ -86,6 +166,3 @@ GfxOps.F3DEX2 = [
     [ 0xDF, GfxOps.gsSPEndDisplayList ],
 ];
 
-//GfxOps.F3DEX2.G_MTX_PUSH = 0x01;
-//GfxOps.F3DEX2.G_MTX_PUSH = 0x01;
-//GfxOps.F3DEX2.G_MTX_PUSH = 0x01;

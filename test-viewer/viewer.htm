@@ -9,19 +9,9 @@
 <body>
 <input type="file" id="file"><br><br>
 <div id="container"></div>
+
 <pre id="ginf"></pre>
 <script>
-
-var domFile = document.querySelector('#file');
-domFile.onchange = function(e)
-{
-    var reader = new FileReader();
-    reader.onloadend = function(e)
-    {
-        viewer.load(reader.result)
-    }
-    reader.readAsArrayBuffer(this.files[0]);
-}
 
 function Viewer(containerDomSelector)
 {
@@ -30,7 +20,7 @@ function Viewer(containerDomSelector)
 
     this.scene = new THREE.Scene();
 
-    this.renderer = new THREE.WebGLRenderer();
+    this.renderer = new THREE.WebGLRenderer({antialias: false});
     this.renderer.setPixelRatio(window.devicePixelRatio);
     
     this.renderer.setScissorTest(true);
@@ -91,11 +81,41 @@ Viewer.prototype.setSize = function(width, height)
     this.renderer.setSize(width, height);
 }
 
-Viewer.prototype.load = function(ab)
+Viewer.prototype.loadDumpFile = function(ab)
 {
-    this.clearScene();
     var dv = new DataView(ab);
-    this.gfx.run(dv);
+
+    var metaOffset = dv.byteLength - 0x14;
+    var meta = {
+        signature:              dv.getUint32(metaOffset + 0x00, false),
+        microcodeAddress:       dv.getUint32(metaOffset + 0x04, true),
+        microcodeChecksum:      dv.getUint32(metaOffset + 0x08, true),
+        rootDisplayListAddress: dv.getUint32(metaOffset + 0x0C, true),
+        rootDisplayListSize:    dv.getUint32(metaOffset + 0x10, true)
+    };
+
+    document.querySelector('#ginf').innerHTML = (
+        "ucode address:  " + hex(meta.microcodeAddress) + "\n" +
+        "ucode checksum: " + hex(meta.microcodeChecksum) + "\n" +
+        "dlist address:  " + hex(meta.rootDisplayListAddress) + "\n"
+    );
+
+    // build intermediate mesh
+    this.gfx.importOps(GfxOps.RDP, GfxOps.F3DEX2);
+    this.gfx.setMainMemory(dv);
+    this.gfx.run(meta.rootDisplayListAddress);
+
+    // build threejs scene
+    this.buildScene();
+}
+
+
+Viewer.prototype.buildScene = function()
+{
+    while(this.scene.children.length > 0)
+    {
+        this.scene.remove(this.scene.children[0]); 
+    }
 
     var geometry = new THREE.Geometry();
     var material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
@@ -118,20 +138,6 @@ Viewer.prototype.load = function(ab)
 
     this.scene.add(mesh);
     this.scene.add(mesh2);
-
-    document.querySelector('#ginf').innerHTML = (
-        "ucode address:  " + hex(this.gfx.meta.microcodeAddress) + "\n" +
-        "ucode checksum: " + hex(this.gfx.meta.microcodeChecksum) + "\n" +
-        "dlist address:  " + hex(this.gfx.meta.rootDisplayListAddress) + "\n"
-    );
-}
-
-Viewer.prototype.clearScene = function()
-{
-    while(this.scene.children.length > 0)
-    {
-        this.scene.remove(this.scene.children[0]); 
-    }
 }
 
 function hex(n)
@@ -140,6 +146,26 @@ function hex(n)
     while(s.length < 8) s = "0" + s;
     return s;
 }
+
+function attachFileReader(query, onloadend)
+{
+    var domFileInput = document.querySelector(query);
+    var reader = new FileReader();
+    reader.onloadend = function()
+    {
+        onloadend(reader.result);
+    }
+
+    domFileInput.addEventListener('change', function()
+    {
+        reader.readAsArrayBuffer(domFileInput.files[0]);
+    });
+}
+
+attachFileReader('#file', function(ab)
+{
+    viewer.loadDumpFile(ab);
+})
 
 var viewer = new Viewer('#container');
 viewer.setSize(800, 600);

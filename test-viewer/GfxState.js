@@ -8,32 +8,93 @@ function DmemVertex(position, texcoords, colors, matrixIndex)
     this.colors = colors;
 }
 
+function TileDescriptor()
+{
+    // gsSPTexture
+    this.on = 0;
+    this.scaleS = 0;
+    this.scaleT = 0;
+    this.levels = 0;
+
+    // gsDPSetTile
+    this.fmt = 0;
+    this.siz = 0;
+    this.line = 0;
+    this.tmem = 0;
+    this.palette = 0;
+    this.cmT = 0;
+    this.maskT = 0;
+    this.shiftT = 0;
+    this.cmS = 0;
+    this.maskS = 0;
+    this.shiftS = 0;
+
+    // gsDPSetTileSize
+    this.ulS = 0;
+    this.ulT = 0;
+    this.lrS = 0;
+    this.lrT = 0;
+}
+
+TileDescriptor.bytesPerTexel = function(siz)
+{
+    switch(siz)
+    {
+        case TileDescriptor.G_IM_SIZ_4b:  return 0;
+        case TileDescriptor.G_IM_SIZ_8b:  return 1;
+        case TileDescriptor.G_IM_SIZ_16b: return 2;
+        case TileDescriptor.G_IM_SIZ_32b: return 4;
+    }
+}
+
+/*
+gsSPTexture         scaleS 0xFFFF, scaleT 0xFFFF, levels 0, tile 0, on 1
+gsDPSetTextureImage G_IM_FMT_RGBA, G_IM_SIZ_16b, addr 0x00000000
+gsDPSetTile         G_IM_FMT_RGBA, G_IM_SIZ_16b, line  0, tmem 0x000, tile 7, palette 0, cmt 2, maskt 4, shiftt 0, cmt 2, masks 7, shifts 0
+gsDPLoadSync
+gsDPLoadBlock       tile 7, uls 0, ult 0, lrs 2047, dxt 64
+gsDPSetTile         G_IM_FMT_RGBA, G_IM_SIZ_16b, line 32, tmem 0x000, tile 0, palette 0, cmt 2, maskt 4, shiftt 0, cmt 2, masks 7, shifts 0
+gsDPSetTileSize     tile 0, uls 0, ult 0, lrs 508, lrt 60
+*/
+
 
 /////////////
 
+/*
+GfxState(config)
+gfx.setup(dv)
+gfx.run(dv)
+gfx.setSegmentAddress(segment, address)
+gfx.setSegmentBuffer(segment, address)
+gfx.readWord(segmentOffset)
+gfx.segmentedToPhysical(segmentOffset)
+gfx.getCommand(segmentOffset)
+gfx.importOps(opsMain, opsPatch)
+gfx.loadVertices(segmentOffset, index, numVertices)
+gfx.loadMatrix(segmentOffset, flags)
+
+*/
+
 function GfxState()
 {
+    this.dv = null; // main memory
+    this.spSegmentBuffers = new Array(16).fill(null); // overrides spSegments
+    this.commandFunctions = new Array(256).fill(null);
+    this.resetState();
 }
 
-GfxState.prototype.setup = function(dv)
+GfxState.prototype.setMainMemory = function(dv)
 {
     this.dv = dv;
+}
 
-    var metaOffset = dv.byteLength - 0x14;
-    this.meta = {
-        signature:              dv.getUint32(metaOffset + 0x00, false),
-        microcodeAddress:       dv.getUint32(metaOffset + 0x04, true),
-        microcodeChecksum:      dv.getUint32(metaOffset + 0x08, true),
-        rootDisplayListAddress: dv.getUint32(metaOffset + 0x0C, true),
-        rootDisplayListSize:    dv.getUint32(metaOffset + 0x10, true)
-    };
-    
-    this.commandFunctions = new Array(256).fill(null);
+GfxState.prototype.resetState = function()
+{
     this.command = null;
     
     this.triangles = [];
 
-    this.spCommandAddress = this.meta.rootDisplayListAddress;
+    this.spCommandAddress = 0;
     this.spSegments = new Array(16).fill(0);
     this.spReturnStack = new Array(16).fill(0);
     this.spReturnIndex = 0;
@@ -41,6 +102,14 @@ GfxState.prototype.setup = function(dv)
     this.spMatrixStack = new Array(10);
     this.spMatrixIndex = 0;
     this.spProjectionMatrix = new THREE.Matrix4();
+    this.dpImageAddress = 0;
+    this.dpTextureMemory = new Uint8Array(4096);
+    this.dpTileDescriptors = new Array(8);
+
+    for(var i = 0; i < this.dpTileDescriptors.length; i++)
+    {
+        this.dpTileDescriptors[i] = new TileDescriptor();
+    }
 
     for(var i = 0; i < this.spMatrixStack.length; i++)
     {
@@ -51,14 +120,12 @@ GfxState.prototype.setup = function(dv)
     {
         this.spVertices[i] = new DmemVertex();
     }
-
-    this.importCommandFunctions(GfxOps.F3DEX2);
 }
 
-GfxState.prototype.run = function(dv)
+GfxState.prototype.run = function(address)
 {
-    this.setup(dv);
-
+    this.resetState();
+    this.spCommandAddress = address;
     var numCommands = 0;
 
     while(this.spReturnIndex >= 0 && numCommands < 20000)
@@ -66,9 +133,9 @@ GfxState.prototype.run = function(dv)
         this.command = this.getCommand(this.spCommandAddress);
         this.spCommandAddress += 8;
 
-        //this.debugLogStep();
-
         var commandFunction = this.commandFunctions[this.command.commandByte()];
+
+        //this.debugLogStep();
 
         if(commandFunction != null)
         {
@@ -77,6 +144,49 @@ GfxState.prototype.run = function(dv)
         
         numCommands++;
     }
+}
+
+GfxState.prototype.setSegmentAddress = function(segment, address)
+{
+    this.spSegmentBuffers[segment] = null;
+    this.spSegments[segment] = address;
+}
+
+GfxState.prototype.setSegmentBuffer = function(segment, buffer)
+{
+    this.spSegments[segment] = 0;
+    this.spSegmentBuffers[segment] = buffer;
+}
+
+GfxState.prototype._get = function(segmentOffset)
+{
+    var segment = (segmentOffset >>> 24) & 0x0F;
+    var offset = (segmentOffset & 0x00FFFFFF);
+
+    if(this.spSegmentBuffers[segment] != null)
+    {
+        return { dv: this.spSegmentBuffers[segment], offset: offset };
+    }
+
+    return { dv: this.dv, offset: this.segmentedToPhysical(segmentOffset) };
+}
+
+GfxState.prototype.getU32 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getUint32(src.offset);
+}
+
+GfxState.prototype.getU16 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getUint16(src.offset);
+}
+
+GfxState.prototype.getS16 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getInt16(src.offset);
 }
 
 GfxState.prototype.segmentedToPhysical = function(segmentOffset)
@@ -88,13 +198,12 @@ GfxState.prototype.segmentedToPhysical = function(segmentOffset)
 
 GfxState.prototype.getCommand = function(segmentOffset)
 {
-    var paddr = this.segmentedToPhysical(segmentOffset);
-    var word0 = this.dv.getUint32(paddr + 0);
-    var word1 = this.dv.getUint32(paddr + 4);
+    var word0 = this.getU32(segmentOffset + 0);
+    var word1 = this.getU32(segmentOffset + 4)
     return new GfxCommand(word0, word1);
 }
 
-GfxState.prototype.importCommandFunctions = function(arr)
+GfxState.prototype._importCommandFunctions = function(arr)
 {
     for(var i = 0; i < arr.length; i++)
     {
@@ -104,44 +213,41 @@ GfxState.prototype.importCommandFunctions = function(arr)
     }
 }
 
-GfxState.prototype.debugLogStep = function()
+GfxState.prototype.importOps = function(dpOps, spOps, spOpsPatch)
 {
-    switch(this.command.commandByte())
+    for(var i = 0; i < 256; i++)
     {
-    case 0x01: console.log("vertex"); break;
-    case 0x02: console.log("modvertex"); break;
-    case 0x05: console.log("tri1"); break;
-    case 0x06: console.log("tri2"); break;
-    case 0x07: console.log("quad7"); break;
-    case 0x04: console.log("branch_z"); break;
-    case 0x03: console.log("culldl"); break;
+        this.commandFunctions[i] = null;
+    }
+
+    this._importCommandFunctions(dpOps);
+    this._importCommandFunctions(spOps);
+
+    if(spOpsPatch)
+    {
+        this._importCommandFunctions(spOpsPatch);
     }
 }
 
 GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
 {
-    var paddr = this.segmentedToPhysical(segmentOffset);
-
     for(var i = 0; i < numVertices; i++)
     {
-        var offset = paddr + (i * 16);
+        var offset = segmentOffset + (i * 16);
 
-        var x = this.dv.getInt16(offset + 0x00);
-        var y = this.dv.getInt16(offset + 0x02);
-        var z = this.dv.getInt16(offset + 0x04);
+        var x = this.getS16(offset + 0x00);
+        var y = this.getS16(offset + 0x02);
+        var z = this.getS16(offset + 0x04);
 
         var position = new THREE.Vector3(x, y, z);
         position.applyMatrix4(this.spMatrixStack[this.spMatrixIndex]);
 
-        //var vertex 
         this.spVertices[index + i] = new DmemVertex(position, null, null);
     }
 }
 
 GfxState.prototype.loadMatrix = function(segmentOffset, flags)
 {
-    var paddr = this.segmentedToPhysical(segmentOffset);
-
     var bPush = !!(flags & 0x01);
     var bLoad = !!(flags & 0x02);
     var bProj = !!(flags & 0x04);
@@ -152,9 +258,9 @@ GfxState.prototype.loadMatrix = function(segmentOffset, flags)
 
     for(var i = 0; i < 16; i++)
     {
-        var offset = paddr + (i * 2);
-        var intpart = this.dv.getUint16(offset);
-        var fracpart = this.dv.getUint16(offset + 32);
+        var offset = segmentOffset + (i * 2);
+        var intpart = this.getU16(offset);
+        var fracpart = this.getU16(offset + 32);
         var fixed = (intpart << 16) | fracpart; // signed
         dramSrcMtx.elements[i] = fixed / 65536;
     }
@@ -183,5 +289,21 @@ GfxState.prototype.loadMatrix = function(segmentOffset, flags)
     else
     {
         dmemDstMtx.multiplyMatrices(dmemSrcMtx, dramSrcMtx);
+    }
+}
+
+GfxState.prototype.debugLogStep = function()
+{
+    console.log(this.command.w0.toString(16), this.command.w0.toString(16))
+
+    switch(this.command.commandByte())
+    {
+    case 0x01: console.log("vertex"); break;
+    case 0x02: console.log("modvertex"); break;
+    case 0x05: console.log("tri1"); break;
+    case 0x06: console.log("tri2"); break;
+    case 0x07: console.log("quad7"); break;
+    case 0x04: console.log("branch_z"); break;
+    case 0x03: console.log("culldl"); break;
     }
 }
