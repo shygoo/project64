@@ -12,7 +12,7 @@
 #include "stdafx.h"
 
 #include "Debugger-RegisterTabs.h"
-#include "Util/OpInfo.h"
+#include "OpInfo.h"
 
 bool CRegisterTabs::m_bColorsEnabled = false;
 CDebuggerUI* CRegisterTabs::m_Debugger = NULL;

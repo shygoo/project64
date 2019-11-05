@@ -1,144 +1,9 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 
-#include "Util/GfxParser.h"
-#include "Util/GfxRenderer.h"
-#include "Util/GfxLabels.h"
-
-CRenderView::CRenderView() :
-    m_bRButtonDown(false),
-    m_CursorX(0),
-    m_CursorY(0)
-{
-}
-
-bool CRenderView::KeyDown(int vkey)
-{
-    return m_KeysDown.count(vkey);
-}
-
-bool CRenderView::RButtonDown(void)
-{
-    return m_bRButtonDown;
-}
-
-void CRenderView::RegisterClass()
-{
-    this->GetWndClassInfo().m_wc.lpfnWndProc = m_pfnSuperWindowProc;
-    this->GetWndClassInfo().Register(&m_pfnSuperWindowProc);
-}
-
-void CRenderView::DrawImage(CDrawBuffers *db)
-{
-    HDC hdc = GetDC();
-    HBITMAP hbm = CreateBitmap(db->m_Width, db->m_Height, 1, 32, db->m_ColorBuffer);
-    HDC hdcMem = CreateCompatibleDC(hdc);
-    SelectObject(hdcMem, hbm);
-    BitBlt(hdc, 1, 1, db->m_Width, db->m_Height, hdcMem, 0, 0, SRCCOPY);
-    ReleaseDC(hdc);
-    DeleteDC(hdcMem);
-    DeleteObject(hbm);
-}
-
-LRESULT CRenderView::OnGetDlgCode(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    return DLGC_WANTALLKEYS;
-}
-
-LRESULT CRenderView::OnKeyUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    m_KeysDown.erase(wParam);
-    return FALSE;
-}
-
-LRESULT CRenderView::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    m_KeysDown.insert(wParam);
-    return FALSE;
-}
-
-LRESULT CRenderView::OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    if (GetFocus() != m_hWnd)
-    {
-        SetFocus();
-    }
-
-    int x, y;
-    x = GET_X_LPARAM(lParam);
-    y = GET_Y_LPARAM(lParam);
-
-    NMRVCLICK rvnm;
-    rvnm.nmh.code = RVN_LCLICK;
-    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
-    rvnm.nmh.hwndFrom = m_hWnd;
-
-    rvnm.x = x;
-    rvnm.y = y;
-
-    m_CursorX = x;
-    m_CursorY = y;
-
-    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
-    return FALSE;
-}
-
-LRESULT CRenderView::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    if (GetFocus() != m_hWnd)
-    {
-        SetFocus();
-    }
-
-    NMRVCLICK rvnm;
-    rvnm.nmh.code = RVN_RCLICK;
-    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
-    rvnm.nmh.hwndFrom = m_hWnd;
-
-    rvnm.x = GET_X_LPARAM(lParam);
-    rvnm.y = GET_Y_LPARAM(lParam);
-
-    m_bRButtonDown = true;
-
-    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
-    return FALSE;
-}
-
-LRESULT CRenderView::OnRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    m_bRButtonDown = false;
-    return FALSE;
-}
-
-LRESULT CRenderView::OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-{
-    int x, y;
-    x = GET_X_LPARAM(lParam);
-    y = GET_Y_LPARAM(lParam);
-
-    NMRVMOUSEMOVE rvnm;
-    rvnm.nmh.code = RVN_MOUSEMOVE;
-    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
-    rvnm.nmh.hwndFrom = m_hWnd;
-
-    rvnm.x = x;
-    rvnm.y = y;
-    rvnm.deltaX = x - m_CursorX;
-    rvnm.deltaY = y - m_CursorY;
-    rvnm.buttons = wParam;
-
-    m_CursorX = x;
-    m_CursorY = y;
-
-    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
-    return FALSE;
-}
-
-///////////////
-
-//HHOOK CDebugDisplayList::hWinMessageHook = NULL;
-//CDebugDisplayList* CDebugDisplayList::_this = NULL;
-//static LRESULT CALLBACK HookProc(int nCode, WPARAM wParam, LPARAM lParam);
+#include "GfxParser.h"
+#include "GfxRenderer.h"
+#include "GfxLabels.h"
 
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     CDebugDialog<CDebugDisplayList>(debugger),
@@ -148,6 +13,9 @@ CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     m_bShowRender(true)
 {
 	m_Camera.m_Pos.z = -5.0f;
+
+    m_StateCanvas = new CCanvas;
+    m_StateCanvas->RegisterClass();
 
     m_RenderView = new CRenderView;
     m_RenderView->RegisterClass();
@@ -186,6 +54,15 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
         m_RenderView->RegisterClass();
     }
 
+    if (m_StateCanvas == NULL)
+    {
+        m_StateCanvas = new CCanvas;
+        m_StateCanvas->RegisterClass();
+    }
+
+    m_StateCanvas->SubclassWindow(GetDlgItem(IDC_CUSTOM2));
+    m_StateCanvas->Init();
+
     m_RenderView->SubclassWindow(GetDlgItem(IDC_CUSTOM1));
 
     m_DisplayListCtrl.Attach(GetDlgItem(IDC_LST_DLIST));
@@ -221,10 +98,45 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width()-2, m_OrgTexPreviewRect.Height()-2);
 
+    CCanvas*& scv = m_StateCanvas;
+    COLORREF headerColor = RGB(0x44, 0x44, 0x44);
+
+    scv->AddItem(10, 10, "IMAGE ADDRESSES", headerColor);
+    m_StateCanvas->AddItem(16, 20, "TEXTURE");
+    m_StateCanvas->AddItem(16, 30, "COLOR");
+    m_StateCanvas->AddItem(16, 40, "DEPTH");
+    m_ItemTextureImage = scv->AddItem(16 + 60, 20, "");
+    m_ItemColorImage = scv->AddItem(16 + 60, 30, "");
+    m_ItemDepthImage = scv->AddItem(16 + 60, 40, "");
+
+    scv->AddItem(10, 70, "GEOMETRY MODE", headerColor);
+    m_ItemGeomZBUFFER = scv->AddItem(16, 80, "ZBUFFER");
+    m_ItemGeomSHADE = scv->AddItem(16, 90, "SHADE");
+    m_ItemGeomFOG = scv->AddItem(16, 100, "FOG");
+    m_ItemGeomLIGHTING = scv->AddItem(16, 110, "LIGHTING");
+    m_ItemGeomTEXTURE_GEN = scv->AddItem(16, 120, "TEXTURE_GEN");
+    m_ItemGeomTEXTURE_GEN_LINEAR = scv->AddItem(16, 130, "TEXTURE_GEN_LINEAR");
+    m_ItemGeomLOD = scv->AddItem(16, 140, "LOD");
+    m_ItemGeomCLIPPING = scv->AddItem(16, 150, "CLIPPING");
+    m_ItemGeomSHADING_SMOOTH = scv->AddItem(16, 160, "SHADING_SMOOTH");
+    m_ItemGeomCULL_FRONT = scv->AddItem(16, 170, "CULL_FRONT");
+    m_ItemGeomCULL_BACK = scv->AddItem(16, 180, "CULL_BACK");
+
+    scv->AddItem(200, 10, "COMBINER", headerColor);
+    scv->AddItem(206, 20, "CYCLE 1 COLOR");
+    scv->AddItem(206, 30, "CYCLE 1 ALPHA");
+    scv->AddItem(206, 40, "CYCLE 2 COLOR");
+    scv->AddItem(206, 50, "CYCLE 2 ALPHA");
+    m_ItemCC1Color = scv->AddItem(206 + 100, 20, "");
+    m_ItemCC1Alpha = scv->AddItem(206 + 100, 30, "");
+    m_ItemCC2Color = scv->AddItem(206 + 100, 40, "");
+    m_ItemCC2Alpha = scv->AddItem(206 + 100, 50, "");
+
     SetTimer(TIMER_ID_DRAW, 20, NULL);
 
     LoadWindowPos();
     WindowCreated();
+
     return TRUE;
 }
 
@@ -405,16 +317,66 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
         return FALSE;
     }
 
-    // Geometry mode
+    //// rdp colors
+    //
+    //::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->m_dpFillColor).c_str());
+    //::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->m_dpFogColor).c_str());
+    //::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->m_dpBlendColor).c_str());
+    //::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->m_dpPrimColor).c_str());
+    //::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->m_dpEnvColor).c_str());
+    //
+    //SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->m_dpFillColor);
+    //SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->m_dpFogColor);
+    //SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->m_dpBlendColor);
+    //SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->m_dpPrimColor);
+    //SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->m_dpEnvColor);
+    //
+    //// tiles
+    //
+    //
+    //// lights
+    //
+    ////stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+    //
+    ///////////////
+    //
+    stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s\r\n",
+        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c0),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d0));
+    
+    stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac0),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad0));
+    
+    stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s\r\n",
+        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c1),
+        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d1));
+    
+    stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
+        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
 
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_ZBUFFER), BM_SETCHECK, state->m_spGeometryMode.f3d.zbuffer ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADE), BM_SETCHECK, state->m_spGeometryMode.f3d.shade ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_FOG), BM_SETCHECK, state->m_spGeometryMode.f3d.fog ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_LIGHTING), BM_SETCHECK, state->m_spGeometryMode.f3d.lighting ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN), BM_SETCHECK, state->m_spGeometryMode.f3d.texture_gen ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_TEXTURE_GEN_LINEAR), BM_SETCHECK, state->m_spGeometryMode.f3d.texture_gen_linear ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_LOD), BM_SETCHECK, state->m_spGeometryMode.f3d.lod ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_CLIPPING), BM_SETCHECK, state->m_spGeometryMode.f3d.clipping ? BST_CHECKED : BST_UNCHECKED, 0);
+    stdstr strTextureImage = stdstr_f("%08X (%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str();
+    stdstr strColorImage = stdstr_f("%08X (%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str();
+    stdstr strDepthImage = stdstr_f("%08X (%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str();
+
+    // Image addresses
+
+    CCanvas*& scv = m_StateCanvas;
+
+    scv->SetItemText(m_ItemTextureImage, strTextureImage.c_str());
+    scv->SetItemText(m_ItemColorImage, strColorImage.c_str());
+    scv->SetItemText(m_ItemDepthImage, strDepthImage.c_str());
+
+    // Geometry mode
 
     bool shading_smooth, cull_front, cull_back;
 
@@ -431,44 +393,70 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
         cull_back = state->m_spGeometryMode.f3d.cull_back;
     }
 
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_SHADING_SMOOTH), BM_SETCHECK, shading_smooth ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_FRONT), BM_SETCHECK, cull_front ? BST_CHECKED : BST_UNCHECKED, 0);
-    ::SendMessage(GetDlgItem(IDC_CHK_GM_CULL_BACK), BM_SETCHECK, cull_back ? BST_CHECKED : BST_UNCHECKED, 0);
 
 
-    // Texture address
+    COLORREF colorEnabled = RGB(0, 0, 0);
+    COLORREF colorDisabled = RGB(0xAA, 0xAA, 0xAA);
 
-    ::SetWindowText(GetDlgItem(IDC_EDIT_TEXTUREIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_DEPTHIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_COLORIMAGE), stdstr_f("0x%08X (0x%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str());
+    scv->SetItemColor(m_ItemGeomZBUFFER, state->m_spGeometryMode.f3d.zbuffer ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomSHADE, state->m_spGeometryMode.f3d.shade ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomFOG, state->m_spGeometryMode.f3d.fog ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomLIGHTING, state->m_spGeometryMode.f3d.lighting ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomTEXTURE_GEN, state->m_spGeometryMode.f3d.texture_gen ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomTEXTURE_GEN_LINEAR, state->m_spGeometryMode.f3d.texture_gen_linear ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomLOD, state->m_spGeometryMode.f3d.lod ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomCLIPPING, state->m_spGeometryMode.f3d.clipping ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomSHADING_SMOOTH, state->m_spGeometryMode.f3d.shading_smooth ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomCULL_FRONT, state->m_spGeometryMode.f3d.cull_front ? colorEnabled : colorDisabled);
+    scv->SetItemColor(m_ItemGeomCULL_BACK, state->m_spGeometryMode.f3d.cull_back ? colorEnabled : colorDisabled);
 
-    // rdp colors
+    // Combiner
 
-    ::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->m_dpFillColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->m_dpFogColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->m_dpBlendColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->m_dpPrimColor).c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->m_dpEnvColor).c_str());
+    int x = 200;
+    int y = 10;
+    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
 
-    SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->m_dpFillColor);
-    SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->m_dpFogColor);
-    SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->m_dpBlendColor);
-    SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->m_dpPrimColor);
-    SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->m_dpEnvColor);
 
-    // tiles
+    scv->SetItemText(m_ItemCC1Color, strCycle1Color.c_str());
+    scv->SetItemText(m_ItemCC1Alpha, strCycle1Color.c_str());
+    scv->SetItemText(m_ItemCC2Color, strCycle1Color.c_str());
+    scv->SetItemText(m_ItemCC2Alpha, strCycle1Color.c_str());
+
+    // Othermode HI
+    othermode_h_t* omh = &state->m_dpOtherMode_h;
+
+    x = 200;
+    y = 70;
+    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
+    scv->Text(x, y, "OTHERMODE HI");
+    x += 6;
+    //scv->SetTextColor(RGB(0, 0, 0));
+    scv->Text(x, y + 10, "PIPELINE"); scv->Text(x + 80, y + 10, CGfxLabels::OtherMode_pm[omh->pm]);
+    scv->Text(x, y + 20, "COLORDITHER");  scv->Text(x + 80, y + 20, CGfxLabels::OtherMode_cd[omh->cd]);
+    scv->Text(x, y + 30, "CYCLETYPE"); scv->Text(x + 80, y + 30, CGfxLabels::OtherMode_cyc[omh->cyc]);
+    scv->Text(x, y + 40, "TEXTPERSP"); scv->Text(x + 80, y + 40, CGfxLabels::OtherMode_tp[omh->tp]);
+    scv->Text(x, y + 50, "TEXTDETAIL"); scv->Text(x + 80, y + 50, CGfxLabels::OtherMode_td[omh->td]);
+    scv->Text(x, y + 60, "TEXTLOD"); scv->Text(x + 80, y + 60, CGfxLabels::OtherMode_tl[omh->tl]);
+    scv->Text(x, y + 70, "TEXTLUT"); scv->Text(x + 80, y + 70, CGfxLabels::OtherMode_tt[omh->tt]);
+    scv->Text(x, y + 80, "TEXTFILT"); scv->Text(x + 80, y + 80, CGfxLabels::OtherMode_tf[omh->tf]);
+    scv->Text(x, y + 90, "TEXTCONV"); scv->Text(x + 80, y + 90, CGfxLabels::OtherMode_tc[omh->tc]);
+    scv->Text(x, y + 100, "COMBKEY"); scv->Text(x + 80, y + 100, CGfxLabels::OtherMode_ck[omh->ck]);
+    scv->Text(x, y + 110, "RGBDITHER"); scv->Text(x + 80, y + 110, CGfxLabels::OtherMode_rd[omh->rd]);
+    scv->Text(x, y + 120, "ALPHADITHER"); scv->Text(x + 80, y + 120, CGfxLabels::OtherMode_ad[omh->ad]);
+
+    // Tile Descriptors
 
     stdstr strTileDescriptors = "# tmem  siz fmt  line shiftS maskS cmS shiftT maskT cmT scaleS scaleT palette levels on\r\n";
 
     for (int i = 0; i <= 7; i++)
     {
         tile_t* t = &state->m_dpTileDescriptors[i];
-    
-        if (t->enabled == 0 && i != 7)
-        {
-            // skip the rendertiles if they are disabled
-            continue;
-        }
+
+        //if (t->enabled == 0 && i != 7)
+        //{
+        //    // skip the rendertiles if they are disabled
+        //    continue;
+        //}
 
         const char* sizName = CGfxLabels::TexelSizesShort[t->siz];
         const char* fmtName = CGfxLabels::ImageFormatsShort[t->fmt];
@@ -485,66 +473,13 @@ LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
         );
     }
 
-    // lights
-
-    //stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
-
-    // othermode_h
-
-    othermode_h_t* omh = &state->m_dpOtherMode_h;
-
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_PIPELINE), CGfxLabels::OtherMode_pm[omh->pm]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_COLORDITHER), CGfxLabels::OtherMode_cd[omh->cd]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_CYCLETYPE), CGfxLabels::OtherMode_cyc[omh->cyc]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTPERSP), CGfxLabels::OtherMode_tp[omh->tp]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTDETAIL), CGfxLabels::OtherMode_td[omh->td]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTLOD), CGfxLabels::OtherMode_tl[omh->tl]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTLUT), CGfxLabels::OtherMode_tt[omh->tt]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTFILT), CGfxLabels::OtherMode_tf[omh->tf]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_TEXTCONV), CGfxLabels::OtherMode_tc[omh->tc]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_COMBKEY), CGfxLabels::OtherMode_ck[omh->ck]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_RGBDITHER), CGfxLabels::OtherMode_rd[omh->rd]);
-    ::SetWindowText(GetDlgItem(IDC_EDIT_OMH_ALPHADITHER), CGfxLabels::OtherMode_ad[omh->ad]);
-
-    /////////////
-
-    stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d0));
-
-    stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad0));
-
-    stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d1));
-
-    stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
-
-    ::SetWindowText(GetDlgItem(IDC_EDIT_CC_1C), strCycle1Color.c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_CC_1A), strCycle1Alpha.c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_CC_2C), strCycle2Color.c_str());
-    ::SetWindowText(GetDlgItem(IDC_EDIT_CC_2A), strCycle2Alpha.c_str());
-
-    stdstr split = "";
-
-    stdstr strStateSummary = (strTileDescriptors);
-    
-    m_StateTextbox.SetWindowTextA(strStateSummary.c_str());
+    x = 10;
+    y = 210;
+    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
+    scv->Text(x, y, "TILE DESCRIPTORS");
+    scv->Text(x+6, y+10, strTileDescriptors.c_str());
 
     m_bShowRender = true;
-
     return FALSE;
 }
 
@@ -867,4 +802,304 @@ void CDebugDisplayList::Export(void)
         case 4: m_GfxParser.ExportSnapshot(path.c_str()); break;
         }
     }
+}
+
+/****************************************/
+
+CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color)
+{
+    m_Color = color;
+    m_X = x;
+    m_Y = y;
+    m_bNeedRedraw = true;
+    m_BoundingRect.left = x;
+    m_BoundingRect.top = y;
+    m_BoundingRect.right = x;
+    m_BoundingRect.bottom = y;
+
+    if (text != NULL)
+    {
+        m_Text = strdup(text);
+    }
+    else
+    {
+        m_Text = NULL;
+    }
+}
+
+CCanvas::CCanvas(void) :
+    m_BackDC(NULL),
+    m_BackBMP(NULL)
+{
+}
+
+void CCanvas::RegisterClass()
+{
+    this->GetWndClassInfo().m_wc.lpfnWndProc = m_pfnSuperWindowProc;
+    this->GetWndClassInfo().Register(&m_pfnSuperWindowProc);
+}
+
+void CCanvas::Init(void)
+{
+    CRect wndRc;
+    GetWindowRect(&wndRc);
+
+    if (m_BackDC != NULL)
+    {
+        return;
+    }
+
+    HDC hdc = GetDC();
+    HBITMAP hOldBMP;
+    HFONT   hOldFont;
+
+    m_BackDC = CreateCompatibleDC(hdc);
+    m_BackBMP = CreateCompatibleBitmap(hdc, wndRc.Width(), wndRc.Height());
+    hOldBMP = (HBITMAP)SelectObject(m_BackDC, m_BackBMP);
+
+    m_Font = CreateFont(8, 6, 0, 0,
+        FW_DONTCARE,
+        FALSE,
+        FALSE,
+        FALSE,
+        DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS,
+        CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY,
+        FF_DONTCARE,
+        "Terminal");
+
+    hOldFont = (HFONT)SelectObject(m_BackDC, m_Font);
+
+    DeleteObject(hOldFont);
+    DeleteObject(hOldBMP);
+    ReleaseDC(hdc);
+
+
+    CRect clrRc(0, 0, wndRc.Width(), wndRc.Height());
+    HBRUSH hbrush = CreateSolidBrush(RGB(255, 255, 255));
+    FillRect(m_BackDC, clrRc, hbrush);
+    DeleteObject(hbrush);
+}
+
+LRESULT CCanvas::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(&ps);
+    CRect rc = ps.rcPaint;
+
+    BitBlt(hdc,
+        rc.left, rc.top,
+        rc.Width(), rc.Height(),
+        m_BackDC,
+        rc.left, rc.top,
+        SRCCOPY);
+
+    EndPaint(&ps);
+    return FALSE;
+}
+
+void CCanvas::Text(int x, int y, const char* text)
+{
+    CRect rc;
+    rc.left = x;
+    rc.top = y;
+    DrawText(m_BackDC, text, -1, &rc, DT_TOP | DT_CALCRECT);
+    DrawText(m_BackDC, text, -1, &rc, DT_TOP);
+    InvalidateRect(&rc);
+}
+
+void CCanvas::DrawItem(CCanvasItem* item)
+{
+    // erase the old bounding rect
+    if (item->m_BoundingRect.Width() > 0 &&
+        item->m_BoundingRect.Height() > 0)
+    {
+        HBRUSH hbrush = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
+        FillRect(m_BackDC, &item->m_BoundingRect, hbrush);
+        InvalidateRect(&item->m_BoundingRect);
+        DeleteObject(hbrush);
+    }
+
+    // update bounding rect and draw text
+    ::SetTextColor(m_BackDC, item->m_Color);
+    DrawText(m_BackDC, item->m_Text, -1, &item->m_BoundingRect, DT_TOP | DT_CALCRECT);
+    DrawText(m_BackDC, item->m_Text, -1, &item->m_BoundingRect, DT_TOP);
+    InvalidateRect(&item->m_BoundingRect);
+}
+
+int CCanvas::AddItem(int x, int y, const char* text, COLORREF color)
+{
+    CCanvasItem* item = new CCanvasItem(x, y, text, color);
+    DrawItem(item);
+    m_Items.push_back(item);
+    return m_Items.size() - 1;
+}
+
+void CCanvas::SetItemColor(int nItem, COLORREF color)
+{
+    if (nItem >= m_Items.size())
+    {
+        return;
+    }
+
+    CCanvasItem* item = m_Items[nItem];
+
+    if (item->m_Color == color)
+    {
+        return;
+    }
+
+    item->m_Color = color;
+    DrawItem(item);
+}
+
+void CCanvas::SetItemText(int nItem, const char* text)
+{
+    if (nItem >= m_Items.size())
+    {
+        return;
+    }
+
+    CCanvasItem* item = m_Items[nItem];
+
+    if (strcmp(text, item->m_Text) == 0)
+    {
+        return;
+    }
+
+    free(item->m_Text);
+    item->m_Text = strdup(text);
+    DrawItem(item);
+}
+
+/****************************************/
+
+CRenderView::CRenderView() :
+    m_bRButtonDown(false),
+    m_CursorX(0),
+    m_CursorY(0)
+{
+}
+
+bool CRenderView::KeyDown(int vkey)
+{
+    return m_KeysDown.count(vkey);
+}
+
+bool CRenderView::RButtonDown(void)
+{
+    return m_bRButtonDown;
+}
+
+void CRenderView::RegisterClass()
+{
+    this->GetWndClassInfo().m_wc.lpfnWndProc = m_pfnSuperWindowProc;
+    this->GetWndClassInfo().Register(&m_pfnSuperWindowProc);
+}
+
+void CRenderView::DrawImage(CDrawBuffers *db)
+{
+    HDC hdc = GetDC();
+    HBITMAP hbm = CreateBitmap(db->m_Width, db->m_Height, 1, 32, db->m_ColorBuffer);
+    HDC hdcMem = CreateCompatibleDC(hdc);
+    SelectObject(hdcMem, hbm);
+    BitBlt(hdc, 1, 1, db->m_Width, db->m_Height, hdcMem, 0, 0, SRCCOPY);
+    ReleaseDC(hdc);
+    DeleteDC(hdcMem);
+    DeleteObject(hbm);
+}
+
+LRESULT CRenderView::OnGetDlgCode(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    return DLGC_WANTALLKEYS;
+}
+
+LRESULT CRenderView::OnKeyUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_KeysDown.erase(wParam);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_KeysDown.insert(wParam);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    if (GetFocus() != m_hWnd)
+    {
+        SetFocus();
+    }
+
+    int x, y;
+    x = GET_X_LPARAM(lParam);
+    y = GET_Y_LPARAM(lParam);
+
+    NMRVCLICK rvnm;
+    rvnm.nmh.code = RVN_LCLICK;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = x;
+    rvnm.y = y;
+
+    m_CursorX = x;
+    m_CursorY = y;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    if (GetFocus() != m_hWnd)
+    {
+        SetFocus();
+    }
+
+    NMRVCLICK rvnm;
+    rvnm.nmh.code = RVN_RCLICK;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = GET_X_LPARAM(lParam);
+    rvnm.y = GET_Y_LPARAM(lParam);
+
+    m_bRButtonDown = true;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
+}
+
+LRESULT CRenderView::OnRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    m_bRButtonDown = false;
+    return FALSE;
+}
+
+LRESULT CRenderView::OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+    int x, y;
+    x = GET_X_LPARAM(lParam);
+    y = GET_Y_LPARAM(lParam);
+
+    NMRVMOUSEMOVE rvnm;
+    rvnm.nmh.code = RVN_MOUSEMOVE;
+    rvnm.nmh.idFrom = ::GetDlgCtrlID(m_hWnd);
+    rvnm.nmh.hwndFrom = m_hWnd;
+
+    rvnm.x = x;
+    rvnm.y = y;
+    rvnm.deltaX = x - m_CursorX;
+    rvnm.deltaY = y - m_CursorY;
+    rvnm.buttons = wParam;
+
+    m_CursorX = x;
+    m_CursorY = y;
+
+    ::SendMessage(GetParent(), WM_NOTIFY, rvnm.nmh.idFrom, (LPARAM)&rvnm);
+    return FALSE;
 }

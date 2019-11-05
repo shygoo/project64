@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "RomInformationClass.h"
-#include "Debugger/Util/Breakpoints.h"
-#include "Debugger/Util/ScriptSystem.h"
+#include "Debugger/Breakpoints.h"
+#include "Debugger/ScriptSystem.h"
 #include <Project64-core/N64System/N64DiskClass.h>
 
 #include <windows.h>

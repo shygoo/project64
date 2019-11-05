@@ -23,7 +23,6 @@ GfxOps.gsMoveWd = function(gfx)
     {
         var segment = (gfx.command.w0 & 0xFFFF) / 4;
         gfx.setSegmentAddress(segment, gfx.command.w1);
-        //gfx.spSegments[segment] = gfx.command.w1;
     }
 }
 
@@ -41,7 +40,6 @@ GfxOps.gsSPMatrix = function(gfx)
     var flagPush = (params ^ 1) & 0x01;
     var flagLoad = params & 0x02;
     var flagProj = params & 0x04; 
-
     gfx.loadMatrix(segmentOffset, flagPush | flagLoad | flagProj);
 }
 
@@ -52,27 +50,36 @@ GfxOps.gsSPPopMatrix = function(gfx)
 
 GfxOps.gsSP2Triangles = function(gfx)
 {
-    var v = new Array(6);
+    
+
+    var tri1 = new Array(3);
+    var tri2 = new Array(3);
     var w0 = gfx.command.w0;
     var w1 = gfx.command.w1;
-    v[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2].position;
-    v[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2].position;
-    v[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2].position;
-    v[3] = gfx.spVertices[((w1 >> 16) & 0xFF) / 2].position;
-    v[4] = gfx.spVertices[((w1 >> 8) & 0xFF) / 2].position;
-    v[5] = gfx.spVertices[((w1 >> 0) & 0xFF) / 2].position;
-    gfx.triangles.push([v[0], v[1], v[2]]);
-    gfx.triangles.push([v[3], v[4], v[5]]);
+    tri1[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2];
+    tri1[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2];
+    tri1[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2];
+    tri2[0] = gfx.spVertices[((w1 >> 16) & 0xFF) / 2];
+    tri2[1] = gfx.spVertices[((w1 >> 8) & 0xFF) / 2];
+    tri2[2] = gfx.spVertices[((w1 >> 0) & 0xFF) / 2];
+    //gfx.triangles.push(tri1);
+    //gfx.triangles.push(tri2);
+    gfx.updateCurrentMaterial();
+    gfx.addTriangle(tri1);
+    gfx.addTriangle(tri2);
 }
 
 GfxOps.gsSP1Triangle = function(gfx)
 {
-    var v = new Array(3);
+    var tri = new Array(3);
     var w0 = gfx.command.w0;
-    v[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2].position;
-    v[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2].position;
-    v[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2].position;
-    gfx.triangles.push([v[0], v[1], v[2]]);
+    tri[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2];
+    tri[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2];
+    tri[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2];
+
+    gfx.updateCurrentMaterial();
+    gfx.addTriangle(tri);
+    //gfx.triangles.push(tri);
 }
 
 GfxOps.gsDPSetTextureImage = function(gfx)
@@ -92,19 +99,22 @@ GfxOps.gsDPLoadBlock = function(gfx)
 
     var tileDesc = gfx.dpTileDescriptors[tile];
 
-    // test
-    var numTexels = lrs;
-    var numBytesPerTexel = TileDescriptor.bytesPerTexel(tileDesc.siz);
-    var numBytes;
+    // ignoring uls, ult parameters
 
-    if(numBytesPerTexel == 0) // 4b
+    var numTexelsToLoad = lrs + 1;
+    var numBytesPerTexel = TileDescriptor.bytesPerTexel(tileDesc.siz);
+    var numBytesToLoad = numTexelsToLoad * numBytesPerTexel;    
+
+    //console.log("loadtile siz: " + tileDesc.siz, numBytesPerTexel);
+
+    var tmemOffset = tileDesc.tmem * 8;
+    for(var i = 0; i < numBytesToLoad; i++)
     {
-        numBytes = numTexels / 2;
+        gfx.dpTextureMemory.setUint8(tmemOffset + i,
+             gfx.getU8(gfx.dpImageAddress + i));
     }
-    else
-    {
-        numBytes = numTexels * numBytesPerTexel;
-    }
+
+    //console.log("tmem: loaded ", numBytesToLoad, " bytes to 0x" + tmemOffset.toString(16), "(tile" + tile +")");
 }
 
 GfxOps.gsSPTexture = function(gfx)
@@ -122,13 +132,14 @@ GfxOps.gsSPTexture = function(gfx)
 GfxOps.gsDPSetTile = function(gfx)
 {
     var cmd = gfx.command;
-    var tile = cmd.w0f(24, 3);
+    var tile = cmd.w1f(24, 3);
     var tileDesc = gfx.dpTileDescriptors[tile];
 
     tileDesc.fmt = cmd.w0f(21, 3);
     tileDesc.siz = cmd.w0f(19, 2);
     tileDesc.line = cmd.w0f(9, 9);
     tileDesc.tmem = cmd.w0f(0, 9);
+
     tileDesc.palette = cmd.w1f(20, 4);
     tileDesc.cmT = cmd.w1f(18, 2);
     tileDesc.maskT = cmd.w1f(14, 4);
@@ -150,11 +161,33 @@ GfxOps.gsDPSetTileSize = function(gfx)
     tileDesc.lrT = cmd.w1f(0, 12);
 }
 
+GfxOps.gsDPLoadTLUTCmd = function(gfx)
+{
+    var cmd = gfx.command;
+    var tile = cmd.w1f(24, 3);
+    var count = cmd.w1f(14, 10);
+
+    var tileDesc = gfx.dpTileDescriptors[tile];
+    var tmemOffset = tileDesc.tmem * 8;
+
+    // todo mirroring
+    for(var i = 0; i < count+1; i++)
+    {
+        var color = gfx.getU16(gfx.dpImageAddress + i*2);
+        gfx.dpTextureMemory.setUint16(tmemOffset + i*2, color);
+    }
+}
+
 GfxOps.RDP = [
-    [0xFD, GfxOps.gsDPSetTextureImage ]
+    [ 0xF0, GfxOps.gsDPLoadTLUTCmd ],
+    [ 0xF2, GfxOps.gsDPSetTileSize ],
+    [ 0xF3, GfxOps.gsDPLoadBlock ],
+    [ 0xF5, GfxOps.gsDPSetTile ],
+    [ 0xFD, GfxOps.gsDPSetTextureImage ],
 ];
 
 GfxOps.F3DEX2 = [
+    [ 0xD7, GfxOps.gsSPTexture ],
     [ 0x05, GfxOps.gsSP1Triangle ],
     [ 0x06, GfxOps.gsSP2Triangles ],
     [ 0x07, GfxOps.gsSP2Triangles ],

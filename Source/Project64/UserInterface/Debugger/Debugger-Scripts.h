@@ -11,7 +11,7 @@
 
 #pragma once
 #include "DebuggerUI.h"
-#include "Util/ScriptSystem.h"
+#include "ScriptSystem.h"
 
 class CScriptList : public CListViewCtrl
 {

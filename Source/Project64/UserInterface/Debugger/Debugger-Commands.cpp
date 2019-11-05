@@ -12,10 +12,10 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 
-#include "Util/Symbols.h"
-#include "Util/Breakpoints.h"
-#include "Util/Assembler.h"
-#include "Util/OpInfo.h"
+#include "Symbols.h"
+#include "Breakpoints.h"
+#include "Assembler.h"
+#include "OpInfo.h"
 
 #include <Project64-core/N64System/Mips/OpCodeName.h>
 

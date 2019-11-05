@@ -12,7 +12,7 @@
 #include "stdafx.h"
 
 #include "DebuggerUI.h"
-#include "Util/ScriptSystem.h"
+#include "ScriptSystem.h"
 
 //char* CEditEval::m_EvalString;
 

@@ -12,7 +12,7 @@
 #include "stdafx.h"
 
 #include "DebuggerUI.h"
-#include "Util/Symbols.h"
+#include "Symbols.h"
 
 CDebugStackTrace::CDebugStackTrace(CDebuggerUI* debugger) :
 CDebugDialog<CDebugStackTrace>(debugger),

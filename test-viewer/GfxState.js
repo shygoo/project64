@@ -1,11 +1,21 @@
+const G_IM_SIZ_4b  = 0;
+const G_IM_SIZ_8b  = 1;
+const G_IM_SIZ_16b = 2;
+const G_IM_SIZ_32b = 3;
 
+const G_IM_FMT_RGBA = 0;
+const G_IM_FMT_YUV  = 1;
+const G_IM_FMT_CI   = 2;
+const G_IM_FMT_IA   = 3;
+const G_IM_FMT_I    = 4;
 
-
-function DmemVertex(position, texcoords, colors, matrixIndex)
+function DmemVertex(position, texcoords, color, normal, alpha)
 {
-    this.position = position;
-    this.texcoords = texcoords;
-    this.colors = colors;
+    this.position = position; // THREE.Vector3
+    this.texcoords = texcoords; // THREE.Vector2
+    this.color = color; // THREE.Color
+    this.alpha = alpha; // float
+    this.normal = normal; // THREE.Vector3
 }
 
 function TileDescriptor()
@@ -40,40 +50,18 @@ TileDescriptor.bytesPerTexel = function(siz)
 {
     switch(siz)
     {
-        case TileDescriptor.G_IM_SIZ_4b:  return 0;
-        case TileDescriptor.G_IM_SIZ_8b:  return 1;
-        case TileDescriptor.G_IM_SIZ_16b: return 2;
-        case TileDescriptor.G_IM_SIZ_32b: return 4;
+        case G_IM_SIZ_4b:  return 0;
+        case G_IM_SIZ_8b:  return 1;
+        case G_IM_SIZ_16b: return 2;
+        case G_IM_SIZ_32b: return 4;
     }
 }
 
-/*
-gsSPTexture         scaleS 0xFFFF, scaleT 0xFFFF, levels 0, tile 0, on 1
-gsDPSetTextureImage G_IM_FMT_RGBA, G_IM_SIZ_16b, addr 0x00000000
-gsDPSetTile         G_IM_FMT_RGBA, G_IM_SIZ_16b, line  0, tmem 0x000, tile 7, palette 0, cmt 2, maskt 4, shiftt 0, cmt 2, masks 7, shifts 0
-gsDPLoadSync
-gsDPLoadBlock       tile 7, uls 0, ult 0, lrs 2047, dxt 64
-gsDPSetTile         G_IM_FMT_RGBA, G_IM_SIZ_16b, line 32, tmem 0x000, tile 0, palette 0, cmt 2, maskt 4, shiftt 0, cmt 2, masks 7, shifts 0
-gsDPSetTileSize     tile 0, uls 0, ult 0, lrs 508, lrt 60
-*/
-
-
-/////////////
-
-/*
-GfxState(config)
-gfx.setup(dv)
-gfx.run(dv)
-gfx.setSegmentAddress(segment, address)
-gfx.setSegmentBuffer(segment, address)
-gfx.readWord(segmentOffset)
-gfx.segmentedToPhysical(segmentOffset)
-gfx.getCommand(segmentOffset)
-gfx.importOps(opsMain, opsPatch)
-gfx.loadVertices(segmentOffset, index, numVertices)
-gfx.loadMatrix(segmentOffset, flags)
-
-*/
+function PolyList(materialIndex)
+{
+    this.materialIndex = materialIndex;
+    this.triangles = [];
+}
 
 function GfxState()
 {
@@ -88,11 +76,192 @@ GfxState.prototype.setMainMemory = function(dv)
     this.dv = dv;
 }
 
+GfxState.prototype.addTriangle = function(tri)
+{
+    var currentPolyList = this.polylists[this.polylists.length - 1];
+    currentPolyList.triangles.push(tri);
+}
+
+GfxState.prototype.updateCurrentMaterial = function()
+{
+    var currentMaterial = this.getCurrentMaterial();
+
+    if(currentMaterial == null)
+    {
+        this.materials.push(this.createMaterial());
+        this.materialIndex = this.materials.length - 1;
+        this.polylists.push(new PolyList(this.materialIndex));
+        return;
+    }
+
+    var hash = this.generateMaterialHash();
+
+    if(currentMaterial.hash == hash)
+    {
+        // material has not changed
+        return;
+    }
+
+    var existingMaterialIndex = this.getMaterialIndex(hash);
+
+    if(existingMaterialIndex != -1)
+    {
+        // material changed back to an existing material
+        this.materialIndex = existingMaterialIndex;
+        this.polylists.push(new PolyList(this.materialIndex));
+    }
+    else
+    {
+        this.materials.push(this.createMaterial());
+        this.materialIndex = this.materials.length - 1;
+        this.polylists.push(new PolyList(this.materialIndex));
+    }
+}
+
+// used to check if a material has already been generated for the current gfx state
+GfxState.prototype.generateMaterialHash = function()
+{
+    return this.dpImageAddress; // todo more
+}
+
+// create intermediate "material" to attach to the current polygon list
+GfxState.prototype.createMaterial = function()
+{
+    var material = {};
+    material.vertexColorsEnabled = false;
+    material.vertexNormalsEnabled = false;
+    material.imageIndex = this.getImageIndex(this.dpImageAddress);
+
+    if(material.imageIndex == -1)
+    {
+        this.images.push(this.createRenderTileImage());
+        material.imageIndex = this.images.length - 1;
+    }
+
+    material.hash = this.generateMaterialHash(); // +...
+
+    return material;
+}
+
+GfxState.prototype.getImageIndex = function(address)
+{
+    for(var i = 0; i < this.images.length; i++)
+    {
+        if(this.images[i].address == address)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+GfxState.prototype.getMaterialIndex = function(hash)
+{
+    for(var i = 0; i < this.materials.length; i++)
+    {
+        if(this.materials[i].hash == hash)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+GfxState.prototype.createRenderTileImage = function()
+{
+    //for(var i = 0; i < )
+    var imageData = null;
+    var renderTile = this.dpTileDescriptors[0];
+    var imageWidth = (renderTile.lrS >> 2) + 1;
+    var imageHeight = (renderTile.lrT >> 2) + 1;
+    var imageSize = imageWidth * imageHeight;
+
+    if(renderTile.fmt == G_IM_FMT_CI && renderTile.siz == G_IM_SIZ_8b)
+    {
+        // todo check textlut for G_TT_RGBA16 or G_TT_IA16
+        imageData = new Uint8Array(imageSize * 4);
+        var tmemColorOffset = 256 * 8;
+        var tmemCiOffset = renderTile.tmem * 8;
+
+        for(var i = 0; i < imageSize; i++)
+        {
+            var ci = this.dpTextureMemory.getUint8(tmemCiOffset + i);
+            var color16 = this.dpTextureMemory.getUint16(tmemColorOffset + ci*2);
+
+            var r = (color16 >> 11) & 0x1F;
+            var g = (color16 >> 6) & 0x1F;
+            var b = (color16 >> 1) & 0x1F;
+            var a = (color16 >> 0) & 0x01;
+
+            const factor = 0xFF / 0x1F;
+
+            imageData[i*4+0] = r * factor;
+            imageData[i*4+1] = g * factor;
+            imageData[i*4+2] = b * factor;
+            imageData[i*4+3] = a * 255;
+        }
+        //material.imageData = imageData;
+        //console.log(imageData);
+    }
+    else if(renderTile.fmt == G_IM_FMT_RGBA && renderTile.siz == G_IM_SIZ_16b)
+    {
+        imageData = new Uint8Array(imageSize * 4);
+        var tmemOffset = renderTile.tmem * 8;
+
+        if(imageSize <= 2048)
+        for(var i = 0; i < imageSize; i++)
+        {
+            var color16 = this.dpTextureMemory.getUint16(tmemOffset + i*2);
+            var r = (color16 >> 11) & 0x1F;
+            var g = (color16 >> 6) & 0x1F;
+            var b = (color16 >> 1) & 0x1F;
+            var a = (color16 >> 0) & 0x01;
+            const factor = 0xFF / 0x1F;
+            imageData[i*4+0] = r * factor;
+            imageData[i*4+1] = g * factor;
+            imageData[i*4+2] = b * factor;
+            imageData[i*4+3] = a * 255;
+        }
+    }
+    else if(renderTile.fmt == G_IM_FMT_I && renderTile.siz == G_IM_SIZ_8b)
+    {
+        console.log("i8:", imageWidth, imageHeight);
+
+        imageData = new Uint8Array(imageSize * 4);
+        var tmemOffset = renderTile.tmem * 8;
+
+        if(imageSize <= 2048)
+        for(var i = 0; i < imageSize; i++)
+        {
+            var intensity8 = this.dpTextureMemory.getUint8(tmemOffset + i);
+            imageData[i*4+0] = intensity8;
+            imageData[i*4+1] = intensity8;
+            imageData[i*4+2] = intensity8;
+            imageData[i*4+3] = intensity8;
+        }
+    }
+    else
+    {
+        console.log("need converter, fmt: " + renderTile.fmt + " siz: " + renderTile.siz);
+    }
+
+    return { address: this.dpImageAddress, data: imageData, width: imageWidth, height: imageHeight };
+}
+
+GfxState.prototype.getCurrentMaterial = function()
+{
+    if(this.materials.length == 0) return null;
+    return this.materials[this.materialIndex];
+}
+
 GfxState.prototype.resetState = function()
 {
     this.command = null;
     
-    this.triangles = [];
+    this.polylists = [];
+    this.materials = [];
+    this.images = []; // cached rgba32 images
+    this.materialIndex = 0;
 
     this.spCommandAddress = 0;
     this.spSegments = new Array(16).fill(0);
@@ -103,7 +272,7 @@ GfxState.prototype.resetState = function()
     this.spMatrixIndex = 0;
     this.spProjectionMatrix = new THREE.Matrix4();
     this.dpImageAddress = 0;
-    this.dpTextureMemory = new Uint8Array(4096);
+    this.dpTextureMemory = new DataView(new ArrayBuffer(4096));
     this.dpTileDescriptors = new Array(8);
 
     for(var i = 0; i < this.dpTileDescriptors.length; i++)
@@ -158,37 +327,6 @@ GfxState.prototype.setSegmentBuffer = function(segment, buffer)
     this.spSegmentBuffers[segment] = buffer;
 }
 
-GfxState.prototype._get = function(segmentOffset)
-{
-    var segment = (segmentOffset >>> 24) & 0x0F;
-    var offset = (segmentOffset & 0x00FFFFFF);
-
-    if(this.spSegmentBuffers[segment] != null)
-    {
-        return { dv: this.spSegmentBuffers[segment], offset: offset };
-    }
-
-    return { dv: this.dv, offset: this.segmentedToPhysical(segmentOffset) };
-}
-
-GfxState.prototype.getU32 = function(segmentOffset)
-{
-    var src = this._get(segmentOffset);
-    return src.dv.getUint32(src.offset);
-}
-
-GfxState.prototype.getU16 = function(segmentOffset)
-{
-    var src = this._get(segmentOffset);
-    return src.dv.getUint16(src.offset);
-}
-
-GfxState.prototype.getS16 = function(segmentOffset)
-{
-    var src = this._get(segmentOffset);
-    return src.dv.getInt16(src.offset);
-}
-
 GfxState.prototype.segmentedToPhysical = function(segmentOffset)
 {
     var segment = (segmentOffset >>> 24) & 0x0F;
@@ -239,10 +377,26 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
         var y = this.getS16(offset + 0x02);
         var z = this.getS16(offset + 0x04);
 
+        var u = this.getS16(offset + 0x08) / 32;
+        var v = this.getS16(offset + 0x0A) / 32;
+
+        var r = this.getU8(offset + 0x0C) / 0xFF;
+        var g = this.getU8(offset + 0x0D) / 0xFF;
+        var b = this.getU8(offset + 0x0E) / 0xFF;
+
+        var nx = this.getS8(offset + 0x0C) / 0x7F;
+        var ny = this.getS8(offset + 0x0D) / 0x7F;
+        var nz = this.getS8(offset + 0x0E) / 0x7F;
+
+        var alpha = this.getU8(offset + 0x0F) / 0xFF;
+
+        var color = new THREE.Color(r, g, b);
+        var normal = new THREE.Vector3(nx, ny, nz);
         var position = new THREE.Vector3(x, y, z);
+        var texcoords = new THREE.Vector2(u, v);
         position.applyMatrix4(this.spMatrixStack[this.spMatrixIndex]);
 
-        this.spVertices[index + i] = new DmemVertex(position, null, null);
+        this.spVertices[index + i] = new DmemVertex(position, texcoords, color, normal, alpha);
     }
 }
 
@@ -306,4 +460,47 @@ GfxState.prototype.debugLogStep = function()
     case 0x04: console.log("branch_z"); break;
     case 0x03: console.log("culldl"); break;
     }
+}
+
+GfxState.prototype._get = function(segmentOffset)
+{
+    var segment = (segmentOffset >>> 24) & 0x0F;
+    var offset = (segmentOffset & 0x00FFFFFF);
+
+    if(this.spSegmentBuffers[segment] != null)
+    {
+        return { dv: this.spSegmentBuffers[segment], offset: offset };
+    }
+
+    return { dv: this.dv, offset: this.segmentedToPhysical(segmentOffset) };
+}
+
+GfxState.prototype.getU32 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getUint32(src.offset);
+}
+
+GfxState.prototype.getU16 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getUint16(src.offset);
+}
+
+GfxState.prototype.getS16 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getInt16(src.offset);
+}
+
+GfxState.prototype.getU8 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getUint8(src.offset);
+}
+
+GfxState.prototype.getS8 = function(segmentOffset)
+{
+    var src = this._get(segmentOffset);
+    return src.dv.getInt8(src.offset);
 }

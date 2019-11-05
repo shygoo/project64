@@ -9,7 +9,7 @@
 *                                                                           *
 ****************************************************************************/
 #pragma once
-#include "Util/Breakpoints.h"
+#include "Breakpoints.h"
 
 class CEditReg64 : 
     public CWindowImpl<CEditReg64, CEdit>,

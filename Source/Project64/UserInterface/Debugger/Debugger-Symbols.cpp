@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <Common/path.h>
 
-#include "Util/Symbols.h"
+#include "Symbols.h"
 
 CDebugSymbols::CDebugSymbols(CDebuggerUI * debugger) :
     CDebugDialog<CDebugSymbols>(debugger)

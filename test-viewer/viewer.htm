@@ -117,27 +117,114 @@ Viewer.prototype.buildScene = function()
         this.scene.remove(this.scene.children[0]); 
     }
 
-    var geometry = new THREE.Geometry();
-    var material = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
-    var material2 = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1});
-    
-    var faceidx = 0;
+    var dataTextures = [];
 
-    for(var i = 0; i < this.gfx.triangles.length; i++)
+    for(var i = 0; i < this.gfx.images.length; i++)
     {
-        var tri = this.gfx.triangles[i];
-        geometry.vertices.push(tri[0]);
-        geometry.vertices.push(tri[1]);
-        geometry.vertices.push(tri[2]);
-        geometry.faces.push(new THREE.Face3(faceidx, faceidx+1, faceidx+2))
-        faceidx += 3;
+        var rawImage = this.gfx.images[i]; 
+        if(rawImage.data == null)
+        {
+            dataTextures.push(null);
+        }
+        else
+        {
+            var dataTexture = new THREE.DataTexture(rawImage.data, rawImage.width, rawImage.height, THREE.RGBAFormat);
+            dataTextures.push(dataTexture);
+        }
     }
 
-    var mesh = new THREE.Mesh(geometry, material)
-    var mesh2 = new THREE.Mesh(geometry, material2)
+    
+    var wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
+    var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, vertexColors: THREE.VertexColors});
+    //var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, color: 0xFF00FFFF});
+    
+    //var dataTexture = new THREE.DataTexture(
+    //    this.gfx.images[4].data,
+    //    this.gfx.images[4].width,
+    //    this.gfx.images[4].height,
+    //    THREE.RGBAFormat);
+    //var imageMaterial = new THREE.MeshBasicMaterial({map: dataTexture})
 
-    this.scene.add(mesh);
-    this.scene.add(mesh2);
+    //console.log(this.gfx.testTexture)
+
+    // build a threejs geometry for each polylist and add to scene
+
+    for(var i = 0; i < this.gfx.polylists.length; i++)
+    {
+        var polylist = this.gfx.polylists[i];
+        var triangles = polylist.triangles;
+        var gfxMaterial = this.gfx.materials[polylist.materialIndex];
+        var imageIndex = gfxMaterial.imageIndex;
+        var dataTexture = dataTextures[imageIndex];
+        
+        var geometry = new THREE.Geometry();
+
+        var faceIdx = 0;
+
+        geometry.faceVertexUvs[0] = [];
+
+        for(var j = 0; j < triangles.length; j++)
+        {
+            var tri = triangles[j];
+            geometry.vertices.push(tri[0].position);
+            geometry.vertices.push(tri[1].position);
+            geometry.vertices.push(tri[2].position);
+
+            //console.log(dataTexture);
+
+            if(dataTexture)
+            {
+                var u0 = (tri[0].texcoords.x / dataTexture.image.width);
+                var v0 = (tri[0].texcoords.y / dataTexture.image.height);
+                var u1 = (tri[1].texcoords.x / dataTexture.image.width);
+                var v1 = (tri[1].texcoords.y / dataTexture.image.height);
+                var u2 = (tri[2].texcoords.x / dataTexture.image.width);
+                var v2 = (tri[2].texcoords.y / dataTexture.image.height);
+
+                //console.log(u0, v0);
+
+                geometry.faceVertexUvs[0].push([
+                    new THREE.Vector2(u0, v0),
+                    new THREE.Vector2(u1, v1),
+                    new THREE.Vector2(u2, v2),
+                ]);
+            }
+
+            var face = new THREE.Face3(faceIdx + 0, faceIdx + 1, faceIdx + 2);
+            face.vertexColors[0] = tri[0].color;
+            face.vertexColors[1] = tri[1].color;
+            face.vertexColors[2] = tri[2].color;
+
+            geometry.faces.push(face);
+            faceIdx += 3;
+        }
+
+        var fillMaterial;
+        if(dataTexture != null)
+        {
+            /*
+            ClampToEdgeWrapping
+            RepeatWrapping
+            MirroredRepeatWrapping
+            */
+            dataTexture.wrapS = THREE.RepeatWrapping;
+            dataTexture.wrapT = THREE.RepeatWrapping;
+            dataTexture.magFilter = THREE.LinearFilter;
+            dataTexture.minFilter = THREE.LinearFilter;
+            fillMaterial = new THREE.MeshBasicMaterial({map: dataTexture});
+        }
+        else
+        {
+            fillMaterial = testMaterial;
+        }
+
+        var fillMesh = new THREE.Mesh(geometry, fillMaterial)
+        //var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
+
+        this.scene.add(fillMesh);
+        //this.scene.add(wireframeMesh);
+        //console.log(this.gfx.polylists[i]);
+    }
 }
 
 function hex(n)

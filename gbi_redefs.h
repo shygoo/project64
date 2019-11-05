@@ -34,3 +34,7 @@
 #define G_RDPHALF_1 0xB3
 #define G_RDPHALF_2 0xB2
 #endif
+
+// fix
+#undef gsSPLoadGeometryMode
+#define	gsSPLoadGeometryMode(word)	gsSPGeometryMode(-1,(word))

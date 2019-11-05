@@ -2,8 +2,52 @@
 
 #include <stdafx.h>
 #include "DebuggerUI.h"
-#include "Util/GfxParser.h"
-#include "Util/GfxRenderer.h"
+#include "GfxParser.h"
+#include "GfxRenderer.h"
+
+class CCanvasItem
+{
+public:
+    COLORREF    m_Color;
+    bool        m_bNeedRedraw;
+    char* m_Text;
+    CRect m_BoundingRect;
+    int m_X, m_Y;
+    CCanvasItem(int x, int y, const char* text, COLORREF color);
+};
+
+class CCanvas :
+    public CWindowImpl<CCanvas>
+{
+public:
+    CCanvas(void);
+    DECLARE_WND_CLASS(_T("Canvas"))
+    void RegisterClass();
+    HBITMAP m_BackBMP;
+    HDC     m_BackDC;
+    HFONT   m_Font;
+
+    void SetItemText(int nItem, const char* text);
+    void SetItemColor(int nItem, COLORREF color);
+    //void SetTextColor(COLORREF color);
+    void Text(int x, int y, const char* text);
+    void Init(void);
+    int AddItem(int x, int y, const char* text, COLORREF color = 0);
+
+private:
+    void DrawItem(CCanvasItem* item);
+    std::vector<CCanvasItem*> m_Items;
+    //CCanvasItem m_Items;
+    LRESULT OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    //LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    //LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+
+    BEGIN_MSG_MAP(CCanvas)
+        MESSAGE_HANDLER(WM_PAINT, OnPaint)
+        //MESSAGE_HANDLER(WM_CREATE, OnCreate)
+        //MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+    END_MSG_MAP()
+};
 
 enum
 {
@@ -85,6 +129,26 @@ public:
     void Refresh(void);
 
 private:
+    int m_ItemTextureImage;
+    int m_ItemColorImage;
+    int m_ItemDepthImage;
+    int m_ItemGeomZBUFFER;
+    int m_ItemGeomSHADE;
+    int m_ItemGeomFOG;
+    int m_ItemGeomLIGHTING;
+    int m_ItemGeomTEXTURE_GEN;
+    int m_ItemGeomTEXTURE_GEN_LINEAR;
+    int m_ItemGeomLOD;
+    int m_ItemGeomCLIPPING;
+    int m_ItemGeomSHADING_SMOOTH;
+    int m_ItemGeomCULL_FRONT;
+    int m_ItemGeomCULL_BACK;
+
+    int m_ItemCC1Color;
+    int m_ItemCC1Alpha;
+    int m_ItemCC2Color;
+    int m_ItemCC2Alpha;
+
     bool m_bRefreshPending;
     bool m_bShowRender;
     //DWORD m_ThreadId;
@@ -95,6 +159,7 @@ private:
     CGfxParser    m_GfxParser;
 
     CRenderView*  m_RenderView;
+    CCanvas*      m_StateCanvas;
     CListViewCtrl m_DisplayListCtrl;
     CEdit         m_StateTextbox;
     CStatic       m_StatusText;

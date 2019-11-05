@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "Util/CPULog.h"
+#include "CPULog.h"
 
 #include "Debugger-CPULogView.h"
 #include <Project64-core/N64System/Mips/OpCodeName.h>

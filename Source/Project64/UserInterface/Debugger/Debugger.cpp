@@ -11,10 +11,10 @@
 
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "Util/ScriptHook.h"
-#include "Util/CPULog.h"
-#include "Util/DMALog.h"
-#include "Util/Symbols.h"
+#include "ScriptHook.h"
+#include "CPULog.h"
+#include "DMALog.h"
+#include "Symbols.h"
 
 CPj64Module _Module;
 
