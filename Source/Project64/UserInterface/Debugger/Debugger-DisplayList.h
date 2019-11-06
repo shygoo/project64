@@ -8,12 +8,13 @@
 class CCanvasItem
 {
 public:
-	int         m_Id;
-	COLORREF    m_Color;
-	bool        m_bNeedRedraw;
-	char* m_Text;
-	CRect m_BoundingRect;
-	int m_X, m_Y;
+    int      m_X, m_Y;
+    CRect    m_BoundingRect;
+	COLORREF m_Color;
+    bool     m_bHaveBgColor;
+    COLORREF m_BgColor;
+	//bool     m_bNeedRedraw;
+	char*    m_Text;
 	CCanvasItem(int x, int y, const char* text, COLORREF color = RGB(255, 255, 255));
 };
 
@@ -29,12 +30,25 @@ public:
 	HFONT   m_Font;
 	COLORREF m_BackgroundColor;
 	COLORREF m_ForegroundColor;
+    int m_OriginX;
+    int m_OriginY;
+    int m_ItemPosX;
+    int m_ItemPosY;
+    int m_LayoutMode;
 
+    enum {
+        LAYOUT_VERTICAL = 1,
+        LAYOUT_HORIZONTAL = 2
+    };
+
+    void GotoOriginX(void);
+    void SetLayoutMode(int mode);
+    void SetOrigin(int x, int y);
 	void SetItemText(int nItem, const char* text);
 	void SetItemColor(int nItem, COLORREF color);
-	void Text(int x, int y, const char* text);
+    void SetItemBgColor(int nItem, COLORREF color);
 	void Init(void);
-	size_t AddItem(int x, int y, const char* text, COLORREF color = RGB(255, 255, 255));
+	size_t AddItem(const char* text, COLORREF color = RGB(255, 255, 255));
 
 private:
 	CCanvasItem* GetItem(int index);
@@ -162,7 +176,13 @@ private:
 		m_ITM_FOGCOLOR,
 		m_ITM_BLENDCOLOR,
 		m_ITM_PRIMCOLOR,
-		m_ITM_ENVCOLOR;
+		m_ITM_ENVCOLOR,
+        m_ITM_FILLCOLOR_PREV0,
+        m_ITM_FILLCOLOR_PREV1,
+        m_ITM_FOGCOLOR_PREV,
+        m_ITM_BLENDCOLOR_PREV,
+        m_ITM_PRIMCOLOR_PREV,
+        m_ITM_ENVCOLOR_PREV;
 
 	int m_ITM_TILES[8];
 

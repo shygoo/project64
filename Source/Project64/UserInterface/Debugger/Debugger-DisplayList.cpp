@@ -5,6 +5,14 @@
 #include "GfxRenderer.h"
 #include "GfxLabels.h"
 
+#define C5bTo8b(n) ((unsigned char)((n & 0x1F) * (255.0f / 31.0f)))
+#define RGBFROM5551(n) RGB(\
+    C5bTo8b(((n) >> 11) & 0x1F),\
+    C5bTo8b(((n) >> 6) & 0x1F),\
+    C5bTo8b(((n) >> 1) & 0x1F))
+
+#define RGBFROM8888(n) RGB((n) >> 24, ((n) >> 16) & 0xFF, ((n) >> 8) & 0xFF)
+
 CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     CDebugDialog<CDebugDisplayList>(debugger),
     m_bRefreshPending(false),
@@ -102,89 +110,119 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	COLORREF headerColor = RGB(0xAA, 0xAA, 0xAA);
 	COLORREF labelColor = RGB(0xCC, 0xCC, 0xCC);
 
-	// Image addresses
-    scv->AddItem(10, 10, "IMAGE ADDRESSES", headerColor);
-    m_StateCanvas->AddItem(16, 20, "TEXTURE", labelColor);
-    m_StateCanvas->AddItem(16, 30, "COLOR", labelColor);
-    m_StateCanvas->AddItem(16, 40, "DEPTH", labelColor);
-    m_ITM_TEXTUREIMAGE = scv->AddItem(70, 20, "");
-    m_ITM_COLORIMAGE = scv->AddItem(70, 30, "");
-    m_ITM_DEPTHIMAGE = scv->AddItem(70, 40, "");
+    // Geometry mode
+    scv->SetOrigin(10, 10);
+    scv->AddItem("GEOMETRY MODE", headerColor);
+    m_ITM_GM_ZBUFFER = scv->AddItem(" ZBUFFER", labelColor);
+    m_ITM_GM_SHADE = scv->AddItem(" SHADE", labelColor);
+    m_ITM_GM_FOG = scv->AddItem(" FOG", labelColor);
+    m_ITM_GM_LIGHTING = scv->AddItem(" LIGHTING", labelColor);
+    m_ITM_GM_TEXTURE_GEN = scv->AddItem(" TEXTURE_GEN", labelColor);
+    m_ITM_GM_TEXTURE_GEN_LINEAR = scv->AddItem(" TEXTURE_GEN_LINEAR", labelColor);
+    m_ITM_GM_LOD = scv->AddItem(" LOD", labelColor);
+    m_ITM_GM_CLIPPING = scv->AddItem(" CLIPPING", labelColor);
+    m_ITM_GM_SHADING_SMOOTH = scv->AddItem(" SHADING_SMOOTH", labelColor);
+    m_ITM_GM_CULL_FRONT = scv->AddItem(" CULL_FRONT", labelColor);
+    m_ITM_GM_CULL_BACK = scv->AddItem(" CULL_BACK", labelColor);
 
-	// Geometry mode
-    scv->AddItem(10, 70, "GEOMETRY MODE", headerColor);
-    m_ITM_GM_ZBUFFER = scv->AddItem(16, 80, "ZBUFFER", labelColor);
-    m_ITM_GM_SHADE = scv->AddItem(16, 90, "SHADE", labelColor);
-    m_ITM_GM_FOG = scv->AddItem(16, 100, "FOG", labelColor);
-    m_ITM_GM_LIGHTING = scv->AddItem(16, 110, "LIGHTING", labelColor);
-    m_ITM_GM_TEXTURE_GEN = scv->AddItem(16, 120, "TEXTURE_GEN", labelColor);
-    m_ITM_GM_TEXTURE_GEN_LINEAR = scv->AddItem(16, 130, "TEXTURE_GEN_LINEAR", labelColor);
-    m_ITM_GM_LOD = scv->AddItem(16, 140, "LOD", labelColor);
-    m_ITM_GM_CLIPPING = scv->AddItem(16, 150, "CLIPPING", labelColor);
-    m_ITM_GM_SHADING_SMOOTH = scv->AddItem(16, 160, "SHADING_SMOOTH", labelColor);
-    m_ITM_GM_CULL_FRONT = scv->AddItem(16, 170, "CULL_FRONT", labelColor);
-    m_ITM_GM_CULL_BACK = scv->AddItem(16, 180, "CULL_BACK", labelColor);
+	// Image addresses
+    scv->SetOrigin(10, 160);
+    scv->AddItem("IMAGE ADDRESSES", headerColor);
+    m_StateCanvas->AddItem(" TEXTURE", labelColor);
+    m_StateCanvas->AddItem(" COLOR", labelColor);
+    m_StateCanvas->AddItem(" DEPTH", labelColor);
+    scv->SetOrigin(70, 170);
+    m_ITM_TEXTUREIMAGE = scv->AddItem("...");
+    m_ITM_COLORIMAGE = scv->AddItem("...");
+    m_ITM_DEPTHIMAGE = scv->AddItem("...");
 
 	// Combiner
-    scv->AddItem(200, 10, "COMBINER", headerColor);
-    scv->AddItem(206, 20, "CYCLE 1 COLOR", labelColor);
-    scv->AddItem(206, 30, "CYCLE 1 ALPHA", labelColor);
-    scv->AddItem(206, 40, "CYCLE 2 COLOR", labelColor);
-    scv->AddItem(206, 50, "CYCLE 2 ALPHA", labelColor);
-    m_ITM_CC1_COLOR = scv->AddItem(206 + 90, 20, "");
-    m_ITM_CC1_ALPHA = scv->AddItem(206 + 90, 30, "");
-    m_ITM_CC2_COLOR = scv->AddItem(206 + 90, 40, "");
-    m_ITM_CC2_ALPHA = scv->AddItem(206 + 90, 50, "");
+    scv->SetOrigin(200, 10);
+    scv->AddItem("COMBINER", headerColor);
+    scv->AddItem(" CYCLE 1 COLOR", labelColor);
+    scv->AddItem(" CYCLE 1 ALPHA", labelColor);
+    scv->AddItem(" CYCLE 2 COLOR", labelColor);
+    scv->AddItem(" CYCLE 2 ALPHA", labelColor);
+
+    scv->SetOrigin(206+90, 20);
+    m_ITM_CC1_COLOR = scv->AddItem("...");
+    m_ITM_CC1_ALPHA = scv->AddItem("...");
+    m_ITM_CC2_COLOR = scv->AddItem("...");
+    m_ITM_CC2_ALPHA = scv->AddItem("...");
 
 	// Othermode HI
-	scv->AddItem(200, 70, "OTHERMODE HI", headerColor);
-	scv->AddItem(206, 80, "PIPELINE", labelColor);
-	scv->AddItem(206, 90, "COLORDITHER", labelColor);
-	scv->AddItem(206, 100, "CYCLETYPE", labelColor);
-	scv->AddItem(206, 110, "TEXTPERSP", labelColor);
-	scv->AddItem(206, 120, "TEXTDETAIL", labelColor);
-	scv->AddItem(206, 130, "TEXTLOD", labelColor);
-	scv->AddItem(206, 140, "TEXTLUT", labelColor);
-	scv->AddItem(206, 150, "TEXTFILT", labelColor);
-	scv->AddItem(206, 160, "TEXTCONV", labelColor);
-	scv->AddItem(206, 170, "COMBKEY", labelColor);
-	scv->AddItem(206, 180, "RGBDITHER", labelColor);
-	scv->AddItem(206, 190, "ALPHADITHER", labelColor);
+    scv->SetOrigin(200, 70);
+	scv->AddItem("OTHERMODE HI", headerColor);
+	scv->AddItem(" PIPELINE", labelColor);
+	scv->AddItem(" COLORDITHER", labelColor);
+	scv->AddItem(" CYCLETYPE", labelColor);
+	scv->AddItem(" TEXTPERSP", labelColor);
+	scv->AddItem(" TEXTDETAIL", labelColor);
+	scv->AddItem(" TEXTLOD", labelColor);
+	scv->AddItem(" TEXTLUT", labelColor);
+	scv->AddItem(" TEXTFILT", labelColor);
+	scv->AddItem(" TEXTCONV", labelColor);
+	scv->AddItem(" COMBKEY", labelColor);
+	scv->AddItem(" RGBDITHER", labelColor);
+	scv->AddItem(" ALPHADITHER", labelColor);
 
-	m_ITM_OMH_PIPELINE = scv->AddItem(206 + 78, 80, "");
-	m_ITM_OMH_COLORDITHER = scv->AddItem(206 + 78, 90, "");
-	m_ITM_OMH_CYCLETYPE = scv->AddItem(206 + 78, 100, "");
-	m_ITM_OMH_TEXTPERSP = scv->AddItem(206 + 78, 110, "");
-	m_ITM_OMH_TEXTDETAIL = scv->AddItem(206 + 78, 120, "");
-	m_ITM_OMH_TEXTLOD = scv->AddItem(206 + 78, 130, "");
-	m_ITM_OMH_TEXTLUT = scv->AddItem(206 + 78, 140, "");
-	m_ITM_OMH_TEXTFILT = scv->AddItem(206 + 78, 150, "");
-	m_ITM_OMH_TEXTCONV = scv->AddItem(206 + 78, 160, "");
-	m_ITM_OMH_COMBKEY = scv->AddItem(206 + 78, 170, "");
-	m_ITM_OMH_RGBDITHER = scv->AddItem(206 + 78, 180, "");
-	m_ITM_OMH_ALPHADITHER = scv->AddItem(206 + 78, 190, "");
+    scv->SetOrigin(206 + 78, 80);
+	m_ITM_OMH_PIPELINE = scv->AddItem("...");
+	m_ITM_OMH_COLORDITHER = scv->AddItem("...");
+	m_ITM_OMH_CYCLETYPE = scv->AddItem("...");
+	m_ITM_OMH_TEXTPERSP = scv->AddItem("...");
+	m_ITM_OMH_TEXTDETAIL = scv->AddItem("...");
+	m_ITM_OMH_TEXTLOD = scv->AddItem("...");
+	m_ITM_OMH_TEXTLUT = scv->AddItem("...");
+	m_ITM_OMH_TEXTFILT = scv->AddItem("...");
+	m_ITM_OMH_TEXTCONV = scv->AddItem("...");
+	m_ITM_OMH_COMBKEY = scv->AddItem("...");
+	m_ITM_OMH_RGBDITHER = scv->AddItem("...");
+	m_ITM_OMH_ALPHADITHER = scv->AddItem("...");
 
 	// Colors
-	scv->AddItem(450, 70, "COLORS", headerColor);
-	scv->AddItem(456, 80, "FILL", labelColor);
-	scv->AddItem(456, 90, "FOG", labelColor);
-	scv->AddItem(456, 100, "BLEND", labelColor);
-	scv->AddItem(456, 110, "PRIM", labelColor);
-	scv->AddItem(456, 120, "ENV", labelColor);
+    scv->SetOrigin(450, 70);
+	scv->AddItem("COLORS", headerColor);
+	scv->AddItem(" FILL", labelColor);
+	scv->AddItem(" FOG", labelColor);
+	scv->AddItem(" BLEND", labelColor);
+	scv->AddItem(" PRIM", labelColor);
+	scv->AddItem(" ENV", labelColor);
 
-	m_ITM_FILLCOLOR = scv->AddItem(498, 80, "");
-	m_ITM_FOGCOLOR = scv->AddItem(498, 90, "");
-	m_ITM_BLENDCOLOR = scv->AddItem(498, 100, "");
-	m_ITM_PRIMCOLOR = scv->AddItem(498, 110, "");
-	m_ITM_ENVCOLOR = scv->AddItem(498, 120, "");
+    scv->SetOrigin(498, 80);
+    m_ITM_FILLCOLOR = scv->AddItem("...");
+    m_ITM_FOGCOLOR = scv->AddItem("...");
+    m_ITM_BLENDCOLOR = scv->AddItem("...");
+    m_ITM_PRIMCOLOR = scv->AddItem("...");
+    m_ITM_ENVCOLOR = scv->AddItem("...");
+
+    scv->SetOrigin(552, 80);
+    scv->SetLayoutMode(CCanvas::LAYOUT_HORIZONTAL);
+    m_ITM_FILLCOLOR_PREV0 = scv->AddItem(" ");
+    scv->SetLayoutMode(CCanvas::LAYOUT_VERTICAL);
+    m_ITM_FILLCOLOR_PREV1 = scv->AddItem(" ");
+    scv->GotoOriginX();
+    m_ITM_FOGCOLOR_PREV = scv->AddItem(" ");
+    m_ITM_BLENDCOLOR_PREV = scv->AddItem(" ");
+    m_ITM_PRIMCOLOR_PREV = scv->AddItem(" ");
+    m_ITM_ENVCOLOR_PREV = scv->AddItem(" ");
+
+    scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV0, RGB(0, 0, 0));
+    scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV1, RGB(0, 0, 0));
+    scv->SetItemBgColor(m_ITM_FOGCOLOR_PREV, RGB(0, 0, 0));
+    scv->SetItemBgColor(m_ITM_BLENDCOLOR_PREV, RGB(0, 0, 0));
+    scv->SetItemBgColor(m_ITM_PRIMCOLOR_PREV, RGB(0, 0, 0));
+    scv->SetItemBgColor(m_ITM_ENVCOLOR_PREV, RGB(0, 0, 0));
 
 	// Tile descriptors
-	scv->AddItem(10, 210, "TILE DESCRIPTORS", headerColor);
-	scv->AddItem(10, 220, " # TMEM  SIZ FMT  LINE SHIFTS MASKS CMS SHIFTT MASKT CMT SCALES SCALET PALETTE LEVELS ON", labelColor);
+    scv->SetOrigin(10, 210);
+	scv->AddItem("TILE DESCRIPTORS", headerColor);
+	scv->AddItem(" # TMEM  SIZ FMT  LINE SHIFTS MASKS CMS SHIFTT MASKT CMT SCALES SCALET PALETTE LEVELS ON", labelColor);
 
+    scv->SetOrigin(16, 230);
 	for (int i = 0; i < 8; i++)
 	{
-		m_ITM_TILES[i] = scv->AddItem(16, 230 + i*10, "");
+		m_ITM_TILES[i] = scv->AddItem("...");
 	}
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);
@@ -466,6 +504,16 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 	scv->SetItemText(m_ITM_BLENDCOLOR, stdstr_f("%08X", state->m_dpBlendColor).c_str());
 	scv->SetItemText(m_ITM_PRIMCOLOR, stdstr_f("%08X", state->m_dpPrimColor).c_str());
 	scv->SetItemText(m_ITM_ENVCOLOR, stdstr_f("%08X", state->m_dpEnvColor).c_str());
+
+    uint16_t fill0 = state->m_dpFillColor >> 16;
+    uint16_t fill1 = state->m_dpFillColor & 0xFFFF;
+
+    scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV0, RGBFROM5551(fill0));
+    scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV1, RGBFROM5551(fill1));
+    scv->SetItemBgColor(m_ITM_FOGCOLOR_PREV, RGBFROM8888(state->m_dpFogColor));
+    scv->SetItemBgColor(m_ITM_BLENDCOLOR_PREV, RGBFROM8888(state->m_dpBlendColor));
+    scv->SetItemBgColor(m_ITM_PRIMCOLOR_PREV, RGBFROM8888(state->m_dpPrimColor));
+    scv->SetItemBgColor(m_ITM_ENVCOLOR_PREV, RGBFROM8888(state->m_dpEnvColor));
 
 	// Tile Descriptors
 	for (int nTile = 0; nTile < 8; nTile++)
@@ -824,12 +872,14 @@ void CDebugDisplayList::Export(void)
 /****************************************/
 
 CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color) :
+    m_X(x),
+    m_Y(y),
+    m_BgColor(RGB(0,0,0)),
+    m_bHaveBgColor(false),
 	m_Color(color),
-	m_X(x),
-	m_Y(y),
 	m_BoundingRect(x, y, x, y)
 {
-    m_bNeedRedraw = true;
+    //m_bNeedRedraw = true;
 
     if (text != NULL)
     {
@@ -845,7 +895,12 @@ CCanvas::CCanvas(void) :
     m_BackDC(NULL),
     m_BackBMP(NULL),
 	m_BackgroundColor(RGB(0x22, 0x22, 0x22)),
-	m_ForegroundColor(RGB(255, 255, 255))
+	m_ForegroundColor(RGB(255, 255, 255)),
+    m_OriginX(0),
+    m_OriginY(0),
+    m_ItemPosX(0),
+    m_ItemPosY(0),
+    m_LayoutMode(LAYOUT_VERTICAL)
 {
 }
 
@@ -853,6 +908,19 @@ void CCanvas::RegisterClass()
 {
     this->GetWndClassInfo().m_wc.lpfnWndProc = m_pfnSuperWindowProc;
     this->GetWndClassInfo().Register(&m_pfnSuperWindowProc);
+}
+
+void CCanvas::SetOrigin(int x, int y)
+{
+    m_OriginX = x;
+    m_OriginY = y;
+    m_ItemPosX = x;
+    m_ItemPosY = y;
+}
+
+void CCanvas::SetLayoutMode(int mode)
+{
+    m_LayoutMode = mode;
 }
 
 void CCanvas::Init(void)
@@ -916,16 +984,6 @@ LRESULT CCanvas::OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled
     return FALSE;
 }
 
-void CCanvas::Text(int x, int y, const char* text)
-{
-    CRect rc;
-    rc.left = x;
-    rc.top = y;
-    DrawText(m_BackDC, text, -1, &rc, DT_TOP | DT_CALCRECT);
-    DrawText(m_BackDC, text, -1, &rc, DT_TOP);
-    InvalidateRect(&rc);
-}
-
 void CCanvas::DrawItem(CCanvasItem* item)
 {
     // erase the old bounding rect
@@ -938,11 +996,23 @@ void CCanvas::DrawItem(CCanvasItem* item)
         DeleteObject(hbrush);
     }
 
+    COLORREF orgBgColor;
+
+    if (item->m_bHaveBgColor)
+    {
+        orgBgColor = SetBkColor(m_BackDC, item->m_BgColor);
+    }
+    
     // update bounding rect and draw text
     ::SetTextColor(m_BackDC, item->m_Color);
     DrawText(m_BackDC, item->m_Text, -1, &item->m_BoundingRect, DT_TOP | DT_CALCRECT);
     DrawText(m_BackDC, item->m_Text, -1, &item->m_BoundingRect, DT_TOP);
     InvalidateRect(&item->m_BoundingRect);
+
+    if (item->m_bHaveBgColor)
+    {
+        SetBkColor(m_BackDC, orgBgColor);
+    }
 }
 
 CCanvasItem* CCanvas::GetItem(int index)
@@ -955,11 +1025,22 @@ CCanvasItem* CCanvas::GetItem(int index)
 	return m_Items[index];
 }
 
-size_t CCanvas::AddItem(int x, int y, const char* text, COLORREF color)
+size_t CCanvas::AddItem(const char* text, COLORREF color)
 {
-    CCanvasItem* item = new CCanvasItem(x, y, text, color);
+    CCanvasItem* item = new CCanvasItem(m_ItemPosX, m_ItemPosY, text, color);
     DrawItem(item);
     m_Items.push_back(item);
+
+    if (m_LayoutMode & LAYOUT_VERTICAL)
+    {
+        m_ItemPosY += item->m_BoundingRect.Height() + 2;
+    }
+
+    if (m_LayoutMode & LAYOUT_HORIZONTAL)
+    {
+        m_ItemPosX += item->m_BoundingRect.Width() + 2;
+    }
+    
     return m_Items.size() - 1;
 }
 
@@ -981,6 +1062,25 @@ void CCanvas::SetItemColor(int id, COLORREF color)
     DrawItem(item);
 }
 
+void CCanvas::SetItemBgColor(int id, COLORREF color)
+{
+    CCanvasItem* item = GetItem(id);
+
+    if (item == NULL)
+    {
+        return;
+    }
+
+    if (item->m_BgColor == color && item->m_bHaveBgColor)
+    {
+        return;
+    }
+
+    item->m_bHaveBgColor = true;
+    item->m_BgColor = color;
+    DrawItem(item);
+}
+
 void CCanvas::SetItemText(int id, const char* text)
 {
 	CCanvasItem* item = GetItem(id);
@@ -998,6 +1098,11 @@ void CCanvas::SetItemText(int id, const char* text)
     free(item->m_Text);
     item->m_Text = strdup(text);
     DrawItem(item);
+}
+
+void CCanvas::GotoOriginX(void)
+{
+    m_ItemPosX = m_OriginX;
 }
 
 /****************************************/
