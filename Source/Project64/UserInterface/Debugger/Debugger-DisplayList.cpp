@@ -99,43 +99,100 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     m_DrawBuffers = new CDrawBuffers(m_OrgTexPreviewRect.Width()-2, m_OrgTexPreviewRect.Height()-2);
 
     CCanvas*& scv = m_StateCanvas;
-    COLORREF headerColor = RGB(0x44, 0x44, 0x44);
+	COLORREF headerColor = RGB(0xAA, 0xAA, 0xAA);
+	COLORREF labelColor = RGB(0xCC, 0xCC, 0xCC);
 
+	// Image addresses
     scv->AddItem(10, 10, "IMAGE ADDRESSES", headerColor);
-    m_StateCanvas->AddItem(16, 20, "TEXTURE");
-    m_StateCanvas->AddItem(16, 30, "COLOR");
-    m_StateCanvas->AddItem(16, 40, "DEPTH");
-    m_ItemTextureImage = scv->AddItem(16 + 60, 20, "");
-    m_ItemColorImage = scv->AddItem(16 + 60, 30, "");
-    m_ItemDepthImage = scv->AddItem(16 + 60, 40, "");
+    m_StateCanvas->AddItem(16, 20, "TEXTURE", labelColor);
+    m_StateCanvas->AddItem(16, 30, "COLOR", labelColor);
+    m_StateCanvas->AddItem(16, 40, "DEPTH", labelColor);
+    m_ITM_TEXTUREIMAGE = scv->AddItem(70, 20, "");
+    m_ITM_COLORIMAGE = scv->AddItem(70, 30, "");
+    m_ITM_DEPTHIMAGE = scv->AddItem(70, 40, "");
 
+	// Geometry mode
     scv->AddItem(10, 70, "GEOMETRY MODE", headerColor);
-    m_ItemGeomZBUFFER = scv->AddItem(16, 80, "ZBUFFER");
-    m_ItemGeomSHADE = scv->AddItem(16, 90, "SHADE");
-    m_ItemGeomFOG = scv->AddItem(16, 100, "FOG");
-    m_ItemGeomLIGHTING = scv->AddItem(16, 110, "LIGHTING");
-    m_ItemGeomTEXTURE_GEN = scv->AddItem(16, 120, "TEXTURE_GEN");
-    m_ItemGeomTEXTURE_GEN_LINEAR = scv->AddItem(16, 130, "TEXTURE_GEN_LINEAR");
-    m_ItemGeomLOD = scv->AddItem(16, 140, "LOD");
-    m_ItemGeomCLIPPING = scv->AddItem(16, 150, "CLIPPING");
-    m_ItemGeomSHADING_SMOOTH = scv->AddItem(16, 160, "SHADING_SMOOTH");
-    m_ItemGeomCULL_FRONT = scv->AddItem(16, 170, "CULL_FRONT");
-    m_ItemGeomCULL_BACK = scv->AddItem(16, 180, "CULL_BACK");
+    m_ITM_GM_ZBUFFER = scv->AddItem(16, 80, "ZBUFFER", labelColor);
+    m_ITM_GM_SHADE = scv->AddItem(16, 90, "SHADE", labelColor);
+    m_ITM_GM_FOG = scv->AddItem(16, 100, "FOG", labelColor);
+    m_ITM_GM_LIGHTING = scv->AddItem(16, 110, "LIGHTING", labelColor);
+    m_ITM_GM_TEXTURE_GEN = scv->AddItem(16, 120, "TEXTURE_GEN", labelColor);
+    m_ITM_GM_TEXTURE_GEN_LINEAR = scv->AddItem(16, 130, "TEXTURE_GEN_LINEAR", labelColor);
+    m_ITM_GM_LOD = scv->AddItem(16, 140, "LOD", labelColor);
+    m_ITM_GM_CLIPPING = scv->AddItem(16, 150, "CLIPPING", labelColor);
+    m_ITM_GM_SHADING_SMOOTH = scv->AddItem(16, 160, "SHADING_SMOOTH", labelColor);
+    m_ITM_GM_CULL_FRONT = scv->AddItem(16, 170, "CULL_FRONT", labelColor);
+    m_ITM_GM_CULL_BACK = scv->AddItem(16, 180, "CULL_BACK", labelColor);
 
+	// Combiner
     scv->AddItem(200, 10, "COMBINER", headerColor);
-    scv->AddItem(206, 20, "CYCLE 1 COLOR");
-    scv->AddItem(206, 30, "CYCLE 1 ALPHA");
-    scv->AddItem(206, 40, "CYCLE 2 COLOR");
-    scv->AddItem(206, 50, "CYCLE 2 ALPHA");
-    m_ItemCC1Color = scv->AddItem(206 + 100, 20, "");
-    m_ItemCC1Alpha = scv->AddItem(206 + 100, 30, "");
-    m_ItemCC2Color = scv->AddItem(206 + 100, 40, "");
-    m_ItemCC2Alpha = scv->AddItem(206 + 100, 50, "");
+    scv->AddItem(206, 20, "CYCLE 1 COLOR", labelColor);
+    scv->AddItem(206, 30, "CYCLE 1 ALPHA", labelColor);
+    scv->AddItem(206, 40, "CYCLE 2 COLOR", labelColor);
+    scv->AddItem(206, 50, "CYCLE 2 ALPHA", labelColor);
+    m_ITM_CC1_COLOR = scv->AddItem(206 + 90, 20, "");
+    m_ITM_CC1_ALPHA = scv->AddItem(206 + 90, 30, "");
+    m_ITM_CC2_COLOR = scv->AddItem(206 + 90, 40, "");
+    m_ITM_CC2_ALPHA = scv->AddItem(206 + 90, 50, "");
+
+	// Othermode HI
+	scv->AddItem(200, 70, "OTHERMODE HI", headerColor);
+	scv->AddItem(206, 80, "PIPELINE", labelColor);
+	scv->AddItem(206, 90, "COLORDITHER", labelColor);
+	scv->AddItem(206, 100, "CYCLETYPE", labelColor);
+	scv->AddItem(206, 110, "TEXTPERSP", labelColor);
+	scv->AddItem(206, 120, "TEXTDETAIL", labelColor);
+	scv->AddItem(206, 130, "TEXTLOD", labelColor);
+	scv->AddItem(206, 140, "TEXTLUT", labelColor);
+	scv->AddItem(206, 150, "TEXTFILT", labelColor);
+	scv->AddItem(206, 160, "TEXTCONV", labelColor);
+	scv->AddItem(206, 170, "COMBKEY", labelColor);
+	scv->AddItem(206, 180, "RGBDITHER", labelColor);
+	scv->AddItem(206, 190, "ALPHADITHER", labelColor);
+
+	m_ITM_OMH_PIPELINE = scv->AddItem(206 + 78, 80, "");
+	m_ITM_OMH_COLORDITHER = scv->AddItem(206 + 78, 90, "");
+	m_ITM_OMH_CYCLETYPE = scv->AddItem(206 + 78, 100, "");
+	m_ITM_OMH_TEXTPERSP = scv->AddItem(206 + 78, 110, "");
+	m_ITM_OMH_TEXTDETAIL = scv->AddItem(206 + 78, 120, "");
+	m_ITM_OMH_TEXTLOD = scv->AddItem(206 + 78, 130, "");
+	m_ITM_OMH_TEXTLUT = scv->AddItem(206 + 78, 140, "");
+	m_ITM_OMH_TEXTFILT = scv->AddItem(206 + 78, 150, "");
+	m_ITM_OMH_TEXTCONV = scv->AddItem(206 + 78, 160, "");
+	m_ITM_OMH_COMBKEY = scv->AddItem(206 + 78, 170, "");
+	m_ITM_OMH_RGBDITHER = scv->AddItem(206 + 78, 180, "");
+	m_ITM_OMH_ALPHADITHER = scv->AddItem(206 + 78, 190, "");
+
+	// Colors
+	scv->AddItem(450, 70, "COLORS", headerColor);
+	scv->AddItem(456, 80, "FILL", labelColor);
+	scv->AddItem(456, 90, "FOG", labelColor);
+	scv->AddItem(456, 100, "BLEND", labelColor);
+	scv->AddItem(456, 110, "PRIM", labelColor);
+	scv->AddItem(456, 120, "ENV", labelColor);
+
+	m_ITM_FILLCOLOR = scv->AddItem(498, 80, "");
+	m_ITM_FOGCOLOR = scv->AddItem(498, 90, "");
+	m_ITM_BLENDCOLOR = scv->AddItem(498, 100, "");
+	m_ITM_PRIMCOLOR = scv->AddItem(498, 110, "");
+	m_ITM_ENVCOLOR = scv->AddItem(498, 120, "");
+
+	// Tile descriptors
+	scv->AddItem(10, 210, "TILE DESCRIPTORS", headerColor);
+	scv->AddItem(10, 220, " # TMEM  SIZ FMT  LINE SHIFTS MASKS CMS SHIFTT MASKT CMT SCALES SCALET PALETTE LEVELS ON", labelColor);
+
+	for (int i = 0; i < 8; i++)
+	{
+		m_ITM_TILES[i] = scv->AddItem(16, 230 + i*10, "");
+	}
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);
 
     LoadWindowPos();
     WindowCreated();
+
+	UpdateStateCanvas((CHleGfxState*)&m_GfxParser);
 
     return TRUE;
 }
@@ -304,181 +361,141 @@ void CDebugDisplayList::SetPreviewColor(WORD ctrlId, uint32_t colorPair)
     ::ReleaseDC(hWndPrevFillColor, dc);
 }
 
+void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
+{
+	ucode_info_t* ucodeInfo = m_GfxParser.GetMicrocodeInfo();
+
+	if (state == NULL)
+	{
+		return;
+	}
+
+	CCanvas*& scv = m_StateCanvas;
+
+	// lights
+	//stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+
+	// Image addresses
+	stdstr strTextureImage = stdstr_f("%08X (%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str();
+	stdstr strColorImage = stdstr_f("%08X (%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str();
+	stdstr strDepthImage = stdstr_f("%08X (%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str();
+	scv->SetItemText(m_ITM_TEXTUREIMAGE, strTextureImage.c_str());
+	scv->SetItemText(m_ITM_COLORIMAGE, strColorImage.c_str());
+	scv->SetItemText(m_ITM_DEPTHIMAGE, strDepthImage.c_str());
+
+	// Geometry mode
+	COLORREF clrOn = RGB(0xFF, 0xFF, 0xFF);
+	COLORREF clrOff = RGB(0x44, 0x44, 0x44);
+
+	bool shading_smooth, cull_front, cull_back;
+
+	if (ucodeInfo->ucodeId == UCODE_F3DEX2)
+	{
+		shading_smooth = state->m_spGeometryMode.f3dex2.shading_smooth;
+		cull_front = state->m_spGeometryMode.f3dex2.cull_front;
+		cull_back = state->m_spGeometryMode.f3dex2.cull_back;
+	}
+	else
+	{
+		shading_smooth = state->m_spGeometryMode.f3d.shading_smooth;
+		cull_front = state->m_spGeometryMode.f3d.cull_front;
+		cull_back = state->m_spGeometryMode.f3d.cull_back;
+	}
+
+	scv->SetItemColor(m_ITM_GM_ZBUFFER, state->m_spGeometryMode.f3d.zbuffer ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_SHADE, state->m_spGeometryMode.f3d.shade ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_FOG, state->m_spGeometryMode.f3d.fog ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_LIGHTING, state->m_spGeometryMode.f3d.lighting ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_TEXTURE_GEN, state->m_spGeometryMode.f3d.texture_gen ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_TEXTURE_GEN_LINEAR, state->m_spGeometryMode.f3d.texture_gen_linear ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_LOD, state->m_spGeometryMode.f3d.lod ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_CLIPPING, state->m_spGeometryMode.f3d.clipping ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_SHADING_SMOOTH, state->m_spGeometryMode.f3d.shading_smooth ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_CULL_FRONT, state->m_spGeometryMode.f3d.cull_front ? clrOn : clrOff);
+	scv->SetItemColor(m_ITM_GM_CULL_BACK, state->m_spGeometryMode.f3d.cull_back ? clrOn : clrOff);
+
+	// Combiner
+	stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s",
+		CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a0),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b0),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c0),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d0));
+
+	stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s",
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa0),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab0),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac0),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad0));
+
+	stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s",
+		CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a1),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b1),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c1),
+		CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d1));
+
+	stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s",
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa1),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab1),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
+		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
+
+	scv->SetItemText(m_ITM_CC1_COLOR, strCycle1Color.c_str());
+	scv->SetItemText(m_ITM_CC1_ALPHA, strCycle1Color.c_str());
+	scv->SetItemText(m_ITM_CC2_COLOR, strCycle1Color.c_str());
+	scv->SetItemText(m_ITM_CC2_ALPHA, strCycle1Color.c_str());
+
+	// Othermode HI
+	othermode_h_t* omh = &state->m_dpOtherMode_h;
+
+	scv->SetItemText(m_ITM_OMH_PIPELINE, CGfxLabels::OtherMode_pm[omh->pm]);
+	scv->SetItemText(m_ITM_OMH_COLORDITHER, CGfxLabels::OtherMode_cd[omh->cd]);
+	scv->SetItemText(m_ITM_OMH_CYCLETYPE, CGfxLabels::OtherMode_cyc[omh->cyc]);
+	scv->SetItemText(m_ITM_OMH_TEXTPERSP, CGfxLabels::OtherMode_tp[omh->tp]);
+	scv->SetItemText(m_ITM_OMH_TEXTDETAIL, CGfxLabels::OtherMode_td[omh->td]);
+	scv->SetItemText(m_ITM_OMH_TEXTLOD, CGfxLabels::OtherMode_tl[omh->tl]);
+	scv->SetItemText(m_ITM_OMH_TEXTLUT, CGfxLabels::OtherMode_tt[omh->tt]);
+	scv->SetItemText(m_ITM_OMH_TEXTFILT, CGfxLabels::OtherMode_tf[omh->tf]);
+	scv->SetItemText(m_ITM_OMH_TEXTCONV, CGfxLabels::OtherMode_tc[omh->tc]);
+	scv->SetItemText(m_ITM_OMH_COMBKEY, CGfxLabels::OtherMode_ck[omh->ck]);
+	scv->SetItemText(m_ITM_OMH_RGBDITHER, CGfxLabels::OtherMode_rd[omh->rd]);
+	scv->SetItemText(m_ITM_OMH_ALPHADITHER, CGfxLabels::OtherMode_ad[omh->ad]);
+
+	// RDP Colors
+	scv->SetItemText(m_ITM_FILLCOLOR, stdstr_f("%08X", state->m_dpFillColor).c_str());
+	scv->SetItemText(m_ITM_FOGCOLOR, stdstr_f("%08X", state->m_dpFogColor).c_str());
+	scv->SetItemText(m_ITM_BLENDCOLOR, stdstr_f("%08X", state->m_dpBlendColor).c_str());
+	scv->SetItemText(m_ITM_PRIMCOLOR, stdstr_f("%08X", state->m_dpPrimColor).c_str());
+	scv->SetItemText(m_ITM_ENVCOLOR, stdstr_f("%08X", state->m_dpEnvColor).c_str());
+
+	// Tile Descriptors
+	for (int nTile = 0; nTile < 8; nTile++)
+	{
+		tile_t* t = &state->m_dpTileDescriptors[nTile];
+
+		const char* sizName = CGfxLabels::TexelSizesShort[t->siz];
+		const char* fmtName = CGfxLabels::ImageFormatsShort[t->fmt];
+
+		stdstr strTileDescriptor = stdstr_f(
+			"%d 0x%03X %3s %4s %4d %6d %5d %3d %6d %5d %3d 0x%04X 0x%04X %7d %6d  %d",
+			nTile,
+			t->tmem, sizName, fmtName, t->line,
+			t->shifts, t->masks, t->cms,
+			t->shiftt, t->maskt, t->cmt,
+			t->scaleS, t->scaleT,
+			t->palette,
+			t->mipmapLevels, t->enabled
+		);
+
+		scv->SetItemText(m_ITM_TILES[nTile], strTileDescriptor.c_str());
+	}
+}
+
 LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
 {
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
     int nItem = pIA->iItem;
-
     CHleGfxState* state = m_GfxParser.GetLoggedState(nItem);
-	ucode_info_t* ucodeInfo = m_GfxParser.GetMicrocodeInfo();
-
-    if (state == NULL)
-    {
-        return FALSE;
-    }
-
-    //// rdp colors
-    //
-    //::SetWindowText(GetDlgItem(IDC_EDIT_FILLCOLOR), stdstr_f("0x%08X", state->m_dpFillColor).c_str());
-    //::SetWindowText(GetDlgItem(IDC_EDIT_FOGCOLOR), stdstr_f("0x%08X", state->m_dpFogColor).c_str());
-    //::SetWindowText(GetDlgItem(IDC_EDIT_BLENDCOLOR), stdstr_f("0x%08X", state->m_dpBlendColor).c_str());
-    //::SetWindowText(GetDlgItem(IDC_EDIT_PRIMCOLOR), stdstr_f("0x%08X", state->m_dpPrimColor).c_str());
-    //::SetWindowText(GetDlgItem(IDC_EDIT_ENVCOLOR), stdstr_f("0x%08X", state->m_dpEnvColor).c_str());
-    //
-    //SetPreviewColor(IDC_PREVIEW_FILLCOLOR, state->m_dpFillColor);
-    //SetPreviewColor(IDC_PREVIEW_FOGCOLOR, state->m_dpFogColor);
-    //SetPreviewColor(IDC_PREVIEW_BLENDCOLOR, state->m_dpBlendColor);
-    //SetPreviewColor(IDC_PREVIEW_PRIMCOLOR, state->m_dpPrimColor);
-    //SetPreviewColor(IDC_PREVIEW_ENVCOLOR, state->m_dpEnvColor);
-    //
-    //// tiles
-    //
-    //
-    //// lights
-    //
-    ////stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
-    //
-    ///////////////
-    //
-    stdstr strCycle1Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c0),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d0));
-    
-    stdstr strCycle1Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac0),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad0));
-    
-    stdstr strCycle2Color = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::CCMuxA, state->m_dpCombiner.a1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxB, state->m_dpCombiner.b1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxC, state->m_dpCombiner.c1),
-        CGfxLabels::LookupName(CGfxLabels::CCMuxD, state->m_dpCombiner.d1));
-    
-    stdstr strCycle2Alpha = stdstr_f("(%s - %s) * %s + %s\r\n",
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Aa1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ab1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
-        CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
-
-    stdstr strTextureImage = stdstr_f("%08X (%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str();
-    stdstr strColorImage = stdstr_f("%08X (%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str();
-    stdstr strDepthImage = stdstr_f("%08X (%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str();
-
-    // Image addresses
-
-    CCanvas*& scv = m_StateCanvas;
-
-    scv->SetItemText(m_ItemTextureImage, strTextureImage.c_str());
-    scv->SetItemText(m_ItemColorImage, strColorImage.c_str());
-    scv->SetItemText(m_ItemDepthImage, strDepthImage.c_str());
-
-    // Geometry mode
-
-    bool shading_smooth, cull_front, cull_back;
-
-    if (ucodeInfo->ucodeId == UCODE_F3DEX2)
-    {
-        shading_smooth = state->m_spGeometryMode.f3dex2.shading_smooth;
-        cull_front = state->m_spGeometryMode.f3dex2.cull_front;
-        cull_back = state->m_spGeometryMode.f3dex2.cull_back;
-    }
-    else
-    {
-        shading_smooth = state->m_spGeometryMode.f3d.shading_smooth;
-        cull_front = state->m_spGeometryMode.f3d.cull_front;
-        cull_back = state->m_spGeometryMode.f3d.cull_back;
-    }
-
-
-
-    COLORREF colorEnabled = RGB(0, 0, 0);
-    COLORREF colorDisabled = RGB(0xAA, 0xAA, 0xAA);
-
-    scv->SetItemColor(m_ItemGeomZBUFFER, state->m_spGeometryMode.f3d.zbuffer ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomSHADE, state->m_spGeometryMode.f3d.shade ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomFOG, state->m_spGeometryMode.f3d.fog ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomLIGHTING, state->m_spGeometryMode.f3d.lighting ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomTEXTURE_GEN, state->m_spGeometryMode.f3d.texture_gen ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomTEXTURE_GEN_LINEAR, state->m_spGeometryMode.f3d.texture_gen_linear ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomLOD, state->m_spGeometryMode.f3d.lod ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomCLIPPING, state->m_spGeometryMode.f3d.clipping ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomSHADING_SMOOTH, state->m_spGeometryMode.f3d.shading_smooth ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomCULL_FRONT, state->m_spGeometryMode.f3d.cull_front ? colorEnabled : colorDisabled);
-    scv->SetItemColor(m_ItemGeomCULL_BACK, state->m_spGeometryMode.f3d.cull_back ? colorEnabled : colorDisabled);
-
-    // Combiner
-
-    int x = 200;
-    int y = 10;
-    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
-
-
-    scv->SetItemText(m_ItemCC1Color, strCycle1Color.c_str());
-    scv->SetItemText(m_ItemCC1Alpha, strCycle1Color.c_str());
-    scv->SetItemText(m_ItemCC2Color, strCycle1Color.c_str());
-    scv->SetItemText(m_ItemCC2Alpha, strCycle1Color.c_str());
-
-    // Othermode HI
-    othermode_h_t* omh = &state->m_dpOtherMode_h;
-
-    x = 200;
-    y = 70;
-    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
-    scv->Text(x, y, "OTHERMODE HI");
-    x += 6;
-    //scv->SetTextColor(RGB(0, 0, 0));
-    scv->Text(x, y + 10, "PIPELINE"); scv->Text(x + 80, y + 10, CGfxLabels::OtherMode_pm[omh->pm]);
-    scv->Text(x, y + 20, "COLORDITHER");  scv->Text(x + 80, y + 20, CGfxLabels::OtherMode_cd[omh->cd]);
-    scv->Text(x, y + 30, "CYCLETYPE"); scv->Text(x + 80, y + 30, CGfxLabels::OtherMode_cyc[omh->cyc]);
-    scv->Text(x, y + 40, "TEXTPERSP"); scv->Text(x + 80, y + 40, CGfxLabels::OtherMode_tp[omh->tp]);
-    scv->Text(x, y + 50, "TEXTDETAIL"); scv->Text(x + 80, y + 50, CGfxLabels::OtherMode_td[omh->td]);
-    scv->Text(x, y + 60, "TEXTLOD"); scv->Text(x + 80, y + 60, CGfxLabels::OtherMode_tl[omh->tl]);
-    scv->Text(x, y + 70, "TEXTLUT"); scv->Text(x + 80, y + 70, CGfxLabels::OtherMode_tt[omh->tt]);
-    scv->Text(x, y + 80, "TEXTFILT"); scv->Text(x + 80, y + 80, CGfxLabels::OtherMode_tf[omh->tf]);
-    scv->Text(x, y + 90, "TEXTCONV"); scv->Text(x + 80, y + 90, CGfxLabels::OtherMode_tc[omh->tc]);
-    scv->Text(x, y + 100, "COMBKEY"); scv->Text(x + 80, y + 100, CGfxLabels::OtherMode_ck[omh->ck]);
-    scv->Text(x, y + 110, "RGBDITHER"); scv->Text(x + 80, y + 110, CGfxLabels::OtherMode_rd[omh->rd]);
-    scv->Text(x, y + 120, "ALPHADITHER"); scv->Text(x + 80, y + 120, CGfxLabels::OtherMode_ad[omh->ad]);
-
-    // Tile Descriptors
-
-    stdstr strTileDescriptors = "# tmem  siz fmt  line shiftS maskS cmS shiftT maskT cmT scaleS scaleT palette levels on\r\n";
-
-    for (int i = 0; i <= 7; i++)
-    {
-        tile_t* t = &state->m_dpTileDescriptors[i];
-
-        //if (t->enabled == 0 && i != 7)
-        //{
-        //    // skip the rendertiles if they are disabled
-        //    continue;
-        //}
-
-        const char* sizName = CGfxLabels::TexelSizesShort[t->siz];
-        const char* fmtName = CGfxLabels::ImageFormatsShort[t->fmt];
-
-        strTileDescriptors += stdstr_f(
-            "%d 0x%03X %3s %4s %4d %6d %5d %3d %6d %5d %3d 0x%04X 0x%04X %7d %6d  %d\r\n",
-            i,
-            t->tmem, sizName, fmtName, t->line,
-            t->shifts, t->masks, t->cms,
-            t->shiftt, t->maskt, t->cmt,
-            t->scaleS, t->scaleT,
-            t->palette,
-            t->mipmapLevels, t->enabled
-        );
-    }
-
-    x = 10;
-    y = 210;
-    //scv->SetTextColor(RGB(0x44, 0x44, 0x44));
-    scv->Text(x, y, "TILE DESCRIPTORS");
-    scv->Text(x+6, y+10, strTileDescriptors.c_str());
-
+	UpdateStateCanvas(state);
     m_bShowRender = true;
     return FALSE;
 }
@@ -806,16 +823,13 @@ void CDebugDisplayList::Export(void)
 
 /****************************************/
 
-CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color)
+CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color) :
+	m_Color(color),
+	m_X(x),
+	m_Y(y),
+	m_BoundingRect(x, y, x, y)
 {
-    m_Color = color;
-    m_X = x;
-    m_Y = y;
     m_bNeedRedraw = true;
-    m_BoundingRect.left = x;
-    m_BoundingRect.top = y;
-    m_BoundingRect.right = x;
-    m_BoundingRect.bottom = y;
 
     if (text != NULL)
     {
@@ -829,7 +843,9 @@ CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color)
 
 CCanvas::CCanvas(void) :
     m_BackDC(NULL),
-    m_BackBMP(NULL)
+    m_BackBMP(NULL),
+	m_BackgroundColor(RGB(0x22, 0x22, 0x22)),
+	m_ForegroundColor(RGB(255, 255, 255))
 {
 }
 
@@ -875,9 +891,10 @@ void CCanvas::Init(void)
     DeleteObject(hOldBMP);
     ReleaseDC(hdc);
 
+	SetBkColor(m_BackDC, m_BackgroundColor);
 
     CRect clrRc(0, 0, wndRc.Width(), wndRc.Height());
-    HBRUSH hbrush = CreateSolidBrush(RGB(255, 255, 255));
+    HBRUSH hbrush = CreateSolidBrush(m_BackgroundColor);
     FillRect(m_BackDC, clrRc, hbrush);
     DeleteObject(hbrush);
 }
@@ -915,7 +932,7 @@ void CCanvas::DrawItem(CCanvasItem* item)
     if (item->m_BoundingRect.Width() > 0 &&
         item->m_BoundingRect.Height() > 0)
     {
-        HBRUSH hbrush = CreateSolidBrush(RGB(0xFF, 0xFF, 0xFF));
+        HBRUSH hbrush = CreateSolidBrush(m_BackgroundColor);
         FillRect(m_BackDC, &item->m_BoundingRect, hbrush);
         InvalidateRect(&item->m_BoundingRect);
         DeleteObject(hbrush);
@@ -928,7 +945,17 @@ void CCanvas::DrawItem(CCanvasItem* item)
     InvalidateRect(&item->m_BoundingRect);
 }
 
-int CCanvas::AddItem(int x, int y, const char* text, COLORREF color)
+CCanvasItem* CCanvas::GetItem(int index)
+{
+	if (index < 0 || index >= m_Items.size())
+	{
+		return NULL;
+	}
+
+	return m_Items[index];
+}
+
+size_t CCanvas::AddItem(int x, int y, const char* text, COLORREF color)
 {
     CCanvasItem* item = new CCanvasItem(x, y, text, color);
     DrawItem(item);
@@ -936,14 +963,14 @@ int CCanvas::AddItem(int x, int y, const char* text, COLORREF color)
     return m_Items.size() - 1;
 }
 
-void CCanvas::SetItemColor(int nItem, COLORREF color)
+void CCanvas::SetItemColor(int id, COLORREF color)
 {
-    if (nItem >= m_Items.size())
+	CCanvasItem* item = GetItem(id);
+
+    if (item == NULL)
     {
         return;
     }
-
-    CCanvasItem* item = m_Items[nItem];
 
     if (item->m_Color == color)
     {
@@ -954,14 +981,14 @@ void CCanvas::SetItemColor(int nItem, COLORREF color)
     DrawItem(item);
 }
 
-void CCanvas::SetItemText(int nItem, const char* text)
+void CCanvas::SetItemText(int id, const char* text)
 {
-    if (nItem >= m_Items.size())
+	CCanvasItem* item = GetItem(id);
+
+    if (item == NULL)
     {
         return;
     }
-
-    CCanvasItem* item = m_Items[nItem];
 
     if (strcmp(text, item->m_Text) == 0)
     {

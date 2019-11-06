@@ -50,8 +50,6 @@ GfxOps.gsSPPopMatrix = function(gfx)
 
 GfxOps.gsSP2Triangles = function(gfx)
 {
-    
-
     var tri1 = new Array(3);
     var tri2 = new Array(3);
     var w0 = gfx.command.w0;
@@ -62,8 +60,6 @@ GfxOps.gsSP2Triangles = function(gfx)
     tri2[0] = gfx.spVertices[((w1 >> 16) & 0xFF) / 2];
     tri2[1] = gfx.spVertices[((w1 >> 8) & 0xFF) / 2];
     tri2[2] = gfx.spVertices[((w1 >> 0) & 0xFF) / 2];
-    //gfx.triangles.push(tri1);
-    //gfx.triangles.push(tri2);
     gfx.updateCurrentMaterial();
     gfx.addTriangle(tri1);
     gfx.addTriangle(tri2);
@@ -76,10 +72,8 @@ GfxOps.gsSP1Triangle = function(gfx)
     tri[0] = gfx.spVertices[((w0 >> 16) & 0xFF) / 2];
     tri[1] = gfx.spVertices[((w0 >> 8) & 0xFF) / 2];
     tri[2] = gfx.spVertices[((w0 >> 0) & 0xFF) / 2];
-
     gfx.updateCurrentMaterial();
     gfx.addTriangle(tri);
-    //gfx.triangles.push(tri);
 }
 
 GfxOps.gsDPSetTextureImage = function(gfx)
@@ -113,6 +107,9 @@ GfxOps.gsDPLoadBlock = function(gfx)
         gfx.dpTextureMemory.setUint8(tmemOffset + i,
              gfx.getU8(gfx.dpImageAddress + i));
     }
+
+    gfx.lastLoadBlock = gfx.segmentedToPhysical(gfx.dpImageAddress);
+    //console.log(gfx.lastLoadBlock.toString(16));
 
     //console.log("tmem: loaded ", numBytesToLoad, " bytes to 0x" + tmemOffset.toString(16), "(tile" + tile +")");
 }
@@ -170,12 +167,23 @@ GfxOps.gsDPLoadTLUTCmd = function(gfx)
     var tileDesc = gfx.dpTileDescriptors[tile];
     var tmemOffset = tileDesc.tmem * 8;
 
-    // todo mirroring
+    console.log("loading tlut to ", tmemOffset, count+1);
+
+    // todo mirroring?
     for(var i = 0; i < count+1; i++)
     {
         var color = gfx.getU16(gfx.dpImageAddress + i*2);
         gfx.dpTextureMemory.setUint16(tmemOffset + i*2, color);
     }
+}
+
+GfxOps.gsSPSetOtherMode_L = function(gfx)
+{
+    var cmd = gfx.command;
+    var len = cmd.w0f(0, 8) + 1;
+    var sft = 32 - cmd.w1f(8, 8) - len;
+    var mask = ~(((1 << len)-1) << sft);
+    gfx.dpOtherModeL = gfx.dpOtherModeL & mask | cmd.w1;
 }
 
 GfxOps.RDP = [
@@ -187,6 +195,7 @@ GfxOps.RDP = [
 ];
 
 GfxOps.F3DEX2 = [
+    [ 0xE2, GfxOps.gsSPSetOtherMode_L],
     [ 0xD7, GfxOps.gsSPTexture ],
     [ 0x05, GfxOps.gsSP1Triangle ],
     [ 0x06, GfxOps.gsSP2Triangles ],

@@ -5,12 +5,18 @@
 <script src="GfxState.js"></script>
 <script src="GfxCommand.js"></script>
 <script src="GfxOps.js"></script>
+<script src="RGBA32.js"></script>
 </head>
-<body>
-<input type="file" id="file"><br><br>
-<div id="container"></div>
+<body style="background: #111; color: #FFF;">
 
-<pre id="ginf"></pre>
+<div style="text-align: center;">
+<div style="display: inline-block; margin: auto auto; text-align: left;">
+    <div style="padding-bottom: 10px;"><input type="file" id="file"></div>
+    <div id="container"></div>
+    <div id="log" style="background-color:#000; height: 250px; overflow-y: auto; font-family: consolas; font-size: 12px; padding: 5px;"></div>
+    <pre id="ginf"></pre>
+</div>
+</div>
 <script>
 
 function Viewer(containerDomSelector)
@@ -18,16 +24,30 @@ function Viewer(containerDomSelector)
     this.gfx = new GfxState();
     this.keysDown = {};
 
+    this.camSpeedZ = 0;
+    this.camSpeedX = 0;
+    this.camSpeedY = 0;
+
+    this.camRotSpeedX = 0;
+    this.camRotSpeedY = 0;
+
+    this.width = 720;
+    this.height = 480;
+
     this.scene = new THREE.Scene();
+
+    this.scene.fog = new THREE.Fog(0xC8C896, 1, 5000);
+    //this.scene.fog.color = 0xFFFFFFFF;
 
     this.renderer = new THREE.WebGLRenderer({antialias: false});
     this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(this.width, this.height);
     
     this.renderer.setScissorTest(true);
     this.renderer.alpha = true;
-    this.renderer.setClearColor(0x222222, 1.0);
-    this.renderer.setViewport(0, 0, 800, 600);
-    this.renderer.setScissor(0, 0, 800, 600);
+    this.renderer.setClearColor(0xC8C896, 1.0);
+    this.renderer.setViewport(0, 0, this.width, this.height);
+    this.renderer.setScissor(0, 0, this.width, this.height);
     this.renderer.domElement.tabIndex = '0'
     this.renderer.domElement.viewer = this;
 
@@ -45,28 +65,104 @@ function Viewer(containerDomSelector)
     	return false;
     }
 
+    this.renderer.domElement.oncontextmenu = function(e)
+    {
+        e.preventDefault();
+        return false;
+    }
+
+    this.renderer.domElement.onmousedown = function(e)
+    {
+        this.requestPointerLock();
+        this.focus();
+        e.preventDefault();
+        return false;
+    }
+
+    var lastMovementX = 0;
+    var lastMovementY = 0;
+
+    this.renderer.domElement.onmousemove = function(e)
+    {
+        if(e.buttons == 0)
+        {
+            return;
+        }
+
+        var movementX = (lastMovementX*4 + e.movementX) / 5;
+        var movementY = (lastMovementY*4 + e.movementY) / 5;
+        lastMovementX = movementX;
+        lastMovementY = movementY;
+
+        if(e.buttons == 1)
+        {
+            viewer.camera.translateX(-movementX * 5);
+            viewer.camera.translateY(movementY * 5);
+        }
+
+        if(e.buttons == 4)
+        {
+            viewer.camera.translateZ(-movementX * 5);
+            viewer.camera.translateZ(movementY * 5);
+        }
+
+        if(e.buttons == 2)
+        {
+            //viewer.camRotSpeedX = -e.movementX * 20;
+            viewer.camera.rotateY(-movementX * 0.01);
+            viewer.camera.rotateX(-movementY * 0.01);
+            viewer.camera.rotation.z = 0;
+        }
+    }
+
+    this.renderer.domElement.onmouseup = function(e)
+    {
+        lastMovementX = 0;
+        lastMovementY = 0;
+        document.exitPointerLock();
+    }
+
     this.keyEvents = {
 	    //27: function(){ _this.resetCamera() }, // esc - reset camera position
-	    87: function(viewer){ viewer.camera.translateZ(-10); }, // w - move forward
-	    65: function(viewer){ viewer.camera.translateX(-10); }, // a - pan left
-	    83: function(viewer){ viewer.camera.translateZ( 10); }, // s - move backward
-	    68: function(viewer){ viewer.camera.translateX( 10); }, // d - pan right
-	    90: function(viewer){ viewer.camera.translateY(-10); }, // z - move down
-	    88: function(viewer){ viewer.camera.translateY( 10); }, // x - move up
-	    40: function(viewer){ viewer.camera.rotateX( -0.05); }, // down - rotate down
-	    38: function(viewer){ viewer.camera.rotateX(  0.05); }, // up - rotate up
-	    37: function(viewer){ viewer.camera.rotateY(  0.05); viewer.camera.rotation.z = 0;}, // left - rotate left
-	    39: function(viewer){ viewer.camera.rotateY( -0.05); viewer.camera.rotation.z = 0;}  // right - rotate right
+	    87: function(viewer){ viewer.camSpeedZ = -10; }, // w - move forward
+	    65: function(viewer){ viewer.camSpeedX = -10; }, // a - pan left
+	    83: function(viewer){ viewer.camSpeedZ = 10; }, // s - move backward
+	    68: function(viewer){ viewer.camSpeedX = 10; }, // d - pan right
+	    90: function(viewer){ viewer.camSpeedY = -10; }, // z - move down
+	    88: function(viewer){ viewer.camSpeedY = 10; }, // x - move up
+	    40: function(viewer){ viewer.camRotSpeedX = -20; }, // down - rotate down
+	    38: function(viewer){ viewer.camRotSpeedX =  20; }, // up - rotate up
+	    37: function(viewer){ viewer.camRotSpeedY =  20;;}, // left - rotate left
+	    39: function(viewer){ viewer.camRotSpeedY = -20;}  // right - rotate right
     }
 
     document.querySelector(containerDomSelector).appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(60, 800/600, 1, 15000);
+    this.camera = new THREE.PerspectiveCamera(60, this.width/this.height, 1, 10000);
     this.camera.rotation.order = "YXZ";
 }
 
 Viewer.prototype.animate = function()
 {
+    viewer.camera.translateZ(this.camSpeedZ);
+    viewer.camera.translateX(this.camSpeedX);
+    viewer.camera.translateY(this.camSpeedY);
+
+    viewer.camera.rotateX(this.camRotSpeedX / 1000);
+    viewer.camera.rotateY(this.camRotSpeedY / 1000);
+    viewer.camera.rotation.z = 0;
+
+    if(this.camSpeedZ < 0) this.camSpeedZ += 0.25;
+    if(this.camSpeedZ > 0) this.camSpeedZ -= 0.25;
+    if(this.camSpeedX > 0) this.camSpeedX -= 0.25;
+    if(this.camSpeedX < 0) this.camSpeedX += 0.25;
+    if(this.camSpeedY > 0) this.camSpeedY -= 0.25;
+    if(this.camSpeedY < 0) this.camSpeedY += 0.25;
+    if(this.camRotSpeedX > 0) this.camRotSpeedX -= 1;
+    if(this.camRotSpeedX < 0) this.camRotSpeedX += 1;
+    if(this.camRotSpeedY > 0) this.camRotSpeedY -= 1;
+    if(this.camRotSpeedY < 0) this.camRotSpeedY += 1;
+
     for(var k in this.keysDown)
     {
         if(k in this.keyEvents) this.keyEvents[k](this);
@@ -107,6 +203,8 @@ Viewer.prototype.loadDumpFile = function(ab)
 
     // build threejs scene
     this.buildScene();
+
+    document.querySelector('#log').innerHTML = this.gfx.loghtm;
 }
 
 
@@ -136,18 +234,14 @@ Viewer.prototype.buildScene = function()
     
     var wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
     var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, vertexColors: THREE.VertexColors});
-    //var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, color: 0xFF00FFFF});
-    
-    //var dataTexture = new THREE.DataTexture(
-    //    this.gfx.images[4].data,
-    //    this.gfx.images[4].width,
-    //    this.gfx.images[4].height,
-    //    THREE.RGBAFormat);
-    //var imageMaterial = new THREE.MeshBasicMaterial({map: dataTexture})
 
-    //console.log(this.gfx.testTexture)
+    var fillMaterial = new THREE.MeshBasicMaterial({
+        transparent: true,
+        side: THREE.DoubleSide});
 
     // build a threejs geometry for each polylist and add to scene
+
+    //var polyOffset = 0;
 
     for(var i = 0; i < this.gfx.polylists.length; i++)
     {
@@ -170,18 +264,14 @@ Viewer.prototype.buildScene = function()
             geometry.vertices.push(tri[1].position);
             geometry.vertices.push(tri[2].position);
 
-            //console.log(dataTexture);
-
-            if(dataTexture)
+            if(dataTexture != null)
             {
-                var u0 = (tri[0].texcoords.x / dataTexture.image.width);
-                var v0 = (tri[0].texcoords.y / dataTexture.image.height);
-                var u1 = (tri[1].texcoords.x / dataTexture.image.width);
-                var v1 = (tri[1].texcoords.y / dataTexture.image.height);
-                var u2 = (tri[2].texcoords.x / dataTexture.image.width);
-                var v2 = (tri[2].texcoords.y / dataTexture.image.height);
-
-                //console.log(u0, v0);
+                var u0 = (tri[0].texcoords.x / dataTexture.image.width) * gfxMaterial.scaleS;
+                var v0 = (tri[0].texcoords.y / dataTexture.image.height) * gfxMaterial.scaleT;
+                var u1 = (tri[1].texcoords.x / dataTexture.image.width) * gfxMaterial.scaleS;
+                var v1 = (tri[1].texcoords.y / dataTexture.image.height) * gfxMaterial.scaleT;
+                var u2 = (tri[2].texcoords.x / dataTexture.image.width) * gfxMaterial.scaleS;
+                var v2 = (tri[2].texcoords.y / dataTexture.image.height) * gfxMaterial.scaleT;
 
                 geometry.faceVertexUvs[0].push([
                     new THREE.Vector2(u0, v0),
@@ -199,19 +289,47 @@ Viewer.prototype.buildScene = function()
             faceIdx += 3;
         }
 
-        var fillMaterial;
+        //var fillMaterial;
         if(dataTexture != null)
         {
-            /*
-            ClampToEdgeWrapping
-            RepeatWrapping
-            MirroredRepeatWrapping
-            */
-            dataTexture.wrapS = THREE.RepeatWrapping;
-            dataTexture.wrapT = THREE.RepeatWrapping;
-            dataTexture.magFilter = THREE.LinearFilter;
+            switch(gfxMaterial.cmS)
+            {
+            case 0: dataTexture.wrapS = THREE.RepeatWrapping; break;
+            case 1: dataTexture.wrapS = THREE.MirroredRepeatWrapping; break;
+            case 2: dataTexture.wrapS = THREE.ClampToEdgeWrapping; break;
+            case 3: dataTexture.wrapS = THREE.MirroredRepeatWrapping; break;
+            }
+
+            switch(gfxMaterial.cmT)
+            {
+            case 0: dataTexture.wrapT = THREE.RepeatWrapping; break;
+            case 1: dataTexture.wrapT = THREE.MirroredRepeatWrapping; break;
+            case 2: dataTexture.wrapT = THREE.ClampToEdgeWrapping; break;
+            case 3: dataTexture.wrapT = THREE.MirroredRepeatWrapping; break;
+            }
+
+            // todo othermodeh TEXTFILT
             dataTexture.minFilter = THREE.LinearFilter;
-            fillMaterial = new THREE.MeshBasicMaterial({map: dataTexture});
+            dataTexture.magFilter = THREE.LinearFilter;
+
+            dataTexture.needsUpdate = true;
+
+            fillMaterial = new THREE.MeshBasicMaterial({
+                map: dataTexture,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+
+            // kokiri decal test
+            if(this.gfx.images[gfxMaterial.imageIndex].address == 0x2fd190 ||
+               this.gfx.images[gfxMaterial.imageIndex].address == 0x383558)
+            {
+                fillMaterial.polygonOffset = true;
+                fillMaterial.polygonOffsetFactor = 1;
+                fillMaterial.polygonOffsetUnits = 1;
+            }
+            // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
+            // todo polygon offset for when rendermode decal is set
         }
         else
         {
@@ -240,7 +358,8 @@ function attachFileReader(query, onloadend)
     var reader = new FileReader();
     reader.onloadend = function()
     {
-        onloadend(reader.result);
+        setTimeout(function(){onloadend(reader.result)}, 1);
+        //onloadend(reader.result);
     }
 
     domFileInput.addEventListener('change', function()
@@ -255,7 +374,7 @@ attachFileReader('#file', function(ab)
 })
 
 var viewer = new Viewer('#container');
-viewer.setSize(800, 600);
+
 viewer.animate();
 
 

@@ -1,13 +1,19 @@
-const G_IM_SIZ_4b  = 0;
-const G_IM_SIZ_8b  = 1;
-const G_IM_SIZ_16b = 2;
-const G_IM_SIZ_32b = 3;
-
 const G_IM_FMT_RGBA = 0;
 const G_IM_FMT_YUV  = 1;
 const G_IM_FMT_CI   = 2;
 const G_IM_FMT_IA   = 3;
 const G_IM_FMT_I    = 4;
+
+const G_IM_SIZ_4b  = 0;
+const G_IM_SIZ_8b  = 1;
+const G_IM_SIZ_16b = 2;
+const G_IM_SIZ_32b = 3;
+
+// cmt/cms flags
+const G_TX_MIRROR = 1;
+const G_TX_NOMIRROR = 0;
+const G_TX_WRAP = 0;
+const G_TX_CLAMP = 2;
 
 function DmemVertex(position, texcoords, color, normal, alpha)
 {
@@ -68,7 +74,13 @@ function GfxState()
     this.dv = null; // main memory
     this.spSegmentBuffers = new Array(16).fill(null); // overrides spSegments
     this.commandFunctions = new Array(256).fill(null);
+    this.loghtm = "";
     this.resetState();
+}
+
+GfxState.prototype.log = function(htm)
+{
+    this.loghtm += htm;
 }
 
 GfxState.prototype.setMainMemory = function(dv)
@@ -121,7 +133,7 @@ GfxState.prototype.updateCurrentMaterial = function()
 // used to check if a material has already been generated for the current gfx state
 GfxState.prototype.generateMaterialHash = function()
 {
-    return this.dpImageAddress; // todo more
+    return this.lastLoadBlock; // todo more
 }
 
 // create intermediate "material" to attach to the current polygon list
@@ -130,7 +142,15 @@ GfxState.prototype.createMaterial = function()
     var material = {};
     material.vertexColorsEnabled = false;
     material.vertexNormalsEnabled = false;
-    material.imageIndex = this.getImageIndex(this.dpImageAddress);
+    material.imageIndex = this.getImageIndex(this.lastLoadBlock);
+
+    var renderTile = this.dpTileDescriptors[0];
+
+    material.cmT = renderTile.cmT;
+    material.cmS = renderTile.cmS;
+    material.scaleS = renderTile.scaleS / 0x10000;
+    material.scaleT = renderTile.scaleT / 0x10000;
+
 
     if(material.imageIndex == -1)
     {
@@ -169,83 +189,93 @@ GfxState.prototype.getMaterialIndex = function(hash)
 
 GfxState.prototype.createRenderTileImage = function()
 {
-    //for(var i = 0; i < )
-    var imageData = null;
     var renderTile = this.dpTileDescriptors[0];
     var imageWidth = (renderTile.lrS >> 2) + 1;
     var imageHeight = (renderTile.lrT >> 2) + 1;
     var imageSize = imageWidth * imageHeight;
+    var imageData = new Uint8Array(imageSize * 4);
+    var imageDV = new DataView(imageData.buffer);
 
-    if(renderTile.fmt == G_IM_FMT_CI && renderTile.siz == G_IM_SIZ_8b)
+    if(renderTile.siz != G_IM_SIZ_4b && imageSize > 2048 ||
+       renderTile.siz == G_IM_SIZ_4b && imageSize > 4096)
     {
-        // todo check textlut for G_TT_RGBA16 or G_TT_IA16
-        imageData = new Uint8Array(imageSize * 4);
-        var tmemColorOffset = 256 * 8;
-        var tmemCiOffset = renderTile.tmem * 8;
-
-        for(var i = 0; i < imageSize; i++)
-        {
-            var ci = this.dpTextureMemory.getUint8(tmemCiOffset + i);
-            var color16 = this.dpTextureMemory.getUint16(tmemColorOffset + ci*2);
-
-            var r = (color16 >> 11) & 0x1F;
-            var g = (color16 >> 6) & 0x1F;
-            var b = (color16 >> 1) & 0x1F;
-            var a = (color16 >> 0) & 0x01;
-
-            const factor = 0xFF / 0x1F;
-
-            imageData[i*4+0] = r * factor;
-            imageData[i*4+1] = g * factor;
-            imageData[i*4+2] = b * factor;
-            imageData[i*4+3] = a * 255;
-        }
-        //material.imageData = imageData;
-        //console.log(imageData);
+        console.log("image too big?", imageWidth, imageHeight);
+        imageData = null;
+        return { address: this.lastLoadBlock, data: imageData, width: imageWidth, height: imageHeight };
     }
-    else if(renderTile.fmt == G_IM_FMT_RGBA && renderTile.siz == G_IM_SIZ_16b)
-    {
-        imageData = new Uint8Array(imageSize * 4);
-        var tmemOffset = renderTile.tmem * 8;
 
-        if(imageSize <= 2048)
+    var tmemOffset = renderTile.tmem * 8;
+
+    var convertFunc;
+
+    function convertCI8(ci)
+    {
+        var tmemColorOffset = 256 * 8; 
+        var color = this.dpTextureMemory.getUint16(tmemColorOffset + ci*2);
+        return RGBA32.fromRGBA16(color); // todo check TEXTLUT for format
+    }
+
+    function convertCI4(ci)
+    {
+        var tmemColorOffset = 256 * 8; // todo check tile descriptor's palette number
+        var color = this.dpTextureMemory.getUint16(tmemColorOffset + ci*2);
+        return RGBA32.fromRGBA16(color); // todo check TEXTLUT for format
+    }
+
+    if(renderTile.siz == G_IM_SIZ_8b)
+    {
+        switch(renderTile.fmt)
+        {
+        case G_IM_FMT_I:  convertFunc = RGBA32.fromI8; break;
+        case G_IM_FMT_IA: convertFunc = RGBA32.fromIA8; break;
+        case G_IM_FMT_CI: convertFunc = convertCI8.bind(this); break;
+        }
+
         for(var i = 0; i < imageSize; i++)
         {
-            var color16 = this.dpTextureMemory.getUint16(tmemOffset + i*2);
-            var r = (color16 >> 11) & 0x1F;
-            var g = (color16 >> 6) & 0x1F;
-            var b = (color16 >> 1) & 0x1F;
-            var a = (color16 >> 0) & 0x01;
-            const factor = 0xFF / 0x1F;
-            imageData[i*4+0] = r * factor;
-            imageData[i*4+1] = g * factor;
-            imageData[i*4+2] = b * factor;
-            imageData[i*4+3] = a * 255;
+            var texel = this.dpTextureMemory.getUint8(tmemOffset + i);
+            imageDV.setUint32(i*4, convertFunc(texel));
         }
     }
-    else if(renderTile.fmt == G_IM_FMT_I && renderTile.siz == G_IM_SIZ_8b)
+    else if(renderTile.siz == G_IM_SIZ_16b)
     {
-        console.log("i8:", imageWidth, imageHeight);
+        switch(renderTile.fmt)
+        {
+        case G_IM_FMT_RGBA: convertFunc = RGBA32.fromRGBA16; break;
+        case G_IM_FMT_IA:   convertFunc = RGBA32.fromIA16; break;
+        }
 
-        imageData = new Uint8Array(imageSize * 4);
-        var tmemOffset = renderTile.tmem * 8;
-
-        if(imageSize <= 2048)
         for(var i = 0; i < imageSize; i++)
         {
-            var intensity8 = this.dpTextureMemory.getUint8(tmemOffset + i);
-            imageData[i*4+0] = intensity8;
-            imageData[i*4+1] = intensity8;
-            imageData[i*4+2] = intensity8;
-            imageData[i*4+3] = intensity8;
+            var texel = this.dpTextureMemory.getUint16(tmemOffset + i*2);
+            imageDV.setUint32(i*4, convertFunc(texel));
+        }
+    }
+    else if(renderTile.siz == G_IM_SIZ_4b)
+    {
+        switch(renderTile.fmt)
+        {
+        case G_IM_FMT_I:  convertFunc = RGBA32.fromI4; break;
+        case G_IM_FMT_IA: convertFunc = RGBA32.fromIA4; break;
+        case G_IM_FMT_CI: convertFunc = convertCI4.bind(this); break;
+        }
+
+        for(var i = 0; i < imageSize / 2; i++)
+        {
+            var pair = this.dpTextureMemory.getUint8(tmemOffset + i);
+            var texel0 = (pair >> 4) & 0x0F;
+            var texel1 = (pair >> 0) & 0x0F;
+            imageDV.setUint32(i*8 + 0, convertFunc(texel0));
+            imageDV.setUint32(i*8 + 4, convertFunc(texel1));
         }
     }
     else
     {
         console.log("need converter, fmt: " + renderTile.fmt + " siz: " + renderTile.siz);
+        imageData = null;
     }
 
-    return { address: this.dpImageAddress, data: imageData, width: imageWidth, height: imageHeight };
+    return { address: this.lastLoadBlock, data: imageData, width: imageWidth, height: imageHeight };
 }
 
 GfxState.prototype.getCurrentMaterial = function()
@@ -274,6 +304,8 @@ GfxState.prototype.resetState = function()
     this.dpImageAddress = 0;
     this.dpTextureMemory = new DataView(new ArrayBuffer(4096));
     this.dpTileDescriptors = new Array(8);
+    this.dpOtherModeL = 0;
+    this.dpOtherModeH = 0;
 
     for(var i = 0; i < this.dpTileDescriptors.length; i++)
     {
@@ -303,6 +335,15 @@ GfxState.prototype.run = function(address)
         this.spCommandAddress += 8;
 
         var commandFunction = this.commandFunctions[this.command.commandByte()];
+
+        function hex(n)
+        {
+            var s = n.toString(16).toUpperCase();
+            while(s.length < 8) s = "0" + s;
+            return s;
+        }
+
+        this.log(hex(this.spCommandAddress) + ": " + hex(this.command.w0) + " " + hex(this.command.w1) + "<br>\n");
 
         //this.debugLogStep();
 
