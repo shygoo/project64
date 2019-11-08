@@ -84,15 +84,15 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     m_DisplayListCtrl.AddColumn("Address", DisplayListCtrl_Col_VAddr);
     m_DisplayListCtrl.AddColumn("SegOffset", DisplayListCtrl_Col_SegOffset);
-    m_DisplayListCtrl.AddColumn("Raw Command", DisplayListCtrl_Col_RawCommand);
+   // m_DisplayListCtrl.AddColumn("Raw Command", DisplayListCtrl_Col_RawCommand);
     m_DisplayListCtrl.AddColumn("Command", DisplayListCtrl_Col_Command);
     m_DisplayListCtrl.AddColumn("Parameters", DisplayListCtrl_Col_Parameters);
 
     m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_SegOffset, 65);
     m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_VAddr, 65);
-    m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_RawCommand, 115);
+   // m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_RawCommand, 115);
     m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Command, 140);
-    m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Parameters, 340);
+    m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_Parameters, 455);
 
     m_StateTextbox.SetFont((HFONT)GetStockObject(ANSI_FIXED_FONT), TRUE);
 
@@ -111,7 +111,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	COLORREF labelColor = RGB(0xCC, 0xCC, 0xCC);
 
     // Geometry mode
-    scv->SetOrigin(10, 10);
+    scv->SetOrigin(568, 130);
     scv->AddItem("GEOMETRY MODE", headerColor);
     m_ITM_GM_ZBUFFER = scv->AddItem(" ZBUFFER", labelColor);
     m_ITM_GM_SHADE = scv->AddItem(" SHADE", labelColor);
@@ -126,33 +126,33 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     m_ITM_GM_CULL_BACK = scv->AddItem(" CULL_BACK", labelColor);
 
 	// Image addresses
-    scv->SetOrigin(10, 160);
+    scv->SetOrigin(300, 70);
     scv->AddItem("IMAGE ADDRESSES", headerColor);
     m_StateCanvas->AddItem(" TEXTURE", labelColor);
     m_StateCanvas->AddItem(" COLOR", labelColor);
     m_StateCanvas->AddItem(" DEPTH", labelColor);
-    scv->SetOrigin(70, 170);
+    scv->SetOrigin(360, 80);
     m_ITM_TEXTUREIMAGE = scv->AddItem("...");
     m_ITM_COLORIMAGE = scv->AddItem("...");
     m_ITM_DEPTHIMAGE = scv->AddItem("...");
 
 	// Combiner
-    scv->SetOrigin(200, 10);
+    scv->SetOrigin(10, 10);
     scv->AddItem("COMBINER", headerColor);
     scv->AddItem(" CYCLE 1 COLOR", labelColor);
     scv->AddItem(" CYCLE 1 ALPHA", labelColor);
     scv->AddItem(" CYCLE 2 COLOR", labelColor);
     scv->AddItem(" CYCLE 2 ALPHA", labelColor);
 
-    scv->SetOrigin(206+90, 20);
+    scv->SetOrigin(16+90, 20);
     m_ITM_CC1_COLOR = scv->AddItem("...");
     m_ITM_CC1_ALPHA = scv->AddItem("...");
     m_ITM_CC2_COLOR = scv->AddItem("...");
     m_ITM_CC2_ALPHA = scv->AddItem("...");
 
 	// Othermode HI
-    scv->SetOrigin(200, 70);
-	scv->AddItem("OTHERMODE HI", headerColor);
+    scv->SetOrigin(10, 70);
+	scv->AddItem("OTHERMODE_H", headerColor);
 	scv->AddItem(" PIPELINE", labelColor);
 	scv->AddItem(" COLORDITHER", labelColor);
 	scv->AddItem(" CYCLETYPE", labelColor);
@@ -166,7 +166,7 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	scv->AddItem(" RGBDITHER", labelColor);
 	scv->AddItem(" ALPHADITHER", labelColor);
 
-    scv->SetOrigin(206 + 78, 80);
+    scv->SetOrigin(16 + 78, 80);
 	m_ITM_OMH_PIPELINE = scv->AddItem("...");
 	m_ITM_OMH_COLORDITHER = scv->AddItem("...");
 	m_ITM_OMH_CYCLETYPE = scv->AddItem("...");
@@ -180,8 +180,28 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	m_ITM_OMH_RGBDITHER = scv->AddItem("...");
 	m_ITM_OMH_ALPHADITHER = scv->AddItem("...");
 
+    // Othermode LO
+    scv->SetOrigin(200, 70);
+    scv->AddItem("OTHERMODE_L", headerColor);
+    m_ITM_OML_AA_EN = scv->AddItem(" AA_EN");
+    m_ITM_OML_Z_CMP = scv->AddItem(" Z_CMP");
+    m_ITM_OML_Z_UPD = scv->AddItem(" Z_UPD");
+    m_ITM_OML_IM_RD = scv->AddItem(" IM_RD");
+    m_ITM_OML_CLR_ON_CVG = scv->AddItem(" CLR_ON_CVG");
+    m_ITM_OML_CVG_DST = scv->AddItem(" CVG_DST");
+    m_ITM_OML_ZMODE = scv->AddItem(" ZMODE");
+    m_ITM_OML_CVG_X_ALPHA = scv->AddItem(" CVG_X_ALPHA");
+    m_ITM_OML_ALPHA_CVG_SEL = scv->AddItem(" ALPHA_CVG_SEL");
+    m_ITM_OML_FORCE_BL = scv->AddItem(" FORCE_BL");
+    scv->AddItem(" CYCLE 1", labelColor);
+    scv->AddItem(" CYCLE 2", labelColor);
+
+    scv->SetOrigin(260, 180);
+    m_ITM_OML_CYCLE1 = scv->AddItem("...");
+    m_ITM_OML_CYCLE2 = scv->AddItem("...");
+
 	// Colors
-    scv->SetOrigin(450, 70);
+    scv->SetOrigin(420, 70);
 	scv->AddItem("COLORS", headerColor);
 	scv->AddItem(" FILL", labelColor);
 	scv->AddItem(" FOG", labelColor);
@@ -189,14 +209,14 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 	scv->AddItem(" PRIM", labelColor);
 	scv->AddItem(" ENV", labelColor);
 
-    scv->SetOrigin(498, 80);
+    scv->SetOrigin(468, 80);
     m_ITM_FILLCOLOR = scv->AddItem("...");
     m_ITM_FOGCOLOR = scv->AddItem("...");
     m_ITM_BLENDCOLOR = scv->AddItem("...");
     m_ITM_PRIMCOLOR = scv->AddItem("...");
     m_ITM_ENVCOLOR = scv->AddItem("...");
 
-    scv->SetOrigin(552, 80);
+    scv->SetOrigin(522, 80);
     scv->SetLayoutMode(CCanvas::LAYOUT_HORIZONTAL);
     m_ITM_FILLCOLOR_PREV0 = scv->AddItem(" ");
     scv->SetLayoutMode(CCanvas::LAYOUT_VERTICAL);
@@ -213,6 +233,26 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     scv->SetItemBgColor(m_ITM_BLENDCOLOR_PREV, RGB(0, 0, 0));
     scv->SetItemBgColor(m_ITM_PRIMCOLOR_PREV, RGB(0, 0, 0));
     scv->SetItemBgColor(m_ITM_ENVCOLOR_PREV, RGB(0, 0, 0));
+
+    // Lights
+    scv->SetOrigin(568, 10);
+    scv->AddItem("LIGHTS", headerColor);
+    scv->AddItem(" LOOKATX", labelColor);
+    scv->AddItem(" LOOKATY", labelColor);
+    scv->AddItem(" LIGHT1", labelColor);
+    scv->AddItem(" LIGHT2", labelColor);
+    scv->AddItem(" LIGHT3", labelColor);
+    scv->AddItem(" LIGHT4", labelColor);
+    scv->AddItem(" LIGHT5", labelColor);
+    scv->AddItem(" LIGHT6", labelColor);
+    scv->AddItem(" LIGHT7", labelColor);
+    scv->AddItem(" LIGHT8", labelColor);
+
+    scv->SetOrigin(628, 20);
+    for (int i = 0; i < 10; i++)
+    {
+        m_ITM_LIGHTS[i] = scv->AddItem("...");
+    }
 
 	// Tile descriptors
     scv->SetOrigin(10, 210);
@@ -313,11 +353,11 @@ void CDebugDisplayList::Refresh(void)
 
         stdstr strVirtAddress = stdstr_f("%08X", dc->virtualAddress);
         stdstr strSegOffset = stdstr_f("%08X", dc->address);
-        stdstr strRawCommand = stdstr_f("%08X %08X", dc->rawCommand.w0, dc->rawCommand.w1);
+        //stdstr strRawCommand = stdstr_f("%08X %08X", dc->rawCommand.w0, dc->rawCommand.w1);
 
         m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_VAddr, strVirtAddress.c_str());
         m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_SegOffset, strSegOffset.c_str());
-        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_RawCommand, strRawCommand.c_str());
+        //m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_RawCommand, strRawCommand.c_str());
         m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Command, dc->name);
         m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Parameters, dc->params.c_str());
     }
@@ -409,22 +449,18 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 	}
 
 	CCanvas*& scv = m_StateCanvas;
-
-	// lights
-	//stdstr strNumLights = stdstr_f("NumLights: %d\r\n", state->numLights);
+    COLORREF clrOn = RGB(0xFF, 0xFF, 0xFF);
+    COLORREF clrOff = RGB(0x44, 0x44, 0x44);
 
 	// Image addresses
-	stdstr strTextureImage = stdstr_f("%08X (%08X)", state->m_dpTextureImage, state->SegmentedToVirtual(state->m_dpTextureImage)).c_str();
-	stdstr strColorImage = stdstr_f("%08X (%08X)", state->m_dpColorImage, state->SegmentedToVirtual(state->m_dpColorImage)).c_str();
-	stdstr strDepthImage = stdstr_f("%08X (%08X)", state->m_dpDepthImage, state->SegmentedToVirtual(state->m_dpDepthImage)).c_str();
+	stdstr strTextureImage = stdstr_f("%08X", state->m_dpTextureImage);
+	stdstr strColorImage = stdstr_f("%08X", state->m_dpColorImage);
+	stdstr strDepthImage = stdstr_f("%08X", state->m_dpDepthImage);
 	scv->SetItemText(m_ITM_TEXTUREIMAGE, strTextureImage.c_str());
 	scv->SetItemText(m_ITM_COLORIMAGE, strColorImage.c_str());
 	scv->SetItemText(m_ITM_DEPTHIMAGE, strDepthImage.c_str());
 
 	// Geometry mode
-	COLORREF clrOn = RGB(0xFF, 0xFF, 0xFF);
-	COLORREF clrOff = RGB(0x44, 0x44, 0x44);
-
 	bool shading_smooth, cull_front, cull_back;
 
 	if (ucodeInfo->ucodeId == UCODE_F3DEX2)
@@ -536,6 +572,61 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 
 		scv->SetItemText(m_ITM_TILES[nTile], strTileDescriptor.c_str());
 	}
+
+    // Lights
+    for (int i = 0; i < 10; i++)
+    {
+        stdstr strLight = stdstr_f("%02X%02X%02X (%d,%d,%d)",
+            state->m_spLights[i].colorA[0],
+            state->m_spLights[i].colorA[1],
+            state->m_spLights[i].colorA[2],
+            state->m_spLights[i].direction[0],
+            state->m_spLights[i].direction[1],
+            state->m_spLights[i].direction[2]);
+
+        scv->SetItemText(m_ITM_LIGHTS[i], strLight.c_str());
+
+        if (i >= 2) {
+            int lightIdx = i - 2;
+            scv->SetItemColor(m_ITM_LIGHTS[i], lightIdx > state->m_spNumLights ? RGB(0x44, 0x44, 0x44) : RGB(0xFF, 0xFF, 0xFF));
+        }
+    }
+
+    // Othermode LO
+    othermode_l_t oml = state->m_dpOtherMode_l;
+
+    stdstr strBlendCycle1 = stdstr_f("(%s * %s + %s - %s) / (%s + %s)",
+        CGfxLabels::OtherModeL_blpm[oml.p0],
+        CGfxLabels::OtherModeL_bla[oml.a0],
+        CGfxLabels::OtherModeL_blpm[oml.m0],
+        CGfxLabels::OtherModeL_blb[oml.b0],
+        CGfxLabels::OtherModeL_bla[oml.a0],
+        CGfxLabels::OtherModeL_blb[oml.b0]);
+
+    stdstr strBlendCycle2 = stdstr_f("(%s * %s + %s - %s) / (%s + %s)",
+        CGfxLabels::OtherModeL_blpm[oml.p1],
+        CGfxLabels::OtherModeL_bla[oml.a1],
+        CGfxLabels::OtherModeL_blpm[oml.m1],
+        CGfxLabels::OtherModeL_blb[oml.b1],
+        CGfxLabels::OtherModeL_bla[oml.a1],
+        CGfxLabels::OtherModeL_blb[oml.b1]);
+
+    stdstr strCVG_DST = stdstr_f(" %s", CGfxLabels::OtherModeL_cvgdst[oml.cvg_dst]);
+    stdstr strZMODE = stdstr_f(" %s", CGfxLabels::OtherModeL_zmode[oml.zmode]);
+
+    scv->SetItemColor(m_ITM_OML_AA_EN, oml.aa_en ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_Z_CMP, oml.z_cmp ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_Z_UPD, oml.z_upd ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_IM_RD, oml.im_rd ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_CLR_ON_CVG, oml.clr_on_cvg ? clrOn : clrOff);
+    scv->SetItemText(m_ITM_OML_CVG_DST, strCVG_DST.c_str());
+    scv->SetItemText(m_ITM_OML_ZMODE, strZMODE.c_str());
+    scv->SetItemColor(m_ITM_OML_CVG_X_ALPHA, oml.cvg_x_alpha ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_ALPHA_CVG_SEL, oml.alpha_cvg_sel ? clrOn : clrOff);
+    scv->SetItemColor(m_ITM_OML_FORCE_BL, oml.force_bl ? clrOn : clrOff);
+
+    scv->SetItemText(m_ITM_OML_CYCLE1, strBlendCycle1.c_str());
+    scv->SetItemText(m_ITM_OML_CYCLE2, strBlendCycle2.c_str());
 }
 
 LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)

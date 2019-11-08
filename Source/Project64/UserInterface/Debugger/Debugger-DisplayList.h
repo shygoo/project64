@@ -56,8 +56,18 @@ private:
 	std::vector<CCanvasItem*> m_Items;
 	LRESULT OnPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
+    LRESULT OnLButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+    {
+        int x, y;
+        x = GET_X_LPARAM(lParam);
+        y = GET_Y_LPARAM(lParam);
+        printf("%d, %d\n", x, y);
+        return FALSE;
+    }
+
 	BEGIN_MSG_MAP(CCanvas)
 		MESSAGE_HANDLER(WM_PAINT, OnPaint)
+        MESSAGE_HANDLER(WM_LBUTTONDOWN, OnLButtonDown)
 	END_MSG_MAP()
 };
 
@@ -130,7 +140,7 @@ public:
     enum {
         DisplayListCtrl_Col_VAddr,
         DisplayListCtrl_Col_SegOffset,
-        DisplayListCtrl_Col_RawCommand,
+        //DisplayListCtrl_Col_RawCommand,
         DisplayListCtrl_Col_Command,
         DisplayListCtrl_Col_Parameters
     };
@@ -141,49 +151,62 @@ public:
     void Refresh(void);
 
 private:
-	int
-		m_ITM_TEXTUREIMAGE,
-		m_ITM_COLORIMAGE,
-		m_ITM_DEPTHIMAGE,
-		m_ITM_GM_ZBUFFER,
-		m_ITM_GM_SHADE,
-		m_ITM_GM_FOG,
-		m_ITM_GM_LIGHTING,
-		m_ITM_GM_TEXTURE_GEN,
-		m_ITM_GM_TEXTURE_GEN_LINEAR,
-		m_ITM_GM_LOD,
-		m_ITM_GM_CLIPPING,
-		m_ITM_GM_SHADING_SMOOTH,
-		m_ITM_GM_CULL_FRONT,
-		m_ITM_GM_CULL_BACK,
-		m_ITM_CC1_COLOR,
-		m_ITM_CC1_ALPHA,
-		m_ITM_CC2_COLOR,
-		m_ITM_CC2_ALPHA,
-		m_ITM_OMH_PIPELINE,
-		m_ITM_OMH_COLORDITHER,
-		m_ITM_OMH_CYCLETYPE,
-		m_ITM_OMH_TEXTPERSP,
-		m_ITM_OMH_TEXTDETAIL,
-		m_ITM_OMH_TEXTLOD,
-		m_ITM_OMH_TEXTLUT,
-		m_ITM_OMH_TEXTFILT,
-		m_ITM_OMH_TEXTCONV,
-		m_ITM_OMH_COMBKEY,
-		m_ITM_OMH_RGBDITHER,
-		m_ITM_OMH_ALPHADITHER,
-		m_ITM_FILLCOLOR,
-		m_ITM_FOGCOLOR,
-		m_ITM_BLENDCOLOR,
-		m_ITM_PRIMCOLOR,
-		m_ITM_ENVCOLOR,
+    int
+        m_ITM_TEXTUREIMAGE,
+        m_ITM_COLORIMAGE,
+        m_ITM_DEPTHIMAGE,
+        m_ITM_GM_ZBUFFER,
+        m_ITM_GM_SHADE,
+        m_ITM_GM_FOG,
+        m_ITM_GM_LIGHTING,
+        m_ITM_GM_TEXTURE_GEN,
+        m_ITM_GM_TEXTURE_GEN_LINEAR,
+        m_ITM_GM_LOD,
+        m_ITM_GM_CLIPPING,
+        m_ITM_GM_SHADING_SMOOTH,
+        m_ITM_GM_CULL_FRONT,
+        m_ITM_GM_CULL_BACK,
+        m_ITM_CC1_COLOR,
+        m_ITM_CC1_ALPHA,
+        m_ITM_CC2_COLOR,
+        m_ITM_CC2_ALPHA,
+        m_ITM_OMH_PIPELINE,
+        m_ITM_OMH_COLORDITHER,
+        m_ITM_OMH_CYCLETYPE,
+        m_ITM_OMH_TEXTPERSP,
+        m_ITM_OMH_TEXTDETAIL,
+        m_ITM_OMH_TEXTLOD,
+        m_ITM_OMH_TEXTLUT,
+        m_ITM_OMH_TEXTFILT,
+        m_ITM_OMH_TEXTCONV,
+        m_ITM_OMH_COMBKEY,
+        m_ITM_OMH_RGBDITHER,
+        m_ITM_OMH_ALPHADITHER,
+        m_ITM_FILLCOLOR,
+        m_ITM_FOGCOLOR,
+        m_ITM_BLENDCOLOR,
+        m_ITM_PRIMCOLOR,
+        m_ITM_ENVCOLOR,
         m_ITM_FILLCOLOR_PREV0,
         m_ITM_FILLCOLOR_PREV1,
         m_ITM_FOGCOLOR_PREV,
         m_ITM_BLENDCOLOR_PREV,
         m_ITM_PRIMCOLOR_PREV,
-        m_ITM_ENVCOLOR_PREV;
+        m_ITM_ENVCOLOR_PREV,
+        m_ITM_OML_AA_EN,
+        m_ITM_OML_Z_CMP,
+        m_ITM_OML_Z_UPD,
+        m_ITM_OML_IM_RD,
+        m_ITM_OML_CLR_ON_CVG,
+        m_ITM_OML_CVG_DST,
+        m_ITM_OML_ZMODE,
+        m_ITM_OML_CVG_X_ALPHA,
+        m_ITM_OML_ALPHA_CVG_SEL,
+        m_ITM_OML_FORCE_BL,
+        m_ITM_OML_CYCLE1,
+        m_ITM_OML_CYCLE2;
 
+    int m_ITM_LIGHTS[10];
 	int m_ITM_TILES[8];
 
     bool m_bRefreshPending;

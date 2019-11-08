@@ -32,6 +32,7 @@ CHleGfxState::CHleGfxState(void) :
     memset(m_spSegments, 0, sizeof(m_spSegments));
     memset(m_spStack, 0, sizeof(m_spStack));
     memset(m_spMatrixStack, 0, sizeof(m_spMatrixStack));
+    memset(m_spLights, 0, sizeof(m_spLights));
 }
 
 
@@ -129,6 +130,41 @@ void CHleGfxState::LoadMatrix(uint32_t address, bool bPush, bool bLoad, bool bPr
     {
         *dmemDstMtx = dmemSrcMtx->Mul(&dramSrcMtx);
     }
+}
+
+void CHleGfxState::LoadLight(uint32_t address, int index)
+{
+    uint32_t physAddr = SegmentedToPhysical(address);
+
+    if (physAddr + sizeof(light_t) >= g_MMU->RdramSize())
+    {
+        return;
+    }
+
+    if (index < 0 || index > 9)
+    {
+        return;
+    }
+
+    light_t* light = &m_spLights[index];
+    uint8_t* ptr = g_MMU->Rdram() + physAddr;
+
+    light->colorA[0] = ptr[0 ^ 3];
+    light->colorA[1] = ptr[1 ^ 3];
+    light->colorA[2] = ptr[2 ^ 3];
+
+    light->colorB[0] = ptr[4 ^ 3];
+    light->colorB[1] = ptr[5 ^ 3];
+    light->colorB[2] = ptr[6 ^ 3];
+
+    light->direction[0] = ptr[8 ^ 3];
+    light->direction[1] = ptr[9 ^ 3];
+    light->direction[2] = ptr[10 ^ 3];
+
+    //printf("%d = col:%02X%02X%02X dir:%d,%d,%d\n",
+    //    index,
+    //    light->colorA[0], light->colorA[1], light->colorA[2],
+    //    light->direction[0], light->direction[1], light->direction[2]);
 }
 
 vertex_t CHleGfxState::Transform(vertex_t* v)

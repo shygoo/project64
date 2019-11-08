@@ -615,6 +615,16 @@ void CGfxOps::op_gsSPMoveMem_f3d(CGfxParser* state, decoded_cmd_t* dc)
 
         dc->SetDramResource(state, RES_VIEWPORT);
     }
+    else if (cmd->p == 0x82)
+    {
+        dc->Rename("gsSPLookAtX");
+        dc->params = stdstr_f("/*addr*/ 0x%08X", cmd->address);
+    }
+    else if (cmd->p == 0x84)
+    {
+        dc->Rename("gsSPLookAtY");
+        dc->params = stdstr_f("/*addr*/ 0x%08X", cmd->address);
+    }
     else if (cmd->p >= 0x86 && cmd->p <= 0x94) // G_MV_L0:7
     {
         dc->Rename("gsSPLight");
@@ -624,6 +634,8 @@ void CGfxOps::op_gsSPMoveMem_f3d(CGfxParser* state, decoded_cmd_t* dc)
             state->SegmentedToVirtual(cmd->address));
 
         dc->SetDramResource(state, RES_AMBIENT_LIGHT);
+
+        state->LoadLight(cmd->address, lightNumber+1);
     }
 
     dc->listFgColor = COLOR_DMA;
@@ -746,6 +758,10 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3d(CGfxParser* state, decoded_cmd_t* dc)
     oml.data = cmd->mode;
 
     int field = cmd->sft;
+
+    uint32_t mask = (((1 << cmd->len) - 1) << field);
+    state->m_dpOtherMode_l.data &= ~mask;
+    state->m_dpOtherMode_l.data |= cmd->mode;
 
     // todo helper function for repeated code
 
@@ -1212,6 +1228,7 @@ void CGfxOps::op_gsMoveWd_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     {
         dc->Rename("gsSPNumLights");
         dc->params = stdstr_f("%d", cmd->data / 24);
+        state->m_spNumLights = cmd->data / 24;
     }
     else if (cmd->index == 0x04) // MW_CLIP
     {
@@ -1272,22 +1289,24 @@ void CGfxOps::op_gsSPMoveMem_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     }
     else if (cmd->i == 0x0A) // G_MV_LIGHT
     {
-        int offs = cmd->o / 3;
+        int index = cmd->o / 3;
 
-        if (offs == 0)
+        if (index == 0)
         {
             dc->Rename("gsSPLookAtX");
         }
-        else if (offs == 1)
+        else if (index == 1)
         {
             dc->Rename("gsSPLookAtY");
         }
-        else if (offs >= 2 && offs <= 10)
+        else if (index >= 2 && index <= 9)
         {
             dc->Rename("gsSPLight");
-            dc->params = stdstr_f("/*addr*/ 0x%08X, LIGHT_%d /*0x%08X*/", cmd->address, (offs - 1),
+            dc->params = stdstr_f("/*addr*/ 0x%08X, LIGHT_%d /*0x%08X*/", cmd->address, (index - 1),
                 state->SegmentedToVirtual(cmd->address));
         }
+
+        state->LoadLight(cmd->address, index);
     }
     else if (cmd->i == 0x0E) // G_MV_MATRIX
     {
@@ -1302,6 +1321,11 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     oml.data = cmd->mode;
 
     int field = 32 - (cmd->sft + (cmd->len + 1));
+    int len = len + 1;
+
+    uint32_t mask = (((1 << len) - 1) << field);
+    state->m_dpOtherMode_l.data &= ~mask;
+    state->m_dpOtherMode_l.data |= cmd->mode;
 
     if (field == 3)
     {

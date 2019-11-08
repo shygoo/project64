@@ -41,7 +41,13 @@ public:
 	static const char* OtherMode_pm[];
     
 	static const char* OtherMode_ac[];
-	static const char* OtherMode_zs[];
+    static const char* OtherMode_zs[];
+
+    static const char* OtherModeL_cvgdst[];
+    static const char* OtherModeL_zmode[];
+    static const char* OtherModeL_blpm[];
+    static const char* OtherModeL_bla[];
+    static const char* OtherModeL_blb[];
 	//static const char* OtherMode_rm[];
 	//static const char* OtherMode_rm2[];
 

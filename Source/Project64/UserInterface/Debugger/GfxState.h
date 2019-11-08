@@ -105,6 +105,16 @@ typedef struct
 	uint8_t  enabled;
 } tile_t;
 
+typedef struct
+{
+    uint8_t colorA[3];
+    uint8_t _pad0;
+    uint8_t colorB[3];
+    uint8_t _pad1;
+    int8_t  direction[3];
+    uint8_t _pad2;
+} light_t;
+
 class rsp_mtx_t
 {
 public:
@@ -125,6 +135,7 @@ public:
     uint32_t SegmentedToVirtual(uint32_t segaddr);
     bool     LoadVertices(uint32_t address, int index, int numv);
     void     LoadMatrix(uint32_t address, bool bPush, bool bLoad, bool bProjection);
+    void     LoadLight(uint32_t address, int index);
     bool     GetCommand(uint32_t address, dl_cmd_t *command);
     int      GetCommands(uint32_t address, int numCommands, dl_cmd_t commands[]);
     vertex_t Transform(vertex_t* vertex);
@@ -143,6 +154,7 @@ public:
 	uint32_t m_spStackIndex;
 	vertex_t m_spVertices[64];
     uint8_t  m_spNumLights;
+    light_t  m_spLights[10]; // lookatx, lookaty, + 8 lights
 
     int       m_spMatrixIndex;
     rsp_mtx_t m_spMatrixStack[10];

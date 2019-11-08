@@ -59,6 +59,13 @@ const char* CGfxLabels::OtherMode_pm[] = { "G_PM_NPRIMITIVE", "G_PM_1PRIMITIVE" 
 
 const char* CGfxLabels::OtherMode_ac[] = { "G_AC_NONE", "G_AC_THRESHOLD", "2", "G_AC_DITHER" };
 const char* CGfxLabels::OtherMode_zs[] = { "G_ZS_PIXEL", "G_ZS_PRIM" };
+
+const char* CGfxLabels::OtherModeL_cvgdst[] = { "CVG_DST_CLAMP", "CVG_DST_WRAP", "CVG_DST_FULL", "CVG_DST_SAVE" };
+const char* CGfxLabels::OtherModeL_zmode[] = { "ZMODE_OPA", "ZMODE_INTER", "ZMODE_XLU", "ZMODE_DEC" };
+const char* CGfxLabels::OtherModeL_blpm[] = { "CLR_IN", "CLR_MEM", "CLR_BL", "CLR_FOG" };
+const char* CGfxLabels::OtherModeL_bla[] = { "A_IN", "A_FOG", "A_SHADE", "0" };
+const char* CGfxLabels::OtherModeL_blb[] = { "1MA", "A_MEM", "1", "0" };
+
 //const char* CGfxLabels::OtherMode_rm[] = {};
 //const char* CGfxLabels::OtherMode_rm2[] = {};
 
