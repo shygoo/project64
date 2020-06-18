@@ -51,16 +51,16 @@ const char* CGfxLabels::OtherMode_tc[] = { "G_TC_CONV", "1", "2", "3", "G_TC_INV
 const char* CGfxLabels::OtherMode_tf[] = { "G_TF_POINT", "1", "G_TF_BILERP", "G_TF_AVERAGE" };
 const char* CGfxLabels::OtherMode_tt[] = { "G_TT_NONE", "1", "G_TT_RGBA16", "G_TT_IA16" };
 const char* CGfxLabels::OtherMode_tl[] = { "G_TL_TILE", "G_TL_LOD" };
-const char* CGfxLabels::OtherMode_td[] = { "G_TD_CLAMP", "G_TD_SHARPEN", "G_TD_DETAI" };
+const char* CGfxLabels::OtherMode_td[] = { "G_TD_CLAMP", "G_TD_SHARPEN", "G_TD_DETAIL" };
 const char* CGfxLabels::OtherMode_tp[] = { "G_TP_NONE", "G_TP_PERSP" };
-const char* CGfxLabels::OtherMode_cyc[] = { "G_CYC_1CYCLE", "G_CYC_2CYCLE", "G_CYC_COPY", "G_CYC_FIL" };
+const char* CGfxLabels::OtherMode_cyc[] = { "G_CYC_1CYCLE", "G_CYC_2CYCLE", "G_CYC_COPY", "G_CYC_FILL" };
 const char* CGfxLabels::OtherMode_cd[] = { "0", "1", "G_CD_DISABLE", "G_CD_ENABLE" };
 const char* CGfxLabels::OtherMode_pm[] = { "G_PM_NPRIMITIVE", "G_PM_1PRIMITIVE" };
 const char* CGfxLabels::OtherMode_ac[] = { "G_AC_NONE", "G_AC_THRESHOLD", "2", "G_AC_DITHER" };
-const char* CGfxLabels::OtherMode_zs[] = { "G_ZS_PIXE", "G_ZS_PRIM" };
+const char* CGfxLabels::OtherMode_zs[] = { "G_ZS_PIXEL", "G_ZS_PRIM" };
 const char* CGfxLabels::OtherModeL_cvgdst[] = { "CVG_DST_CLAMP", "CVG_DST_WRAP", "CVG_DST_FUL", "CVG_DST_SAVE" };
 const char* CGfxLabels::OtherModeL_zmode[] = { "ZMODE_OPA", "ZMODE_INTER", "ZMODE_XLU", "ZMODE_DEC" };
-const char* CGfxLabels::OtherModeL_blpm[] = { "CLR_IN", "CLR_MEM", "CLR_B", "CLR_FOG" };
+const char* CGfxLabels::OtherModeL_blpm[] = { "CLR_IN", "CLR_MEM", "CLR_BL", "CLR_FOG" };
 const char* CGfxLabels::OtherModeL_bla[] = { "A_IN", "A_FOG", "A_SHADE", "0" };
 const char* CGfxLabels::OtherModeL_blb[] = { "1MA", "A_MEM", "1", "0" };
 //const char* CGfxLabels::OtherMode_rm[] = {};
@@ -152,7 +152,7 @@ gfx_label_t CGfxLabels::RenderModesCycle1[] = {
 	{ 0x00407048, "G_RM_AA_XLU_LINE" },
 	{ 0x004041C8, "G_RM_AA_XLU_SURF" },
 	{ 0x00407F58, "G_RM_AA_ZB_DEC_LINE" },
-	{ 0x00442D58, "G_RM_AA_ZB_OPA_DECA" },
+	{ 0x00442D58, "G_RM_AA_ZB_OPA_DECAL" },
 	{ 0x00442478, "G_RM_AA_ZB_OPA_INTER" },
 	{ 0x00442078, "G_RM_AA_ZB_OPA_SURF" },
 	{ 0x00402078, "G_RM_AA_ZB_OPA_TERR" },
@@ -173,18 +173,18 @@ gfx_label_t CGfxLabels::RenderModesCycle1[] = {
 	{ 0x0C084000, "G_RM_OPA_SURF" },
 	{ 0x0C084203, "G_RM_PCL_SURF" },
 	{ 0x00442008, "G_RM_RA_OPA_SURF" },
-	{ 0x00442D18, "G_RM_RA_ZB_OPA_DECA" },
+	{ 0x00442D18, "G_RM_RA_ZB_OPA_DECAL" },
 	{ 0x00442438, "G_RM_RA_ZB_OPA_INTER" },
 	{ 0x00442038, "G_RM_RA_ZB_OPA_SURF" },
 	{ 0x0C087008, "G_RM_TEX_EDGE" },
 	{ 0x0C844040, "G_RM_VISCVG" },
 	{ 0x00404240, "G_RM_XLU_SURF" },
 	{ 0x00404B50, "G_RM_ZB_CLD_SURF" },
-	{ 0x00442E10, "G_RM_ZB_OPA_DECA" },
+	{ 0x00442E10, "G_RM_ZB_OPA_DECAL" },
 	{ 0x00442230, "G_RM_ZB_OPA_SURF" },
 	{ 0x00404F50, "G_RM_ZB_OVL_SURF" },
 	{ 0x0C080233, "G_RM_ZB_PCL_SURF" },
-	{ 0x00404E50, "G_RM_ZB_XLU_DECA" },
+	{ 0x00404E50, "G_RM_ZB_XLU_DECAL" },
 	{ 0x00404A50, "G_RM_ZB_XLU_SURF" },
 	// messed up?
 	//{ 0xC8000000, "G_RM_FOG_SHADE_A" },
