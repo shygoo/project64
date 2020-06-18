@@ -137,7 +137,7 @@ void CGfxParser::Step(void)
     dc.rawCommand = m_spCommand;
     dc.virtualAddress = SegmentedToVirtual(dc.address);
     dc.name = "?";
-    dc.params = "?";
+    dc.params = stdstr("?");
 
     m_spCommandAddress += 8;
     commandInfo = &m_CommandArray[m_spCommand.commandByte];
@@ -187,7 +187,7 @@ void CGfxParser::Step(void)
     if (m_CurrentMacroLength > 0)
     {
         dc.name = "...";
-        dc.params = "...";
+        dc.params = stdstr("...");
         m_CurrentMacroLength--;
     }
 

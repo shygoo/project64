@@ -15,7 +15,7 @@
 // ucode-independent rdp commands
 dl_cmd_info_t CGfxOps::Commands_RDP[] = {
     { 0xC0, "gsDPNoOp",                 op_Nop },
-    { 0xC8, "gsDPTriFill",              NULL },
+    { 0xC8, "gsDPTriFil",              NULL },
     { 0xC9, "gsDPTriFillZ",             NULL },
     { 0xCA, "gsDPTriTxtr",              NULL },
     { 0xCB, "gsDPTriTxtrZ",             NULL },
@@ -70,7 +70,7 @@ dl_cmd_info_t CGfxOps::Commands_F3D[] = {
     { 0xB6, "gsSPClearGeometryMode", op_gsSPClearGeometryMode_f3d },
     { 0xB7, "gsSPSetGeometryMode",   op_gsSPSetGeometryMode_f3d },
     { 0xB8, "gsSPEndDisplayList",    op_gsSPEndDisplayList_f3d },
-    { 0xB9, "gsSPSetOtherMode_l",    op_gsSPSetOtherMode_l_f3d },
+    { 0xB9, "gsSPSetOtherMode_",    op_gsSPSetOtherMode_l_f3d },
     { 0xBA, "gsSPSetOtherMode_h",    op_gsSPSetOtherMode_h_f3d },
     { 0xBB, "gsSPTexture",           op_gsSPTexture_f3d },
     { 0xBC, "gsMoveWd",              op_gsMoveWd_f3d },
@@ -92,7 +92,7 @@ dl_cmd_info_t CGfxOps::Commands_F3DEX[] = {
     { 0xB6, "gsSPClearGeometryMode",    op_gsSPClearGeometryMode_f3dex },
     { 0xB7, "gsSPSetGeometryMode",      op_gsSPSetGeometryMode_f3dex },
     { 0xB8, "gsSPEndDisplayList",       op_gsSPEndDisplayList_f3dex },
-    { 0xB9, "gsSPSetOtherMode_l",       op_gsSPSetOtherMode_l_f3dex },
+    { 0xB9, "gsSPSetOtherMode_",       op_gsSPSetOtherMode_l_f3dex },
     { 0xBA, "gsSPSetOtherMode_h",       op_gsSPSetOtherMode_h_f3dex },
     { 0xBB, "gsSPTexture",              op_gsSPTexture_f3dex },
     { 0xBC, "gsMoveWd",                 op_gsMoveWd_f3dex },
@@ -214,7 +214,7 @@ void CGfxOps::op_gsDPSetOtherMode(CGfxParser* state, decoded_cmd_t* dc)
 
     if (szPresetC1 != NULL && szPresetC2 != NULL)
     {
-        dc->params += stdstr(szPresetC1) + "|" + szPresetC2 + ")";
+        dc->params += stdstr(szPresetC1) + "|" + stdstr(szPresetC2) + ")";
     }
     else
     {
@@ -592,7 +592,7 @@ void CGfxOps::op_gsSPMatrix_f3d(CGfxParser* state, decoded_cmd_t* dc)
 
     dc->params = stdstr_f("/*addr*/ 0x%08X, (%s | %s | %s) /*0x%08X*/", cmd->address,
         bProj ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
-        bLoad ? "G_MTX_LOAD" : "G_MTX_MUL",
+        bLoad ? "G_MTX_LOAD" : "G_MTX_MU",
         bPush ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
         state->SegmentedToVirtual(cmd->address));
 
@@ -802,7 +802,7 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3d(CGfxParser* state, decoded_cmd_t* dc)
         dc->Rename("gsDPSetDepthSource");
         switch (cmd->mode)
         {
-        case 0: dc->params = "G_ZS_PIXEL"; break;
+        case 0: dc->params = "G_ZS_PIXE"; break;
         case 4: dc->params = "G_ZS_PRIM"; break;
         default: dc->params = stdstr_f("%08X", cmd->mode);
         }
@@ -822,18 +822,18 @@ void CGfxOps::op_gsSPSetOtherMode_h_f3d(CGfxParser* state, decoded_cmd_t* dc)
 
     switch (field)
     {
-    case 4:  dc->params = stdstr_f(CGfxLabels::OtherMode_ad[omh.ad]); dc->Rename("gsDPSetAlphaDither"); break; // hw2 only
-    case 6:  dc->params = stdstr_f(CGfxLabels::OtherMode_rd[omh.rd]); dc->Rename("gsDPSetColorDither"); break; // hw2 only
-    case 8:  dc->params = stdstr_f(CGfxLabels::OtherMode_ck[omh.ck]); dc->Rename("gsDPSetCombineKey"); break;
-    case 9:  dc->params = stdstr_f(CGfxLabels::OtherMode_tc[omh.tc]); dc->Rename("gsDPSetTextureConvert"); break;
-    case 12: dc->params = stdstr_f(CGfxLabels::OtherMode_tf[omh.tf]); dc->Rename("gsDPSetTextureFilter"); break;
-    case 14: dc->params = stdstr_f(CGfxLabels::OtherMode_tt[omh.tt]); dc->Rename("gsDPSetTextureLUT"); break;
-    case 16: dc->params = stdstr_f(CGfxLabels::OtherMode_tl[omh.tl]); dc->Rename("gsDPSetTextureLOD"); break;
-    case 17: dc->params = stdstr_f(CGfxLabels::OtherMode_td[omh.td]); dc->Rename("gsDPSetTextureDetail"); break;
-    case 19: dc->params = stdstr_f(CGfxLabels::OtherMode_tp[omh.tp]); dc->Rename("gsDPSetTexturePersp"); break;
-    case 20: dc->params = stdstr_f(CGfxLabels::OtherMode_cyc[omh.cyc]); dc->Rename("gsDPSetCycleType"); break;
-    case 22: dc->params = stdstr_f(CGfxLabels::OtherMode_cd[omh.cd]); dc->Rename("gsDPSetColorDither"); break; // hw1 only
-    case 23: dc->params = stdstr_f(CGfxLabels::OtherMode_pm[omh.pm]); dc->Rename("gsDPPipelineMode"); break;
+    case 4:  dc->params = CGfxLabels::OtherMode_ad[omh.ad]; dc->Rename("gsDPSetAlphaDither"); break; // hw2 only
+    case 6:  dc->params = CGfxLabels::OtherMode_rd[omh.rd]; dc->Rename("gsDPSetColorDither"); break; // hw2 only
+    case 8:  dc->params = CGfxLabels::OtherMode_ck[omh.ck]; dc->Rename("gsDPSetCombineKey"); break;
+    case 9:  dc->params = CGfxLabels::OtherMode_tc[omh.tc]; dc->Rename("gsDPSetTextureConvert"); break;
+    case 12: dc->params = CGfxLabels::OtherMode_tf[omh.tf]; dc->Rename("gsDPSetTextureFilter"); break;
+    case 14: dc->params = CGfxLabels::OtherMode_tt[omh.tt]; dc->Rename("gsDPSetTextureLUT"); break;
+    case 16: dc->params = CGfxLabels::OtherMode_tl[omh.tl]; dc->Rename("gsDPSetTextureLOD"); break;
+    case 17: dc->params = CGfxLabels::OtherMode_td[omh.td]; dc->Rename("gsDPSetTextureDetai"); break;
+    case 19: dc->params = CGfxLabels::OtherMode_tp[omh.tp]; dc->Rename("gsDPSetTexturePersp"); break;
+    case 20: dc->params = CGfxLabels::OtherMode_cyc[omh.cyc]; dc->Rename("gsDPSetCycleType"); break;
+    case 22: dc->params = CGfxLabels::OtherMode_cd[omh.cd]; dc->Rename("gsDPSetColorDither"); break; // hw1 only
+    case 23: dc->params = CGfxLabels::OtherMode_pm[omh.pm]; dc->Rename("gsDPPipelineMode"); break;
     }
 }
 
@@ -1202,7 +1202,7 @@ void CGfxOps::op_gsSPMatrix_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
 
     dc->params = stdstr_f("/*addr*/ 0x%08X, (%s | %s | %s) /*0x%08X*/", cmd->address,
         bPush ? "G_MTX_PUSH" : "G_MTX_NOPUSH",
-        bLoad ? "G_MTX_LOAD" : "G_MTX_MUL",
+        bLoad ? "G_MTX_LOAD" : "G_MTX_MU",
         bProj ? "G_MTX_PROJECTION" : "G_MTX_MODELVIEW",
         state->SegmentedToVirtual(cmd->address));
 
@@ -1363,7 +1363,7 @@ void CGfxOps::op_gsSPSetOtherMode_l_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
         dc->Rename("gsDPSetDepthSource");
         switch (cmd->mode)
         {
-        case 0: dc->params = "G_ZS_PIXEL"; break;
+        case 0: dc->params = "G_ZS_PIXE"; break;
         case 4: dc->params = "G_ZS_PRIM"; break;
         default: dc->params = stdstr_f("%08X", cmd->mode);
         }
@@ -1395,7 +1395,7 @@ void CGfxOps::op_gsSPSetOtherMode_h_f3dex2(CGfxParser* state, decoded_cmd_t* dc)
     case 12: dc->params = CGfxLabels::OtherMode_tf[omh.tf]; dc->Rename("gsDPSetTextureFilter"); break;
     case 14: dc->params = CGfxLabels::OtherMode_tt[omh.tt]; dc->Rename("gsDPSetTextureLUT"); break;
     case 16: dc->params = CGfxLabels::OtherMode_tl[omh.tl]; dc->Rename("gsDPSetTextureLOD"); break;
-    case 17: dc->params = CGfxLabels::OtherMode_td[omh.td]; dc->Rename("gsDPSetTextureDetail"); break;
+    case 17: dc->params = CGfxLabels::OtherMode_td[omh.td]; dc->Rename("gsDPSetTextureDetai"); break;
     case 19: dc->params = CGfxLabels::OtherMode_tp[omh.tp]; dc->Rename("gsDPSetTexturePersp"); break;
     case 20: dc->params = CGfxLabels::OtherMode_cyc[omh.cyc]; dc->Rename("gsDPSetCycleType"); break;
     case 22: dc->params = CGfxLabels::OtherMode_cd[omh.cd]; dc->Rename("gsDPSetColorDither"); break; // hw1 only

@@ -20,14 +20,12 @@ CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
     CDebugDialog<CDebugScripts>(debugger)
 {
     m_SelectedScriptName = (char*)malloc(MAX_PATH);
-	InitializeCriticalSection(&m_CriticalSection);
-	//CScriptSystem::SetScriptsWindow(this);
+    //CScriptSystem::SetScriptsWindow(this);
 }
 
 CDebugScripts::~CDebugScripts(void)
 {
-	DeleteCriticalSection(&m_CriticalSection);
-	free(m_SelectedScriptName);
+    free(m_SelectedScriptName);
 }
 
 LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -38,13 +36,13 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     HFONT monoFont = CreateFont(-11, 0, 0, 0,
         FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        CLEARTYPE_QUALITY, FF_DONTCARE, "Consolas"
+        CLEARTYPE_QUALITY, FF_DONTCARE, L"Consolas"
     );
 
     m_InstanceInfoEdit.Attach(GetDlgItem(IDC_CTX_INFO_EDIT));
 
     m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
-    m_ScriptList.AddColumn("Script", 0, 0);
+    m_ScriptList.AddColumn(L"Script", 0, 0);
     m_ScriptList.SetColumnWidth(0, 100);
     m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     m_ScriptList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
@@ -60,8 +58,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 
     RefreshList();
 
-	LoadWindowPos();
-	WindowCreated();
+    LoadWindowPos();
+    WindowCreated();
     return 0;
 }
 
@@ -82,7 +80,7 @@ void CDebugScripts::ConsolePrint(const char* text)
 
     m_ConsoleEdit.SetRedraw(FALSE);
 
-    m_ConsoleEdit.AppendText(text);
+    m_ConsoleEdit.AppendText(stdstr(text).ToUTF16().c_str());
 
     m_ConsoleEdit.SetRedraw(TRUE);
 
@@ -94,7 +92,7 @@ void CDebugScripts::ConsolePrint(const char* text)
 
 void CDebugScripts::RefreshConsole()
 {
-	EnterCriticalSection(&m_CriticalSection);
+    CGuard guard(m_CS);
 
     m_Debugger->OpenScriptsWindow();
     CScriptSystem* scriptSystem = m_Debugger->ScriptSystem();
@@ -106,13 +104,11 @@ void CDebugScripts::RefreshConsole()
         free((*logData)[0]);
         logData->erase(logData->begin() + 0);
     }
-
-	LeaveCriticalSection(&m_CriticalSection);
 }
 
 void CDebugScripts::ConsoleClear()
 {
-    m_ConsoleEdit.SetWindowTextA("");
+    m_ConsoleEdit.SetWindowText(L"");
 }
 
 void CDebugScripts::ConsoleCopy()
@@ -124,12 +120,12 @@ void CDebugScripts::ConsoleCopy()
 
     EmptyClipboard();
 
-    size_t nChars = m_ConsoleEdit.GetWindowTextLengthA() + 1;
+    size_t nChars = m_ConsoleEdit.GetWindowTextLength() + 1;
 
-    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, nChars);
+    HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, nChars * sizeof(wchar_t));
 
-    char* memBuf = (char*)GlobalLock(hMem);
-    m_ConsoleEdit.GetWindowTextA(memBuf, nChars);
+    wchar_t* memBuf = (wchar_t*)GlobalLock(hMem);
+    m_ConsoleEdit.GetWindowText(memBuf, nChars);
 
     GlobalUnlock(hMem);
     SetClipboardData(CF_TEXT, hMem);
@@ -140,16 +136,15 @@ void CDebugScripts::ConsoleCopy()
 
 void CDebugScripts::RefreshList()
 {
-	EnterCriticalSection(&m_CriticalSection);
+    CGuard guard(m_CS);
 
-	int nIndex = m_ScriptList.GetSelectedIndex();
+    int nIndex = m_ScriptList.GetSelectedIndex();
 
     CPath SearchPath("Scripts", "*");
 
     if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
     {
-		LeaveCriticalSection(&m_CriticalSection);
-		return;
+        return;
     }
 
     m_ScriptList.SetRedraw(false);
@@ -158,7 +153,7 @@ void CDebugScripts::RefreshList()
     do
     {
         stdstr scriptFileName = SearchPath.GetNameExtension();
-        m_ScriptList.AddItem(0, 0, scriptFileName.c_str());
+        m_ScriptList.AddItem(0, 0, scriptFileName.ToUTF16().c_str());
     } while (SearchPath.FindNext());
 
     m_ScriptList.SetRedraw(true);
@@ -169,8 +164,6 @@ void CDebugScripts::RefreshList()
         m_ScriptList.SelectItem(nIndex);
         RefreshStatus();
     }
-
-	LeaveCriticalSection(&m_CriticalSection);
 }
 
 LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -186,6 +179,9 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
     case ID_POPUP_STOP:
         StopSelected();
         break;
+    case ID_POPUP_SCRIPT_EDIT:
+        EditSelected();
+        break;
     case IDC_CLEAR_BTN:
         ConsoleClear();
         break;
@@ -196,7 +192,7 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
     return FALSE;
 }
 
-LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
+LRESULT CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 {
     // Run script on double click
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
@@ -204,20 +200,20 @@ LRESULT	CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 
     m_ScriptList.SelectItem(nItem);
 
-    RunSelected();
+    ToggleSelected();
 
     return 0;
 }
 
 void CDebugScripts::RefreshStatus()
 {
-	EnterCriticalSection(&m_CriticalSection);
-	INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
+    CGuard guard(m_CS);
+    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
 
     char* szState = "";
     switch (state)
     {
-    case STATE_RUNNING:	szState = "Running"; break;
+    case STATE_RUNNING: szState = "Running"; break;
     case STATE_STARTED: szState = "Started"; break;
     case STATE_STOPPED: szState = "Stopped"; break;
     case STATE_INVALID: szState = "Not running"; break;
@@ -225,7 +221,7 @@ void CDebugScripts::RefreshStatus()
 
     stdstr instanceInfo = stdstr_f("%s (%s)", m_SelectedScriptName, szState);
 
-    m_InstanceInfoEdit.SetWindowTextA(instanceInfo.c_str());
+    m_InstanceInfoEdit.SetWindowText(instanceInfo.ToUTF16().c_str());
 
     if (state == STATE_RUNNING)
     {
@@ -235,24 +231,24 @@ void CDebugScripts::RefreshStatus()
     {
         m_EvalEdit.EnableWindow(FALSE);
     }
-
-	LeaveCriticalSection(&m_CriticalSection);
 }
 
-LRESULT	CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
+LRESULT CDebugScripts::OnScriptListClicked(NMHDR* pNMHDR)
 {
     // Select instance for console input
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
     int nItem = pIA->iItem;
 
-    m_ScriptList.GetItemText(nItem, 0, m_SelectedScriptName, MAX_PATH);
+    wchar_t ScriptName[MAX_PATH];
+    m_ScriptList.GetItemText(nItem, 0, ScriptName, MAX_PATH);
+    strcpy(m_SelectedScriptName, stdstr().FromUTF16(ScriptName).c_str());
 
     RefreshStatus();
 
     return 0;
 }
 
-LRESULT	CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
+LRESULT CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
 {
     OnScriptListClicked(pNMHDR);
 
@@ -295,10 +291,10 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
 
     DWORD nItem = pLVCD->nmcd.dwItemSpec;
 
-    char scriptName[MAX_PATH];
+    wchar_t scriptName[MAX_PATH];
     m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
 
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptName);
+    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(stdstr("").FromUTF16(scriptName).c_str());
 
     if (state == STATE_STARTED)
     {
@@ -312,7 +308,7 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
     return CDRF_DODEFAULT;
 }
 
-void CDebugScripts::EvaluateInSelectedInstance(char* code)
+void CDebugScripts::EvaluateInSelectedInstance(const char* code)
 {
     INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
 
@@ -331,9 +327,9 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
     {
         if (m_HistoryIdx > 0)
         {
-            char* code = m_History[--m_HistoryIdx];
-            SetWindowTextA(code);
-            int selEnd = strlen(code);
+            wchar_t* code = m_History[--m_HistoryIdx];
+            SetWindowText(code);
+            int selEnd = wcslen(code);
             SetSel(selEnd, selEnd);
         }
     }
@@ -342,14 +338,14 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
         int size = m_History.size();
         if (m_HistoryIdx < size - 1)
         {
-            char* code = m_History[++m_HistoryIdx];
-            SetWindowTextA(code);
-            int selEnd = strlen(code);
+            wchar_t* code = m_History[++m_HistoryIdx];
+            SetWindowText(code);
+            int selEnd = wcslen(code);
             SetSel(selEnd, selEnd);
         }
         else if (m_HistoryIdx < size)
         {
-            SetWindowTextA("");
+            SetWindowText(L"");
             m_HistoryIdx++;
         }
     }
@@ -362,18 +358,18 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
         }
 
         size_t codeLength = GetWindowTextLength() + 1;
-        char* code = (char*)malloc(codeLength);
-        GetWindowTextA(code, codeLength);
+        wchar_t* code = (wchar_t*)malloc(codeLength * sizeof(wchar_t));
+        GetWindowText(code, codeLength);
 
-        m_ScriptWindow->EvaluateInSelectedInstance(code);
+        m_ScriptWindow->EvaluateInSelectedInstance(stdstr().FromUTF16(code).c_str());
 
-        SetWindowTextA("");
+        SetWindowText(L"");
         int historySize = m_History.size();
 
         // remove duplicate
         for (int i = 0; i < historySize; i++)
         {
-            if (strcmp(code, m_History[i]) == 0)
+            if (wcscmp(code, m_History[i]) == 0)
             {
                 free(m_History[i]);
                 m_History.erase(m_History.begin() + i);
@@ -412,7 +408,26 @@ void CDebugScripts::RunSelected()
 
 void CDebugScripts::StopSelected()
 {
-	m_Debugger->ScriptSystem()->StopScript(m_SelectedScriptName);
+    m_Debugger->ScriptSystem()->StopScript(m_SelectedScriptName);
 
-	//m_Debugger->Debug_RefreshScriptsWindow();
+    //m_Debugger->Debug_RefreshScriptsWindow();
+}
+
+void CDebugScripts::ToggleSelected()
+{
+    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName);
+
+    if (state == STATE_INVALID || state == STATE_STOPPED)
+    {
+        RunSelected();
+    }
+    else
+    {
+        StopSelected();
+    }
+}
+
+void CDebugScripts::EditSelected()
+{
+    ShellExecute(NULL, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), NULL, L"Scripts", SW_SHOWNORMAL);
 }

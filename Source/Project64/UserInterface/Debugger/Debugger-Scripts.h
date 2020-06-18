@@ -25,7 +25,7 @@ class CEditEval : public CWindowImpl<CEditEval, CEdit>
 private:
     //static char* m_EvalString;
     static const int HISTORY_MAX_ENTRIES = 20;
-    vector<char*> m_History;
+    vector<wchar_t*> m_History;
     int m_HistoryIdx;
     CDebugScripts* m_ScriptWindow;
 
@@ -89,7 +89,7 @@ private:
     char* m_SelectedScriptName;
 
     void RefreshStatus();
-	CRITICAL_SECTION m_CriticalSection;
+    CriticalSection m_CS;
 
 public:
     enum { IDD = IDD_Debugger_Scripts };
@@ -104,9 +104,11 @@ public:
     void RefreshList();
     void RefreshConsole();
 
-    void EvaluateInSelectedInstance(char* code);
+    void EvaluateInSelectedInstance(const char* code);
     void RunSelected();
     void StopSelected();
+    void ToggleSelected();
+    void EditSelected();
 
     LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnDestroy(void)

@@ -160,7 +160,7 @@ CScanResult::~CScanResult(void)
 {
 }
 
-void CScanResult::SetDescription(char* str)
+void CScanResult::SetDescription(const char* str)
 {
     if (m_Description != NULL)
     {
@@ -238,7 +238,7 @@ bool CScanResult::GetMemoryValue(CMixed* v)
     return true;
 }
 
-int CScanResult::GetMemoryValueString(char* buffer, size_t size)
+int CScanResult::GetMemoryValueString(char* buffer, size_t size, bool bIgnoreHex)
 {
     if (g_MMU == NULL)
     {
@@ -246,7 +246,7 @@ int CScanResult::GetMemoryValueString(char* buffer, size_t size)
         return 1;
     }
     
-    bool bHex = (m_DisplayFormat == DisplayHex);
+    bool bHex = (m_DisplayFormat == DisplayHex) && !bIgnoreHex;
 
     uint32_t paddr = m_Address & 0x1FFFFFFF;
 
@@ -313,7 +313,7 @@ uint32_t CScanResult::GetVirtualAddress(void)
     }
 }
 
-bool CScanResult::SetMemoryValueFromString(char* str)
+bool CScanResult::SetMemoryValueFromString(const char* str)
 {
     if (g_MMU == NULL)
     {
@@ -409,6 +409,11 @@ bool CScanResult::SetMemoryValueFromString(char* str)
 
 bool CScanResult::SetAddressSafe(uint32_t address)
 {
+    if (!g_MMU || !g_Rom)
+    {
+        return false;
+    }
+
     uint32_t ramSize = g_MMU->RdramSize();
     uint32_t romSize = g_Rom->GetRomSize();
 
@@ -442,6 +447,11 @@ bool CScanResult::SetAddressSafe(uint32_t address)
 
 bool CScanResult::SetStrLengthSafe(int length)
 {
+    if (!g_MMU || !g_Rom)
+    {
+        return false;
+    }
+
     uint32_t ramSize = g_MMU->RdramSize();
     uint32_t romSize = g_Rom->GetRomSize();
 
@@ -536,6 +546,11 @@ void CMemoryScanner::Reset(void)
 
 bool CMemoryScanner::SetAddressRange(uint32_t startAddress, uint32_t endAddress)
 {
+    if (!g_MMU || !g_Rom)
+    {
+        return false;
+    }
+
     if(m_DidFirstScan)
     {
         return false;
@@ -596,6 +611,11 @@ bool CMemoryScanner::SetAddressRange(uint32_t startAddress, uint32_t endAddress)
 
 uint8_t* CMemoryScanner::GetMemoryPool(uint32_t physAddr)
 {
+    if (!g_MMU || !g_Rom)
+    {
+        return NULL;
+    }
+
     if ((physAddr >= 0x00000000 && physAddr < g_MMU->RdramSize()) ||
         (physAddr >= 0x04000000 && physAddr <= 0x04001FFF))
     {
@@ -717,7 +737,7 @@ void CMemoryScanner::FirstScanLoopString(DisplayFormat resultDisplayFormat)
         for (int i = 0; i < length; i++)
         {
             uint32_t leAddr = (addr + i) ^ 3;
-            if (m_Value._string[i] != m_Memory[leAddr])
+            if ((uint8_t)m_Value._string[i] != m_Memory[leAddr])
             {
                 goto next_addr;
             }
@@ -746,7 +766,7 @@ void CMemoryScanner::FirstScanLoopIString(DisplayFormat resultDisplayFormat)
         for (int i = 0; i < length; i++)
         {
             uint32_t leAddr = (addr + i) ^ 3;
-            if (toupper(m_Value._string[i]) != toupper(m_Memory[leAddr]))
+            if (toupper((uint8_t)m_Value._string[i]) != toupper(m_Memory[leAddr]))
             {
                 goto next_addr;
             }
@@ -762,7 +782,7 @@ void CMemoryScanner::FirstScanLoopIString(DisplayFormat resultDisplayFormat)
 // scan for text of unknown single-byte encoding
 void CMemoryScanner::FirstScanLoopUnkString(void)
 {
-    const char *str = m_Value._string;
+    const uint8_t* str = (const uint8_t*)m_Value._string;
     int length = m_StringValueLength;
     
     uint32_t startAddr = m_RangeStartAddress;
@@ -989,13 +1009,13 @@ bool CMemoryScanner::NextScan()
 
 int CMemoryScanner::HexDigitVal(char c)
 {
-    if (c >= '0' && c < '9') return (c - '0');
-    if (c >= 'A' && c < 'F') return (c - 'A') + 0x0A;
-    if (c >= 'a' && c < 'f') return (c - 'a') + 0x0A;
+    if (c >= '0' && c <= '9') return (c - '0');
+    if (c >= 'A' && c <= 'F') return (c - 'A') + 0x0A;
+    if (c >= 'a' && c <= 'f') return (c - 'a') + 0x0A;
     return 0;
 }
 
-int CMemoryScanner::ParseHexString(char *dst, char* src)
+int CMemoryScanner::ParseHexString(char *dst, const char* src)
 {
     bool bHiNibble = true;
     uint8_t curByte = 0;

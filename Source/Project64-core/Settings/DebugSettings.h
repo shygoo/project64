@@ -33,7 +33,11 @@ public:
     static inline bool bShowPifRamErrors(void) { return m_bShowPifRamErrors; }
     static inline bool bCPULoggingEnabled(void) { return m_bCPULoggingEnabled;  }
     static inline uint32_t ExceptionBreakpoints(void) { return m_ExceptionBreakpoints; }
-    
+    static inline uint32_t FpExceptionBreakpoints(void) { return m_FpExceptionBreakpoints; }
+    static inline uint32_t IntrBreakpoints(void) { return m_IntrBreakpoints; }
+    static inline uint32_t RcpIntrBreakpoints(void) { return m_RcpIntrBreakpoints; }
+    static inline bool ShowUnhandledMemory(void) { return m_ShowUnhandledMemory; }
+
 private:
     static void StaticRefreshSettings(CDebugSettings * _this)
     {
@@ -57,7 +61,11 @@ private:
     static bool m_bShowPifRamErrors;
     static bool m_bCPULoggingEnabled;
     static uint32_t m_ExceptionBreakpoints;
-    
+    static uint32_t m_FpExceptionBreakpoints;
+    static uint32_t m_IntrBreakpoints;
+    static uint32_t m_RcpIntrBreakpoints;
+    static bool m_ShowUnhandledMemory;
+
     static int32_t m_RefCount;
     static bool m_Registered;
 };

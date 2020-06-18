@@ -41,13 +41,13 @@ void CDebugDisplayList::ResetResourceTreeCtrl(void)
     m_ResourceTreeCtrl.DeleteAllItems();
     //m_ResourceTreeCtrl.SetImageList(m_TreeImageList);
 
-    m_hTreeDisplayLists = m_ResourceTreeCtrl.InsertItem("Display lists", -1, -1, NULL, NULL);
-    m_hTreeSegments = m_ResourceTreeCtrl.InsertItem("Segments", -1, -1, NULL, NULL);
-    m_hTreeImages = m_ResourceTreeCtrl.InsertItem("Images", -1, -1, NULL, NULL);
-    m_hTreeVertices = m_ResourceTreeCtrl.InsertItem("Vertices", -1, -1, NULL, NULL);
-    m_hTreeMatrices = m_ResourceTreeCtrl.InsertItem("Matrices", -1, -1, NULL, NULL);
-    m_hTreeViewports = m_ResourceTreeCtrl.InsertItem("Viewports", -1, -1, NULL, NULL);
-    m_hTreeLights = m_ResourceTreeCtrl.InsertItem("Lights", -1, -1, NULL, NULL);
+    m_hTreeDisplayLists = m_ResourceTreeCtrl.InsertItem(L"Display lists", -1, -1, NULL, NULL);
+    m_hTreeSegments = m_ResourceTreeCtrl.InsertItem(L"Segments", -1, -1, NULL, NULL);
+    m_hTreeImages = m_ResourceTreeCtrl.InsertItem(L"Images", -1, -1, NULL, NULL);
+    m_hTreeVertices = m_ResourceTreeCtrl.InsertItem(L"Vertices", -1, -1, NULL, NULL);
+    m_hTreeMatrices = m_ResourceTreeCtrl.InsertItem(L"Matrices", -1, -1, NULL, NULL);
+    m_hTreeViewports = m_ResourceTreeCtrl.InsertItem(L"Viewports", -1, -1, NULL, NULL);
+    m_hTreeLights = m_ResourceTreeCtrl.InsertItem(L"Lights", -1, -1, NULL, NULL);
 }
 
 LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -82,11 +82,11 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
     m_DisplayListCtrl.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
     m_DisplayListCtrl.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT);
 
-    m_DisplayListCtrl.AddColumn("Address", DisplayListCtrl_Col_VAddr);
-    m_DisplayListCtrl.AddColumn("SegOffset", DisplayListCtrl_Col_SegOffset);
-   // m_DisplayListCtrl.AddColumn("Raw Command", DisplayListCtrl_Col_RawCommand);
-    m_DisplayListCtrl.AddColumn("Command", DisplayListCtrl_Col_Command);
-    m_DisplayListCtrl.AddColumn("Parameters", DisplayListCtrl_Col_Parameters);
+    m_DisplayListCtrl.AddColumn(L"Address", DisplayListCtrl_Col_VAddr);
+    m_DisplayListCtrl.AddColumn(L"SegOffset", DisplayListCtrl_Col_SegOffset);
+   // m_DisplayListCtrl.AddColumn(L"Raw Command", DisplayListCtrl_Col_RawCommand);
+    m_DisplayListCtrl.AddColumn(L"Command", DisplayListCtrl_Col_Command);
+    m_DisplayListCtrl.AddColumn(L"Parameters", DisplayListCtrl_Col_Parameters);
 
     m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_SegOffset, 65);
     m_DisplayListCtrl.SetColumnWidth(DisplayListCtrl_Col_VAddr, 65);
@@ -112,120 +112,120 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     // Geometry mode
     scv->SetOrigin(568, 130);
-    scv->AddItem("GEOMETRY MODE", headerColor);
-    m_ITM_GM_ZBUFFER = scv->AddItem(" ZBUFFER", labelColor);
-    m_ITM_GM_SHADE = scv->AddItem(" SHADE", labelColor);
-    m_ITM_GM_FOG = scv->AddItem(" FOG", labelColor);
-    m_ITM_GM_LIGHTING = scv->AddItem(" LIGHTING", labelColor);
-    m_ITM_GM_TEXTURE_GEN = scv->AddItem(" TEXTURE_GEN", labelColor);
-    m_ITM_GM_TEXTURE_GEN_LINEAR = scv->AddItem(" TEXTURE_GEN_LINEAR", labelColor);
-    m_ITM_GM_LOD = scv->AddItem(" LOD", labelColor);
-    m_ITM_GM_CLIPPING = scv->AddItem(" CLIPPING", labelColor);
-    m_ITM_GM_SHADING_SMOOTH = scv->AddItem(" SHADING_SMOOTH", labelColor);
-    m_ITM_GM_CULL_FRONT = scv->AddItem(" CULL_FRONT", labelColor);
-    m_ITM_GM_CULL_BACK = scv->AddItem(" CULL_BACK", labelColor);
+    scv->AddItem(L"GEOMETRY MODE", headerColor);
+    m_ITM_GM_ZBUFFER = scv->AddItem(L" ZBUFFER", labelColor);
+    m_ITM_GM_SHADE = scv->AddItem(L" SHADE", labelColor);
+    m_ITM_GM_FOG = scv->AddItem(L" FOG", labelColor);
+    m_ITM_GM_LIGHTING = scv->AddItem(L" LIGHTING", labelColor);
+    m_ITM_GM_TEXTURE_GEN = scv->AddItem(L" TEXTURE_GEN", labelColor);
+    m_ITM_GM_TEXTURE_GEN_LINEAR = scv->AddItem(L" TEXTURE_GEN_LINEAR", labelColor);
+    m_ITM_GM_LOD = scv->AddItem(L" LOD", labelColor);
+    m_ITM_GM_CLIPPING = scv->AddItem(L" CLIPPING", labelColor);
+    m_ITM_GM_SHADING_SMOOTH = scv->AddItem(L" SHADING_SMOOTH", labelColor);
+    m_ITM_GM_CULL_FRONT = scv->AddItem(L" CULL_FRONT", labelColor);
+    m_ITM_GM_CULL_BACK = scv->AddItem(L" CULL_BACK", labelColor);
 
 	// Image addresses
     scv->SetOrigin(300, 70);
-    scv->AddItem("IMAGE ADDRESSES", headerColor);
-    m_StateCanvas->AddItem(" TEXTURE", labelColor);
-    m_StateCanvas->AddItem(" COLOR", labelColor);
-    m_StateCanvas->AddItem(" DEPTH", labelColor);
+    scv->AddItem(L"IMAGE ADDRESSES", headerColor);
+    m_StateCanvas->AddItem(L" TEXTURE", labelColor);
+    m_StateCanvas->AddItem(L" COLOR", labelColor);
+    m_StateCanvas->AddItem(L" DEPTH", labelColor);
     scv->SetOrigin(360, 80);
-    m_ITM_TEXTUREIMAGE = scv->AddItem("...");
-    m_ITM_COLORIMAGE = scv->AddItem("...");
-    m_ITM_DEPTHIMAGE = scv->AddItem("...");
+    m_ITM_TEXTUREIMAGE = scv->AddItem(L"...");
+    m_ITM_COLORIMAGE = scv->AddItem(L"...");
+    m_ITM_DEPTHIMAGE = scv->AddItem(L"...");
 
 	// Combiner
     scv->SetOrigin(10, 10);
-    scv->AddItem("COMBINER", headerColor);
-    scv->AddItem(" CYCLE 1 COLOR", labelColor);
-    scv->AddItem(" CYCLE 1 ALPHA", labelColor);
-    scv->AddItem(" CYCLE 2 COLOR", labelColor);
-    scv->AddItem(" CYCLE 2 ALPHA", labelColor);
+    scv->AddItem(L"COMBINER", headerColor);
+    scv->AddItem(L" CYCLE 1 COLOR", labelColor);
+    scv->AddItem(L" CYCLE 1 ALPHA", labelColor);
+    scv->AddItem(L" CYCLE 2 COLOR", labelColor);
+    scv->AddItem(L" CYCLE 2 ALPHA", labelColor);
 
     scv->SetOrigin(16+90, 20);
-    m_ITM_CC1_COLOR = scv->AddItem("...");
-    m_ITM_CC1_ALPHA = scv->AddItem("...");
-    m_ITM_CC2_COLOR = scv->AddItem("...");
-    m_ITM_CC2_ALPHA = scv->AddItem("...");
+    m_ITM_CC1_COLOR = scv->AddItem(L"...");
+    m_ITM_CC1_ALPHA = scv->AddItem(L"...");
+    m_ITM_CC2_COLOR = scv->AddItem(L"...");
+    m_ITM_CC2_ALPHA = scv->AddItem(L"...");
 
 	// Othermode HI
     scv->SetOrigin(10, 70);
-	scv->AddItem("OTHERMODE_H", headerColor);
-	scv->AddItem(" PIPELINE", labelColor);
-	scv->AddItem(" COLORDITHER", labelColor);
-	scv->AddItem(" CYCLETYPE", labelColor);
-	scv->AddItem(" TEXTPERSP", labelColor);
-	scv->AddItem(" TEXTDETAIL", labelColor);
-	scv->AddItem(" TEXTLOD", labelColor);
-	scv->AddItem(" TEXTLUT", labelColor);
-	scv->AddItem(" TEXTFILT", labelColor);
-	scv->AddItem(" TEXTCONV", labelColor);
-	scv->AddItem(" COMBKEY", labelColor);
-	scv->AddItem(" RGBDITHER", labelColor);
-	scv->AddItem(" ALPHADITHER", labelColor);
+	scv->AddItem(L"OTHERMODE_H", headerColor);
+	scv->AddItem(L" PIPELINE", labelColor);
+	scv->AddItem(L" COLORDITHER", labelColor);
+	scv->AddItem(L" CYCLETYPE", labelColor);
+	scv->AddItem(L" TEXTPERSP", labelColor);
+	scv->AddItem(L" TEXTDETAIL", labelColor);
+	scv->AddItem(L" TEXTLOD", labelColor);
+	scv->AddItem(L" TEXTLUT", labelColor);
+	scv->AddItem(L" TEXTFILT", labelColor);
+	scv->AddItem(L" TEXTCONV", labelColor);
+	scv->AddItem(L" COMBKEY", labelColor);
+	scv->AddItem(L" RGBDITHER", labelColor);
+	scv->AddItem(L" ALPHADITHER", labelColor);
 
     scv->SetOrigin(16 + 78, 80);
-	m_ITM_OMH_PIPELINE = scv->AddItem("...");
-	m_ITM_OMH_COLORDITHER = scv->AddItem("...");
-	m_ITM_OMH_CYCLETYPE = scv->AddItem("...");
-	m_ITM_OMH_TEXTPERSP = scv->AddItem("...");
-	m_ITM_OMH_TEXTDETAIL = scv->AddItem("...");
-	m_ITM_OMH_TEXTLOD = scv->AddItem("...");
-	m_ITM_OMH_TEXTLUT = scv->AddItem("...");
-	m_ITM_OMH_TEXTFILT = scv->AddItem("...");
-	m_ITM_OMH_TEXTCONV = scv->AddItem("...");
-	m_ITM_OMH_COMBKEY = scv->AddItem("...");
-	m_ITM_OMH_RGBDITHER = scv->AddItem("...");
-	m_ITM_OMH_ALPHADITHER = scv->AddItem("...");
+	m_ITM_OMH_PIPELINE = scv->AddItem(L"...");
+	m_ITM_OMH_COLORDITHER = scv->AddItem(L"...");
+	m_ITM_OMH_CYCLETYPE = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTPERSP = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTDETAIL = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTLOD = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTLUT = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTFILT = scv->AddItem(L"...");
+	m_ITM_OMH_TEXTCONV = scv->AddItem(L"...");
+	m_ITM_OMH_COMBKEY = scv->AddItem(L"...");
+	m_ITM_OMH_RGBDITHER = scv->AddItem(L"...");
+	m_ITM_OMH_ALPHADITHER = scv->AddItem(L"...");
 
     // Othermode LO
     scv->SetOrigin(200, 70);
-    scv->AddItem("OTHERMODE_L", headerColor);
-    m_ITM_OML_AA_EN = scv->AddItem(" AA_EN");
-    m_ITM_OML_Z_CMP = scv->AddItem(" Z_CMP");
-    m_ITM_OML_Z_UPD = scv->AddItem(" Z_UPD");
-    m_ITM_OML_IM_RD = scv->AddItem(" IM_RD");
-    m_ITM_OML_CLR_ON_CVG = scv->AddItem(" CLR_ON_CVG");
-    m_ITM_OML_CVG_DST = scv->AddItem(" CVG_DST");
-    m_ITM_OML_ZMODE = scv->AddItem(" ZMODE");
-    m_ITM_OML_CVG_X_ALPHA = scv->AddItem(" CVG_X_ALPHA");
-    m_ITM_OML_ALPHA_CVG_SEL = scv->AddItem(" ALPHA_CVG_SEL");
-    m_ITM_OML_FORCE_BL = scv->AddItem(" FORCE_BL");
-    scv->AddItem(" CYCLE 1", labelColor);
-    scv->AddItem(" CYCLE 2", labelColor);
+    scv->AddItem(L"OTHERMODE_L", headerColor);
+    m_ITM_OML_AA_EN = scv->AddItem(L" AA_EN");
+    m_ITM_OML_Z_CMP = scv->AddItem(L" Z_CMP");
+    m_ITM_OML_Z_UPD = scv->AddItem(L" Z_UPD");
+    m_ITM_OML_IM_RD = scv->AddItem(L" IM_RD");
+    m_ITM_OML_CLR_ON_CVG = scv->AddItem(L" CLR_ON_CVG");
+    m_ITM_OML_CVG_DST = scv->AddItem(L" CVG_DST");
+    m_ITM_OML_ZMODE = scv->AddItem(L" ZMODE");
+    m_ITM_OML_CVG_X_ALPHA = scv->AddItem(L" CVG_X_ALPHA");
+    m_ITM_OML_ALPHA_CVG_SEL = scv->AddItem(L" ALPHA_CVG_SEL");
+    m_ITM_OML_FORCE_BL = scv->AddItem(L" FORCE_BL");
+    scv->AddItem(L" CYCLE 1", labelColor);
+    scv->AddItem(L" CYCLE 2", labelColor);
 
     scv->SetOrigin(260, 180);
-    m_ITM_OML_CYCLE1 = scv->AddItem("...");
-    m_ITM_OML_CYCLE2 = scv->AddItem("...");
+    m_ITM_OML_CYCLE1 = scv->AddItem(L"...");
+    m_ITM_OML_CYCLE2 = scv->AddItem(L"...");
 
 	// Colors
     scv->SetOrigin(420, 70);
-	scv->AddItem("COLORS", headerColor);
-	scv->AddItem(" FILL", labelColor);
-	scv->AddItem(" FOG", labelColor);
-	scv->AddItem(" BLEND", labelColor);
-	scv->AddItem(" PRIM", labelColor);
-	scv->AddItem(" ENV", labelColor);
+	scv->AddItem(L"COLORS", headerColor);
+	scv->AddItem(L" FILL", labelColor);
+	scv->AddItem(L" FOG", labelColor);
+	scv->AddItem(L" BLEND", labelColor);
+	scv->AddItem(L" PRIM", labelColor);
+	scv->AddItem(L" ENV", labelColor);
 
     scv->SetOrigin(468, 80);
-    m_ITM_FILLCOLOR = scv->AddItem("...");
-    m_ITM_FOGCOLOR = scv->AddItem("...");
-    m_ITM_BLENDCOLOR = scv->AddItem("...");
-    m_ITM_PRIMCOLOR = scv->AddItem("...");
-    m_ITM_ENVCOLOR = scv->AddItem("...");
+    m_ITM_FILLCOLOR = scv->AddItem(L"...");
+    m_ITM_FOGCOLOR = scv->AddItem(L"...");
+    m_ITM_BLENDCOLOR = scv->AddItem(L"...");
+    m_ITM_PRIMCOLOR = scv->AddItem(L"...");
+    m_ITM_ENVCOLOR = scv->AddItem(L"...");
 
     scv->SetOrigin(522, 80);
     scv->SetLayoutMode(CCanvas::LAYOUT_HORIZONTAL);
-    m_ITM_FILLCOLOR_PREV0 = scv->AddItem(" ");
+    m_ITM_FILLCOLOR_PREV0 = scv->AddItem(L" ");
     scv->SetLayoutMode(CCanvas::LAYOUT_VERTICAL);
-    m_ITM_FILLCOLOR_PREV1 = scv->AddItem(" ");
+    m_ITM_FILLCOLOR_PREV1 = scv->AddItem(L" ");
     scv->GotoOriginX();
-    m_ITM_FOGCOLOR_PREV = scv->AddItem(" ");
-    m_ITM_BLENDCOLOR_PREV = scv->AddItem(" ");
-    m_ITM_PRIMCOLOR_PREV = scv->AddItem(" ");
-    m_ITM_ENVCOLOR_PREV = scv->AddItem(" ");
+    m_ITM_FOGCOLOR_PREV = scv->AddItem(L" ");
+    m_ITM_BLENDCOLOR_PREV = scv->AddItem(L" ");
+    m_ITM_PRIMCOLOR_PREV = scv->AddItem(L" ");
+    m_ITM_ENVCOLOR_PREV = scv->AddItem(L" ");
 
     scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV0, RGB(0, 0, 0));
     scv->SetItemBgColor(m_ITM_FILLCOLOR_PREV1, RGB(0, 0, 0));
@@ -236,33 +236,33 @@ LRESULT CDebugDisplayList::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM
 
     // Lights
     scv->SetOrigin(568, 10);
-    scv->AddItem("LIGHTS", headerColor);
-    scv->AddItem(" LOOKATX", labelColor);
-    scv->AddItem(" LOOKATY", labelColor);
-    scv->AddItem(" LIGHT1", labelColor);
-    scv->AddItem(" LIGHT2", labelColor);
-    scv->AddItem(" LIGHT3", labelColor);
-    scv->AddItem(" LIGHT4", labelColor);
-    scv->AddItem(" LIGHT5", labelColor);
-    scv->AddItem(" LIGHT6", labelColor);
-    scv->AddItem(" LIGHT7", labelColor);
-    scv->AddItem(" LIGHT8", labelColor);
+    scv->AddItem(L"LIGHTS", headerColor);
+    scv->AddItem(L" LOOKATX", labelColor);
+    scv->AddItem(L" LOOKATY", labelColor);
+    scv->AddItem(L" LIGHT1", labelColor);
+    scv->AddItem(L" LIGHT2", labelColor);
+    scv->AddItem(L" LIGHT3", labelColor);
+    scv->AddItem(L" LIGHT4", labelColor);
+    scv->AddItem(L" LIGHT5", labelColor);
+    scv->AddItem(L" LIGHT6", labelColor);
+    scv->AddItem(L" LIGHT7", labelColor);
+    scv->AddItem(L" LIGHT8", labelColor);
 
     scv->SetOrigin(628, 20);
     for (int i = 0; i < 10; i++)
     {
-        m_ITM_LIGHTS[i] = scv->AddItem("...");
+        m_ITM_LIGHTS[i] = scv->AddItem(L"...");
     }
 
 	// Tile descriptors
     scv->SetOrigin(10, 210);
-	scv->AddItem("TILE DESCRIPTORS", headerColor);
-	scv->AddItem(" # TMEM  SIZ FMT  LINE SHIFTS MASKS CMS SHIFTT MASKT CMT SCALES SCALET PALETTE LEVELS ON", labelColor);
+	scv->AddItem(L"TILE DESCRIPTORS", headerColor);
+	scv->AddItem(L" # TMEM  SIZ FMT  LINE SHIFTS MASKS CMS SHIFTT MASKT CMT SCALES SCALET PALETTE LEVELS ON", labelColor);
 
     scv->SetOrigin(16, 230);
 	for (int i = 0; i < 8; i++)
 	{
-		m_ITM_TILES[i] = scv->AddItem("...");
+		m_ITM_TILES[i] = scv->AddItem(L"...");
 	}
 
     SetTimer(TIMER_ID_DRAW, 20, NULL);
@@ -299,7 +299,7 @@ LRESULT CDebugDisplayList::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
     case IDC_BTN_REFRESH:
 		//g_Settings->SaveBool(Debugger_SteppingOps, false);
         m_bRefreshPending = true;
-        m_StatusText.SetWindowTextA("Waiting for RSP task...");
+        m_StatusText.SetWindowText(L"Waiting for RSP task...");
         ::EnableWindow(GetDlgItem(IDC_BTN_REFRESH), false);
         break;
     case IDC_BTN_EXPORT:
@@ -342,7 +342,7 @@ void CDebugDisplayList::Refresh(void)
 
     stdstr strStatus = ucodeInfo->ucodeName;
     strStatus += stdstr_f(" (Checksum: 0x%08X) - %d commands, %d triangles", ucodeInfo->checksum, numCommands, numTriangles);
-    m_StatusText.SetWindowText(strStatus.c_str());
+    m_StatusText.SetWindowText(strStatus.ToUTF16().c_str());
 
     m_DisplayListCtrl.SetRedraw(FALSE);
     m_DisplayListCtrl.DeleteAllItems();
@@ -355,11 +355,11 @@ void CDebugDisplayList::Refresh(void)
         stdstr strSegOffset = stdstr_f("%08X", dc->address);
         //stdstr strRawCommand = stdstr_f("%08X %08X", dc->rawCommand.w0, dc->rawCommand.w1);
 
-        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_VAddr, strVirtAddress.c_str());
-        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_SegOffset, strSegOffset.c_str());
-        //m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_RawCommand, strRawCommand.c_str());
-        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Command, dc->name);
-        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Parameters, dc->params.c_str());
+        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_VAddr, strVirtAddress.ToUTF16().c_str());
+        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_SegOffset, strSegOffset.ToUTF16().c_str());
+        //m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_RawCommand, strRawCommand.ToUTF16().c_str());
+        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Command, stdstr(dc->name).ToUTF16().c_str());
+        m_DisplayListCtrl.AddItem(nCmd, DisplayListCtrl_Col_Parameters, dc->params.ToUTF16().c_str());
     }
 
     m_DisplayListCtrl.SetRedraw(TRUE);
@@ -407,7 +407,7 @@ void CDebugDisplayList::Refresh(void)
 
         if (hParentItem != NULL)
         {
-            HTREEITEM hItem = m_ResourceTreeCtrl.InsertItem(str.c_str(), hParentItem, NULL);
+            HTREEITEM hItem = m_ResourceTreeCtrl.InsertItem(str.ToUTF16().c_str(), hParentItem, NULL);
             m_ResourceTreeCtrl.SetItemData(hItem, nRes);
         }
     }
@@ -456,9 +456,9 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 	stdstr strTextureImage = stdstr_f("%08X", state->m_dpTextureImage);
 	stdstr strColorImage = stdstr_f("%08X", state->m_dpColorImage);
 	stdstr strDepthImage = stdstr_f("%08X", state->m_dpDepthImage);
-	scv->SetItemText(m_ITM_TEXTUREIMAGE, strTextureImage.c_str());
-	scv->SetItemText(m_ITM_COLORIMAGE, strColorImage.c_str());
-	scv->SetItemText(m_ITM_DEPTHIMAGE, strDepthImage.c_str());
+	scv->SetItemText(m_ITM_TEXTUREIMAGE, strTextureImage.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_COLORIMAGE, strColorImage.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_DEPTHIMAGE, strDepthImage.ToUTF16().c_str());
 
 	// Geometry mode
 	bool shading_smooth, cull_front, cull_back;
@@ -513,33 +513,33 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 		CGfxLabels::LookupName(CGfxLabels::ACMuxC, state->m_dpCombiner.Ac1),
 		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
 
-	scv->SetItemText(m_ITM_CC1_COLOR, strCycle1Color.c_str());
-	scv->SetItemText(m_ITM_CC1_ALPHA, strCycle1Color.c_str());
-	scv->SetItemText(m_ITM_CC2_COLOR, strCycle1Color.c_str());
-	scv->SetItemText(m_ITM_CC2_ALPHA, strCycle1Color.c_str());
+	scv->SetItemText(m_ITM_CC1_COLOR, strCycle1Color.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC1_ALPHA, strCycle1Color.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC2_COLOR, strCycle1Color.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC2_ALPHA, strCycle1Color.ToUTF16().c_str());
 
 	// Othermode HI
 	othermode_h_t* omh = &state->m_dpOtherMode_h;
 
-	scv->SetItemText(m_ITM_OMH_PIPELINE, CGfxLabels::OtherMode_pm[omh->pm]);
-	scv->SetItemText(m_ITM_OMH_COLORDITHER, CGfxLabels::OtherMode_cd[omh->cd]);
-	scv->SetItemText(m_ITM_OMH_CYCLETYPE, CGfxLabels::OtherMode_cyc[omh->cyc]);
-	scv->SetItemText(m_ITM_OMH_TEXTPERSP, CGfxLabels::OtherMode_tp[omh->tp]);
-	scv->SetItemText(m_ITM_OMH_TEXTDETAIL, CGfxLabels::OtherMode_td[omh->td]);
-	scv->SetItemText(m_ITM_OMH_TEXTLOD, CGfxLabels::OtherMode_tl[omh->tl]);
-	scv->SetItemText(m_ITM_OMH_TEXTLUT, CGfxLabels::OtherMode_tt[omh->tt]);
-	scv->SetItemText(m_ITM_OMH_TEXTFILT, CGfxLabels::OtherMode_tf[omh->tf]);
-	scv->SetItemText(m_ITM_OMH_TEXTCONV, CGfxLabels::OtherMode_tc[omh->tc]);
-	scv->SetItemText(m_ITM_OMH_COMBKEY, CGfxLabels::OtherMode_ck[omh->ck]);
-	scv->SetItemText(m_ITM_OMH_RGBDITHER, CGfxLabels::OtherMode_rd[omh->rd]);
-	scv->SetItemText(m_ITM_OMH_ALPHADITHER, CGfxLabels::OtherMode_ad[omh->ad]);
+	scv->SetItemText(m_ITM_OMH_PIPELINE, stdstr(CGfxLabels::OtherMode_pm[omh->pm]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_COLORDITHER, stdstr(CGfxLabels::OtherMode_cd[omh->cd]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_CYCLETYPE, stdstr(CGfxLabels::OtherMode_cyc[omh->cyc]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTPERSP, stdstr(CGfxLabels::OtherMode_tp[omh->tp]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTDETAIL, stdstr(CGfxLabels::OtherMode_td[omh->td]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTLOD, stdstr(CGfxLabels::OtherMode_tl[omh->tl]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTLUT, stdstr(CGfxLabels::OtherMode_tt[omh->tt]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTFILT, stdstr(CGfxLabels::OtherMode_tf[omh->tf]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_TEXTCONV, stdstr(CGfxLabels::OtherMode_tc[omh->tc]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_COMBKEY, stdstr(CGfxLabels::OtherMode_ck[omh->ck]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_RGBDITHER, stdstr(CGfxLabels::OtherMode_rd[omh->rd]).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_OMH_ALPHADITHER, stdstr(CGfxLabels::OtherMode_ad[omh->ad]).ToUTF16().c_str());
 
 	// RDP Colors
-	scv->SetItemText(m_ITM_FILLCOLOR, stdstr_f("%08X", state->m_dpFillColor).c_str());
-	scv->SetItemText(m_ITM_FOGCOLOR, stdstr_f("%08X", state->m_dpFogColor).c_str());
-	scv->SetItemText(m_ITM_BLENDCOLOR, stdstr_f("%08X", state->m_dpBlendColor).c_str());
-	scv->SetItemText(m_ITM_PRIMCOLOR, stdstr_f("%08X", state->m_dpPrimColor).c_str());
-	scv->SetItemText(m_ITM_ENVCOLOR, stdstr_f("%08X", state->m_dpEnvColor).c_str());
+	scv->SetItemText(m_ITM_FILLCOLOR, stdstr_f("%08X", state->m_dpFillColor).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_FOGCOLOR, stdstr_f("%08X", state->m_dpFogColor).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_BLENDCOLOR, stdstr_f("%08X", state->m_dpBlendColor).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_PRIMCOLOR, stdstr_f("%08X", state->m_dpPrimColor).ToUTF16().c_str());
+	scv->SetItemText(m_ITM_ENVCOLOR, stdstr_f("%08X", state->m_dpEnvColor).ToUTF16().c_str());
 
     uint16_t fill0 = state->m_dpFillColor >> 16;
     uint16_t fill1 = state->m_dpFillColor & 0xFFFF;
@@ -570,7 +570,7 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 			t->mipmapLevels, t->enabled
 		);
 
-		scv->SetItemText(m_ITM_TILES[nTile], strTileDescriptor.c_str());
+		scv->SetItemText(m_ITM_TILES[nTile], strTileDescriptor.ToUTF16().c_str());
 	}
 
     // Lights
@@ -584,7 +584,7 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
             state->m_spLights[i].direction[1],
             state->m_spLights[i].direction[2]);
 
-        scv->SetItemText(m_ITM_LIGHTS[i], strLight.c_str());
+        scv->SetItemText(m_ITM_LIGHTS[i], strLight.ToUTF16().c_str());
 
         if (i >= 2) {
             int lightIdx = i - 2;
@@ -619,14 +619,14 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
     scv->SetItemColor(m_ITM_OML_Z_UPD, oml.z_upd ? clrOn : clrOff);
     scv->SetItemColor(m_ITM_OML_IM_RD, oml.im_rd ? clrOn : clrOff);
     scv->SetItemColor(m_ITM_OML_CLR_ON_CVG, oml.clr_on_cvg ? clrOn : clrOff);
-    scv->SetItemText(m_ITM_OML_CVG_DST, strCVG_DST.c_str());
-    scv->SetItemText(m_ITM_OML_ZMODE, strZMODE.c_str());
+    scv->SetItemText(m_ITM_OML_CVG_DST, strCVG_DST.ToUTF16().c_str());
+    scv->SetItemText(m_ITM_OML_ZMODE, strZMODE.ToUTF16().c_str());
     scv->SetItemColor(m_ITM_OML_CVG_X_ALPHA, oml.cvg_x_alpha ? clrOn : clrOff);
     scv->SetItemColor(m_ITM_OML_ALPHA_CVG_SEL, oml.alpha_cvg_sel ? clrOn : clrOff);
     scv->SetItemColor(m_ITM_OML_FORCE_BL, oml.force_bl ? clrOn : clrOff);
 
-    scv->SetItemText(m_ITM_OML_CYCLE1, strBlendCycle1.c_str());
-    scv->SetItemText(m_ITM_OML_CYCLE2, strBlendCycle2.c_str());
+    scv->SetItemText(m_ITM_OML_CYCLE1, strBlendCycle1.ToUTF16().c_str());
+    scv->SetItemText(m_ITM_OML_CYCLE2, strBlendCycle2.ToUTF16().c_str());
 }
 
 LRESULT CDebugDisplayList::OnListItemChanged(NMHDR* pNMHDR)
@@ -775,7 +775,7 @@ LRESULT CDebugDisplayList::OnResourceTreeSelChanged(NMHDR* pNMHDR)
         m_bShowRender = true;
         break;
     default:
-        ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strDefaultInfo.c_str());
+        ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strDefaultInfo.ToUTF16().c_str());
         break;
     }
     
@@ -911,24 +911,24 @@ void CDebugDisplayList::PreviewImageResource(dram_resource_t* res)
         (int)(scale*100),
         res->address, res->virtAddress);
 
-    ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strImageInfo.c_str());
+    ::SetWindowText(GetDlgItem(IDC_EDIT_RESINFO), strImageInfo.ToUTF16().c_str());
 }
 
 void CDebugDisplayList::Export(void)
 {
     OPENFILENAME openfilename;
-    char filePath[_MAX_PATH];
+    TCHAR filePath[_MAX_PATH];
 
     memset(&filePath, 0, sizeof(filePath));
     memset(&openfilename, 0, sizeof(openfilename));
 
-    sprintf(filePath, "*.c");
+    wsprintf(filePath, L"*.c");
 
-    const char* filters = (
-        /*1*/ "Display List Source (*.c)\0*.c;\0"
-        /*2*/ "Raw Display List Source (*.c)\0*.c;\0"
-        /*3*/ "Microcode binary (*.bin)\0*.bin;\0"
-        /*4*/ "RAM GFX Snapshot (*.bin)\0*.bin;\0"
+    const TCHAR* filters = (
+        /*1*/ L"Display List Source (*.c)\0*.c;\0"
+        /*2*/ L"Raw Display List Source (*.c)\0*.c;\0"
+        /*3*/ L"Microcode binary (*.bin)\0*.bin;\0"
+        /*4*/ L"RAM GFX Snapshot (*.bin)\0*.bin;\0"
     );
 
     const char *defaultExtensions[] = { "", ".c", ".c", ".bin", ".bin" };
@@ -937,13 +937,14 @@ void CDebugDisplayList::Export(void)
     openfilename.hwndOwner = (HWND)m_hWnd;
     openfilename.lpstrFilter = filters;
     openfilename.lpstrFile = filePath;
-    openfilename.lpstrInitialDir = ".";
+    openfilename.lpstrInitialDir = L".";
     openfilename.nMaxFile = MAX_PATH;
     openfilename.Flags = OFN_HIDEREADONLY;
 
     if (GetSaveFileName(&openfilename))
     {
-        stdstr path = filePath;
+        stdstr path;
+        path.FromUTF16(filePath);
 
         if (openfilename.nFileExtension == 0)
         {
@@ -962,7 +963,7 @@ void CDebugDisplayList::Export(void)
 
 /****************************************/
 
-CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color) :
+CCanvasItem::CCanvasItem(int x, int y, const TCHAR* text, COLORREF color) :
     m_X(x),
     m_Y(y),
     m_BgColor(RGB(0,0,0)),
@@ -974,7 +975,7 @@ CCanvasItem::CCanvasItem(int x, int y, const char* text, COLORREF color) :
 
     if (text != NULL)
     {
-        m_Text = strdup(text);
+        m_Text = wcsdup(text);
     }
     else
     {
@@ -1042,7 +1043,7 @@ void CCanvas::Init(void)
         CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY,
         FF_DONTCARE,
-        "Terminal");
+        L"Terminal");
 
     hOldFont = (HFONT)SelectObject(m_BackDC, m_Font);
 
@@ -1116,7 +1117,7 @@ CCanvasItem* CCanvas::GetItem(int index)
 	return m_Items[index];
 }
 
-size_t CCanvas::AddItem(const char* text, COLORREF color)
+size_t CCanvas::AddItem(const TCHAR* text, COLORREF color)
 {
     CCanvasItem* item = new CCanvasItem(m_ItemPosX, m_ItemPosY, text, color);
     DrawItem(item);
@@ -1172,7 +1173,7 @@ void CCanvas::SetItemBgColor(int id, COLORREF color)
     DrawItem(item);
 }
 
-void CCanvas::SetItemText(int id, const char* text)
+void CCanvas::SetItemText(int id, const TCHAR* text)
 {
 	CCanvasItem* item = GetItem(id);
 
@@ -1181,13 +1182,13 @@ void CCanvas::SetItemText(int id, const char* text)
         return;
     }
 
-    if (strcmp(text, item->m_Text) == 0)
+    if (wcscmp(text, item->m_Text) == 0)
     {
         return;
     }
 
     free(item->m_Text);
-    item->m_Text = strdup(text);
+    item->m_Text = wcsdup(text);
     DrawItem(item);
 }
 

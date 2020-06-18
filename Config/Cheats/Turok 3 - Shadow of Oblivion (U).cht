@@ -1,15 +1,6 @@
 [89A579F1-667E97EF-C:45]
 Name=Turok 3 - Shadow of Oblivion (U)
-Cheat0="Have PSG",E8878B8E 5959
-Cheat1="Have Cerebral Bore",E8878B89 5959
-Cheat2="Have All Secrets",E96CB01A 504F,E96CB01C 504F
-Cheat3="Have Grenade Launcher",E8878B8C 5959
-Cheat4="Infinite Life Force",E9878B54 59BB
-Cheat5="Infinite Health",E987822E B55A
-Cheat6="Infinite Arrows",E9878B60 59B6
-Cheat7="Infinite Pistol Ammo",E9878B62 59BB
-Cheat8="Infinite Shotgun Ammo",E9878B66 59B6
-Cheat9="Infinite Grenade Gun Ammo",E9878B5E 59B6
-Cheat10="Infinite Firestorm Cannon Ammo",E9878B68 59B6
-Cheat11="Have Pistol",E8878B7E 5959
-Cheat12="Have Shotgun",E8878B88 5959
+Cheat0="Infinite 9999 Life Force Gems",8168FB5C 270F
+Cheat1="Active Cheat Select",811659C4 FFFF,811659C6 FFFF,811659CA 00??
+Cheat1_N=If you want to just enable All Secrets, Select Nothing and then Uncheck it.
+Cheat1_O=$00 Nothing,$01 Invincibility,$02 All Weapons,$03 Invincible & All Weapons,$04 Unlimited Ammo,$05 Invincible & Unlimited Ammo,$06 All Weapons & Unlimited Ammo,$07 Invincible_All Weapons & Unlimited Ammo,$08 Have All Keys,$09 Invincible & All Keys,$0A All Weapons & All Keys,$0B Invincible_All Weapons & All Keys,$0C Unlimited Ammo & All Keys,$0D Invincible_Unlimited Ammo & All Keys,$0E All Weapons_Unlimited Ammo & All Keys,$0F Invincible_All Weapons_Unlimited Ammo & All Keys

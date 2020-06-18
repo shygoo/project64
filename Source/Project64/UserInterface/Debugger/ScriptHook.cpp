@@ -1,3 +1,13 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                       *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
 #include <stdafx.h>
 
 #include "ScriptHook.h"
@@ -17,6 +27,7 @@ int CScriptHook::Add(CScriptInstance* scriptInstance, void* heapptr, uint32_t pa
     jsCallback.param4 = param4;
     jsCallback.bOnce = bOnce;
     m_Callbacks.push_back(jsCallback);
+    m_ScriptSystem->CallbackAdded();
     return jsCallback.callbackId;
 }
 
@@ -77,32 +88,32 @@ void CScriptHook::InvokeByAddressInRange_MaskedOpcode(uint32_t pc, uint32_t opco
 
 void CScriptHook::InvokeByAddressInRange_GPRValue(uint32_t pc)
 {
-	int nCallbacks = m_Callbacks.size();
+    int nCallbacks = m_Callbacks.size();
 
-	for (int i = 0; i < nCallbacks; i++)
-	{
-		uint32_t startAddress = m_Callbacks[i].param;
-		uint32_t endAddress = m_Callbacks[i].param2;
-		uint32_t registers = m_Callbacks[i].param3;
-		uint32_t value = m_Callbacks[i].param4;
+    for (int i = 0; i < nCallbacks; i++)
+    {
+        uint32_t startAddress = m_Callbacks[i].param;
+        uint32_t endAddress = m_Callbacks[i].param2;
+        uint32_t registers = m_Callbacks[i].param3;
+        uint32_t value = m_Callbacks[i].param4;
 
-		if (!(pc == startAddress || (pc >= startAddress && pc <= endAddress)))
-		{
-			continue;
-		}
+        if (!(pc == startAddress || (pc >= startAddress && pc <= endAddress)))
+        {
+            continue;
+        }
 
-		for (int nReg = 0; nReg < 32; nReg++)
-		{
-			if (registers & (1 << nReg))
-			{
-				if (value == g_Reg->m_GPR[nReg].UW[0])
-				{
-					m_Callbacks[i].scriptInstance->Invoke2(m_Callbacks[i].heapptr, pc, nReg);
+        for (int nReg = 0; nReg < 32; nReg++)
+        {
+            if (registers & (1 << nReg))
+            {
+                if (value == g_Reg->m_GPR[nReg].UW[0])
+                {
+                    m_Callbacks[i].scriptInstance->Invoke2(m_Callbacks[i].heapptr, pc, nReg);
                     break;
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 }
 
 void CScriptHook::InvokeAll()
@@ -122,6 +133,7 @@ void CScriptHook::RemoveById(int callbackId)
         if (m_Callbacks[i].callbackId == callbackId)
         {
             m_Callbacks.erase(m_Callbacks.begin() + i);
+            m_ScriptSystem->CallbackRemoved();
             return;
         }
     }
@@ -135,6 +147,7 @@ void CScriptHook::RemoveByParam(uint32_t param)
         if (m_Callbacks[i].param == param)
         {
             m_Callbacks.erase(m_Callbacks.begin() + i);
+            m_ScriptSystem->CallbackRemoved();
             return;
         }
     }
@@ -148,6 +161,7 @@ void CScriptHook::RemoveByInstance(CScriptInstance* scriptInstance)
         if (m_Callbacks[i].scriptInstance == scriptInstance)
         {
             m_Callbacks.erase(m_Callbacks.begin() + i);
+            m_ScriptSystem->CallbackRemoved();
         }
     }
 }

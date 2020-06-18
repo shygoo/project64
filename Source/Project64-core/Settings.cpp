@@ -90,6 +90,7 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Cmd_BaseDirectory, new CSettingTypeTempString(BaseDirectory));
     AddHandler(Cmd_ShowHelp, new CSettingTypeTempBool(false));
     AddHandler(Cmd_RomFile, new CSettingTypeTempString(""));
+    AddHandler(Cmd_ComboDiskFile, new CSettingTypeTempString(""));
 
     //Support Files
     AddHandler(SupportFile_Settings, new CSettingTypeApplicationPath("Settings", "ConfigFile", SupportFile_SettingsDefault));
@@ -137,6 +138,7 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Setting_LanguageDirDefault, new CSettingTypeRelativePath("Lang", ""));
     AddHandler(Setting_LanguageDir, new CSettingTypeApplicationPath("Lang Directory", "Directory", Setting_LanguageDirDefault));
 	AddHandler(Setting_SyncViaAudioEnabled, new CSettingTypeTempBool(false, "SyncViaAudioEnabled"));
+    AddHandler(Setting_DiskSaveType, new CSettingTypeApplication("Settings", "Disk Save Type", (uint32_t)1));
 
 	AddHandler(Default_RDRamSize, new CSettingTypeApplication("Defaults", "RDRAM Size", 0x400000u));
 	AddHandler(Default_UseHleGfx, new CSettingTypeApplication("Defaults", "HLE GFX Default", true));
@@ -147,9 +149,12 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
 	AddHandler(Default_32Bit, new CSettingTypeApplication("Defaults", "32bit", true));
 	AddHandler(Default_SyncViaAudio, new CSettingTypeApplication("Defaults", "Audio-Sync Audio", true));
 	AddHandler(Default_FixedAudio, new CSettingTypeApplication("Defaults", "Fixed Audio", true));
-    AddHandler(Default_UnalignedDMA, new CSettingTypeApplication("Defaults", "Unaligned DMA", false));
+	AddHandler(Default_UnalignedDMA, new CSettingTypeApplication("Defaults", "Unaligned DMA", false));
+	AddHandler(Default_RandomizeSIPIInterrupts, new CSettingTypeApplication("Defaults", "Randomize SI/PI Interrupts", true));
+	AddHandler(Default_SMM_Protect_Memory, new CSettingTypeApplication("Defaults", "SMM-Protect", false));
 
     AddHandler(Rdb_GoodName, new CSettingTypeRomDatabase("Good Name", Game_GameName));
+	AddHandler(Rdb_RPCKey, new CSettingTypeRomDatabase("RPC Key", Game_RPCKey));
     AddHandler(Rdb_SaveChip, new CSettingTypeRDBSaveChip("Save Type", (uint32_t)SaveChip_Auto));
 #ifdef _DEBUG
     AddHandler(Rdb_CpuType, new CSettingTypeRDBCpuType("CPU Type", CPU_SyncCores));
@@ -184,7 +189,7 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Rdb_SMM_StoreInstruc, new CSettingTypeRomDatabase("SMM-StoreInstr", false));
     AddHandler(Rdb_SMM_PIDMA, new CSettingTypeRomDatabase("SMM-PI DMA", true));
     AddHandler(Rdb_SMM_TLB, new CSettingTypeRomDatabase("SMM-TLB", true));
-    AddHandler(Rdb_SMM_Protect, new CSettingTypeRomDatabase("SMM-Protect", false));
+    AddHandler(Rdb_SMM_Protect, new CSettingTypeRomDatabase("SMM-Protect", Default_SMM_Protect_Memory));
     AddHandler(Rdb_SMM_ValidFunc, new CSettingTypeRomDatabase("SMM-FUNC", true));
     AddHandler(Rdb_GameCheatFix, new CSettingTypeRomDatabaseIndex("Cheat", "", ""));
     AddHandler(Rdb_GameCheatFixPlugin, new CSettingTypeRomDatabaseIndex("CheatPlugin", "", ""));
@@ -194,6 +199,7 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Rdb_AllowROMWrites, new CSettingTypeRDBYesNo("AllowROMWrites", false));
     AddHandler(Rdb_CRC_Recalc, new CSettingTypeRDBYesNo("CRC-Recalc", false));
     AddHandler(Rdb_UnalignedDMA, new CSettingTypeRomDatabase("Unaligned DMA", Default_UnalignedDMA));
+    AddHandler(Rdb_RandomizeSIPIInterrupts, new CSettingTypeRomDatabase("Randomize SI/PI Interrupts", Default_RandomizeSIPIInterrupts));
 
     AddHandler(Game_IniKey, new CSettingTypeTempString(""));
     AddHandler(Game_File, new CSettingTypeTempString(""));
@@ -253,6 +259,8 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Game_OverClockModifier, new CSettingTypeGame("OverClockModifier", (uint32_t)1));
     AddHandler(Game_FullSpeed, new CSettingTypeTempBool(true, "Full Speed"));
     AddHandler(Game_UnalignedDMA, new CSettingTypeGame("Unaligned DMA", Rdb_UnalignedDMA));
+    AddHandler(Game_RandomizeSIPIInterrupts, new CSettingTypeGame("Randomize SI/PI Interrupts", Rdb_RandomizeSIPIInterrupts));
+	AddHandler(Game_RPCKey, new CSettingTypeTempString(""));
 
     //User Interface
     AddHandler(UserInterface_ShowCPUPer, new CSettingTypeApplication("Settings", "Display CPU Usage", (uint32_t)false));
@@ -328,6 +336,8 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
 
     AddHandler(UserInterface_BasicMode, new CSettingTypeApplication("Settings", "Basic Mode", (uint32_t)true));
     AddHandler(File_DiskIPLPath, new CSettingTypeApplicationPath("Settings", "Disk IPL ROM Path", Default_None));
+    AddHandler(File_DiskIPLUSAPath, new CSettingTypeApplicationPath("Settings", "Disk IPL USA ROM Path", Default_None));
+    AddHandler(File_DiskIPLTOOLPath, new CSettingTypeApplicationPath("Settings", "Disk IPL TOOL ROM Path", Default_None));
 
     AddHandler(Debugger_Enabled, new CSettingTypeApplication("Debugger", "Debugger", false));
     AddHandler(Debugger_ShowTLBMisses, new CSettingTypeApplication("Debugger", "Show TLB Misses", false));
@@ -343,10 +353,12 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Debugger_WriteBPExists, new CSettingTypeTempBool(false));
     AddHandler(Debugger_ReadBPExists, new CSettingTypeTempBool(false));
     AddHandler(Debugger_WaitingForStep, new CSettingTypeTempBool(false));
-    AddHandler(Debugger_AutoRefreshMemoryView, new CSettingTypeApplication("Debugger", "Auto Refresh Memory View", true));
     AddHandler(Debugger_CPULoggingEnabled, new CSettingTypeApplication("Debugger", "Enable CPU Logging", false));
     AddHandler(Debugger_CPULogBufferSize, new CSettingTypeApplication("Debugger", "CPU Log Buffer Size", (uint32_t)1024));
     AddHandler(Debugger_ExceptionBreakpoints, new CSettingTypeApplication("Debugger", "Exception Breakpoints", (uint32_t)0));
+    AddHandler(Debugger_FpExceptionBreakpoints, new CSettingTypeApplication("Debugger", "FP Exception Breakpoints", (uint32_t)0));
+    AddHandler(Debugger_IntrBreakpoints, new CSettingTypeApplication("Debugger", "Interrupt Breakpoints", (uint32_t)0));
+    AddHandler(Debugger_RcpIntrBreakpoints, new CSettingTypeApplication("Debugger", "RCP Interrupt Breakpoints", (uint32_t)0));
     AddHandler(Debugger_DebugLanguage, new CSettingTypeApplication("Debugger", "Debug Language", false));
     AddHandler(Debugger_ShowDivByZero, new CSettingTypeApplication("Debugger", "Show Div by zero", false));
     AddHandler(Debugger_AppLogFlush, new CSettingTypeApplication("Logging", "Log Auto Flush", (uint32_t)false));
@@ -434,13 +446,9 @@ void CSettings::AddHowToHandleSetting(const char * BaseDirectory)
     AddHandler(Cheat_Entry, new CSettingTypeCheats("", Cheat_UserEntry));
     AddHandler(Cheat_Notes, new CSettingTypeCheats("_N", Cheat_UserNotes));
     AddHandler(Cheat_Options, new CSettingTypeCheats("_O", Cheat_UserOptions));
-    AddHandler(Cheat_Range, new CSettingTypeCheats("_R", Cheat_UserRange));
-    AddHandler(Cheat_RangeNotes, new CSettingTypeCheats("_RN", Cheat_UserRangeNotes));
     AddHandler(Cheat_UserEntry, new CSettingTypeGameIndex("Cheat", "", ""));
     AddHandler(Cheat_UserNotes, new CSettingTypeGameIndex("Cheat", "_N", ""));
     AddHandler(Cheat_UserOptions, new CSettingTypeGameIndex("Cheat", "_O", ""));
-    AddHandler(Cheat_UserRange, new CSettingTypeGameIndex("Cheat", "_R", ""));
-    AddHandler(Cheat_UserRangeNotes, new CSettingTypeGameIndex("Cheat", "_RN", ""));
     AddHandler(Cheat_Active, new CSettingTypeGameIndex("Cheat", "Active", false));
     AddHandler(Cheat_Extension, new CSettingTypeGameIndex("Cheat", ".exten", "??? - Not Set"));
 

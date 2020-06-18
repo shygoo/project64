@@ -1,9 +1,6 @@
 [6A162FF2-2093704C-C:50]
 Name=Turok 3 - Shadow of Oblivion (E)
-Cheat0="Infinite\Grenade Gun Ammo",E9878B5E 59B6
-Cheat1="Have\a Grenade Launcher",E88790AC 5959
-Cheat2="Infinite\Shotgun Ammo",E9879086 59B6
-Cheat3="Have\Shotgun",E88790A8 5959
-Cheat4="Infinite\Arrows",E9879080 59BB
-Cheat5="Infinite\Life Units",E9878B54 59BB
-Cheat6="Access\All Cheats & Level Warp",E96CB02C 504F,E96CB02A 504F
+Cheat0="Infinite 9999 Life Force Gems",8168FB5C 270F
+Cheat1="Active Cheat Select",811659D4 FFFF,811659D6 FFFF,811659DA 00??
+Cheat1_N=If you want to just enable All Secrets, Select Nothing and then Uncheck it.
+Cheat1_O=$00 Nothing,$01 Invincibility,$02 All Weapons,$03 Invincible & All Weapons,$04 Unlimited Ammo,$05 Invincible & Unlimited Ammo,$06 All Weapons & Unlimited Ammo,$07 Invincible_All Weapons & Unlimited Ammo,$08 Have All Keys,$09 Invincible & All Keys,$0A All Weapons & All Keys,$0B Invincible_All Weapons & All Keys,$0C Unlimited Ammo & All Keys,$0D Invincible_Unlimited Ammo & All Keys,$0E All Weapons_Unlimited Ammo & All Keys,$0F Invincible_All Weapons_Unlimited Ammo & All Keys

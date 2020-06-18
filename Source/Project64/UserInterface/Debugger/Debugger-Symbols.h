@@ -20,14 +20,24 @@ class CDebugSymbols :
     public CDialogResize<CDebugSymbols>
 {
 private:
-    CListViewCtrl m_SymbolsListView;
-    CAddSymbolDlg m_AddSymbolDlg;
+    enum {
+        SymbolsListView_Col_Address,
+        SymbolsListView_Col_Type,
+        SymbolsListView_Col_Name,
+        SymbolsListView_Col_Value,
+        SymbolsListView_Col_Description,
+        SymbolsListView_Num_Columns
+    };
 
-    HANDLE m_AutoRefreshThread;
-    static DWORD WINAPI CDebugSymbols::AutoRefreshProc(void* _this);
+    static const CSetValueDlg::ComboItem ModalChangeTypeItems[];
+
+    CListViewCtrl m_SymbolsListView;
+    CSetValueDlg  m_SetValueDlg;
+    CAddSymbolDlg m_AddSymbolDlg;
 
 public:
     enum { IDD = IDD_Debugger_Symbols };
+    enum { TIMER_ID_AUTO_REFRESH };
 
     CDebugSymbols(CDebuggerUI * debugger);
     //virtual ~CDebugScripts(void);
@@ -40,13 +50,14 @@ public:
     LRESULT	OnListDblClicked(NMHDR* pNMHDR);
     LRESULT OnDestroy(void);
     void OnExitSizeMove(void);
+    void OnTimer(UINT_PTR nIDEvent);
 
     BEGIN_MSG_MAP_EX(CDebugSymbols)
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         MSG_WM_DESTROY(OnDestroy)
         NOTIFY_HANDLER_EX(IDC_SYMBOLS_LIST, NM_DBLCLK, OnListDblClicked)
-        //NOTIFY_HANDLER_EX(IDC_CMD_LIST, NM_RCLICK, OnListClicked)
+        MSG_WM_TIMER(OnTimer)
         CHAIN_MSG_MAP(CDialogResize<CDebugSymbols>)
         MSG_WM_EXITSIZEMOVE(OnExitSizeMove);
         END_MSG_MAP()

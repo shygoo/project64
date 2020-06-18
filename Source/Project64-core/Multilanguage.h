@@ -64,6 +64,7 @@ enum LanguageStringID
     MENU_RECENT_ROM = 107,
     MENU_RECENT_DIR = 108,
     MENU_EXIT = 109,
+    MENU_OPEN_COMBO = 110,
 
     //System Menu
     MENU_SYSTEM = 120,
@@ -234,6 +235,7 @@ enum LanguageStringID
     TAB_ROMSTATUS = 410,
     TAB_RECOMPILER = 411,
     TAB_DEFAULTS = 412,
+    TAB_DISKDRIVE = 413,
 
     //Plugin Dialog
     PLUG_ABOUT = 420,
@@ -270,7 +272,11 @@ enum LanguageStringID
     OPTION_CHANGE_FR = 466,
     OPTION_CHECK_RUNNING = 467,
     OPTION_UNIQUE_SAVE_DIR = 468,
+
     OPTION_IPL_ROM_PATH = 469,
+    OPTION_IPL_ROM_USA_PATH = 470,
+    OPTION_IPL_ROM_TOOL_PATH = 471,
+    OPTION_DISKSAVETYPE = 472,
 
     //Rom Browser Tab
     RB_MAX_ROMS = 480,
@@ -328,6 +334,8 @@ enum LanguageStringID
     ROM_DELAY_DP = 539,
     ROM_OVER_CLOCK_MODIFIER = 5400,
     ROM_UNALIGNED_DMA = 5410,
+    ROM_RANDOMIZE_SIPI_INTERRUPTS = 5420,
+    ROM_MEM_SIZE_NOTE = 5430,
 
     //Core Styles
     CORE_INTERPTER = 540,
@@ -402,6 +410,10 @@ enum LanguageStringID
     BOTTOM_RESET_ALL = 721,
     BOTTOM_APPLY = 722,
     BOTTOM_CLOSE = 723,
+    
+    //Disk Save Type
+    DISKSAVE_SHADOW = 730,
+    DISKSAVE_RAM = 731,
 
     /*********************************************************************************
     * ROM Information                                                                *
@@ -559,6 +571,8 @@ enum LanguageStringID
     MSG_FAIL_IMAGE_IPL = 2058,
     MSG_IPL_REQUIRED = 2059,
     MSG_MSGBOX_WARNING_TITLE = 2060,
+    MSG_USA_IPL_REQUIRED = 2061,
+    MSG_TOOL_IPL_REQUIRED = 2062,
 
     /*********************************************************************************
     * Android                                                                        *

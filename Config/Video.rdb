@@ -1849,6 +1849,8 @@ depthmode=1
 fast_crc=0
 stipple_mode=1
 stipple_pattern=4286595040
+fb_read_always=1
+fb_smart=0
 
 [2577C7D4-D18FAAAE-C:50]
 Good Name=Mario Kart 64 (E) (V1.1)
@@ -1857,6 +1859,8 @@ depthmode=1
 fast_crc=0
 stipple_mode=1
 stipple_pattern=4286595040
+fb_read_always=1
+fb_smart=0
 
 [6BFF4758-E5FF5D5E-C:4A]
 Good Name=Mario Kart 64 (J) (V1.0)
@@ -1865,6 +1869,8 @@ depthmode=1
 fast_crc=0
 stipple_mode=1
 stipple_pattern=4286595040
+fb_read_always=1
+fb_smart=0
 
 [C9C3A987-5810344C-C:4A]
 Good Name=Mario Kart 64 (J) (V1.1)
@@ -1873,6 +1879,8 @@ depthmode=1
 fast_crc=0
 stipple_mode=1
 stipple_pattern=4286595040
+fb_read_always=1
+fb_smart=0
 
 [3E5055B6-2E92DA52-C:45]
 Good Name=Mario Kart 64 (U)
@@ -1881,6 +1889,8 @@ depthmode=1
 fast_crc=0
 stipple_mode=1
 stipple_pattern=4286595040
+fb_read_always=1
+fb_smart=0
 
 [9C663069-80F24A80-C:50]
 Good Name=Mario Party (E) (M3)
@@ -2268,6 +2278,12 @@ Internal Name=NINTAMAGAMEGALLERY64
 depthmode=0
 fb_smart=0
 force_microcheck=1
+
+[67D20729-F696774C-C:4A]
+Good Name=Nintendo All-Star! Dairantou Smash Brothers (J)
+Internal Name=SMASH BROTHERS
+fb_read_always=1
+fb_smart=0
 
 [8A97A197-272DF6C1-C:50]
 Good Name=Nuclear Strike 64 (E) (M2)
@@ -3251,6 +3267,24 @@ Good Name=Super Robot Taisen 64 (J)
 Internal Name=½°Êß°ÛÎÞ¯ÄÀ²¾Ý64
 fast_crc=0
 use_sts1_only=1
+
+[DD26FDA1-CB4A6BE3-C:55]
+Good Name=Super Smash Bros. (A)
+Internal Name=SMASH BROTHERS
+fb_read_always=1
+fb_smart=0
+
+[93945F48-5C0F2E30-C:50]
+Good Name=Super Smash Bros. (E) (M3)
+Internal Name=SMASH BROTHERS
+fb_read_always=1
+fb_smart=0
+
+[916B8B5B-780B85A4-C:45]
+Good Name=Super Smash Bros. (U)
+Internal Name=SMASH BROTHERS
+fb_read_always=1
+fb_smart=0
 
 [2CBB127F-09C2BFD8-C:50]
 Good Name=Supercross 2000 (E) (M3)

@@ -2,7 +2,9 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup Label="Configuration">
-    <PlatformToolset Condition="'$(DefaultPlatformToolset)'!=''">$(DefaultPlatformToolset)_xp</PlatformToolset>
+    <PlatformToolset Condition="'$(DefaultPlatformToolset)'!='' AND '$(DefaultPlatformToolset)'!='v142'">$(DefaultPlatformToolset)_xp</PlatformToolset>
+    <PlatformToolset Condition="'$(DefaultPlatformToolset)'=='v142'">$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
 
   <ImportGroup Label="PropertySheets">
@@ -124,10 +126,10 @@
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)map/$(TargetName).map</MapFileName>
       <MapExports>false</MapExports>
-      <HeapReserveSize>0</HeapReserveSize>
-      <HeapCommitSize>0</HeapCommitSize>
-      <StackReserveSize>0</StackReserveSize>
-      <StackCommitSize>0</StackCommitSize>
+      <HeapReserveSize />
+      <HeapCommitSize />
+      <StackReserveSize />
+      <StackCommitSize />
       <SwapRunFromCD>false</SwapRunFromCD>
       <SwapRunFromNET>false</SwapRunFromNET>
       <OptimizeReferences>true</OptimizeReferences>

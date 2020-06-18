@@ -5,6 +5,7 @@
 HWND CSupportWindow::m_hParent = NULL;
 CSupportWindow * CSupportWindow::m_this = NULL;
 uint32_t CSupportWindow::m_RunCount = 0;
+uint32_t CSupportWindow::m_TimeOutTime = 30;
 
 CSupportWindow::CSupportWindow(void)
 {
@@ -49,10 +50,10 @@ void CSupportWindow::EnableContinue()
 
 LRESULT CSupportWindow::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    SetWindowTextW(m_hWnd, wGS(MSG_SUPPORT_TITLE).c_str());
-    SetWindowTextW(GetDlgItem(IDC_ENTER_CODE), wGS(MSG_SUPPORT_ENTER_CODE).c_str());
-    SetWindowTextW(GetDlgItem(ID_SUPPORT_PJ64), wGS(MSG_SUPPORT_PROJECT64).c_str());
-    SetWindowTextW(GetDlgItem(IDCANCEL), wGS(MSG_SUPPORT_CONTINUE).c_str());
+    ::SetWindowTextW(m_hWnd, wGS(MSG_SUPPORT_TITLE).c_str());
+    ::SetWindowTextW(GetDlgItem(IDC_ENTER_CODE), wGS(MSG_SUPPORT_ENTER_CODE).c_str());
+    ::SetWindowTextW(GetDlgItem(ID_SUPPORT_PJ64), wGS(MSG_SUPPORT_PROJECT64).c_str());
+    ::SetWindowTextW(GetDlgItem(IDCANCEL), wGS(MSG_SUPPORT_CONTINUE).c_str());
 
     {
         HWND hInfo = GetDlgItem(IDC_INFO);
@@ -72,7 +73,7 @@ LRESULT CSupportWindow::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
         {
             ::SetWindowPos(hInfo,NULL,0,0,rcWin.right, rcWin.bottom,SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER);
         }
-        SetWindowTextW(hInfo, InfoText.c_str());
+        ::SetWindowTextW(hInfo, InfoText.c_str());
 
         ::GetWindowRect(hInfo,&rcWin);
         ::MapWindowPoints(NULL, m_hWnd, (LPPOINT)&rcWin, 2);
@@ -91,7 +92,7 @@ LRESULT CSupportWindow::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 
         ::EnableWindow(GetDlgItem(IDCANCEL), false);
         srand ((uint32_t)time(NULL));
-        SetTimer(0, ((rand() % 35) + 5) * 1000, NULL);
+        SetTimer(0, 1000, NULL);
     }
     return TRUE;
 }
@@ -120,8 +121,14 @@ LRESULT CSupportWindow::OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /
 
 LRESULT CSupportWindow::OnTimer(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    KillTimer(wParam);
-    EnableContinue();
+    m_TimeOutTime -= 1;
+    if (m_TimeOutTime == 0)
+    {
+        KillTimer(wParam);
+        EnableContinue();
+    }
+    stdstr_f continue_txt(m_TimeOutTime > 0 ? "%s (%d)" : "%s", GS(MSG_SUPPORT_CONTINUE), m_TimeOutTime);
+    ::SetWindowTextW(GetDlgItem(IDCANCEL), continue_txt.ToUTF16().c_str());
     return true;
 }
 
@@ -133,7 +140,8 @@ LRESULT CSupportWindow::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCt
 
 LRESULT CSupportWindow::OnSupportProject64(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-    ShellExecute(NULL, "open", "http://www.pj64-emu.com/support-project64.html", NULL, NULL, SW_SHOWMAXIMIZED);
+    stdstr SupportURL = stdstr_f("http://www.pj64-emu.com/support-project64.html?ver=%s", VER_FILE_VERSION_STR);
+    ShellExecute(NULL, L"open", SupportURL.ToUTF16().c_str(), NULL, NULL, SW_SHOWMAXIMIZED);
     return TRUE;
 }
 

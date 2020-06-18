@@ -93,28 +93,28 @@ LRESULT	CSettingConfig::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     CConfigSettingSection * SettingsSection;
 
     //Set the text for all gui Items
-    SetDlgItemTextW(m_hWnd, IDC_RESET_PAGE, wGS(BOTTOM_RESET_PAGE).c_str());
-    SetDlgItemTextW(m_hWnd, IDC_RESET_ALL, wGS(BOTTOM_RESET_ALL).c_str());
-    SetDlgItemTextW(m_hWnd, IDOK, wGS(CHEAT_OK).c_str());
-    SetDlgItemTextW(m_hWnd, IDCANCEL, wGS(CHEAT_CANCEL).c_str());
-    SetDlgItemTextW(m_hWnd, IDAPPLY, wGS(BOTTOM_APPLY).c_str());
+    SetDlgItemText(IDC_RESET_PAGE, wGS(BOTTOM_RESET_PAGE).c_str());
+    SetDlgItemText(IDC_RESET_ALL, wGS(BOTTOM_RESET_ALL).c_str());
+    SetDlgItemText(IDOK, wGS(CHEAT_OK).c_str());
+    SetDlgItemText(IDCANCEL, wGS(CHEAT_CANCEL).c_str());
+    SetDlgItemText(IDAPPLY, wGS(BOTTOM_APPLY).c_str());
 
     if (m_GameConfig)
     {
         if (g_Settings->LoadBool(Setting_RdbEditor))
         {
-            SetWindowText(stdstr_f("%s ** RDB Edit Mode **", ConfigRomTitle.c_str()).c_str());
+            SetWindowText(stdstr_f("%s ** RDB Edit Mode **", ConfigRomTitle.c_str()).ToUTF16().c_str());
         }
         else
         {
-            SetWindowText(ConfigRomTitle.c_str());
+            SetWindowText(ConfigRomTitle.ToUTF16().c_str());
         }
     }
     else
     {
         if (g_Settings->LoadBool(Setting_RdbEditor))
         {
-            SetWindowTextW(m_hWnd, stdstr_f("%s ** RDB Edit Mode **", GS(OPTIONS_TITLE)).ToUTF16().c_str());
+            SetWindowText(stdstr_f("%s ** RDB Edit Mode **", GS(OPTIONS_TITLE)).ToUTF16().c_str());
         }
         else
         {
@@ -131,12 +131,14 @@ LRESULT	CSettingConfig::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
         m_GeneralOptionsPage = new CGeneralOptionsPage(this, this->m_hWnd, rcSettingInfo);
         m_AdvancedPage = new CAdvancedOptionsPage(this->m_hWnd, rcSettingInfo);
         m_DefaultsPage = new CDefaultsOptionsPage(this->m_hWnd, rcSettingInfo);
+        m_DiskDrivePage = new CDiskDrivePage(this->m_hWnd, rcSettingInfo);
 
         SettingsSection = new CConfigSettingSection(wGS(TAB_OPTIONS).c_str());
         SettingsSection->AddPage(m_GeneralOptionsPage);
         SettingsSection->AddPage(m_AdvancedPage);
         SettingsSection->AddPage(m_DefaultsPage);
         SettingsSection->AddPage(new COptionsDirectoriesPage(this->m_hWnd, rcSettingInfo));
+        SettingsSection->AddPage(m_DiskDrivePage);
         m_Sections.push_back(SettingsSection);
 
         SettingsSection = new CConfigSettingSection(wGS(TAB_ROMSELECTION).c_str());

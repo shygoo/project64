@@ -1,3 +1,14 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                       *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
+
 #pragma once
 
 #include <stdafx.h>
@@ -21,6 +32,13 @@ public:
 
 private:
     static ExcCheckboxMeta ExcCheckboxMap[];
+    static ExcCheckboxMeta FpExcCheckboxMap[];
+    static ExcCheckboxMeta IntrCheckboxMap[];
+    static ExcCheckboxMeta RcpIntrCheckboxMap[];
+
+    void InitCheckboxes(ExcCheckboxMeta* checkboxMap, SettingID settingID, bool bShift = false);
+    void UpdateBpSetting(ExcCheckboxMeta* checkboxMap, SettingID settingID, WORD wID, bool bChecked, bool bShift = false);
+    void EnableCheckboxes(ExcCheckboxMeta* checkboxMap, bool bEnable);
 
     LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
     LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);

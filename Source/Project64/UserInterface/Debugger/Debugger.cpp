@@ -36,6 +36,7 @@ CDebuggerUI::CDebuggerUI() :
 	m_DisplayList(NULL),
     m_DMALog(NULL),
     m_CPULog(NULL),
+    m_SymbolTable(NULL),
     m_StepEvent(false)
 {
     g_Debugger = this;
@@ -45,10 +46,8 @@ CDebuggerUI::CDebuggerUI() :
 
     m_DMALog = new CDMALog();
     m_CPULog = new CCPULog();
+    m_SymbolTable = new CSymbolTable(this);
 
-	InitializeCriticalSection(&m_CriticalSection);
-
-	CSymbols::InitializeCriticalSection();
     g_Settings->RegisterChangeCB(GameRunning_InReset, this, (CSettings::SettingChangedFunc)GameReset);
     g_Settings->RegisterChangeCB(Debugger_SteppingOps, this, (CSettings::SettingChangedFunc)SteppingOpsChanged);
     g_Settings->RegisterChangeCB(GameRunning_CPU_Running, this, (CSettings::SettingChangedFunc)GameCpuRunningChanged);
@@ -76,9 +75,7 @@ CDebuggerUI::~CDebuggerUI(void)
 	delete m_DisplayList;
     delete m_DMALog;
     delete m_CPULog;
-
-    CSymbols::DeleteCriticalSection();
-	DeleteCriticalSection(&m_CriticalSection);
+    delete m_SymbolTable;
 }
 
 void CDebuggerUI::SteppingOpsChanged(CDebuggerUI * _this)
@@ -130,9 +127,10 @@ void CDebuggerUI::GameReset(CDebuggerUI * _this)
         _this->m_StackTrace->ClearEntries();
     }
 
-    CSymbols::EnterCriticalSection();
-    CSymbols::Load();
-    CSymbols::LeaveCriticalSection();
+    if (_this->m_SymbolTable)
+    {
+        _this->m_SymbolTable->Load();
+    }
 
     if (_this->m_Symbols)
     {
@@ -240,10 +238,6 @@ void CDebuggerUI::OpenMemoryDump()
 
 void CDebuggerUI::OpenMemoryWindow(void)
 {
-    if (g_MMU == NULL)
-    {
-        return;
-    }
     if (m_MemoryView == NULL)
     {
         m_MemoryView = new CDebugMemoryView(this);
@@ -486,190 +480,9 @@ CCPULog* CDebuggerUI::CPULog()
     return m_CPULog;
 }
 
-// thread safe LW_PAddr
-// does not trigger application breakpoint if paddr is invalid
-bool CDebuggerUI::DebugLW_PAddr(uint32_t paddr, uint32_t& value)
+CSymbolTable* CDebuggerUI::SymbolTable()
 {
-     if (g_MMU == NULL)
-     {
-          return false;
-     }
-
-     if ((paddr < g_MMU->RdramSize()) || // RDRAM
-          (paddr >= 0x04000000 && paddr <= 0x04001FFF)) //  DMEM/IMEM
-     {
-          value = *(uint32_t*)(g_MMU->Rdram() + paddr);
-          return true;
-     }
-     else if (paddr >= 0x05000000 && paddr <= 0x050004FF) // 64DD buffer
-     {
-          // todo
-          return false;
-     }
-     else if (paddr >= 0x06000000 && paddr <= 0x06FFFFFF) // Cartridge Domain 1 (Address 1) (64DD IPL ROM)
-     {
-          uint32_t iplRomOffset = paddr - 0x06000000;
-
-          if (g_DDRom != NULL && iplRomOffset < g_DDRom->GetRomSize())
-          {
-               value = *(uint32_t*)(g_MMU->Rdram() + paddr);
-               return true;
-          }
-     }
-     else if (paddr >= 0x08000000 && paddr < 0x08FFFFFF) // Cartridge Domain 2 (Address 2)
-     {
-          uint32_t saveOffset = paddr & 0x000FFFFF;
-
-          if (g_System->m_SaveUsing == SaveChip_Sram && saveOffset <= 0x7FFF) // sram
-          {
-               uint8_t tmp[4] = "";
-               CSram *sram = g_MMU->GetSram();
-               sram->DmaFromSram(tmp, paddr - 0x08000000, 4);
-               value = tmp[3] << 24 | tmp[2] << 16 | tmp[1] << 8 | tmp[0];
-               return true;
-          }
-          else if (g_System->m_SaveUsing == SaveChip_FlashRam && saveOffset == 0) // flash ram status
-          {
-               CFlashram* flashRam = g_MMU->GetFlashram();
-               value = flashRam->ReadFromFlashStatus(0x08000000);
-               return true;
-          }
-     }
-     else if (paddr >= 0x10000000 && paddr <= 0x15FFFFFF) // Cartridge ROM
-     {
-          uint32_t cartRomOffset = paddr - 0x10000000;
-          if (g_Rom != NULL && paddr < g_Rom->GetRomSize())
-          {
-               value = *(uint32_t*)(g_Rom->GetRomAddress() + cartRomOffset);
-               return true;
-          }
-     }
-     else if (paddr >= 0x1FC00000 && paddr <= 0x1FC007BF) // PIF ROM
-     {
-          return false;
-     }
-     else if (paddr >= 0x1FC007C0 && paddr <= 0x1FC007FF) // PIF RAM
-     {
-          uint32_t pifRamOffset = paddr - 0x1FC007C0;
-          value = *(uint32_t*)(g_MMU->PifRam() + pifRamOffset);
-          return true;
-     }
-
-     // note: write-only registers are excluded
-     switch (paddr)
-     {
-     case 0x03F00000: value = g_Reg->RDRAM_CONFIG_REG; return true;
-     case 0x03F00004: value = g_Reg->RDRAM_DEVICE_ID_REG; return true;
-     case 0x03F00008: value = g_Reg->RDRAM_DELAY_REG; return true;
-     case 0x03F0000C: value = g_Reg->RDRAM_MODE_REG; return true;
-     case 0x03F00010: value = g_Reg->RDRAM_REF_INTERVAL_REG; return true;
-     case 0x03F00014: value = g_Reg->RDRAM_REF_ROW_REG; return true;
-     case 0x03F00018: value = g_Reg->RDRAM_RAS_INTERVAL_REG; return true;
-     case 0x03F0001C: value = g_Reg->RDRAM_MIN_INTERVAL_REG; return true;
-     case 0x03F00020: value = g_Reg->RDRAM_ADDR_SELECT_REG; return true;
-     case 0x03F00024: value = g_Reg->RDRAM_DEVICE_MANUF_REG; return true;
-     case 0x04040010: value = g_Reg->SP_STATUS_REG; return true;
-     case 0x04040014: value = g_Reg->SP_DMA_FULL_REG; return true;
-     case 0x04040018: value = g_Reg->SP_DMA_BUSY_REG; return true;
-     case 0x0404001C: value = g_Reg->SP_SEMAPHORE_REG; return true;
-     case 0x04080000: value = g_Reg->SP_PC_REG; return true;
-     case 0x0410000C: value = g_Reg->DPC_STATUS_REG; return true;
-     case 0x04100010: value = g_Reg->DPC_CLOCK_REG; return true;
-     case 0x04100014: value = g_Reg->DPC_BUFBUSY_REG; return true;
-     case 0x04100018: value = g_Reg->DPC_PIPEBUSY_REG; return true;
-     case 0x0410001C: value = g_Reg->DPC_TMEM_REG; return true;
-     case 0x04300000: value = g_Reg->MI_MODE_REG; return true;
-     case 0x04300004: value = g_Reg->MI_VERSION_REG; return true;
-     case 0x04300008: value = g_Reg->MI_INTR_REG; return true;
-     case 0x0430000C: value = g_Reg->MI_INTR_MASK_REG; return true;
-     case 0x04400000: value = g_Reg->VI_STATUS_REG; return true;
-     case 0x04400004: value = g_Reg->VI_ORIGIN_REG; return true;
-     case 0x04400008: value = g_Reg->VI_WIDTH_REG; return true;
-     case 0x0440000C: value = g_Reg->VI_INTR_REG; return true;
-     case 0x04400010: value = g_Reg->VI_V_CURRENT_LINE_REG; return true;
-     case 0x04400014: value = g_Reg->VI_BURST_REG; return true;
-     case 0x04400018: value = g_Reg->VI_V_SYNC_REG; return true;
-     case 0x0440001C: value = g_Reg->VI_H_SYNC_REG; return true;
-     case 0x04400020: value = g_Reg->VI_LEAP_REG; return true;
-     case 0x04400024: value = g_Reg->VI_H_START_REG; return true;
-     case 0x04400028: value = g_Reg->VI_V_START_REG; return true;
-     case 0x0440002C: value = g_Reg->VI_V_BURST_REG; return true;
-     case 0x04400030: value = g_Reg->VI_X_SCALE_REG; return true;
-     case 0x04400034: value = g_Reg->VI_Y_SCALE_REG; return true;
-     case 0x04600000: value = g_Reg->PI_DRAM_ADDR_REG; return true;
-     case 0x04600004: value = g_Reg->PI_CART_ADDR_REG; return true;
-     case 0x04600008: value = g_Reg->PI_RD_LEN_REG; return true;
-     case 0x0460000C: value = g_Reg->PI_WR_LEN_REG; return true;
-     case 0x04600010: value = g_Reg->PI_STATUS_REG; return true;
-     case 0x04600014: value = g_Reg->PI_DOMAIN1_REG; return true;
-     case 0x04600018: value = g_Reg->PI_BSD_DOM1_PWD_REG; return true;
-     case 0x0460001C: value = g_Reg->PI_BSD_DOM1_PGS_REG; return true;
-     case 0x04600020: value = g_Reg->PI_BSD_DOM1_RLS_REG; return true;
-     case 0x04600024: value = g_Reg->PI_DOMAIN2_REG; return true;
-     case 0x04600028: value = g_Reg->PI_BSD_DOM2_PWD_REG; return true;
-     case 0x0460002C: value = g_Reg->PI_BSD_DOM2_PGS_REG; return true;
-     case 0x04600030: value = g_Reg->PI_BSD_DOM2_RLS_REG; return true;
-     case 0x04700000: value = g_Reg->RI_MODE_REG; return true;
-     case 0x04700004: value = g_Reg->RI_CONFIG_REG; return true;
-     case 0x04700008: value = g_Reg->RI_CURRENT_LOAD_REG; return true;
-     case 0x0470000C: value = g_Reg->RI_SELECT_REG; return true;
-     case 0x04700010: value = g_Reg->RI_REFRESH_REG; return true;
-     case 0x04700014: value = g_Reg->RI_LATENCY_REG; return true;
-     case 0x04700018: value = g_Reg->RI_RERROR_REG; return true;
-     case 0x0470001C: value = g_Reg->RI_WERROR_REG; return true;
-     case 0x04800018: value = g_Reg->SI_STATUS_REG; return true;
-     case 0x05000500: value = g_Reg->ASIC_DATA; return true;
-     case 0x05000504: value = g_Reg->ASIC_MISC_REG; return true;
-     case 0x05000508: value = g_Reg->ASIC_STATUS; return true;
-     case 0x0500050C: value = g_Reg->ASIC_CUR_TK; return true;
-     case 0x05000510: value = g_Reg->ASIC_BM_STATUS; return true;
-     case 0x05000514: value = g_Reg->ASIC_ERR_SECTOR; return true;
-     case 0x05000518: value = g_Reg->ASIC_SEQ_STATUS; return true;
-     case 0x0500051C: value = g_Reg->ASIC_CUR_SECTOR; return true;
-     case 0x05000520: value = g_Reg->ASIC_HARD_RESET; return true;
-     case 0x05000524: value = g_Reg->ASIC_C1_S0; return true;
-     case 0x05000528: value = g_Reg->ASIC_HOST_SECBYTE; return true;
-     case 0x0500052C: value = g_Reg->ASIC_C1_S2; return true;
-     case 0x05000530: value = g_Reg->ASIC_SEC_BYTE; return true;
-     case 0x05000534: value = g_Reg->ASIC_C1_S4; return true;
-     case 0x05000538: value = g_Reg->ASIC_C1_S6; return true;
-     case 0x0500053C: value = g_Reg->ASIC_CUR_ADDR; return true;
-     case 0x05000540: value = g_Reg->ASIC_ID_REG; return true;
-     case 0x05000544: value = g_Reg->ASIC_TEST_REG; return true;
-     case 0x05000548: value = g_Reg->ASIC_TEST_PIN_SEL; return true;
-     case 0x04500004:
-          if (g_System->bFixedAudio())
-          {
-               value = g_Audio->GetLength();
-          }
-          else
-          {
-               CAudioPlugin* audioPlg = g_Plugins->Audio();
-               value = (audioPlg->AiReadLength != NULL) ? audioPlg->AiReadLength() : 0;
-          }
-          return true;
-     case 0x0450000C:
-          value = g_System->bFixedAudio() ? g_Audio->GetStatus() : g_Reg->AI_STATUS_REG;
-          return true;
-     }
-
-     return false;
-}
-
-bool CDebuggerUI::DebugLW_VAddr(uint32_t vaddr, uint32_t& value)
-{
-     if (vaddr <= 0x7FFFFFFF || vaddr >= 0xC0000000) // KUSEG, KSEG2 (TLB)
-     {
-          if (g_MMU == NULL)
-          {
-               return false;
-          }
-
-          return g_MMU->LW_VAddr(vaddr, value);
-     }
-
-     uint32_t paddr = vaddr & 0x1FFFFFFF;
-     return DebugLW_PAddr(paddr, value);
+    return m_SymbolTable;
 }
 
 // CDebugger implementation
@@ -684,21 +497,58 @@ void CDebuggerUI::RSPReceivedDisplayList(void)
 	Debug_RefreshDisplayListWindow();
 }
 
-
 // Exception handling - break on exception vector if exception bp is set
 void CDebuggerUI::HandleCPUException(void)
 {
     int exc = (g_Reg->CAUSE_REGISTER >> 2) & 0x1F;
-
-    if ((CDebugSettings::ExceptionBreakpoints() & (1 << exc)))
+    int intr = (g_Reg->CAUSE_REGISTER >> 8) & 0xFF;
+    int fpExc = (g_Reg->m_FPCR[31] >> 12) & 0x3F;
+    int rcpIntr = g_Reg->MI_INTR_REG & 0x2F;
+    
+    if ((ExceptionBreakpoints() & (1 << exc)))
     {
-        if (CDebugSettings::bCPULoggingEnabled())
+        if (exc == 15) // floating-point exception
         {
-            g_Debugger->OpenCPULogWindow();
+            if (fpExc & FpExceptionBreakpoints())
+            {
+                goto have_bp;
+            }
+            return;
         }
-
-        g_Settings->SaveBool(Debugger_SteppingOps, true);
+        else if (exc == 0) // interrupt exception
+        {
+            if (intr & IntrBreakpoints())
+            {
+                if (intr & 0x04) // RCP interrupt (IP2)
+                {
+                    if (rcpIntr & RcpIntrBreakpoints())
+                    {
+                        goto have_bp;
+                    }
+                    return;
+                }
+                else // other interrupts
+                {
+                    goto have_bp;
+                }
+            }
+            return;
+        }
+        else // other exceptions
+        {
+            goto have_bp;
+        }
     }
+
+    return;
+
+have_bp:
+    if (bCPULoggingEnabled())
+    {
+        g_Debugger->OpenCPULogWindow();
+    }
+
+    g_Settings->SaveBool(Debugger_SteppingOps, true);
 }
 
 void CDebuggerUI::HandleCartToRamDMA(void)
@@ -722,19 +572,19 @@ void CDebuggerUI::HandleCartToRamDMA(void)
 // Called from the interpreter core at the beginning of every CPU step
 void CDebuggerUI::CPUStepStarted()
 {
+    uint32_t pc = g_Reg->m_PROGRAM_COUNTER;
+    COpInfo opInfo(R4300iOp::m_Opcode);
+    bool bStoreOp = opInfo.IsStoreCommand();
+    uint32_t storeAddress = bStoreOp ? opInfo.GetLoadStoreAddress() : 0;
+
     if (isStepping() && bCPULoggingEnabled())
     {
         Debug_RefreshCPULogWindow();
     }
 
-    uint32_t pc = g_Reg->m_PROGRAM_COUNTER;
-    COpInfo opInfo(R4300iOp::m_Opcode);
-
-    if (opInfo.IsStoreCommand())
+    if(bStoreOp && m_Breakpoints->NumMemLocks() > 0)
     {
-        uint32_t memoryAddress = opInfo.GetLoadStoreAddress();
-
-        if (m_Breakpoints->MemLockExists(memoryAddress, opInfo.NumBytesToStore()))
+        if (m_Breakpoints->MemLockExists(storeAddress, opInfo.NumBytesToStore()))
         {
             // Memory is locked, skip op
             g_Settings->SaveBool(Debugger_SkipOp, true);
@@ -742,35 +592,33 @@ void CDebuggerUI::CPUStepStarted()
         }
     }
 
-    m_ScriptSystem->HookCPUExec()->InvokeByAddressInRange(pc);
-    if (SkipOp()) { return; }
-
-    m_ScriptSystem->HookCPUExecOpcode()->InvokeByAddressInRange_MaskedOpcode(pc, R4300iOp::m_Opcode.Hex);
-    if (SkipOp()) { return; }
-
-    m_ScriptSystem->HookCPUGPRValue()->InvokeByAddressInRange_GPRValue(pc);
-    if (SkipOp()) { return; }
-    
-    // Memory events, pi cart -> ram dma
-    if (opInfo.IsLoadStoreCommand()) // Read and write instructions
+    if (m_ScriptSystem->HaveCallbacks())
     {
-        uint32_t memoryAddress = opInfo.GetLoadStoreAddress();
+        m_ScriptSystem->HookCPUExec()->InvokeByAddressInRange(pc);
+        if (SkipOp()) { return; }
 
-        if (opInfo.IsLoadCommand()) // Read instructions
+        m_ScriptSystem->HookCPUExecOpcode()->InvokeByAddressInRange_MaskedOpcode(pc, R4300iOp::m_Opcode.Hex);
+        if (SkipOp()) { return; }
+
+        m_ScriptSystem->HookCPUGPRValue()->InvokeByAddressInRange_GPRValue(pc);
+        if (SkipOp()) { return; }
+
+        if (bStoreOp)
         {
-            m_ScriptSystem->HookCPURead()->InvokeByAddressInRange(memoryAddress);
+            m_ScriptSystem->HookCPUWrite()->InvokeByAddressInRange(storeAddress);
             if (SkipOp()) { return; }
         }
-        else // Write instructions
-        {
-            m_ScriptSystem->HookCPUWrite()->InvokeByAddressInRange(memoryAddress);
-            if (SkipOp()) { return; }
 
-            if (memoryAddress == 0xA460000C) // PI_WR_LEN_REG
-            {
-                HandleCartToRamDMA();
-            }
+        if (opInfo.IsLoadCommand())
+        {
+            m_ScriptSystem->HookCPURead()->InvokeByAddressInRange(opInfo.GetLoadStoreAddress());
+            if (SkipOp()) { return; }
         }
+    }
+
+    if (bStoreOp && storeAddress == 0xA460000C) // PI_WR_LEN_REG
+    {
+        HandleCartToRamDMA();
     }
 
     if (CDebugSettings::ExceptionBreakpoints() != 0)
@@ -778,39 +626,45 @@ void CDebuggerUI::CPUStepStarted()
         if (pc == 0x80000000 || pc == 0x80000080 ||
             pc == 0xA0000100 || pc == 0x80000180)
         {
-            HandleCPUException();
+            if ((g_Reg->STATUS_REGISTER >> 1) & 3) // if exl/erl bits are set
+            {
+                HandleCPUException();
+            }
         }
     }
 
-    if (m_Breakpoints->HaveAnyGPRWriteBP())
+    if (m_Breakpoints->HaveRegBP())
     {
-        int nReg = 0;
-        opInfo.WritesGPR(&nReg);
+        if (m_Breakpoints->HaveAnyGPRWriteBP())
+        {
+            int nReg = 0;
+            opInfo.WritesGPR(&nReg);
 
-        if (nReg != 0 && m_Breakpoints->HaveGPRWriteBP(nReg))
+            if (nReg != 0 && m_Breakpoints->HaveGPRWriteBP(nReg))
+            {
+                g_Settings->SaveBool(Debugger_SteppingOps, true);
+            }
+        }
+
+        if (m_Breakpoints->HaveAnyGPRReadBP())
+        {
+            int nReg1 = 0, nReg2 = 0;
+            opInfo.ReadsGPR(&nReg1, &nReg2);
+
+            if ((nReg1 != 0 && m_Breakpoints->HaveGPRReadBP(nReg1)) ||
+                (nReg2 != 0 && m_Breakpoints->HaveGPRReadBP(nReg2)))
+            {
+                g_Settings->SaveBool(Debugger_SteppingOps, true);
+            }
+        }
+
+        if (m_Breakpoints->HaveHIWriteBP() && opInfo.WritesHI() ||
+            m_Breakpoints->HaveLOWriteBP() && opInfo.WritesLO() ||
+            m_Breakpoints->HaveHIReadBP() && opInfo.ReadsHI() ||
+            m_Breakpoints->HaveLOReadBP() && opInfo.ReadsLO())
         {
             g_Settings->SaveBool(Debugger_SteppingOps, true);
         }
-    }
-
-    if (m_Breakpoints->HaveAnyGPRReadBP())
-    {
-        int nReg1 = 0, nReg2 = 0;
-        opInfo.ReadsGPR(&nReg1, &nReg2);
-
-        if ((nReg1 != 0 && m_Breakpoints->HaveGPRReadBP(nReg1)) ||
-            (nReg2 != 0 && m_Breakpoints->HaveGPRReadBP(nReg2)))
-        {
-            g_Settings->SaveBool(Debugger_SteppingOps, true);
-        }
-    }
-
-    if (m_Breakpoints->HaveHIWriteBP() && opInfo.WritesHI() ||
-        m_Breakpoints->HaveLOWriteBP() && opInfo.WritesLO() ||
-        m_Breakpoints->HaveHIReadBP()  && opInfo.ReadsHI()  ||
-        m_Breakpoints->HaveLOReadBP()  && opInfo.ReadsLO())
-    {
-        g_Settings->SaveBool(Debugger_SteppingOps, true);
     }
 }
 
@@ -826,14 +680,14 @@ void CDebuggerUI::CPUStep()
 // Called after opcode has been executed
 void CDebuggerUI::CPUStepEnded()
 {
+    if (m_StackTrace == NULL)
+    {
+        return;
+    }
+    
     OPCODE Opcode = R4300iOp::m_Opcode;
     uint32_t op = Opcode.op;
     uint32_t funct = Opcode.funct;
-
-    if (m_StackTrace == NULL)
-    {
-        m_StackTrace = new CDebugStackTrace(this);
-    }
 
     if (op == R4300i_JAL || ((op == R4300i_SPECIAL) && (funct == R4300i_SPECIAL_JALR) && (Opcode.rd == 31))) // JAL or JALR RA, x
     {
@@ -856,7 +710,7 @@ void CDebuggerUI::FrameDrawn()
     static HFONT monoFont = CreateFont(-11, 0, 0, 0,
         FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-        PROOF_QUALITY, FF_DONTCARE, "Consolas"
+        PROOF_QUALITY, FF_DONTCARE, L"Consolas"
     );
 
     if (hMainWnd == NULL)

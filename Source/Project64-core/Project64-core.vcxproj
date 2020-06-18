@@ -33,7 +33,7 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <Command>"$(SolutionDir)Source\Script\UpdateVersion.cmd" "$(Configuration)" "$(SolutionDir)Source\Project64-core\Version.h.in" "$(SolutionDir)Source\Project64-core\Version.h"</Command>
+      <Command>"$(SolutionDir)Source\Script\UpdateVersion.cmd" "$(Configuration)" "$(Platform)" "$(SolutionDir)Source\Project64-core\Version.h.in" "$(SolutionDir)Source\Project64-core\Version.h"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -45,6 +45,7 @@
     <ClCompile Include="MemoryExceptionFilter.cpp" />
     <ClCompile Include="Multilanguage\LanguageClass.cpp" />
     <ClCompile Include="N64System\CheatClass.cpp" />
+    <ClCompile Include="N64System\CheatFile.cpp" />
     <ClCompile Include="N64System\EmulationThread.cpp" />
     <ClCompile Include="N64System\FramePerSecondClass.cpp" />
     <ClCompile Include="N64System\Interpreter\InterpreterCPU.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="Multilanguage.h" />
     <ClInclude Include="Multilanguage\LanguageClass.h" />
     <ClInclude Include="N64System\CheatClass.h" />
+    <ClInclude Include="N64System\CheatFile.h" />
     <ClInclude Include="N64System\FramePerSecondClass.h" />
     <ClInclude Include="N64System\Interpreter\InterpreterCPU.h" />
     <ClInclude Include="N64System\Interpreter\InterpreterOps32.h" />

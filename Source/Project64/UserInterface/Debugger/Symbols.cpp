@@ -1,470 +1,501 @@
+/****************************************************************************
+*                                                                           *
+* Project64 - A Nintendo 64 emulator.                                       *
+* http://www.pj64-emu.com/                                                  *
+* Copyright (C) 2012 Project64. All rights reserved.                        *
+*                                                                           *
+* License:                                                                  *
+* GNU/GPLv2 http://www.gnu.org/licenses/gpl-2.0.html                        *
+*                                                                           *
+****************************************************************************/
 #include "stdafx.h"
 #include "Symbols.h"
 
-bool CSymbols::m_bInitialized = false;
-vector<CSymbolEntry*> CSymbols::m_Symbols;
-int CSymbols::m_NextSymbolId;
-
-CFile CSymbols::m_SymFileHandle;
-char* CSymbols::m_SymFileBuffer;
-size_t CSymbols::m_SymFileSize;
-
-char CSymbols::m_ParserDelimeter;
-char* CSymbols::m_ParserToken;
-size_t CSymbols::m_ParserTokenLength;
-bool CSymbols::m_bHaveFirstToken;
-char* CSymbols::m_SymFileParseBuffer;
-
-CRITICAL_SECTION CSymbols::m_CriticalSection = {0};
-
-int CSymbols::GetTypeNumber(char* typeName)
+CSymbolTable::CSymbolTable(CDebuggerUI* debugger) :
+    m_Debugger(debugger),
+    m_NextSymbolId(0),
+    m_SymFileBuffer(NULL),
+    m_SymFileSize(0),
+    m_ParserToken(NULL),
+    m_ParserTokenLength(0),
+    m_ParserDelimeter(0),
+    m_SymFileParseBuffer(NULL),
+    m_bHaveFirstToken(false),
+    m_TokPos(NULL)
 {
-	const char* name;
-	for (int i = 0; (name = SymbolTypes[i]) != NULL; i++)
-	{
-		if (strcmp(typeName, name) == 0)
-		{
-			return i;
-		}
-	}
-	return -1;
 }
 
-const char* CSymbols::GetTypeName(int typeNumber)
+CSymbolTable::~CSymbolTable()
 {
-	if (typeNumber > 11)
-	{
-		return NULL;
-	}
-	return SymbolTypes[typeNumber];
+    delete[] m_SymFileBuffer;
+    delete[] m_SymFileParseBuffer;
+}
+
+symbol_type_info_t CSymbolTable::m_SymbolTypes[] = {
+    { SYM_CODE,   "code",   1 },
+    { SYM_DATA,   "data",   1 },
+    { SYM_U8,     "u8",     1 },
+    { SYM_U16,    "u16",    2 },
+    { SYM_U32,    "u32",    4 },
+    { SYM_U64,    "u64",    8 },
+    { SYM_S8,     "s8",     1 },
+    { SYM_S16,    "s16",    2 },
+    { SYM_S32,    "s32",    4 },
+    { SYM_S64,    "s64",    8 },
+    { SYM_FLOAT,  "float",  4 },
+    { SYM_DOUBLE, "double", 8 },
+    { SYM_VECTOR2, "v2", 8 },
+    { SYM_VECTOR3, "v3", 12 },
+    { SYM_VECTOR4, "v4", 16 },
+    { SYM_INVALID, NULL,    0 }
+};
+
+symbol_type_id_t CSymbolTable::GetTypeId(char* typeName)
+{
+    const char* name;
+    for (int i = 0; (name = m_SymbolTypes[i].name) != NULL; i++)
+    {
+        if (strcmp(typeName, name) == 0)
+        {
+            return (symbol_type_id_t)i;
+        }
+    }
+    return SYM_INVALID;
+}
+
+const char* CSymbolTable::GetTypeName(int typeId)
+{
+    if (typeId >= NUM_SYM_TYPES)
+    {
+        return NULL;
+    }
+    return m_SymbolTypes[typeId].name;
+}
+
+int CSymbolTable::GetTypeSize(int typeId)
+{
+    if (typeId >= NUM_SYM_TYPES)
+    {
+        return NULL;
+    }
+    return m_SymbolTypes[typeId].size;
 }
 
 // Open symbols file for game and parse into list
-
-CPath CSymbols::GetSymFilePath()
+CPath CSymbolTable::GetSymFilePath()
 {
-	stdstr symFileName;
-	symFileName.Format("%s.sym", g_Settings->LoadStringVal(Game_GameName).c_str());
+    stdstr symFileName;
+    symFileName.Format("%s.sym", g_Settings->LoadStringVal(Game_GameName).c_str());
 
-	CPath symFilePath(g_Settings->LoadStringVal(Directory_NativeSave).c_str(), symFileName.c_str());
+    CPath symFilePath(g_Settings->LoadStringVal(Directory_NativeSave).c_str(), symFileName.c_str());
 
-	if (g_Settings->LoadBool(Setting_UniqueSaveDir))
-	{
-		symFilePath.AppendDirectory(g_Settings->LoadStringVal(Game_UniqueSaveDir).c_str());
-	}
-	symFilePath.NormalizePath(CPath(CPath::MODULE_DIRECTORY));
-	if (!symFilePath.DirectoryExists())
-	{
-		symFilePath.DirectoryCreate();
-	}
+    if (g_Settings->LoadBool(Setting_UniqueSaveDir))
+    {
+        symFilePath.AppendDirectory(g_Settings->LoadStringVal(Game_UniqueSaveDir).c_str());
+    }
 
-	return symFilePath;
+    symFilePath.NormalizePath(CPath(CPath::MODULE_DIRECTORY));
+
+    if (!symFilePath.DirectoryExists())
+    {
+        symFilePath.DirectoryCreate();
+    }
+
+    return symFilePath;
 }
 
-void CSymbols::ParserInit()
+void CSymbolTable::ParserFetchToken(const char* delim)
 {
-	m_SymFileParseBuffer = (char*)malloc(m_SymFileSize + 1);
-	strcpy(m_SymFileParseBuffer, m_SymFileBuffer);
-	m_bHaveFirstToken = false;
+    if (!m_bHaveFirstToken)
+    {
+        m_TokPos = NULL;
+        m_ParserToken = strtok_s(m_SymFileParseBuffer, delim, &m_TokPos);
+        m_bHaveFirstToken = true;
+    }
+    else
+    {
+        m_ParserToken = strtok_s(NULL, delim, &m_TokPos);
+    }
+    
+    if (m_ParserToken != NULL)
+    {
+        m_ParserTokenLength = strlen(m_ParserToken);
+        m_ParserDelimeter = m_SymFileBuffer[m_ParserToken - m_SymFileParseBuffer + m_ParserTokenLength];
+    }
+    else
+    {
+        m_ParserTokenLength = 0;
+        m_ParserDelimeter = '\0';
+    }
 }
 
-void CSymbols::ParserDone()
+void CSymbolTable::Load()
 {
-	free(m_SymFileParseBuffer);
+    CGuard guard(m_CS);
+
+    m_NextSymbolId = 0;
+    m_Symbols.clear();
+
+    if (g_Settings->LoadStringVal(Game_GameName).length() == 0)
+    {
+        MessageBox(NULL, L"Game must be loaded", L"Symbols", MB_ICONWARNING | MB_OK);
+        return;
+    }
+    
+    CPath symFilePath = GetSymFilePath();
+    
+    bool bOpened = m_SymFileHandle.Open(symFilePath, CFileBase::modeRead);
+    
+    if (!bOpened)
+    {
+        return;
+    }
+    
+    if (m_SymFileBuffer != NULL)
+    {
+        delete[] m_SymFileBuffer;
+    }
+
+    if (m_SymFileParseBuffer != NULL)
+    {
+        delete[] m_SymFileParseBuffer;
+    }
+
+    m_SymFileSize = m_SymFileHandle.GetLength();
+    m_SymFileBuffer = new char[m_SymFileSize + 1];
+    m_SymFileParseBuffer = new char[m_SymFileSize + 1];
+    m_SymFileHandle.Read(m_SymFileBuffer, m_SymFileSize);
+    m_SymFileHandle.Close();
+    m_SymFileBuffer[m_SymFileSize] = '\0';
+    
+    strcpy(m_SymFileParseBuffer, m_SymFileBuffer);
+    m_bHaveFirstToken = false;
+
+    symbol_parse_error_t errorCode = ERR_SUCCESS;
+    int lineNumber = 1;
+
+    while (true)
+    {
+        uint32_t address = 0;
+        int type = 0;
+        char* name = NULL;
+        char* description = NULL;
+        
+        // Address
+        ParserFetchToken(",\n\0");
+
+        if (m_ParserToken == NULL || m_ParserTokenLength == 0)
+        {
+            // Empty line @EOF
+            errorCode = ERR_SUCCESS;
+            break;
+        }
+
+        char* endptr;
+        address = (uint32_t)strtoull(m_ParserToken, &endptr, 16);
+        
+        if (endptr == m_ParserToken)
+        {
+            errorCode = ERR_INVALID_ADDR;
+            break;
+        }
+        
+        // Type
+        if (m_ParserDelimeter != ',')
+        {
+            errorCode = ERR_MISSING_FIELDS;
+            break;
+        }
+        
+        ParserFetchToken(",\n\0");
+        type = GetTypeId(m_ParserToken);
+
+        if (type == -1)
+        {
+            errorCode = ERR_INVALID_TYPE;
+            break;
+        }
+        
+        // Name
+        if (m_ParserDelimeter != ',')
+        {
+            errorCode = ERR_MISSING_FIELDS;
+            break;
+        }
+
+        ParserFetchToken(",\n\0");
+        name = m_ParserToken;
+
+        // Optional description
+        if (m_ParserDelimeter == ',')
+        {
+            ParserFetchToken("\n\0");
+            description = m_ParserToken;
+        }
+        
+        // Add symbol object to the vector
+        AddSymbol(type, address, name, description);
+
+        if (m_ParserDelimeter == '\0')
+        {
+            errorCode = ERR_SUCCESS;
+            break;
+        }
+
+        lineNumber++;
+    }
+    
+    delete[] m_SymFileParseBuffer;
+    m_SymFileParseBuffer = NULL;
+
+    delete[] m_SymFileBuffer;
+    m_SymFileBuffer = NULL;
+
+    switch (errorCode)
+    {
+    case ERR_SUCCESS:
+        break;
+    case ERR_INVALID_ADDR:
+        ParseErrorAlert("Invalid address", lineNumber);
+        break;
+    case ERR_INVALID_TYPE:
+        ParseErrorAlert("Invalid type", lineNumber);
+        break;
+    case ERR_INVALID_NAME:
+        ParseErrorAlert("Invalid name", lineNumber);
+        break;
+    case ERR_MISSING_FIELDS:
+        ParseErrorAlert("Missing required field(s)", lineNumber);
+        break;
+    }
 }
 
-void CSymbols::ParserFetchToken(const char* delim)
+void CSymbolTable::Save()
 {
-	if (!m_bHaveFirstToken)
-	{
-		m_ParserToken = strtok(m_SymFileParseBuffer, delim);
-		m_bHaveFirstToken = true;
-	}
-	else
-	{
-		m_ParserToken = strtok(NULL, delim);
-	}
-	
-	if (m_ParserToken != NULL)
-	{
-		m_ParserTokenLength = strlen(m_ParserToken);
-		m_ParserDelimeter = m_SymFileBuffer[m_ParserToken - m_SymFileParseBuffer + m_ParserTokenLength];
-	}
-	else
-	{
-		m_ParserTokenLength = 0;
-		m_ParserDelimeter = '\0';
-	}
+    CGuard guard(m_CS);
+
+    m_SymFileHandle.Open(GetSymFilePath(), CFileBase::modeCreate | CFileBase::modeReadWrite);
+    m_SymFileHandle.SeekToBegin();
+
+    for (size_t i = 0; i < m_Symbols.size(); i++)
+    {
+        CSymbol& symbol = m_Symbols[i];
+        stdstr strLine = stdstr_f("%08X,%s,%s", symbol.m_Address, symbol.TypeName(), symbol.m_Name);
+        
+        if (symbol.m_Description != NULL)
+        {
+            strLine += stdstr_f(",%s", symbol.m_Description);
+        }
+
+        strLine += "\n";
+        m_SymFileHandle.Write(strLine.c_str(), strLine.length());
+    }
+
+    m_SymFileHandle.SetEndOfFile();
+    m_SymFileHandle.Close();
 }
 
-void CSymbols::Load()
+void CSymbolTable::GetValueString(char* dst, CSymbol* symbol)
 {
-	m_NextSymbolId = 0;
-	Reset();
+    union
+    {
+        uint8_t   u8;
+        int8_t    s8;
+        uint16_t u16;
+        int16_t  s16;
+        uint32_t u32;
+        int32_t  s32;
+        uint64_t u64;
+        int64_t  s64;
+        float    f32;
+        double   f64;
+    } value;
 
-	if (g_Settings->LoadStringVal(Game_GameName).length() == 0)
-	{
-		MessageBox(NULL, "Game must be loaded", "Symbols", MB_ICONWARNING | MB_OK);
-		return;
-	}
-	
-	CPath symFilePath = GetSymFilePath();
-	
-	bool bOpened = m_SymFileHandle.Open(symFilePath, CFileBase::modeRead);
-	
-	if (!bOpened)
-	{
-		return;
-	}
-	
-	m_SymFileSize = m_SymFileHandle.GetLength();
-	m_SymFileBuffer = (char*)malloc(m_SymFileSize + 1);
-	m_SymFileHandle.Read(m_SymFileBuffer, m_SymFileSize);
-	m_SymFileHandle.Close();
-	m_SymFileBuffer[m_SymFileSize] = '\0';
-	
-	ParseError errorCode = ERR_SUCCESS;
-	int lineNumber = 1;
+    uint32_t address = symbol->m_Address;
 
-	ParserInit();
-
-	while (true)
-	{
-		uint32_t address = 0;
-		int type = 0;
-		char* name = NULL;
-		char* description = NULL;
-		
-		// Address
-		ParserFetchToken(",\n\0");
-
-		if (m_ParserToken == NULL || m_ParserTokenLength == 0)
-		{
-			// Empty line @EOF
-			errorCode = ERR_SUCCESS;
-			break;
-		}
-
-		char* endptr;
-		address = (uint32_t)strtoull(m_ParserToken, &endptr, 16);
-		
-		if (endptr == m_ParserToken)
-		{
-			errorCode = ERR_INVALID_ADDR;
-			break;
-		}
-		
-		// Type
-		if (m_ParserDelimeter != ',')
-		{
-			errorCode = ERR_MISSING_FIELDS;
-			break;
-		}
-		
-		ParserFetchToken(",\n\0");
-		type = GetTypeNumber(m_ParserToken);
-
-		if (type == -1)
-		{
-			errorCode = ERR_INVALID_TYPE;
-			break;
-		}
-		
-		// Name
-		if (m_ParserDelimeter != ',')
-		{
-			errorCode = ERR_MISSING_FIELDS;
-			break;
-		}
-
-		ParserFetchToken(",\n\0");
-		name = m_ParserToken;
-
-		// Optional description
-		if (m_ParserDelimeter == ',')
-		{
-			ParserFetchToken("\n\0");
-			description = m_ParserToken;
-		}
-		
-		// Add symbol object to the vector
-		Add(type, address, name, description);
-
-		if (m_ParserDelimeter == '\0')
-		{
-			errorCode = ERR_SUCCESS;
-			break;
-		}
-
-		lineNumber++;
-	}
-	
-	ParserDone();
-	free(m_SymFileBuffer);
-
-	switch (errorCode)
-	{
-	case ERR_SUCCESS:
-		break;
-	case ERR_INVALID_ADDR:
-		ParseErrorAlert("Invalid address", lineNumber);
-		break;
-	case ERR_INVALID_TYPE:
-		ParseErrorAlert("Invalid type", lineNumber);
-		break;
-	case ERR_INVALID_NAME:
-		ParseErrorAlert("Invalid name", lineNumber);
-		break;
-	case ERR_MISSING_FIELDS:
-		ParseErrorAlert("Missing required field(s)", lineNumber);
-		break;
-	}
+    float xyzw[4];
+    switch (symbol->m_Type)
+    {
+    case SYM_CODE:
+    case SYM_DATA:
+        sprintf(dst, "");
+        break;
+    case SYM_U8:
+        m_Debugger->DebugLoad_VAddr(address, value.u8);
+        sprintf(dst, "%u", value.u8);
+        break;
+    case SYM_U16:
+        m_Debugger->DebugLoad_VAddr(address, value.u16);
+        sprintf(dst, "%u", value.u16);
+        break;
+    case SYM_U32:
+        m_Debugger->DebugLoad_VAddr(address, value.u32);
+        sprintf(dst, "%u", value.u32);
+        break;
+    case SYM_U64:
+        m_Debugger->DebugLoad_VAddr(address, value.u64);
+        sprintf(dst, "%I64u", value.u64);
+        break;
+    case SYM_S8:
+        m_Debugger->DebugLoad_VAddr(address, value.s8);
+        sprintf(dst, "%ihh", value.s8);
+        break;
+    case SYM_S16:
+        m_Debugger->DebugLoad_VAddr(address, value.s16);
+        sprintf(dst, "%i", value.s16);
+        break;
+    case SYM_S32:
+        m_Debugger->DebugLoad_VAddr(address, value.s32);
+        sprintf(dst, "%i", value.s32);
+        break;
+    case SYM_S64:
+        m_Debugger->DebugLoad_VAddr(address, value.s64);
+        sprintf(dst, "%I64i", value.s64);
+        break;
+    case SYM_FLOAT:
+        m_Debugger->DebugLoad_VAddr(address, value.f32);
+        sprintf(dst, "%f", value.f32);
+        break;
+    case SYM_DOUBLE:
+        m_Debugger->DebugLoad_VAddr(address, value.f64);
+        sprintf(dst, "%f", value.f64);
+        break;
+    case SYM_VECTOR2:
+        for (int i = 0; i < 2; i++) {
+            m_Debugger->DebugLoad_VAddr(address + (i * sizeof(float)), value.f32);
+            xyzw[i] = value.f32;
+        }
+        sprintf(dst, "%f, %f", xyzw[0], xyzw[1]);
+        break;
+    case SYM_VECTOR3:
+        for (int i = 0; i < 3; i++) {
+            m_Debugger->DebugLoad_VAddr(address + (i * sizeof(float)), value.f32);
+            xyzw[i] = value.f32;
+        }
+        sprintf(dst, "%f, %f, %f", xyzw[0], xyzw[1], xyzw[2]);
+        break;
+    case SYM_VECTOR4:
+        for (int i = 0; i < 4; i++) {
+            m_Debugger->DebugLoad_VAddr(address + (i * sizeof(float)), value.f32);
+            xyzw[i] = value.f32;
+        }
+        sprintf(dst, "%f, %f, %f, %f", xyzw[0], xyzw[1], xyzw[2], xyzw[3]);
+        break;
+    default:
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+        break;
+    }
 }
 
-void CSymbols::Save()
+void CSymbolTable::ParseErrorAlert(char* message, int lineNumber)
 {
-	int nSymbols = m_Symbols.size();
-	
-	char* symfile;
-	int symfile_size = 0;
-	int symfile_idx = 0;
-
-	// Determine file size
-	for (int i = 0; i < nSymbols; i++)
-	{
-		CSymbolEntry* symbol = m_Symbols[i];
-
-		symfile_size += 11; // address 8, required commas 2, newline 1
-		symfile_size += strlen(symbol->m_Name);
-		symfile_size += strlen(symbol->TypeName());
-
-		if (symbol->m_Description != NULL && strlen(symbol->m_Description) != 0)
-		{
-			symfile_size += 1; // comma
-			symfile_size += strlen(symbol->m_Description);
-		}
-	}
-
-	if (symfile_size == 0)
-	{
-		return;
-	}
-
-	symfile = (char*) malloc(symfile_size + 1);
-	symfile[symfile_size] = '\0';
-
-	// Write out
-	for (int i = 0; i < nSymbols; i++)
-	{
-		CSymbolEntry* symbol = m_Symbols[i];
-		symfile_idx += sprintf(&symfile[symfile_idx], "%08X,%s,%s", symbol->m_Address, symbol->TypeName(), symbol->m_Name);
-		if (symbol->m_Description != NULL)
-		{
-			symfile_idx += sprintf(&symfile[symfile_idx], ",%s", symbol->m_Description);
-		}
-		symfile_idx += sprintf(&symfile[symfile_idx], "\n");
-	}
-
-	m_SymFileHandle.Open(GetSymFilePath(), CFileBase::modeCreate | CFileBase::modeReadWrite);
-	m_SymFileHandle.SeekToBegin();
-	m_SymFileHandle.Write(symfile, symfile_size);
-	m_SymFileHandle.SetEndOfFile();
-	m_SymFileHandle.Close();
-
-	free(symfile);
+    stdstr messageFormatted = stdstr_f("%s\nLine %d", message, lineNumber);
+    MessageBox(NULL, messageFormatted.ToUTF16().c_str(), L"Parse error", MB_OK | MB_ICONWARNING);
 }
 
-void CSymbols::GetValueString(char* dest, CSymbolEntry* lpSymbol)
+void CSymbolTable::Reset()
 {
-	uint8_t v8;
-	uint16_t v16;
-	uint32_t v32;
-	uint64_t v64;
-	float vf;
-	double vd;
-
-	uint32_t address = lpSymbol->m_Address;
-
-	switch (lpSymbol->m_Type)
-	{
-	case TYPE_CODE:
-	case TYPE_DATA:
-		sprintf(dest, "");
-		break;
-	case TYPE_U8:
-		g_MMU->LB_VAddr(address, v8);
-		sprintf(dest, "%u", v8);
-		break;
-	case TYPE_U16:
-		g_MMU->LH_VAddr(address, v16);
-		sprintf(dest, "%u", v16);
-		break;
-	case TYPE_U32:
-		g_MMU->LW_VAddr(address, v32);
-		sprintf(dest, "%u", v32);
-		break;
-	case TYPE_U64:
-		g_MMU->LD_VAddr(address, v64);
-		sprintf(dest, "%I64u", v64);
-		break;
-	case TYPE_S8:
-		g_MMU->LB_VAddr(address, v8);
-		sprintf(dest, "%ihh", v8);
-		break;
-	case TYPE_S16:
-		g_MMU->LH_VAddr(address, v16);
-		sprintf(dest, "%i", v16);
-		break;
-	case TYPE_S32:
-		g_MMU->LW_VAddr(address, v32);
-		sprintf(dest, "%i", v32);
-		break;
-	case TYPE_S64:
-		g_MMU->LD_VAddr(address, v64);
-		sprintf(dest, "%I64i", v64);
-		break;
-	case TYPE_FLOAT:
-		g_MMU->LW_VAddr(address, *(uint32_t*)&vf);
-		sprintf(dest, "%f", vf);
-		break;
-	case TYPE_DOUBLE:
-		g_MMU->LD_VAddr(address, *(uint64_t*)&vd);
-		sprintf(dest, "%f", vd);
-		break;
-	default:
-		MessageBox(NULL, "unkown type", "", MB_OK);
-		break;
-	}
+    CGuard guard(m_CS);
+    m_Symbols.clear();
 }
 
-void CSymbols::ParseErrorAlert(char* message, int lineNumber)
+bool CSymbolTable::CmpSymbolAddresses(CSymbol& a, CSymbol& b)
 {
-	stdstr messageFormatted = stdstr_f("%s\nLine %d", message, lineNumber);
-	MessageBox(NULL, messageFormatted.c_str(), "Parse error", MB_OK | MB_ICONWARNING);
+    return (a.m_Address < b.m_Address);
 }
 
-void CSymbols::Reset()
+void CSymbolTable::AddSymbol(int type, uint32_t address, const char* name, const char* description)
 {
-	for (int i = 0; i < GetCount(); i++)
-	{
-		delete m_Symbols[i];
-	}
-	m_Symbols.clear();
+    CGuard guard(m_CS);
+
+    if (name == NULL || strlen(name) == 0)
+    {
+        return;
+    }
+
+    if (description == NULL || strlen(description) == 0)
+    {
+        description = NULL;
+    }
+
+    int id = m_NextSymbolId++;
+
+    CSymbol symbol = CSymbol(id, type, address, name, description);
+    m_Symbols.push_back(symbol);
+
+    sort(m_Symbols.begin(), m_Symbols.end(), CmpSymbolAddresses);
 }
 
-const char* CSymbols::GetNameByAddress(uint32_t address)
+int CSymbolTable::GetCount()
 {
-    uint32_t len = GetCount();
-	for (uint32_t i = 0; i < len; i++)
-	{
-		if (m_Symbols[i]->m_Address == address)
-		{
-			return m_Symbols[i]->m_Name;
-		}
-	}
-	return NULL;
+    CGuard guard(m_CS);
+    return m_Symbols.size();
 }
 
-bool CSymbols::SortFunction(CSymbolEntry* a, CSymbolEntry* b)
+bool CSymbolTable::GetSymbolByIndex(size_t index, CSymbol* symbol)
 {
-	return (a->m_Address < b->m_Address);
+    CGuard guard(m_CS);
+    if (index < 0 || index >= m_Symbols.size())
+    {
+        return false;
+    }
+    *symbol = m_Symbols[index];
+    return true;
 }
 
-void CSymbols::Add(int type, uint32_t address, char* name, char* description)
+bool CSymbolTable::GetSymbolByAddress(uint32_t address, CSymbol* symbol)
 {
-	if (name == NULL || strlen(name) == 0)
-	{
-		return;
-	}
-
-	if (description == NULL || strlen(description) == 0)
-	{
-		description = NULL;
-	}
-
-	int id = m_NextSymbolId++;
-
-	CSymbolEntry* symbol = new CSymbolEntry(id, type, address, name, description);
-	m_Symbols.push_back(symbol);
-
-	sort(m_Symbols.begin(), m_Symbols.end(), SortFunction);
+    CGuard guard(m_CS);
+    for (size_t i = 0; i < m_Symbols.size(); i++)
+    {
+        if (m_Symbols[i].m_Address == address)
+        {
+            *symbol = m_Symbols[i];
+            return true;
+        }
+    }
+    return false;
 }
 
-int CSymbols::GetCount()
+bool CSymbolTable::GetSymbolByOverlappedAddress(uint32_t address, CSymbol* symbol)
 {
-	return m_Symbols.size();
+    CGuard guard(m_CS);
+    for (size_t i = 0; i < m_Symbols.size(); i++)
+    {
+        if (address >= m_Symbols[i].m_Address &&
+            address < m_Symbols[i].m_Address + m_Symbols[i].TypeSize())
+        {
+            *symbol = m_Symbols[i];
+            return true;
+        }
+    }
+    return false;
 }
 
-CSymbolEntry* CSymbols::GetEntryByIndex(int index)
+bool CSymbolTable::GetSymbolById(int id, CSymbol* symbol)
 {
-	if (index < 0 || index >= GetCount())
-	{
-		return NULL;
-	}
-	return m_Symbols[index];
+    CGuard guard(m_CS);
+    for (size_t i = 0; i < m_Symbols.size(); i++)
+    {
+        if (m_Symbols[i].m_Id == id)
+        {
+            *symbol = m_Symbols[i];
+            return true;
+        }
+    }
+    return false;
 }
 
-CSymbolEntry* CSymbols::GetEntryByAddress(uint32_t address)
+bool CSymbolTable::RemoveSymbolById(int id)
 {
-	for (int i = 0; i < GetCount(); i++)
-	{
-		if (m_Symbols[i]->m_Address == address)
-		{
-			return m_Symbols[i];
-		}
-	}
-	return NULL;
-}
-
-CSymbolEntry* CSymbols::GetEntryById(int id)
-{
-	for (int i = 0; i < GetCount(); i++)
-	{
-		if (m_Symbols[i]->m_Id == id)
-		{
-			return m_Symbols[i];
-		}
-	}
-	return NULL;
-}
-
-void CSymbols::RemoveEntryById(int id)
-{
-	for (int i = 0; i < GetCount(); i++)
-	{
-		if (m_Symbols[i]->m_Id == id)
-		{
-			delete m_Symbols[i];
-			m_Symbols.erase(m_Symbols.begin() + i);
-			break;
-		}
-	}
-}
-
-void CSymbols::EnterCriticalSection()
-{
-	::EnterCriticalSection(&m_CriticalSection);
-}
-
-void CSymbols::LeaveCriticalSection()
-{
-	::LeaveCriticalSection(&m_CriticalSection);
-}
-
-void CSymbols::InitializeCriticalSection()
-{
-	if (!m_bInitialized)
-	{
-		m_bInitialized = true;
-		::InitializeCriticalSection(&m_CriticalSection);
-	}
-}
-
-void CSymbols::DeleteCriticalSection()
-{
-	if (m_bInitialized)
-	{
-		m_bInitialized = false;
-		::DeleteCriticalSection(&m_CriticalSection);
-	}
+    CGuard guard(m_CS);
+    for (size_t i = 0; i < m_Symbols.size(); i++)
+    {
+        if (m_Symbols[i].m_Id == id)
+        {
+            m_Symbols.erase(m_Symbols.begin() + i);
+            return true;
+        }
+    }
+    return false;
 }

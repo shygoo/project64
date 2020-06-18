@@ -24,6 +24,7 @@ enum SettingID
     //Command Settings
     Cmd_BaseDirectory,
     Cmd_RomFile,
+    Cmd_ComboDiskFile,
     Cmd_ShowHelp,
 
     //Support Files
@@ -64,6 +65,7 @@ enum SettingID
     Setting_EnableDisk,
 	Setting_SyncViaAudioEnabled,
 	Setting_Enhancement,
+    Setting_DiskSaveType,
 
     //Default Settings
     Default_RDRamSize,
@@ -75,7 +77,9 @@ enum SettingID
 	Default_32Bit,
 	Default_SyncViaAudio,
 	Default_FixedAudio,
-    Default_UnalignedDMA,
+	Default_UnalignedDMA,
+	Default_RandomizeSIPIInterrupts,
+	Default_SMM_Protect_Memory,
 
     //RDB Settings
     Rdb_GoodName,
@@ -115,6 +119,8 @@ enum SettingID
     Rdb_AllowROMWrites,
     Rdb_CRC_Recalc,
     Rdb_UnalignedDMA,
+    Rdb_RandomizeSIPIInterrupts,
+	Rdb_RPCKey,
 
     //Individual Game Settings
     Game_IniKey,
@@ -171,6 +177,8 @@ enum SettingID
     Game_OverClockModifier,
     Game_FullSpeed,
     Game_UnalignedDMA,
+    Game_RandomizeSIPIInterrupts,
+	Game_RPCKey,
 
     // General Game running info
     GameRunning_LoadingInProgress,
@@ -232,6 +240,8 @@ enum SettingID
 
     //File Info
     File_DiskIPLPath,
+    File_DiskIPLUSAPath,
+    File_DiskIPLTOOLPath,
 
     //Debugger
     Debugger_Enabled,
@@ -253,10 +263,12 @@ enum SettingID
     Debugger_WriteBPExists,
     Debugger_ReadBPExists,
     Debugger_WaitingForStep,
-    Debugger_AutoRefreshMemoryView,
     Debugger_CPULoggingEnabled,
     Debugger_CPULogBufferSize,
     Debugger_ExceptionBreakpoints,
+    Debugger_FpExceptionBreakpoints,
+    Debugger_IntrBreakpoints,
+    Debugger_RcpIntrBreakpoints,
 
     //Trace
     Debugger_TraceMD5,
@@ -326,13 +338,9 @@ enum SettingID
     Cheat_Entry,
     Cheat_Notes,
     Cheat_Options,
-    Cheat_Range,
-    Cheat_RangeNotes,
     Cheat_UserEntry,
     Cheat_UserNotes,
     Cheat_UserOptions,
-    Cheat_UserRange,
-    Cheat_UserRangeNotes,
     Cheat_Active,
     Cheat_Extension,
 

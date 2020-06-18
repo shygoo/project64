@@ -21,72 +21,72 @@ CDebugTlb::~CDebugTlb()
 {
 }
 
-LRESULT	CDebugTlb::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CDebugTlb::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
     DlgSavePos_Init(DebuggerUI_TLBPos);
 
-    LV_COLUMN  col;
+    LV_COLUMN col;
     float DPIScale = CClientDC(m_hWnd).GetDeviceCaps(LOGPIXELSX) / 96.0f;
 
     col.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
     col.fmt = LVCFMT_LEFT;
 
-    col.pszText = "Index";
-    col.cx = 40 * DPIScale;
+    col.pszText = L"Index";
+    col.cx = (int)(40 * DPIScale);
     col.iSubItem = 0;
     ListView_InsertColumn(GetDlgItem(IDC_LIST), 0, &col);
 
-    col.pszText = "Page Mask";
-    col.cx = 90 * DPIScale;
+    col.pszText = L"Page Mask";
+    col.cx = (int)(90 * DPIScale);
     col.iSubItem = 1;
     ListView_InsertColumn(GetDlgItem(IDC_LIST), 1, &col);
 
-    col.pszText = "Entry Hi";
-    col.cx = 90 * DPIScale;
+    col.pszText = L"Entry Hi";
+    col.cx = (int)(90 * DPIScale);
     col.iSubItem = 2;
     ListView_InsertColumn(GetDlgItem(IDC_LIST), 2, &col);
 
-    col.pszText = "Entry Lo0";
-    col.cx = 90 * DPIScale;
+    col.pszText = L"Entry Lo0";
+    col.cx = (int)(90 * DPIScale);
     col.iSubItem = 3;
     ListView_InsertColumn(GetDlgItem(IDC_LIST), 3, &col);
 
-    col.pszText = "Entry Lo1";
-    col.cx = 90 * DPIScale;
+    col.pszText = L"Entry Lo1";
+    col.cx = (int)(90 * DPIScale);
     col.iSubItem = 4;
     ListView_InsertColumn(GetDlgItem(IDC_LIST), 4, &col);
 
-    col.pszText = "Index";
-    col.cx = 40 * DPIScale;
+    col.pszText = L"Index";
+    col.cx = (int)(40 * DPIScale);
     col.iSubItem = 0;
     ListView_InsertColumn(GetDlgItem(IDC_LIST2), 0, &col);
 
-    col.pszText = "Valid";
-    col.cx = 40 * DPIScale;
+    col.pszText = L"Valid";
+    col.cx = (int)(40 * DPIScale);
     col.iSubItem = 1;
     ListView_InsertColumn(GetDlgItem(IDC_LIST2), 1, &col);
 
-    col.pszText = "Dirty";
-    col.cx = 40 * DPIScale;
+    col.pszText = L"Dirty";
+    col.cx = (int)(40 * DPIScale);
     col.iSubItem = 2;
     ListView_InsertColumn(GetDlgItem(IDC_LIST2), 2, &col);
 
-    col.pszText = "Rule";
-    col.cx = 270 * DPIScale;
+    col.pszText = L"Rule";
+    col.cx = (int)(270 * DPIScale);
     col.iSubItem = 3;
     ListView_InsertColumn(GetDlgItem(IDC_LIST2), 3, &col);
 
     RefreshTLBWindow();
     SendMessage(GetDlgItem(IDC_TLB_ENTRIES), BM_SETCHECK, BST_CHECKED, 0);
 
- 	LoadWindowPos();
-	WindowCreated();
+    LoadWindowPos();
+    WindowCreated();
     return TRUE;
 }
 
 void CDebugTlb::OnExitSizeMove(void)
 {
-	SaveWindowPos(0);
+    SaveWindowPos(0);
 }
 
 LRESULT CDebugTlb::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL& /*bHandled*/)
@@ -116,14 +116,14 @@ void CDebugTlb::RefreshTLBWindow(void)
     }
 
     HWND hList = GetDlgItem(IDC_LIST);
-    char Output[100], OldText[100];
+    wchar_t Output[100], OldText[100];
     LV_ITEM item, OldItem;
     int count;
 
     CTLB::TLB_ENTRY * tlb = g_TLB->m_tlb;
     for (count = 0; count < 32; count++)
     {
-        sprintf(Output, "0x%02X", count);
+        swprintf(Output, sizeof(Output), L"0x%02X", count);
         item.mask = LVIF_TEXT;
         item.iItem = count;
         item.pszText = Output;
@@ -142,71 +142,71 @@ void CDebugTlb::RefreshTLBWindow(void)
         else
         {
             ListView_GetItem(hList, &OldItem);
-            if (strcmp(item.pszText, OldItem.pszText) != 0)
+            if (wcscmp(item.pszText, OldItem.pszText) != 0)
             {
                 ListView_SetItem(hList, &item);
             }
         }
         if (tlb[count].EntryDefined)
         {
-            sprintf(Output, "0x%08X", tlb[count].PageMask.Value);
+            swprintf(Output, sizeof(Output), L"0x%08X", tlb[count].PageMask.Value);
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 1;
         OldItem.iSubItem = 1;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
 
         if (tlb[count].EntryDefined)
         {
-            sprintf(Output, "0x%08X", tlb[count].EntryHi.Value);
+            swprintf(Output, sizeof(Output), L"0x%08X", tlb[count].EntryHi.Value);
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 2;
         OldItem.iSubItem = 2;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
 
         if (tlb[count].EntryDefined)
         {
-            sprintf(Output, "0x%08X", tlb[count].EntryLo0.Value);
+            swprintf(Output, sizeof(Output), L"0x%08X", tlb[count].EntryLo0.Value);
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 3;
         OldItem.iSubItem = 3;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
 
         if (tlb[count].EntryDefined)
         {
-            sprintf(Output, "0x%08X", tlb[count].EntryLo1.Value);
+            swprintf(Output, sizeof(Output), L"0x%08X", tlb[count].EntryLo1.Value);
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 4;
         OldItem.iSubItem = 4;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
@@ -216,7 +216,7 @@ void CDebugTlb::RefreshTLBWindow(void)
     hList = GetDlgItem(IDC_LIST2);
     for (count = 0; count < 64; count++)
     {
-        sprintf(Output, "0x%02X", count);
+        swprintf(Output, sizeof(Output), L"0x%02X", count);
         item.mask = LVIF_TEXT;
         item.iItem = count;
         item.pszText = Output;
@@ -235,7 +235,7 @@ void CDebugTlb::RefreshTLBWindow(void)
         else
         {
             ListView_GetItem(hList, &OldItem);
-            if (strcmp(item.pszText, OldItem.pszText) != 0)
+            if (wcscmp(item.pszText, OldItem.pszText) != 0)
             {
                 ListView_SetItem(hList, &item);
             }
@@ -243,49 +243,49 @@ void CDebugTlb::RefreshTLBWindow(void)
 
         if (FastTlb[count].ValidEntry)
         {
-            sprintf(Output, "%s", FastTlb[count].VALID ? "Yes" : "No");
+            swprintf(Output, sizeof(Output), L"%s", FastTlb[count].VALID ? L"Yes" : L"No");
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 1;
         OldItem.iSubItem = 1;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
 
         if (FastTlb[count].ValidEntry && FastTlb[count].VALID)
         {
-            sprintf(Output, "%s", FastTlb[count].DIRTY ? "Yes" : "No");
+            swprintf(Output, sizeof(Output), L"%s", FastTlb[count].DIRTY ? L"Yes" : L"No");
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 2;
         OldItem.iSubItem = 2;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }
 
         if (FastTlb[count].ValidEntry && FastTlb[count].VALID)
         {
-            sprintf(Output, "%08X:%08X -> %08X:%08X", FastTlb[count].VSTART, FastTlb[count].VEND,
+            swprintf(Output, sizeof(Output), L"%08X:%08X -> %08X:%08X", FastTlb[count].VSTART, FastTlb[count].VEND,
                 FastTlb[count].PHYSSTART, FastTlb[count].PHYSEND);
         }
         else
         {
-            strcpy(Output, "................");
+            wcscpy(Output, L"................");
         }
         item.iSubItem = 3;
         OldItem.iSubItem = 3;
         ListView_GetItem(hList, &OldItem);
-        if (strcmp(item.pszText, OldItem.pszText) != 0)
+        if (wcscmp(item.pszText, OldItem.pszText) != 0)
         {
             ListView_SetItem(hList, &item);
         }

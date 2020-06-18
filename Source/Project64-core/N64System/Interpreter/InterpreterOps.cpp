@@ -83,6 +83,12 @@ const int32_t   R4300iOp::LWR_SHIFT[4] = { 24, 16, 8, 0 };
     m_JumpToLocation = (*_PROGRAM_COUNTER);\
     return;
 
+#define TLB_WRITE_EXCEPTION(Address) \
+    g_Reg->DoTLBWriteMiss(m_NextInstruction == JUMP,Address);\
+    m_NextInstruction = JUMP;\
+    m_JumpToLocation = (*_PROGRAM_COUNTER);\
+    return;
+
 void R4300iOp::SPECIAL()
 {
     Jump_Special[m_Opcode.funct]();
@@ -250,13 +256,13 @@ R4300iOp::Func * R4300iOp::BuildInterpreter()
     Jump_Special[45] = SPECIAL_DADDU;
     Jump_Special[46] = SPECIAL_DSUB;
     Jump_Special[47] = SPECIAL_DSUBU;
-    Jump_Special[48] = UnknownOpcode;
-    Jump_Special[49] = UnknownOpcode;
-    Jump_Special[50] = UnknownOpcode;
-    Jump_Special[51] = UnknownOpcode;
+    Jump_Special[48] = SPECIAL_TGE;
+    Jump_Special[49] = SPECIAL_TGEU;
+    Jump_Special[50] = SPECIAL_TLT;
+    Jump_Special[51] = SPECIAL_TLTU;
     Jump_Special[52] = SPECIAL_TEQ;
     Jump_Special[53] = UnknownOpcode;
-    Jump_Special[54] = UnknownOpcode;
+    Jump_Special[54] = SPECIAL_TNE;
     Jump_Special[55] = UnknownOpcode;
     Jump_Special[56] = SPECIAL_DSLL;
     Jump_Special[57] = UnknownOpcode;
@@ -275,13 +281,13 @@ R4300iOp::Func * R4300iOp::BuildInterpreter()
     Jump_Regimm[5] = UnknownOpcode;
     Jump_Regimm[6] = UnknownOpcode;
     Jump_Regimm[7] = UnknownOpcode;
-    Jump_Regimm[8] = UnknownOpcode;
-    Jump_Regimm[9] = UnknownOpcode;
-    Jump_Regimm[10] = UnknownOpcode;
-    Jump_Regimm[11] = UnknownOpcode;
-    Jump_Regimm[12] = UnknownOpcode;
+    Jump_Regimm[8] = REGIMM_TGEI;
+    Jump_Regimm[9] = REGIMM_TGEIU;
+    Jump_Regimm[10] = REGIMM_TLTI;
+    Jump_Regimm[11] = REGIMM_TLTIU;
+    Jump_Regimm[12] = REGIMM_TEQI;
     Jump_Regimm[13] = UnknownOpcode;
-    Jump_Regimm[14] = UnknownOpcode;
+    Jump_Regimm[14] = REGIMM_TNEI;
     Jump_Regimm[15] = UnknownOpcode;
     Jump_Regimm[16] = REGIMM_BLTZAL;
     Jump_Regimm[17] = REGIMM_BGEZAL;
@@ -1033,12 +1039,11 @@ void R4300iOp::LDL()
 
     if (!g_MMU->LD_VAddr((Address & ~7), Value))
     {
-        g_Notify->BreakPoint(__FILE__, __LINE__);
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_READ_EXCEPTION(Address);
     }
     _GPR[m_Opcode.rt].DW = _GPR[m_Opcode.rt].DW & LDL_MASK[Offset];
     _GPR[m_Opcode.rt].DW += Value << LDL_SHIFT[Offset];
@@ -1064,12 +1069,11 @@ void R4300iOp::LDR()
 
     if (!g_MMU->LD_VAddr((Address & ~7), Value))
     {
-        g_Notify->BreakPoint(__FILE__, __LINE__);
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_READ_EXCEPTION(Address);
     }
 
     _GPR[m_Opcode.rt].DW = _GPR[m_Opcode.rt].DW & LDR_MASK[Offset];
@@ -1135,12 +1139,11 @@ void R4300iOp::LWL()
 
     if (!g_MMU->LW_VAddr((Address & ~3), Value))
     {
-        g_Notify->BreakPoint(__FILE__, __LINE__);
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_READ_EXCEPTION(Address);
     }
 
     _GPR[m_Opcode.rt].DW = (int32_t)(_GPR[m_Opcode.rt].W[0] & LWL_MASK[Offset]);
@@ -1236,12 +1239,11 @@ void R4300iOp::LWR()
 
     if (!g_MMU->LW_VAddr((Address & ~3), Value))
     {
-        g_Notify->BreakPoint(__FILE__, __LINE__);
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_READ_EXCEPTION(Address);
     }
 
     _GPR[m_Opcode.rt].DW = (int32_t)(_GPR[m_Opcode.rt].W[0] & LWR_MASK[Offset]);
@@ -1283,14 +1285,11 @@ void R4300iOp::SB()
     }
     if (!g_MMU->SB_VAddr(Address, _GPR[m_Opcode.rt].UB[0]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1307,14 +1306,11 @@ void R4300iOp::SH()
     }
     if (!g_MMU->SH_VAddr(Address, _GPR[m_Opcode.rt].UHW[0]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1331,15 +1327,11 @@ void R4300iOp::SWL()
 
     if (!g_MMU->LW_VAddr((Address & ~3), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_WRITE_EXCEPTION(Address);
     }
 
     Value &= SWL_MASK[Offset];
@@ -1347,14 +1339,11 @@ void R4300iOp::SWL()
 
     if (!g_MMU->SW_VAddr((Address & ~0x03), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1375,14 +1364,11 @@ void R4300iOp::SW()
     }
     if (!g_MMU->SW_VAddr(Address, _GPR[m_Opcode.rt].UW[0]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1410,15 +1396,11 @@ void R4300iOp::SDL()
 
     if (!g_MMU->LD_VAddr((Address & ~7), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_WRITE_EXCEPTION(Address);
     }
 
     Value &= SDL_MASK[Offset];
@@ -1426,14 +1408,11 @@ void R4300iOp::SDL()
 
     if (!g_MMU->SD_VAddr((Address & ~7), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1462,15 +1441,11 @@ void R4300iOp::SDR()
 
     if (!g_MMU->LD_VAddr((Address & ~7), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_WRITE_EXCEPTION(Address);
     }
 
     Value &= SDR_MASK[Offset];
@@ -1478,14 +1453,11 @@ void R4300iOp::SDR()
 
     if (!g_MMU->SD_VAddr((Address & ~7), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1502,15 +1474,11 @@ void R4300iOp::SWR()
 
     if (!g_MMU->LW_VAddr((Address & ~3), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_WRITE_EXCEPTION(Address);
     }
 
     Value &= SWR_MASK[Offset];
@@ -1518,14 +1486,11 @@ void R4300iOp::SWR()
 
     if (!g_MMU->SW_VAddr((Address & ~0x03), Value))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1604,11 +1569,11 @@ void R4300iOp::SC()
     {
         if (!g_MMU->SW_VAddr(Address, _GPR[m_Opcode.rt].UW[0]))
         {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
             if (bShowTLBMisses())
             {
                 g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
             }
+            TLB_WRITE_EXCEPTION(Address);
         }
     }
     _GPR[m_Opcode.rt].UW[0] = (*_LLBit);
@@ -1627,15 +1592,11 @@ void R4300iOp::LD()
     }
     if (!g_MMU->LD_VAddr(Address, _GPR[m_Opcode.rt].UDW))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
-        return;
+        TLB_WRITE_EXCEPTION(Address);
     }
 #ifdef Interpreter_StackTest
     if (m_Opcode.rt == 29)
@@ -1660,14 +1621,11 @@ void R4300iOp::LDC1()
     }
     if (!g_MMU->LD_VAddr(Address, *(uint64_t *)_FPR_D[m_Opcode.ft]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_READ_EXCEPTION(Address);
     }
 }
 
@@ -1686,14 +1644,11 @@ void R4300iOp::SWC1()
 
     if (!g_MMU->SW_VAddr(Address, *(uint32_t *)_FPR_S[m_Opcode.ft]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1713,14 +1668,11 @@ void R4300iOp::SDC1()
     }
     if (!g_MMU->SD_VAddr(Address, *(int64_t *)_FPR_D[m_Opcode.ft]))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 
@@ -1737,14 +1689,11 @@ void R4300iOp::SD()
     }
     if (!g_MMU->SD_VAddr(Address, _GPR[m_Opcode.rt].UDW))
     {
-        if (HaveDebugger())
-        {
-            g_Notify->BreakPoint(__FILE__, __LINE__);
-        }
         if (bShowTLBMisses())
         {
             g_Notify->DisplayError(stdstr_f("%s TLB: %X", __FUNCTION__, Address).c_str());
         }
+        TLB_WRITE_EXCEPTION(Address);
     }
 }
 /********************** R4300i OpCodes: Special **********************/
@@ -2048,9 +1997,49 @@ void R4300iOp::SPECIAL_DSUBU()
 
 void R4300iOp::SPECIAL_TEQ()
 {
-    if (_GPR[m_Opcode.rs].DW == _GPR[m_Opcode.rt].DW && HaveDebugger())
+    if (_GPR[m_Opcode.rs].DW == _GPR[m_Opcode.rt].DW)
     {
-        g_Notify->DisplayError("Should trap this ???");
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::SPECIAL_TGE()
+{
+    if (_GPR[m_Opcode.rs].DW >= _GPR[m_Opcode.rt].DW)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::SPECIAL_TGEU()
+{
+    if (_GPR[m_Opcode.rs].UDW >= _GPR[m_Opcode.rt].UDW)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::SPECIAL_TLT()
+{
+    if (_GPR[m_Opcode.rs].DW < _GPR[m_Opcode.rt].DW)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::SPECIAL_TLTU()
+{
+    if (_GPR[m_Opcode.rs].UDW < _GPR[m_Opcode.rt].UDW)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::SPECIAL_TNE()
+{
+    if (_GPR[m_Opcode.rs].DW != _GPR[m_Opcode.rt].DW)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
     }
 }
 
@@ -2220,6 +2209,63 @@ void R4300iOp::REGIMM_BGEZAL()
     }
     _GPR[31].DW = (int32_t)((*_PROGRAM_COUNTER) + 8);
 }
+
+void R4300iOp::REGIMM_TEQI()
+{
+    if (_GPR[m_Opcode.rs].DW == (int64_t)((int16_t)m_Opcode.immediate))
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::REGIMM_TGEI()
+{
+    if (_GPR[m_Opcode.rs].DW >= (int64_t)((int16_t)m_Opcode.immediate))
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::REGIMM_TGEIU()
+{
+    int32_t imm32 = (int16_t)m_Opcode.immediate;
+    int64_t imm64;
+
+    imm64 = imm32;
+    if (_GPR[m_Opcode.rs].DW >= (uint64_t)imm64)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::REGIMM_TLTI()
+{
+    if (_GPR[m_Opcode.rs].DW < (int64_t)((int16_t)m_Opcode.immediate))
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::REGIMM_TLTIU()
+{
+    int32_t imm32 = (int16_t)m_Opcode.immediate;
+    int64_t imm64;
+
+    imm64 = imm32;
+    if (_GPR[m_Opcode.rs].DW < (uint64_t)imm64)
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
+void R4300iOp::REGIMM_TNEI()
+{
+    if (_GPR[m_Opcode.rs].DW != (int64_t)((int16_t)m_Opcode.immediate))
+    {
+        g_Reg->DoTrapException(m_NextInstruction == JUMP);
+    }
+}
+
 /************************** COP0 functions **************************/
 void R4300iOp::COP0_MF()
 {

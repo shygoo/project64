@@ -46,28 +46,6 @@
     <Manifest Condition="'$(PlatformToolset)'!='v90'">
       <EnableDPIAwareness>true</EnableDPIAwareness>
     </Manifest>
-    <ClCompile>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MaxSpeed</Optimization>
-    </ClCompile>
-    <ClCompile>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Speed</FavorSizeOrSpeed>
-    </ClCompile>
-    <ClCompile>
-      <OmitFramePointers Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</OmitFramePointers>
-    </ClCompile>
-    <ClCompile>
-      <Optimization Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MinSpace</Optimization>
-    </ClCompile>
-    <ClCompile>
-      <FavorSizeOrSpeed Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Size</FavorSizeOrSpeed>
-    </ClCompile>
-    <ClCompile>
-      <OmitFramePointers Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</OmitFramePointers>
-    </ClCompile>
-    <PreBuildEvent>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-      </Command>
-    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="UserInterface\Debugger\CPULog.cpp" />
@@ -103,6 +81,7 @@
     <ClCompile Include="UserInterface\Debugger\GfxMicrocode.cpp" />
     <ClCompile Include="UserInterface\Debugger\GfxOps.cpp" />
     <ClCompile Include="UserInterface\Debugger\GfxParser.cpp" />
+    <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
     <ClCompile Include="UserInterface\Debugger\DMALog.cpp" />
     <ClCompile Include="UserInterface\Debugger\GfxLabels.cpp" />
     <ClCompile Include="UserInterface\Debugger\GfxState.cpp" />
@@ -112,6 +91,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptInstance.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptSystem.cpp" />
     <ClCompile Include="UserInterface\Debugger\Symbols.cpp" />
+    <ClCompile Include="UserInterface\DiscordRPC.cpp" />
     <ClCompile Include="UserInterface\EnhancementConfig.cpp" />
     <ClCompile Include="UserInterface\MainWindow.cpp" />
     <ClCompile Include="UserInterface\LoggingUI.cpp" />
@@ -125,6 +105,7 @@
     <ClCompile Include="UserInterface\Settings\SettingsPage-AdvancedOptions.cpp" />
     <ClCompile Include="UserInterface\Settings\SettingsPage-Defaults.cpp" />
     <ClCompile Include="UserInterface\Settings\SettingsPage-Directories.cpp" />
+    <ClCompile Include="UserInterface\Settings\SettingsPage-DiskDrive.cpp" />
     <ClCompile Include="UserInterface\Settings\SettingsPage-Game-General.cpp" />
     <ClCompile Include="UserInterface\Settings\SettingsPage-Game-Plugin.cpp" />
     <ClCompile Include="UserInterface\Settings\SettingsPage-Game-Recompiler.cpp" />
@@ -137,10 +118,12 @@
     <ClCompile Include="UserInterface\SupportEnterCode.cpp" />
     <ClCompile Include="UserInterface\SupportWindow.cpp" />
     <ClCompile Include="UserInterface\WTLControls\EditNumber32.cpp" />
+    <ClCompile Include="UserInterface\WTLControls\HexEditCtrl.cpp" />
     <ClCompile Include="UserInterface\WTLControls\ModifiedEditBox.cpp" />
     <ClCompile Include="UserInterface\WTLControls\PartialGroupBox.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DiscordRPC.h" />
     <ClInclude Include="UserInterface\Debugger\CPULog.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-CPULogView.h" />
     <ClInclude Include="N64System\Debugger\OpInfo.h" />
@@ -169,6 +152,7 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-StackView.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-Symbols.h" />
+    <ClInclude Include="UserInterface\Debugger\Debugger-RegisterTabData.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-TLB.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-ViewMemory.h" />
     <ClInclude Include="UserInterface\Debugger\debugger.h" />
@@ -177,6 +161,7 @@
     <ClInclude Include="UserInterface\Debugger\GfxOpTypes.h" />
     <ClInclude Include="UserInterface\Debugger\GfxOps.h" />
     <ClInclude Include="UserInterface\Debugger\GfxParser.h" />
+    <ClInclude Include="UserInterface\Debugger\DebugMMU.h" />
     <ClInclude Include="UserInterface\Debugger\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\GfxLabels.h" />
     <ClInclude Include="UserInterface\Debugger\GfxState.h" />
@@ -202,6 +187,7 @@
     <ClInclude Include="UserInterface\Settings\SettingsPage-AdvancedOptions.h" />
     <ClInclude Include="UserInterface\Settings\SettingsPage-Defaults.h" />
     <ClInclude Include="UserInterface\Settings\SettingsPage-Directories.h" />
+    <ClInclude Include="UserInterface\Settings\SettingsPage-DiskDrive.h" />
     <ClInclude Include="UserInterface\Settings\SettingsPage-Game-General.h" />
     <ClInclude Include="UserInterface\Settings\SettingsPage-Game-Plugin.h" />
     <ClInclude Include="UserInterface\Settings\SettingsPage-Game-Recompiler.h" />
@@ -213,7 +199,10 @@
     <ClInclude Include="UserInterface\Settings\SettingsPage.h" />
     <ClInclude Include="UserInterface\SupportEnterCode.h" />
     <ClInclude Include="UserInterface\SupportWindow.h" />
+    <ClInclude Include="UserInterface\WTLControls\DisplayMode.h" />
     <ClInclude Include="UserInterface\WTLControls\EditNumber32.h" />
+    <ClInclude Include="UserInterface\WTLControls\GetCWindowText.h" />
+    <ClInclude Include="UserInterface\WTLControls\HexEditCtrl.h" />
     <ClInclude Include="UserInterface\WTLControls\ModifiedCheckBox.h" />
     <ClInclude Include="UserInterface\WTLControls\ModifiedComboBox.h" />
     <ClInclude Include="UserInterface\WTLControls\ModifiedEditBox.h" />
@@ -226,6 +215,9 @@
       <Project>{3326e128-33af-422c-bb7c-67cc6b915610}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\3rdParty\discord-rpc\discord-rpc.vcxproj">
+      <Project>{dcc841b2-298a-40f0-84d1-acbabd3b86e8}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\3rdParty\duktape\duktape.vcxproj">
       <Project>{e8d9a652-a354-4374-b6c5-a51ee62749fd}</Project>
     </ProjectReference>
@@ -237,8 +229,23 @@
       <Project>{b4a4b994-9111-42b1-93c2-6f1ca8bc4421}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\nragev20\NRage_Input_V2.vcxproj">
+      <Project>{fd617e80-9e40-4138-85da-b94633972e6a}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Project64-audio\Project64-audio.vcxproj">
+      <Project>{d233025a-231f-4a43-92b6-e87193c60acc}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Project64-core\Project64-core.vcxproj">
       <Project>{00c7b43a-ded7-4df0-b072-9a5783ef866d}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\Project64-video\Project64-video.vcxproj">
+      <Project>{a4d13408-a794-4199-8fc7-4a9a32505005}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\RSP\RSP.vcxproj">
+      <Project>{a7ed562c-63f3-4b7e-b6b3-2cf7848752e1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\UpdateVersion\UpdateVersion.vcxproj">
+      <Project>{1968162c-0793-491d-91a1-81645a24d399}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -266,9 +273,4 @@
   <ItemGroup>
     <Manifest Include="Project64.exe.manifest" />
   </ItemGroup>
-  <ProjectExtensions>
-    <VisualStudio>
-      <UserProperties RESOURCE_FILE="UserInterface\UIResources.rc" />
-    </VisualStudio>
-  </ProjectExtensions>
 </Project>

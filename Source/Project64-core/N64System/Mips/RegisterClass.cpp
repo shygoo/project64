@@ -357,7 +357,7 @@ void CRegisters::DoAddressError(bool DelaySlot, uint32_t BadVaddr, bool FromRead
 {
     if (HaveDebugger())
     {
-        g_Notify->DisplayError("AddressError");
+        g_Notify->DisplayError(stdstr_f("AddressError %s Vaddr: %X", FromRead ? "reading" : "writing", BadVaddr).c_str());
         if ((STATUS_REGISTER & STATUS_EXL) != 0)
         {
             g_Notify->DisplayError("EXL set in AddressError Exception");
@@ -438,7 +438,23 @@ void CRegisters::DoBreakException(bool DelaySlot)
     m_PROGRAM_COUNTER = 0x80000180;
 }
 
-void CRegisters::DoCopUnusableException(bool DelaySlot, int Coprocessor)
+void CRegisters::DoTrapException(bool DelaySlot)
+{
+    CAUSE_REGISTER = EXC_TRAP;
+    if (DelaySlot)
+    {
+        EPC_REGISTER = m_PROGRAM_COUNTER - 4;
+        CAUSE_REGISTER |= CAUSE_BD;
+    }
+    else
+    {
+        EPC_REGISTER = m_PROGRAM_COUNTER;
+    }
+    m_PROGRAM_COUNTER = 0x80000180;
+
+}
+
+void CRegisters::DoCopUnusableException(bool DelaySlot, int32_t Coprocessor)
 {
     if (HaveDebugger())
     {
@@ -513,6 +529,44 @@ bool CRegisters::DoIntrException(bool DelaySlot)
 void CRegisters::DoTLBReadMiss(bool DelaySlot, uint32_t BadVaddr)
 {
     CAUSE_REGISTER = EXC_RMISS;
+    BAD_VADDR_REGISTER = BadVaddr;
+    CONTEXT_REGISTER &= 0xFF80000F;
+    CONTEXT_REGISTER |= (BadVaddr >> 9) & 0x007FFFF0;
+    ENTRYHI_REGISTER = (BadVaddr & 0xFFFFE000);
+    if ((STATUS_REGISTER & STATUS_EXL) == 0)
+    {
+        if (DelaySlot)
+        {
+            CAUSE_REGISTER |= CAUSE_BD;
+            EPC_REGISTER = m_PROGRAM_COUNTER - 4;
+        }
+        else
+        {
+            EPC_REGISTER = m_PROGRAM_COUNTER;
+        }
+        if (g_TLB->AddressDefined(BadVaddr))
+        {
+            m_PROGRAM_COUNTER = 0x80000180;
+        }
+        else
+        {
+            m_PROGRAM_COUNTER = 0x80000000;
+        }
+        STATUS_REGISTER |= STATUS_EXL;
+    }
+    else
+    {
+        if (HaveDebugger())
+        {
+            g_Notify->DisplayError(stdstr_f("TLBMiss - EXL Set\nBadVaddr = %X\nAddress Defined: %s", BadVaddr, g_TLB->AddressDefined(BadVaddr) ? "true" : "false").c_str());
+        }
+        m_PROGRAM_COUNTER = 0x80000180;
+    }
+}
+
+void CRegisters::DoTLBWriteMiss(bool DelaySlot, uint32_t BadVaddr)
+{
+    CAUSE_REGISTER = EXC_WMISS;
     BAD_VADDR_REGISTER = BadVaddr;
     CONTEXT_REGISTER &= 0xFF80000F;
     CONTEXT_REGISTER |= (BadVaddr >> 9) & 0x007FFFF0;

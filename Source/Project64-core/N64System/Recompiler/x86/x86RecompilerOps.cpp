@@ -361,6 +361,84 @@ void CX86RecompilerOps::CompileWriteTLBMiss(x86Reg AddressReg, x86Reg LookUpReg)
 
 bool DelaySlotEffectsCompare(uint32_t PC, uint32_t Reg1, uint32_t Reg2);
 
+/*************************** Trap functions  *************************/
+void CX86RecompilerOps::Compile_TrapCompare(TRAP_COMPARE CompareType)
+{
+    void *FunctAddress = NULL;
+    const char *FunctName = NULL;
+    switch (CompareType)
+    {
+    case CompareTypeTEQ:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TEQ;
+        FunctName = "R4300iOp::SPECIAL_TEQ";
+        break;
+    case CompareTypeTNE:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TNE;
+        FunctName = "R4300iOp::SPECIAL_TNE";
+        break;
+    case CompareTypeTGE:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TGE;
+        FunctName = "R4300iOp::SPECIAL_TGE";
+        break;
+    case CompareTypeTGEU:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TGEU;
+        FunctName = "R4300iOp::SPECIAL_TGEU";
+        break;
+    case CompareTypeTLT:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TLT;
+        FunctName = "R4300iOp::SPECIAL_TLT";
+        break;
+    case CompareTypeTLTU:
+        FunctAddress = (void*)R4300iOp::SPECIAL_TLTU;
+        FunctName = "R4300iOp::SPECIAL_TLTU";
+        break;
+    case CompareTypeTEQI:
+        FunctAddress = (void*)R4300iOp::REGIMM_TEQI;
+        FunctName = "R4300iOp::REGIMM_TEQI";
+        break;
+    case CompareTypeTNEI:
+        FunctAddress = (void*)R4300iOp::REGIMM_TNEI;
+        FunctName = "R4300iOp::REGIMM_TNEI";
+        break;
+    case CompareTypeTGEI:
+        FunctAddress = (void*)R4300iOp::REGIMM_TGEI;
+        FunctName = "R4300iOp::REGIMM_TGEI";
+        break;
+    case CompareTypeTGEIU:
+        FunctAddress = (void*)R4300iOp::REGIMM_TGEIU;
+        FunctName = "R4300iOp::REGIMM_TGEIU";
+        break;
+    case CompareTypeTLTI:
+        FunctAddress = (void*)R4300iOp::REGIMM_TLTI;
+        FunctName = "R4300iOp::REGIMM_TLTI";
+        break;
+    case CompareTypeTLTIU:
+        FunctAddress = (void*)R4300iOp::REGIMM_TLTIU;
+        FunctName = "R4300iOp::REGIMM_TLTIU";
+        break;
+    default:
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+    }
+
+    if (FunctName != NULL && FunctAddress != NULL)
+    {
+        if (IsMapped(m_Opcode.rs)) {
+            UnMap_GPR(m_Opcode.rs, true);
+        }
+        if (IsMapped(m_Opcode.rt)) {
+            UnMap_GPR(m_Opcode.rt, true);
+        }
+        m_RegWorkingSet.BeforeCallDirect();
+        MoveConstToVariable(m_Opcode.Hex, &R4300iOp::m_Opcode.Hex, "R4300iOp::m_Opcode.Hex");
+        Call_Direct(FunctAddress, FunctName);
+        m_RegWorkingSet.AfterCallDirect();
+    }
+    else
+    {
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+    }
+}
+
 /************************** Branch functions  ************************/
 void CX86RecompilerOps::Compile_BranchCompare(BRANCH_COMPARE CompareType)
 {
@@ -2699,7 +2777,7 @@ void CX86RecompilerOps::LB_KnownAddress(x86Reg Reg, uint32_t VAddr, bool SignExt
     {
         MoveConstToX86reg(0, Reg);
         CPU_Message("%s\nFailed to translate address %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -2729,7 +2807,7 @@ void CX86RecompilerOps::LB_KnownAddress(x86Reg Reg, uint32_t VAddr, bool SignExt
         break;
     default:
         MoveConstToX86reg(0, Reg);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to compile address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -2770,7 +2848,7 @@ void CX86RecompilerOps::LH_KnownAddress(x86Reg Reg, uint32_t VAddr, bool SignExt
     {
         MoveConstToX86reg(0, Reg);
         CPU_Message("%s\nFailed to translate address %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -2800,7 +2878,7 @@ void CX86RecompilerOps::LH_KnownAddress(x86Reg Reg, uint32_t VAddr, bool SignExt
         break;
     default:
         MoveConstToX86reg(0, Reg);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to compile address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -3193,7 +3271,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             case 0x04080000: MoveVariableToX86reg(&g_Reg->SP_PC_REG, "SP_PC_REG", Reg); break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3226,7 +3304,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             case 0x0430000C: MoveVariableToX86reg(&g_Reg->MI_INTR_MASK_REG, "MI_INTR_MASK_REG", Reg); break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory)) { g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str()); }
+                if (ShowUnhandledMemory()) { g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str()); }
             }
             break;
         case 0x04400000:
@@ -3250,7 +3328,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
                 break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3317,7 +3395,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
                 break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3341,7 +3419,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             case 0x04600030: MoveVariableToX86reg(&g_Reg->PI_BSD_DOM2_RLS_REG, "PI_BSD_DOM2_RLS_REG", Reg); break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3354,7 +3432,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             case 0x04700010: MoveVariableToX86reg(&g_Reg->RI_REFRESH_REG, "RI_REFRESH_REG", Reg); break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3366,7 +3444,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             case 0x04800018: MoveVariableToX86reg(&g_Reg->SI_STATUS_REG, "SI_STATUS_REG", Reg); break;
             default:
                 MoveConstToX86reg(0, Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                 }
@@ -3404,7 +3482,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
                 case 0x05000548: MoveVariableToX86reg(&g_Reg->ASIC_TEST_PIN_SEL, "ASIC_TEST_PIN_SEL", Reg); break;
                 default:
                     MoveConstToX86reg(0, Reg);
-                    if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                    if (ShowUnhandledMemory())
                     {
                         g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
                     }
@@ -3435,7 +3513,7 @@ void CX86RecompilerOps::LW_KnownAddress(x86Reg Reg, uint32_t VAddr)
             else
             {
                 MoveConstToX86reg(((PAddr & 0xFFFF) << 16) | (PAddr & 0xFFFF), Reg);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
                     g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
@@ -10502,7 +10580,7 @@ void CX86RecompilerOps::SB_Const(uint8_t Value, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory)) { g_Notify->DisplayError(stdstr_f("%s, \nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str()); }
+        if (ShowUnhandledMemory()) { g_Notify->DisplayError(stdstr_f("%s, \nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str()); }
         return;
     }
 
@@ -10520,7 +10598,7 @@ void CX86RecompilerOps::SB_Const(uint8_t Value, uint32_t VAddr)
         MoveConstByteToVariable(Value, PAddr + g_MMU->Rdram(), VarName);
         break;
     default:
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store %02X in %08X?", __FUNCTION__, Value, VAddr).c_str());
         }
@@ -10550,7 +10628,7 @@ void CX86RecompilerOps::SB_Register(x86Reg Reg, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -10571,7 +10649,7 @@ void CX86RecompilerOps::SB_Register(x86Reg Reg, uint32_t VAddr)
         MoveX86regByteToVariable(Reg, PAddr + g_MMU->Rdram(), VarName);
         break;
     default:
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
         }
@@ -10599,7 +10677,7 @@ void CX86RecompilerOps::SH_Const(uint16_t Value, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -10620,7 +10698,7 @@ void CX86RecompilerOps::SH_Const(uint16_t Value, uint32_t VAddr)
         MoveConstHalfToVariable(Value, PAddr + g_MMU->Rdram(), VarName);
         break;
     default:
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store %04X in %08X?", __FUNCTION__, Value, VAddr).c_str());
         }
@@ -10650,7 +10728,7 @@ void CX86RecompilerOps::SH_Register(x86Reg Reg, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -10671,7 +10749,7 @@ void CX86RecompilerOps::SH_Register(x86Reg Reg, uint32_t VAddr)
         MoveX86regHalfToVariable(Reg, PAddr + g_MMU->Rdram(), VarName);
         break;
     default:
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, PAddr).c_str());
         }
@@ -10700,7 +10778,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -10740,7 +10818,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         case 0x03F8000C: break;
         case 0x03F80014: break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -10793,7 +10871,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         case 0x0404001C: MoveConstToVariable(0, &g_Reg->SP_SEMAPHORE_REG, "SP_SEMAPHORE_REG"); break;
         case 0x04080000: MoveConstToVariable(Value & 0xFFC, &g_Reg->SP_PC_REG, "SP_PC_REG"); break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -10817,7 +10895,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
 #endif
             break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -10935,7 +11013,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
             }
             break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -10999,7 +11077,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         case 0x04400030: MoveConstToVariable(Value, &g_Reg->VI_X_SCALE_REG, "VI_X_SCALE_REG"); break;
         case 0x04400034: MoveConstToVariable(Value, &g_Reg->VI_Y_SCALE_REG, "VI_Y_SCALE_REG"); break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -11048,7 +11126,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         default:
             sprintf(VarName, "RDRAM + %X", PAddr);
             MoveConstToVariable(Value, PAddr + g_MMU->Rdram(), VarName);
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -11113,7 +11191,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         case 0x0460002C: MoveConstToVariable((Value & 0xFF), &g_Reg->PI_BSD_DOM2_PGS_REG, "PI_BSD_DOM2_PGS_REG"); break;
         case 0x04600030: MoveConstToVariable((Value & 0xFF), &g_Reg->PI_BSD_DOM2_RLS_REG, "PI_BSD_DOM2_RLS_REG"); break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -11127,7 +11205,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         case 0x04700008: MoveConstToVariable(Value, &g_Reg->RI_CURRENT_LOAD_REG, "RI_CURRENT_LOAD_REG"); break;
         case 0x0470000C: MoveConstToVariable(Value, &g_Reg->RI_SELECT_REG, "RI_SELECT_REG"); break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -11184,7 +11262,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
             m_RegWorkingSet.AfterCallDirect();
             break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
             }
@@ -11202,7 +11280,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
                 m_RegWorkingSet.AfterCallDirect();
                 break;
             default:
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
                 }
@@ -11230,7 +11308,7 @@ void CX86RecompilerOps::SW_Const(uint32_t Value, uint32_t VAddr)
         }
         break;
     default:
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store %08X in %08X?", __FUNCTION__, Value, VAddr).c_str());
         }
@@ -11276,7 +11354,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
     if (!g_TransVaddr->TranslateVaddr(VAddr, PAddr))
     {
         CPU_Message("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\nFailed to translate address: %08X", __FUNCTION__, VAddr).c_str());
         }
@@ -11350,7 +11428,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
             else
             {
                 CPU_Message("    Should be moving %s in to %08X ?!?", x86_Name(Reg), VAddr);
-                if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+                if (ShowUnhandledMemory())
                 {
                     g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
                 }
@@ -11395,7 +11473,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
             break;
         default:
             CPU_Message("    Should be moving %s in to %08X ?!?", x86_Name(Reg), VAddr);
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11464,7 +11542,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
         case 0x04400034: MoveX86regToVariable(Reg, &g_Reg->VI_Y_SCALE_REG, "VI_Y_SCALE_REG"); break;
         default:
             CPU_Message("    Should be moving %s in to %08X ?!?", x86_Name(Reg), VAddr);
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11522,7 +11600,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
         default:
             sprintf(VarName, "RDRAM + %X", PAddr);
             MoveX86regToVariable(Reg, PAddr + g_MMU->Rdram(), VarName);
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11571,7 +11649,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
             m_RegWorkingSet.AfterCallDirect();
             break;
         case 0x04600010:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11621,7 +11699,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
             break;
         default:
             CPU_Message("    Should be moving %s in to %08X ?!?", x86_Name(Reg), VAddr);
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11635,7 +11713,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
         case 0x0470000C: MoveX86regToVariable(Reg, &g_Reg->RI_SELECT_REG, "RI_SELECT_REG"); break;
         case 0x04700010: MoveX86regToVariable(Reg, &g_Reg->RI_REFRESH_REG, "RI_REFRESH_REG"); break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11686,7 +11764,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
             m_RegWorkingSet.AfterCallDirect();
             break;
         default:
-            if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+            if (ShowUnhandledMemory())
             {
                 g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
             }
@@ -11705,18 +11783,6 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
                 MoveX86regToVariable(Reg, &g_Reg->ASIC_CMD, "ASIC_CMD");
                 m_RegWorkingSet.BeforeCallDirect();
                 Call_Direct(AddressOf(&DiskCommand), "DiskCommand");
-                m_RegWorkingSet.AfterCallDirect();
-                OrConstToVariable((uint32_t)DD_STATUS_MECHA_INT, &g_Reg->ASIC_STATUS, "ASIC_STATUS");
-                OrConstToVariable((uint32_t)CAUSE_IP3, &g_Reg->FAKE_CAUSE_REGISTER, "FAKE_CAUSE_REGISTER");
-                m_RegWorkingSet.BeforeCallDirect();
-#ifdef _MSC_VER
-                MoveConstToX86reg((uint32_t)g_Reg, x86_ECX);
-                Call_Direct(AddressOf(&CRegisters::CheckInterrupts), "CRegisters::CheckInterrupts");
-#else
-                PushImm32((uint32_t)g_Reg);
-                Call_Direct(AddressOf(&CRegisters::CheckInterrupts), "CRegisters::CheckInterrupts");
-                AddConstToX86Reg(x86_ESP, 4);
-#endif
                 m_RegWorkingSet.AfterCallDirect();
                 break;
             }
@@ -11748,7 +11814,7 @@ void CX86RecompilerOps::SW_Register(x86Reg Reg, uint32_t VAddr)
         break;
     default:
         CPU_Message("    Should be moving %s in to %08X ?!?", x86_Name(Reg), VAddr);
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+        if (ShowUnhandledMemory())
         {
             g_Notify->DisplayError(stdstr_f("%s\ntrying to store in %08X?", __FUNCTION__, VAddr).c_str());
         }

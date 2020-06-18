@@ -17,6 +17,24 @@
 
 #include "Symbols.h"
 
+const CSetValueDlg::ComboItem CDebugSymbols::ModalChangeTypeItems[] = {
+    { "code",   SYM_CODE},
+    { "uint8",  SYM_U8 },
+    { "int8",   SYM_S8 },
+    { "uint16", SYM_U16 },
+    { "int16",  SYM_S16 },
+    { "uint32", SYM_U32 },
+    { "int32",  SYM_S32 },
+    { "uint64", SYM_U64 },
+    { "int64",  SYM_S64 },
+    { "float",  SYM_FLOAT },
+    { "double", SYM_DOUBLE },
+    { "v2", SYM_VECTOR2 },
+    { "v3", SYM_VECTOR3 },
+    { "v4", SYM_VECTOR4 },
+    { NULL, 0 }
+};
+
 CDebugSymbols::CDebugSymbols(CDebuggerUI * debugger) :
     CDebugDialog<CDebugSymbols>(debugger)
 {
@@ -30,11 +48,11 @@ LRESULT CDebugSymbols::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     m_SymbolsListView.Attach(GetDlgItem(IDC_SYMBOLS_LIST));
     m_SymbolsListView.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
-    m_SymbolsListView.AddColumn("Address", 0);
-    m_SymbolsListView.AddColumn("Type", 1);
-    m_SymbolsListView.AddColumn("Name", 2);
-    m_SymbolsListView.AddColumn("Value", 3);
-    m_SymbolsListView.AddColumn("Description", 4);
+    m_SymbolsListView.AddColumn(L"Address", 0);
+    m_SymbolsListView.AddColumn(L"Type", 1);
+    m_SymbolsListView.AddColumn(L"Name", 2);
+    m_SymbolsListView.AddColumn(L"Value", 3);
+    m_SymbolsListView.AddColumn(L"Description", 4);
 
     m_SymbolsListView.SetColumnWidth(0, 70);
     m_SymbolsListView.SetColumnWidth(1, 40);
@@ -44,10 +62,10 @@ LRESULT CDebugSymbols::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 
     Refresh();
 
-    m_AutoRefreshThread = CreateThread(NULL, 0, AutoRefreshProc, (void*)this, 0, NULL);
+    SetTimer(TIMER_ID_AUTO_REFRESH, 100, NULL);
 
-	LoadWindowPos();
-	WindowCreated();
+    LoadWindowPos();
+    WindowCreated();
     return 0;
 }
 
@@ -58,22 +76,16 @@ void CDebugSymbols::OnExitSizeMove(void)
 
 LRESULT CDebugSymbols::OnDestroy(void)
 {
+    KillTimer(TIMER_ID_AUTO_REFRESH);
     m_SymbolsListView.Detach();
-    if (m_AutoRefreshThread != NULL)
-    {
-        TerminateThread(m_AutoRefreshThread, 0);
-        CloseHandle(m_AutoRefreshThread);
-    }
     return 0;
 }
 
-DWORD WINAPI CDebugSymbols::AutoRefreshProc(void* _this)
+void CDebugSymbols::OnTimer(UINT_PTR nIDEvent)
 {
-    CDebugSymbols* self = (CDebugSymbols*)_this;
-    while (true)
+    if (nIDEvent == TIMER_ID_AUTO_REFRESH)
     {
-        self->RefreshValues();
-        Sleep(100);
+        RefreshValues();
     }
 }
 
@@ -89,35 +101,197 @@ LRESULT CDebugSymbols::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
         break;
     case IDC_REMOVESYMBOL_BTN:
     {
-        int id = m_SymbolsListView.GetItemData(m_SymbolsListView.GetSelectedIndex());
-        CSymbols::EnterCriticalSection();
-        CSymbols::RemoveEntryById(id);
-        CSymbols::Save();
-        CSymbols::LeaveCriticalSection();
-        Refresh();
+        int nItem = m_SymbolsListView.GetSelectedIndex();
+        if (nItem != -1)
+        {
+            int id = m_SymbolsListView.GetItemData(nItem);
+            m_Debugger->SymbolTable()->RemoveSymbolById(id);
+            m_Debugger->SymbolTable()->Save();
+            Refresh();
+        }
         break;
     }
     }
     return FALSE;
 }
 
-LRESULT	CDebugSymbols::OnListDblClicked(NMHDR* pNMHDR)
+LRESULT    CDebugSymbols::OnListDblClicked(NMHDR* pNMHDR)
 {
-    // Open it in memory viewer/commands viewer
+    if (g_MMU == NULL)
+    {
+        return true;
+    }
+
+    LONG iItem = m_SymbolsListView.GetNextItem(-1, LVNI_SELECTED);
+    if (iItem == -1)
+    {
+        return true;
+    }
+
+    int nSelectedCol = -1;
+
+    // hit test for column
+
+    POINT mousePt;
+    RECT listRect;
+    GetCursorPos(&mousePt);
+    m_SymbolsListView.GetWindowRect(&listRect);
+
+    int mouseX = mousePt.x - listRect.left;
+
+    for (int nCol = 0, colX = 0; nCol < SymbolsListView_Num_Columns; nCol++)
+    {
+        int colWidth = m_SymbolsListView.GetColumnWidth(nCol);
+        if (mouseX >= colX && mouseX <= colX + colWidth)
+        {
+            nSelectedCol = nCol;
+            break;
+        }
+        colX += colWidth;
+    }
+
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
     int nItem = pIA->iItem;
-
     int id = m_SymbolsListView.GetItemData(nItem);
-    CSymbolEntry* symbol = CSymbols::GetEntryById(id);
 
-    if (symbol->m_Type == 0) // code
+    CSymbol symbol;
+    if (!m_Debugger->SymbolTable()->GetSymbolById(id, &symbol))
     {
-        m_Debugger->Debug_ShowCommandsLocation(symbol->m_Address, true);
+        return 0;
     }
-    else // data/number
+
+    switch (nSelectedCol)
     {
-        m_Debugger->Debug_ShowMemoryLocation(symbol->m_Address, true);
-    }
+    case SymbolsListView_Col_Address:
+        // Open it in memory viewer/commands viewer
+        if (symbol.m_Type == SYM_CODE) // code
+        {
+            m_Debugger->Debug_ShowCommandsLocation(symbol.m_Address, true);
+        }
+        else // data/number
+        {
+            m_Debugger->Debug_ShowMemoryLocation(symbol.m_Address, true);
+        }
+        break;
+    case SymbolsListView_Col_Type:
+        if (m_SetValueDlg.DoModal("Change type", "New type:", symbol.m_Type, ModalChangeTypeItems))
+        {
+            ValueType t = (ValueType)m_SetValueDlg.GetEnteredData();
+
+            //Is there a better way?
+            m_Debugger->SymbolTable()->RemoveSymbolById(id);
+            m_Debugger->SymbolTable()->AddSymbol(t, symbol.m_Address, symbol.m_Name, symbol.m_Description);
+        }
+        break;
+    case SymbolsListView_Col_Name:
+        if (m_SetValueDlg.DoModal("Set name", "New name:", symbol.m_Name))
+        {
+            wchar_t* szEnteredString = m_SetValueDlg.GetEnteredString();
+            m_Debugger->SymbolTable()->RemoveSymbolById(id);
+            m_Debugger->SymbolTable()->AddSymbol(symbol.m_Type, symbol.m_Address, stdstr().FromUTF16(szEnteredString).c_str(), symbol.m_Description);
+        }
+        break;
+    case SymbolsListView_Col_Value:
+        char szValue[256];
+        const char* x;
+        const char* y;
+        m_Debugger->SymbolTable()->GetValueString(szValue, &symbol);
+        if (m_SetValueDlg.DoModal("Change value", "New value:", szValue))
+        {
+            stdstr EnteredString = stdstr().FromUTF16(m_SetValueDlg.GetEnteredString());
+
+            switch (symbol.m_Type)
+            {
+            case SYM_U8:
+                m_Debugger->DebugStore_VAddr<uint8_t>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_U16:
+                m_Debugger->DebugStore_VAddr<uint16_t>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_U32:
+                m_Debugger->DebugStore_VAddr<uint32_t>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_U64:
+                m_Debugger->DebugStore_VAddr<uint64_t>(symbol.m_Address, atoll(EnteredString.c_str()));
+                break;
+            case SYM_S8:
+                m_Debugger->DebugStore_VAddr<int8_t>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_S16:
+                m_Debugger->DebugStore_VAddr<int16_t>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_S32:
+                m_Debugger->DebugStore_VAddr<int>(symbol.m_Address, atoi(EnteredString.c_str()));
+                break;
+            case SYM_S64:
+                m_Debugger->DebugStore_VAddr<int64_t>(symbol.m_Address, atoll(EnteredString.c_str()));
+                break;
+            case SYM_FLOAT:
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address, atof(EnteredString.c_str()));
+                break;
+            case SYM_DOUBLE:
+                m_Debugger->DebugStore_VAddr<double>(symbol.m_Address, atof(EnteredString.c_str()));
+                break;
+            case SYM_VECTOR2:
+                x = EnteredString.c_str();
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address, atof(szValue));
+
+                x = x + (y - x) + 1;
+                memcpy(szValue, x, strlen(x));
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + sizeof(float), atof(szValue));
+                break;
+            case SYM_VECTOR3:
+                x = EnteredString.c_str();
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address, atof(szValue));
+
+                x = x + (y - x) + 1;
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + sizeof(float), atof(szValue));
+
+                x = x + (y - x) + 1;
+                memcpy(szValue, x, strlen(x));
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + (sizeof(float) * 2), atof(szValue));
+                break;
+            case SYM_VECTOR4:
+                x = EnteredString.c_str();
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address, atof(szValue));
+
+                x = x + (y - x) + 1;
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + sizeof(float), atof(szValue));
+
+                x = x + (y - x) + 1;
+                y = strchr(x, ',');
+                memcpy(szValue, x, y - x);
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + (sizeof(float) * 2), atof(szValue));
+
+                x = x + (y - x) + 1;
+                memcpy(szValue, x, strlen(x));
+                m_Debugger->DebugStore_VAddr<float>(symbol.m_Address + (sizeof(float) * 3), atof(szValue));
+                break;
+            }
+        }
+        break;
+    case SymbolsListView_Col_Description:
+        if (m_SetValueDlg.DoModal("Set description", "New description:", symbol.m_Description))
+        {
+            stdstr szEnteredString = stdstr().FromUTF16(m_SetValueDlg.GetEnteredString());
+            m_Debugger->SymbolTable()->RemoveSymbolById(id);
+            m_Debugger->SymbolTable()->AddSymbol(symbol.m_Type, symbol.m_Address, symbol.m_Name, szEnteredString.c_str());
+        }
+        break;
+    } 
+
+    m_Debugger->SymbolTable()->Save();
+    Refresh();
 
     return 0;
 }
@@ -131,32 +305,25 @@ void CDebugSymbols::Refresh()
     m_SymbolsListView.SetRedraw(FALSE);
     m_SymbolsListView.DeleteAllItems();
 
-    CSymbols::EnterCriticalSection();
+    CSymbol symbol;
+    int nItem = 0;
 
-    int count = CSymbols::GetCount();
-
-    for (int i = 0; i < count; i++)
+    while (m_Debugger->SymbolTable()->GetSymbolByIndex(nItem, &symbol))
     {
-        CSymbolEntry* lpSymbol = CSymbols::GetEntryByIndex(i);
+        char szValue[256];
+        m_Debugger->SymbolTable()->GetValueString(szValue, &symbol);
 
-        stdstr addrStr = stdstr_f("%08X", lpSymbol->m_Address);
+        stdstr strAddr = stdstr_f("%08X", symbol.m_Address);
 
-        m_SymbolsListView.AddItem(i, 0, addrStr.c_str());
-        m_SymbolsListView.AddItem(i, 1, lpSymbol->TypeName());
-        m_SymbolsListView.AddItem(i, 2, lpSymbol->m_Name);
-        m_SymbolsListView.AddItem(i, 4, lpSymbol->m_Description);
+        m_SymbolsListView.AddItem(nItem, 0, strAddr.ToUTF16().c_str());
+        m_SymbolsListView.AddItem(nItem, 1, stdstr(symbol.TypeName()).ToUTF16().c_str());
+        m_SymbolsListView.AddItem(nItem, 2, stdstr(symbol.m_Name).ToUTF16().c_str());
+        m_SymbolsListView.AddItem(nItem, 4, stdstr(symbol.m_Description).ToUTF16().c_str());
+        m_SymbolsListView.AddItem(nItem, 5, stdstr(szValue).ToUTF16().c_str());
 
-        m_SymbolsListView.SetItemData(i, lpSymbol->m_Id);
-
-        if (g_MMU)
-        {
-            char szValue[64];
-            CSymbols::GetValueString(szValue, lpSymbol);
-            m_SymbolsListView.AddItem(i, 3, szValue);
-        }
+        m_SymbolsListView.SetItemData(nItem, symbol.m_Id);
+        nItem++;
     }
-
-    CSymbols::LeaveCriticalSection();
 
     m_SymbolsListView.SetRedraw(TRUE);
 }
@@ -169,20 +336,21 @@ void CDebugSymbols::RefreshValues()
     }
 
     int count = m_SymbolsListView.GetItemCount();
-
-    CSymbols::EnterCriticalSection();
+    
+    CSymbol symbol;
 
     for (int i = 0; i < count; i++)
     {
         int symbolId = m_SymbolsListView.GetItemData(i);
 
-        CSymbolEntry* lpSymbol = CSymbols::GetEntryById(symbolId);
+        if (!m_Debugger->SymbolTable()->GetSymbolById(symbolId, &symbol))
+        {
+            break;
+        }
 
-        char szValue[64];
-        CSymbols::GetValueString(szValue, lpSymbol);
+        char szValue[256];
+        m_Debugger->SymbolTable()->GetValueString(szValue, &symbol);
 
-        m_SymbolsListView.SetItemText(i, 3, szValue);
+        m_SymbolsListView.SetItemText(i, 3, stdstr(szValue).ToUTF16().c_str());
     }
-
-    CSymbols::LeaveCriticalSection();
 }

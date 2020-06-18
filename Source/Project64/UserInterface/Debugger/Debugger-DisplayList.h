@@ -14,8 +14,8 @@ public:
     bool     m_bHaveBgColor;
     COLORREF m_BgColor;
 	//bool     m_bNeedRedraw;
-	char*    m_Text;
-	CCanvasItem(int x, int y, const char* text, COLORREF color = RGB(255, 255, 255));
+	TCHAR*   m_Text;
+	CCanvasItem(int x, int y, const TCHAR* text, COLORREF color = RGB(255, 255, 255));
 };
 
 class CCanvas :
@@ -44,11 +44,11 @@ public:
     void GotoOriginX(void);
     void SetLayoutMode(int mode);
     void SetOrigin(int x, int y);
-	void SetItemText(int nItem, const char* text);
+	void SetItemText(int nItem, const TCHAR* text);
 	void SetItemColor(int nItem, COLORREF color);
     void SetItemBgColor(int nItem, COLORREF color);
 	void Init(void);
-	size_t AddItem(const char* text, COLORREF color = RGB(255, 255, 255));
+	size_t AddItem(const TCHAR* text, COLORREF color = RGB(255, 255, 255));
 
 private:
 	CCanvasItem* GetItem(int index);

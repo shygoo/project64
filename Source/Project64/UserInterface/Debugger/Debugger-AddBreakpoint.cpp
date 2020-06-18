@@ -13,7 +13,7 @@
 
 #include "DebuggerUI.h"
 
-LRESULT	CAddBreakpointDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CAddBreakpointDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
     CenterWindow();
     m_AddressEdit.Attach(GetDlgItem(IDC_ADDR_EDIT));
@@ -29,9 +29,9 @@ LRESULT CAddBreakpointDlg::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND, BOOL&
     {
     case IDOK:
     {
-        char addrStr[9];
-        m_AddressEdit.GetWindowTextA(addrStr, 9);
-        uint32_t address = strtoul(addrStr, NULL, 16);
+        wchar_t addrStr[9];
+        m_AddressEdit.GetWindowText(addrStr, 9);
+        uint32_t address = wcstoul(addrStr, NULL, 16);
 
         CBreakpoints* breakpoints = m_Debugger->Breakpoints();
 

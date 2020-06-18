@@ -43,7 +43,7 @@ private:
     } INSTANCE_ENTRY;
 
     CDebuggerUI* m_Debugger;
-
+    int m_NumCallbacks;
     char* m_APIScript;
 
     vector<HOOKENTRY> m_Hooks;
@@ -55,10 +55,10 @@ private:
     CScriptHook* m_HookCPURead;
     CScriptHook* m_HookCPUWrite;
     CScriptHook* m_HookCPUExecOpcode;
-	CScriptHook* m_HookCPUGPRValue;
+    CScriptHook* m_HookCPUGPRValue;
     CScriptHook* m_HookFrameDrawn;
 
-	CRITICAL_SECTION m_CriticalSection;
+    CriticalSection m_CS;
 
     void RegisterHook(const char* hookId, CScriptHook* cbList); // associate string id with callback list
     void UnregisterHooks();
@@ -103,10 +103,17 @@ public:
     CScriptHook* GetHook(const char* hookId);
 
     int GetNextCallbackId();
+    void CallbackAdded();
+    void CallbackRemoved();
+
+    inline int HaveCallbacks()
+    {
+        return m_NumCallbacks != 0;
+    }
 
     void DeleteStoppedInstances();
-    INSTANCE_STATE GetInstanceState(char* scriptName);
-    CScriptInstance* GetInstance(char* scriptName);
+    INSTANCE_STATE GetInstanceState(const char* scriptName);
+    CScriptInstance* GetInstance(const char* scriptName);
 
     CScriptHook* HookCPUExec()
     {
@@ -128,10 +135,10 @@ public:
         return m_HookCPUExecOpcode;
     }
 
-	CScriptHook* HookCPUGPRValue()
-	{
-		return m_HookCPUGPRValue;
-	}
+    CScriptHook* HookCPUGPRValue()
+    {
+        return m_HookCPUGPRValue;
+    }
 
     CScriptHook* HookFrameDrawn()
     {

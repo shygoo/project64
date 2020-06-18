@@ -38,6 +38,7 @@ void CDMA::OnFirstDMA()
     case CIC_NUS_5167:  offset = +0x0318; break;
     case CIC_NUS_8303:  offset = +0x0318; break;
     case CIC_NUS_DDUS:  offset = +0x0318; break;
+    case CIC_NUS_DDTL:  offset = +0x0318; break;
     case CIC_UNKNOWN:
     case CIC_NUS_6102:  offset = +0x0318; break;
     case CIC_NUS_6103:  offset = +0x0318; break;
@@ -206,7 +207,7 @@ void CDMA::PI_DMA_WRITE()
     g_Reg->PI_STATUS_REG |= PI_STATUS_DMA_BUSY;
     if (g_Reg->PI_DRAM_ADDR_REG + PI_WR_LEN_REG > g_MMU->RdramSize())
     {
-        if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory)) { g_Notify->DisplayError(stdstr_f("PI_DMA_WRITE not in Memory: %08X", g_Reg->PI_DRAM_ADDR_REG + PI_WR_LEN_REG).c_str()); }
+        if (ShowUnhandledMemory()) { g_Notify->DisplayError(stdstr_f("PI_DMA_WRITE not in Memory: %08X", g_Reg->PI_DRAM_ADDR_REG + PI_WR_LEN_REG).c_str()); }
         g_Reg->PI_STATUS_REG &= ~PI_STATUS_DMA_BUSY;
         g_Reg->MI_INTR_REG |= MI_INTR_PI;
         g_Reg->CheckInterrupts();
@@ -459,17 +460,23 @@ void CDMA::PI_DMA_WRITE()
         {
             g_Recompiler->ClearRecompCode_Phys(g_Reg->PI_DRAM_ADDR_REG, g_Reg->PI_WR_LEN_REG, CRecompiler::Remove_DMA);
         }
-        g_SystemTimer->SetTimer(g_SystemTimer->PiTimer, PI_WR_LEN_REG/8 + (g_Random->next() % 0x40), false);
 
-        //g_Reg->PI_STATUS_REG &= ~PI_STATUS_DMA_BUSY;
-        //g_Reg->MI_INTR_REG |= MI_INTR_PI;
-        //g_Reg->CheckInterrupts();
+        if(g_System->bRandomizeSIPIInterrupts())
+        {
+            g_SystemTimer->SetTimer(g_SystemTimer->PiTimer, PI_WR_LEN_REG / 8 + (g_Random->next() % 0x40), false);
+        }
+        else
+        {
+            g_Reg->PI_STATUS_REG &= ~PI_STATUS_DMA_BUSY;
+            g_Reg->MI_INTR_REG |= MI_INTR_PI;
+            g_Reg->CheckInterrupts();
+        }
         //ChangeTimer(PiTimer,(int32_t)(PI_WR_LEN_REG * 8.9) + 50);
         //ChangeTimer(PiTimer,(int32_t)(PI_WR_LEN_REG * 8.9));
         return;
     }
 
-    if (g_Settings->LoadBool(Debugger_ShowUnhandledMemory))
+    if (ShowUnhandledMemory())
     {
         g_Notify->DisplayError(stdstr_f("PI_DMA_WRITE not in ROM: %08X", PI_CART_ADDR_REG).c_str());
     }
