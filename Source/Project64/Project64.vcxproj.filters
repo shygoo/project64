@@ -52,11 +52,11 @@
     <Filter Include="Header Files\User Interface Headers\Debugger Headers">
       <UniqueIdentifier>{c4249d55-df70-4453-b017-b548514ad094}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\User Interface Source\Debugger Source\Util Source">
-      <UniqueIdentifier>{8a0b20b3-198f-46fe-b7a9-10c922fa9b1a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\User Interface Headers\Debugger Headers\Util Headers">
+    <Filter Include="Header Files\User Interface Headers\Debugger Headers\GFX Util Headers">
       <UniqueIdentifier>{8dc685bf-33c0-4c53-a1b0-64d43ef0bcae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\User Interface Source\Debugger Source\GFX Util Source">
+      <UniqueIdentifier>{8a0b20b3-198f-46fe-b7a9-10c922fa9b1a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -216,50 +216,50 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-DisplayList.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\Assembler.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
-    </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\Breakpoints.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
-    </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\CPULog.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
-    </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\DMALog.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
-    </ClCompile>
     <ClCompile Include="UserInterface\Debugger\GfxLabels.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
-    </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\GfxMicrocode.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\GfxOps.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\GfxParser.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\GfxRenderer.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\GfxState.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptHook.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptInstance.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptSystem.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\Symbols.cpp">
-      <Filter>Source Files\User Interface Source\Debugger Source\Util Source</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\DMALog.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\Assembler.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\Breakpoints.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\CPULog.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\GfxMicrocode.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source\GFX Util Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -449,56 +449,56 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-DisplayList.h">
       <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\Symbols.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\Assembler.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\Breakpoints.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\CPULog.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\DMALog.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxLabels.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="UserInterface\Debugger\GfxMicrocode.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxOps.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxOpTypes.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxParser.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxRenderer.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\GfxState.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Symbols.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\MemoryScanner.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\OpInfo.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\ScriptHook.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\ScriptInstance.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\ScriptSystem.h">
-      <Filter>Header Files\User Interface Headers\Debugger Headers\Util Headers</Filter>
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\DMALog.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Assembler.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\Breakpoints.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\CPULog.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\GfxMicrocode.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers\GFX Util Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

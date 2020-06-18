@@ -72,7 +72,7 @@ size_t CGfxParser::GetTriangleCount(void)
 
 void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
-    new((CHleGfxState*)this) CHleGfxState;
+    new ((CHleGfxState*)this) CHleGfxState;
 
     m_spCommandAddress = dlistAddr;
 
