@@ -151,6 +151,11 @@ public:
     void Refresh(void);
 
 private:
+    enum
+    {
+        WM_REFRESH = WM_USER + 1
+    };
+
     int
         m_ITM_TEXTUREIMAGE,
         m_ITM_COLORIMAGE,
@@ -236,6 +241,7 @@ private:
     CRect m_OrgTexPreviewRect;
     CRect m_OrgResInfoRect;
     
+    void RefreshList(void);
 	void UpdateStateCanvas(CHleGfxState* state);
     void ResetResourceTreeCtrl(void);
     void SetPreviewColor(WORD ctrlId, uint32_t colorPair);
@@ -244,6 +250,7 @@ private:
 
     LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
     LRESULT OnDestroy(void);
+    LRESULT OnRefresh(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
     LRESULT OnClicked(WORD wNotifyCode, WORD wID, HWND /*hWndCtl*/, BOOL& bHandled);
     LRESULT OnListItemChanged(NMHDR* pNMHDR);
     LRESULT OnListDblClicked(NMHDR* pNMHDR);
@@ -272,7 +279,7 @@ private:
         NOTIFY_HANDLER_EX(IDC_LST_DLIST, NM_CUSTOMDRAW, OnCustomDrawList)
         MESSAGE_HANDLER(WM_MEASUREITEM, OnMeasureItem)
         MSG_WM_TIMER(OnTimer)
-
+        MESSAGE_HANDLER(WM_REFRESH, OnRefresh)
         NOTIFY_HANDLER_EX(IDC_CUSTOM1, RVN_LCLICK, OnRenderViewClicked)
         NOTIFY_HANDLER_EX(IDC_CUSTOM1, RVN_MOUSEMOVE, OnRenderViewMouseMove)
 

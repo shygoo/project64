@@ -18,7 +18,8 @@ CDebugDisplayList::CDebugDisplayList(CDebuggerUI* debugger) :
     m_bRefreshPending(false),
     m_DrawBuffers(NULL),
     m_RenderView(NULL),
-    m_bShowRender(true)
+    m_bShowRender(true),
+    m_GfxParser(debugger)
 {
 	m_Camera.m_Pos.z = -5.0f;
 
@@ -313,6 +314,17 @@ LRESULT CDebugDisplayList::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWnd
 // called from RunRSP when task type == 1
 void CDebugDisplayList::Refresh(void)
 {
+    SendMessage(WM_REFRESH, 0, 0);
+}
+
+LRESULT CDebugDisplayList::OnRefresh(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+{
+    RefreshList();
+    return 0;
+}
+
+void CDebugDisplayList::RefreshList(void)
+{
     if (m_hWnd == NULL || g_MMU == NULL || m_bRefreshPending == false)
     {
         return;
@@ -324,10 +336,11 @@ void CDebugDisplayList::Refresh(void)
 
     uint32_t ucodeAddr, dlistAddr, dlistSize;
 
-	// not thread safe
-    g_MMU->LW_VAddr(0xA4000FD0, ucodeAddr);
-    g_MMU->LW_VAddr(0xA4000FF0, dlistAddr);
-    g_MMU->LW_VAddr(0xA4000FF4, dlistSize);
+    m_Debugger->DebugLoad_PAddr(0x04000FD0, ucodeAddr);
+    m_Debugger->DebugLoad_PAddr(0x04000FF0, dlistAddr);
+    m_Debugger->DebugLoad_PAddr(0x04000FF4, dlistSize);
+
+    printf("%08X %08X %08X\n", ucodeAddr, dlistAddr, dlistSize);
 
     m_GfxParser.Run(ucodeAddr, dlistAddr, dlistSize);
 
@@ -336,9 +349,6 @@ void CDebugDisplayList::Refresh(void)
     size_t numCommands = m_GfxParser.GetCommandCount();
     size_t numResources = m_GfxParser.GetRamResourceCount();
     size_t numTriangles = m_GfxParser.GetTriangleCount();
-
-    //ucode_version_t ucodeVersion = m_GfxParser.GetUCodeVersion();
-    //uint32_t ucodeChecksum = m_GfxParser.GetUCodeChecksum();
 
     stdstr strStatus = ucodeInfo->ucodeName;
     strStatus += stdstr_f(" (Checksum: 0x%08X) - %d commands, %d triangles", ucodeInfo->checksum, numCommands, numTriangles);

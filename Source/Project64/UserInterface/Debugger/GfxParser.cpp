@@ -7,17 +7,25 @@
 #include "GfxState.h"
 #include "GfxMicrocode.h"
 
-CGfxParser::CGfxParser(void) :
+CGfxParser::CGfxParser(CDebuggerUI* debugger) :
+    m_Debugger(debugger),
     m_MicrocodeInfo({ 0 }),
     m_MicrocodeAddress(0),
     m_RootDisplayListSize(0),
     m_RootDisplayListAddress(0),
     m_RootDisplayListEndAddress(0),
     m_VertexBufferSize(16),
-    m_RamSnapshot(NULL),
     m_TriangleCount(0),
     m_CurrentMacroLength(0)
 {
+}
+
+CGfxParser::~CGfxParser(void)
+{
+    if (m_RamSnapshot != NULL)
+    {
+        delete[] m_RamSnapshot;
+    }
 }
 
 uint8_t* CGfxParser::GetRamSnapshot(void)
@@ -72,7 +80,7 @@ size_t CGfxParser::GetTriangleCount(void)
 
 void CGfxParser::Setup(uint32_t ucodeAddr, uint32_t dlistAddr, uint32_t dlistSize)
 {
-    new ((CHleGfxState*)this) CHleGfxState;
+    ClearState();
 
     m_spCommandAddress = dlistAddr;
 
@@ -197,6 +205,8 @@ void CGfxParser::Step(void)
     }
 
     m_CommandLog.push_back(dc);
+
+    printf("%s %s\n", dc.name, dc.params.c_str());
 }
 
 
@@ -470,4 +480,176 @@ bool CGfxParser::ExportMicrocode(const char* path)
     file.write(ucodeBE, 4096);
     file.close();
     delete[] ucodeBE;
+}
+
+bool CGfxParser::LoadVertices(uint32_t address, int index, int numv)
+{
+    uint32_t physAddr = SegmentedToPhysical(address);
+
+    if (physAddr + numv * sizeof(vertex_t) > m_RamSnapshotSize)
+    {
+        return false;
+    }
+
+    if (index + numv >= sizeof(m_spVertices) / sizeof(m_spVertices[0]))
+    {
+        return false;
+    }
+
+    uint8_t* ptr = &m_RamSnapshot[physAddr];
+
+    for (uint32_t i = 0; i < numv; i++)
+    {
+        vertex_t* vtx = &m_spVertices[index + i];
+        uint32_t offs = i * 16;
+
+        vtx->x = *(int16_t*)&ptr[(offs + 0) ^ 2];
+        vtx->y = *(int16_t*)&ptr[(offs + 2) ^ 2];
+        vtx->z = *(int16_t*)&ptr[(offs + 4) ^ 2];
+
+        *vtx = Transform(vtx);
+        // todo the rest
+    }
+
+    return true;
+}
+
+void CGfxParser::LoadMatrix(uint32_t address, bool bPush, bool bLoad, bool bProjection)
+{
+    uint32_t physAddr = SegmentedToPhysical(address);
+
+    if (physAddr + sizeof(rsp_mtx_t) >= m_RamSnapshotSize)
+    {
+        return;
+    }
+
+    rsp_mtx_t dramSrcMtx;
+    rsp_mtx_t* dmemSrcMtx;
+    rsp_mtx_t* dmemDstMtx;
+
+    uint8_t* ptr = &m_RamSnapshot[physAddr];
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            uint32_t offs = (i * 8) + (j * 2);
+            dramSrcMtx.intpart[i][j] = *(int16_t*)&ptr[(offs + 0) ^ 2];
+            dramSrcMtx.fracpart[i][j] = *(int16_t*)&ptr[(offs + 32) ^ 2];
+        }
+    }
+
+    if (bProjection)
+    {
+        dmemSrcMtx = &m_spProjectionMatrix;
+        dmemDstMtx = &m_spProjectionMatrix;
+    }
+    else // modelview
+    {
+        dmemSrcMtx = &m_spMatrixStack[m_spMatrixIndex];
+
+        if (bPush)
+        {
+            m_spMatrixIndex++;
+        }
+
+        if (m_spMatrixIndex >= sizeof(m_spMatrixStack) / sizeof(rsp_mtx_t))
+        {
+            printf("matrix stack overrun\n");
+            m_bDone = true;
+            return;
+        }
+
+        dmemDstMtx = &m_spMatrixStack[m_spMatrixIndex];
+    }
+
+    if (bLoad)
+    {
+        *dmemDstMtx = dramSrcMtx;
+    }
+    else // mul
+    {
+        *dmemDstMtx = dmemSrcMtx->Mul(&dramSrcMtx);
+    }
+}
+
+void CGfxParser::LoadLight(uint32_t address, int index)
+{
+    uint32_t physAddr = SegmentedToPhysical(address);
+
+    if (physAddr + sizeof(light_t) >= m_RamSnapshotSize)
+    {
+        return;
+    }
+
+    if (index < 0 || index > 9)
+    {
+        return;
+    }
+
+    light_t* light = &m_spLights[index];
+    uint8_t* ptr = &m_RamSnapshot[physAddr];
+
+    light->colorA[0] = ptr[0 ^ 3];
+    light->colorA[1] = ptr[1 ^ 3];
+    light->colorA[2] = ptr[2 ^ 3];
+
+    light->colorB[0] = ptr[4 ^ 3];
+    light->colorB[1] = ptr[5 ^ 3];
+    light->colorB[2] = ptr[6 ^ 3];
+
+    light->direction[0] = ptr[8 ^ 3];
+    light->direction[1] = ptr[9 ^ 3];
+    light->direction[2] = ptr[10 ^ 3];
+}
+
+vertex_t CGfxParser::Transform(vertex_t* v)
+{
+    if (m_spMatrixIndex >= sizeof(m_spMatrixStack) / sizeof(rsp_mtx_t))
+    {
+        printf("CGfxParser::Transform mtx stack overrun\n");
+        return {0,0,0};
+    }
+
+    rsp_mtx_t* mtx = &m_spMatrixStack[m_spMatrixIndex];
+
+    int16_t x = v->x * mtx->GetF(0, 0) + v->y * mtx->GetF(1, 0) + v->z * mtx->GetF(2, 0) + 1 * mtx->GetF(3, 0);
+    int16_t y = v->x * mtx->GetF(0, 1) + v->y * mtx->GetF(1, 1) + v->z * mtx->GetF(2, 1) + 1 * mtx->GetF(3, 1);
+    int16_t z = v->x * mtx->GetF(0, 2) + v->y * mtx->GetF(1, 2) + v->z * mtx->GetF(2, 2) + 1 * mtx->GetF(3, 2);
+
+    vertex_t _v = *v;
+    _v.x = (float)x;
+    _v.y = (float)y;
+    _v.z = (float)z;
+
+    return _v;
+}
+
+bool CGfxParser::GetCommand(uint32_t address, dl_cmd_t *command)
+{
+    uint32_t physAddress = SegmentedToPhysical(address);
+
+    if (physAddress + sizeof(dl_cmd_t) > m_RamSnapshotSize)
+    {
+        return false;
+    }
+
+    *command = *(dl_cmd_t*)&m_RamSnapshot[physAddress];
+    return true;
+}
+
+int CGfxParser::GetCommands(uint32_t address, int numCommands, dl_cmd_t commands[])
+{
+    int nRead = 0;
+
+    for (int i = 0; i < numCommands; i++)
+    {
+        if (!GetCommand(address + i * 8, &commands[i]))
+        {
+            break;
+        }
+        nRead++;
+    }
+
+    return nRead;
 }

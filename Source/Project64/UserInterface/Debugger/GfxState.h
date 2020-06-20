@@ -131,15 +131,11 @@ class CHleGfxState
 {
 public:
     CHleGfxState(void);
+    void     ClearState(void);
+
     uint32_t SegmentedToPhysical(uint32_t segaddr);
     uint32_t SegmentedToVirtual(uint32_t segaddr);
-    bool     LoadVertices(uint32_t address, int index, int numv);
-    void     LoadMatrix(uint32_t address, bool bPush, bool bLoad, bool bProjection);
-    void     LoadLight(uint32_t address, int index);
-    bool     GetCommand(uint32_t address, dl_cmd_t *command);
-    int      GetCommands(uint32_t address, int numCommands, dl_cmd_t commands[]);
-    vertex_t Transform(vertex_t* vertex);
-    
+
     bool     m_bDone;
     uint32_t m_nCommand;
 

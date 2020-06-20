@@ -909,7 +909,24 @@ void CGfxOps::op_gsMoveWd_f3d(CGfxParser* state, decoded_cmd_t* dc)
 void CGfxOps::op_gsSPPopMatrix_f3d(CGfxParser* state, decoded_cmd_t* dc)
 {
     dl_cmd_popmtx_f3d_t *cmd = &state->m_spCommand.popmtx_f3d;
-    dc->params = stdstr_f("0x%08X", cmd->p0); // todo?
+
+    switch (cmd->p0)
+    {
+    case 0:
+        dc->params = stdstr_f("G_MTX_MODELVIEW");
+        if (state->m_spMatrixIndex > 0)
+        {
+            state->m_spMatrixIndex--;
+        }
+        break;
+    case 1:
+        // no operation
+        dc->params = stdstr_f("G_MTX_PROJECTION");
+        break;
+    default: // INVALID
+        dc->params = stdstr_f("%08X", cmd->p0);
+        break; 
+    }
 }
 
 void CGfxOps::op_gsSP1Triangle_f3d(CGfxParser* state, decoded_cmd_t* dc)
