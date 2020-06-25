@@ -73,6 +73,18 @@ function GfxState()
 {
     this.dv = null; // main memory
     this.spSegmentBuffers = new Array(16).fill(null); // overrides spSegments
+    this.spGeometryMode = {
+        zbuffer: 0,
+        shade: 0,
+        cull_front: 0,
+        cull_back: 0,
+        fog: 0,
+        lighting: 0,
+        texture_gen: 0,
+        texture_gen_linear: 0,
+        shading_smooth: 0,
+        clipping: 0
+    };
     this.commandFunctions = new Array(256).fill(null);
     this.loghtm = "";
     this.resetState();
@@ -133,16 +145,25 @@ GfxState.prototype.updateCurrentMaterial = function()
 // used to check if a material has already been generated for the current gfx state
 GfxState.prototype.generateMaterialHash = function()
 {
-    return this.lastLoadBlock; // todo more
+    return this.lastLoadBlock + this.spGeometryMode.lighting + this.spGeometryMode.shade; // todo more
 }
 
 // create intermediate "material" to attach to the current polygon list
 GfxState.prototype.createMaterial = function()
 {
     var material = {};
-    material.vertexColorsEnabled = false;
-    material.vertexNormalsEnabled = false;
+
+    var gmLighting = this.spGeometryMode.lighting;
+    var gmShade = this.spGeometryMode.shade;
+    
+    var renderMode = (this.dpOtherModeL >> 3) & 0b1111111111111;
+    material.bFog = !!this.spGeometryMode.fog;
+    material.bDecal = ((renderMode >> 7) & 3) == 3;
+    material.vertexColorsEnabled = (gmLighting == 0) && (gmShade == 1);
+    material.vertexNormalsEnabled = (gmLighting == 1) && (gmShade == 1);
     material.imageIndex = this.getImageIndex(this.lastLoadBlock);
+
+    console.log('mtlvc: ', material.vertexColorsEnabled);
 
     var renderTile = this.dpTileDescriptors[0];
 
@@ -343,7 +364,7 @@ GfxState.prototype.run = function(address)
             return s;
         }
 
-        this.log(hex(this.spCommandAddress) + ": " + hex(this.command.w0) + " " + hex(this.command.w1) + "<br>\n");
+        this.log(hex(this.spCommandAddress-8) + ": " + hex(this.command.w0) + " " + hex(this.command.w1) + "<br>\n");
 
         //this.debugLogStep();
 
@@ -408,6 +429,25 @@ GfxState.prototype.importOps = function(dpOps, spOps, spOpsPatch)
     }
 }
 
+GfxState.prototype.importOpsFromChecksum = function(checksum)
+{
+    var dpOps = GfxOps.RDP;
+    var spOps = null;
+    var spOpsPatch = null;
+
+    switch(checksum)
+    {
+    case 0x3A1CBAC3:
+        spOps = GfxOps.Fast3D;
+        break;
+    case 0x5D3099F1:
+        spOps = GfxOps.F3DEX2;
+        break;
+    }
+
+    this.importOps(dpOps, spOps, spOpsPatch);
+}
+
 GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
 {
     for(var i = 0; i < numVertices; i++)
@@ -441,11 +481,11 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
     }
 }
 
-GfxState.prototype.loadMatrix = function(segmentOffset, flags)
+GfxState.prototype.loadMatrix = function(segmentOffset, bPush, bLoad, bProj)
 {
-    var bPush = !!(flags & 0x01);
-    var bLoad = !!(flags & 0x02);
-    var bProj = !!(flags & 0x04);
+    //var bPush = !!(flags & 0x01);
+    //var bLoad = !!(flags & 0x02);
+    //var bProj = !!(flags & 0x04);
 
     var dmemSrcMtx = null;
     var dmemDstMtx = null;

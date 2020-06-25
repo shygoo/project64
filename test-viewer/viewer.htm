@@ -36,7 +36,7 @@ function Viewer(containerDomSelector)
 
     this.scene = new THREE.Scene();
 
-    this.scene.fog = new THREE.Fog(0xC8C896, 1, 5000);
+    this.scene.fog = new THREE.Fog(0xC8C896, 1, 32768);
     //this.scene.fog.color = 0xFFFFFFFF;
 
     this.renderer = new THREE.WebGLRenderer({antialias: false});
@@ -79,9 +79,6 @@ function Viewer(containerDomSelector)
         return false;
     }
 
-    var lastMovementX = 0;
-    var lastMovementY = 0;
-
     this.renderer.domElement.onmousemove = function(e)
     {
         if(e.buttons == 0)
@@ -89,28 +86,26 @@ function Viewer(containerDomSelector)
             return;
         }
 
-        var movementX = (lastMovementX*4 + e.movementX) / 5;
-        var movementY = (lastMovementY*4 + e.movementY) / 5;
-        lastMovementX = movementX;
-        lastMovementY = movementY;
+        var movementX = e.movementX;
+        var movementY = e.movementY;
 
         if(e.buttons == 1)
         {
-            viewer.camera.translateX(-movementX * 5);
-            viewer.camera.translateY(movementY * 5);
+            viewer.camera.translateX(movementX * 2);
+            viewer.camera.translateY(-movementY * 2);
         }
 
         if(e.buttons == 4)
         {
-            viewer.camera.translateZ(-movementX * 5);
-            viewer.camera.translateZ(movementY * 5);
+            viewer.camera.translateX(movementX * 2);
+            viewer.camera.translateZ(movementY * 10);
         }
 
         if(e.buttons == 2)
         {
             //viewer.camRotSpeedX = -e.movementX * 20;
-            viewer.camera.rotateY(-movementX * 0.01);
-            viewer.camera.rotateX(-movementY * 0.01);
+            viewer.camera.rotateY(-movementX * 0.005);
+            viewer.camera.rotateX(-movementY * 0.005);
             viewer.camera.rotation.z = 0;
         }
     }
@@ -123,7 +118,7 @@ function Viewer(containerDomSelector)
     }
 
     this.keyEvents = {
-	    //27: function(){ _this.resetCamera() }, // esc - reset camera position
+	    //32: function(){ _this.resetCamera() }, // space - reset camera position
 	    87: function(viewer){ viewer.camSpeedZ = -10; }, // w - move forward
 	    65: function(viewer){ viewer.camSpeedX = -10; }, // a - pan left
 	    83: function(viewer){ viewer.camSpeedZ = 10; }, // s - move backward
@@ -138,7 +133,7 @@ function Viewer(containerDomSelector)
 
     document.querySelector(containerDomSelector).appendChild(this.renderer.domElement);
 
-    this.camera = new THREE.PerspectiveCamera(60, this.width/this.height, 1, 10000);
+    this.camera = new THREE.PerspectiveCamera(45, this.width/this.height, 1, 32768);
     this.camera.rotation.order = "YXZ";
 }
 
@@ -190,6 +185,12 @@ Viewer.prototype.loadDumpFile = function(ab)
         rootDisplayListSize:    dv.getUint32(metaOffset + 0x10, true)
     };
 
+    if(meta.signature != 0x47494E46)
+    {
+        alert('Error: Not a valid GFX dump file');
+        return;
+    }
+
     document.querySelector('#ginf').innerHTML = (
         "ucode address:  " + hex(meta.microcodeAddress) + "\n" +
         "ucode checksum: " + hex(meta.microcodeChecksum) + "\n" +
@@ -197,7 +198,7 @@ Viewer.prototype.loadDumpFile = function(ab)
     );
 
     // build intermediate mesh
-    this.gfx.importOps(GfxOps.RDP, GfxOps.F3DEX2);
+    this.gfx.importOpsFromChecksum(meta.microcodeChecksum);
     this.gfx.setMainMemory(dv);
     this.gfx.run(meta.rootDisplayListAddress);
 
@@ -210,6 +211,13 @@ Viewer.prototype.loadDumpFile = function(ab)
 
 Viewer.prototype.buildScene = function()
 {
+    if(this.gfx.dpFogColor)
+    {
+        // todo alpha & correct far value?
+        this.renderer.setClearColor(this.gfx.dpFogColor >>> 8, 1.0);
+        this.scene.fog = new THREE.Fog(this.gfx.dpFogColor >>> 8, 1, 16384);
+    }
+
     while(this.scene.children.length > 0)
     {
         this.scene.remove(this.scene.children[0]); 
@@ -317,19 +325,21 @@ Viewer.prototype.buildScene = function()
             fillMaterial = new THREE.MeshBasicMaterial({
                 map: dataTexture,
                 transparent: true,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                alphaTest: 0.3,
+                vertexColors: gfxMaterial.vertexColorsEnabled ? THREE.VertexColors : false,
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1,
+                fog: gfxMaterial.bFog
             });
 
-            // kokiri decal test
-            if(this.gfx.images[gfxMaterial.imageIndex].address == 0x2fd190 ||
-               this.gfx.images[gfxMaterial.imageIndex].address == 0x383558)
+            if(gfxMaterial.bDecal)
             {
-                fillMaterial.polygonOffset = true;
-                fillMaterial.polygonOffsetFactor = 1;
-                fillMaterial.polygonOffsetUnits = 1;
+                fillMaterial.polygonOffset = false;
             }
+
             // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
-            // todo polygon offset for when rendermode decal is set
         }
         else
         {
