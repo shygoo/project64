@@ -167,8 +167,6 @@ GfxOps.gsDPLoadTLUTCmd = function(gfx)
     var tileDesc = gfx.dpTileDescriptors[tile];
     var tmemOffset = tileDesc.tmem * 8;
 
-    console.log("loading tlut to ", tmemOffset, count+1);
-
     // todo mirroring?
     for(var i = 0; i < count+1; i++)
     {
@@ -235,8 +233,6 @@ GfxOps.gsSPVertex_f3d = function(gfx)
     var numVertices = gfx.command.w0f(20, 4) + 1;
     var index = gfx.command.w0f(16, 4);
     gfx.loadVertices(gfx.command.w1, index, numVertices);
-
-    console.log(gfx.command.w0.toString(16), gfx.command.w1.toString(16))
 }
 
 GfxOps.gsSP1Triangle_f3d = function(gfx)
@@ -287,8 +283,6 @@ GfxOps.gsSPSetGeometryMode_f3d = function(gfx)
     mode.texture_gen_linear |= cmd.w1f(19, 1);
     mode.shading_smooth |= cmd.w1f(9, 1);
     mode.g_clipping |= cmd.w1f(23, 1);
-
-    console.log('set shade', mode.shade);
 }
 
 GfxOps.gsSPClearGeometryMode_f3d = function(gfx)
@@ -306,8 +300,6 @@ GfxOps.gsSPClearGeometryMode_f3d = function(gfx)
     mode.texture_gen_linear &= ~cmd.w1f(19, 1);
     mode.shading_smooth &= ~cmd.w1f(9, 1);
     mode.g_clipping &= ~cmd.w1f(23, 1);
-
-    console.log('clear shade', mode.shade);
 }
 
 GfxOps.Fast3D = [

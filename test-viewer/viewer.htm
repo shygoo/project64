@@ -1,7 +1,7 @@
 <html>
 <head>
 <!--<script src="gl-matrix-min.js"></script>-->
-<script src="three.min.js"></script>
+<script src="three.vertexalpha.js"></script>
 <script src="GfxState.js"></script>
 <script src="GfxCommand.js"></script>
 <script src="GfxOps.js"></script>
@@ -239,17 +239,19 @@ Viewer.prototype.buildScene = function()
         }
     }
 
-    
-    var wireframeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true, wireframe: true });
-    var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, vertexColors: THREE.VertexColors});
+    var wireframeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        opacity: 0.2,
+        transparent: true,
+        wireframe: true,
+    });
+    //var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, vertexColors: THREE.VertexColors});
 
     var fillMaterial = new THREE.MeshBasicMaterial({
         transparent: true,
         side: THREE.DoubleSide});
 
     // build a threejs geometry for each polylist and add to scene
-
-    //var polyOffset = 0;
 
     for(var i = 0; i < this.gfx.polylists.length; i++)
     {
@@ -259,18 +261,17 @@ Viewer.prototype.buildScene = function()
         var imageIndex = gfxMaterial.imageIndex;
         var dataTexture = dataTextures[imageIndex];
         
-        var geometry = new THREE.Geometry();
-
-        var faceIdx = 0;
-
-        geometry.faceVertexUvs[0] = [];
+        var geometry = new THREE.BufferGeometry();
+        var positions = [];
+        var colors = [];
+        var uvs = [];
 
         for(var j = 0; j < triangles.length; j++)
         {
             var tri = triangles[j];
-            geometry.vertices.push(tri[0].position);
-            geometry.vertices.push(tri[1].position);
-            geometry.vertices.push(tri[2].position);
+            positions.push(tri[0].position.x, tri[0].position.y, tri[0].position.z);
+            positions.push(tri[1].position.x, tri[1].position.y, tri[1].position.z);
+            positions.push(tri[2].position.x, tri[2].position.y, tri[2].position.z);
 
             if(dataTexture != null)
             {
@@ -281,20 +282,14 @@ Viewer.prototype.buildScene = function()
                 var u2 = (tri[2].texcoords.x / dataTexture.image.width) * gfxMaterial.scaleS;
                 var v2 = (tri[2].texcoords.y / dataTexture.image.height) * gfxMaterial.scaleT;
 
-                geometry.faceVertexUvs[0].push([
-                    new THREE.Vector2(u0, v0),
-                    new THREE.Vector2(u1, v1),
-                    new THREE.Vector2(u2, v2),
-                ]);
+                uvs.push(u0, v0, u1, v1, u2, v2);
             }
 
-            var face = new THREE.Face3(faceIdx + 0, faceIdx + 1, faceIdx + 2);
-            face.vertexColors[0] = tri[0].color;
-            face.vertexColors[1] = tri[1].color;
-            face.vertexColors[2] = tri[2].color;
-
-            geometry.faces.push(face);
-            faceIdx += 3;
+            // todo alpha
+            console.log(tri[0])
+            colors.push(tri[0].color.r, tri[0].color.g, tri[0].color.b, tri[0].alpha);
+            colors.push(tri[1].color.r, tri[1].color.g, tri[1].color.b, tri[1].alpha);
+            colors.push(tri[2].color.r, tri[2].color.g, tri[2].color.b, tri[2].alpha);
         }
 
         //var fillMaterial;
@@ -324,10 +319,11 @@ Viewer.prototype.buildScene = function()
 
             fillMaterial = new THREE.MeshBasicMaterial({
                 map: dataTexture,
-                transparent: true,
+                transparent: true, // todo check rendermode?
                 side: THREE.DoubleSide,
                 alphaTest: 0.3,
                 vertexColors: gfxMaterial.vertexColorsEnabled ? THREE.VertexColors : false,
+                vertexAlphaEnabled: true,
                 polygonOffset: true,
                 polygonOffsetFactor: 1,
                 polygonOffsetUnits: 1,
@@ -343,14 +339,22 @@ Viewer.prototype.buildScene = function()
         }
         else
         {
-            fillMaterial = testMaterial;
+            fillMaterial = wireframeMaterial;
         }
 
+        var fPositions = new Float32Array(positions);
+        var fUVs = new Float32Array(uvs);
+        var fColors = new Float32Array(colors);
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(fPositions, 3));
+        geometry.setAttribute('uv', new THREE.BufferAttribute(fUVs, 2));
+        geometry.setAttribute('color', new THREE.BufferAttribute(fColors, 4));
+
         var fillMesh = new THREE.Mesh(geometry, fillMaterial)
-        //var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
+        var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
 
         this.scene.add(fillMesh);
-        //this.scene.add(wireframeMesh);
+        this.scene.add(wireframeMesh);
         //console.log(this.gfx.polylists[i]);
     }
 }

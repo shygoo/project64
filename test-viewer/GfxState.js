@@ -163,8 +163,6 @@ GfxState.prototype.createMaterial = function()
     material.vertexNormalsEnabled = (gmLighting == 1) && (gmShade == 1);
     material.imageIndex = this.getImageIndex(this.lastLoadBlock);
 
-    console.log('mtlvc: ', material.vertexColorsEnabled);
-
     var renderTile = this.dpTileDescriptors[0];
 
     material.cmT = renderTile.cmT;
