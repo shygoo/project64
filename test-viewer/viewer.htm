@@ -238,15 +238,6 @@ Viewer.prototype.buildScene = function()
             dataTextures.push(dataTexture);
         }
     }
-
-    var wireframeMaterial = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        opacity: 0.2,
-        transparent: true,
-        wireframe: true,
-    });
-    //var testMaterial = new THREE.MeshBasicMaterial({ opacity: 0.9, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1, vertexColors: THREE.VertexColors});
-
     var fillMaterial = new THREE.MeshBasicMaterial({
         transparent: true,
         side: THREE.DoubleSide});
@@ -285,8 +276,7 @@ Viewer.prototype.buildScene = function()
                 uvs.push(u0, v0, u1, v1, u2, v2);
             }
 
-            // todo alpha
-            console.log(tri[0])
+            // todo alpha for normal vertices
             colors.push(tri[0].color.r, tri[0].color.g, tri[0].color.b, tri[0].alpha);
             colors.push(tri[1].color.r, tri[1].color.g, tri[1].color.b, tri[1].alpha);
             colors.push(tri[2].color.r, tri[2].color.g, tri[2].color.b, tri[2].alpha);
@@ -320,26 +310,31 @@ Viewer.prototype.buildScene = function()
             fillMaterial = new THREE.MeshBasicMaterial({
                 map: dataTexture,
                 transparent: true, // todo check rendermode?
-                side: THREE.DoubleSide,
+                side: THREE.DoubleSide, // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
                 alphaTest: 0.3,
-                vertexColors: gfxMaterial.vertexColorsEnabled ? THREE.VertexColors : false,
+                vertexColors: THREE.VertexColors,
                 vertexAlphaEnabled: true,
                 polygonOffset: true,
                 polygonOffsetFactor: 1,
                 polygonOffsetUnits: 1,
-                fog: gfxMaterial.bFog
+                fog: gfxMaterial.bFog,
             });
 
             if(gfxMaterial.bDecal)
             {
                 fillMaterial.polygonOffset = false;
             }
-
-            // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
         }
         else
         {
-            fillMaterial = wireframeMaterial;
+            fillMaterial = new THREE.MeshBasicMaterial({
+                //color: gfxMaterial.lights[0].colorA >> 8,
+                vertexColors: THREE.VertexColors,
+                vertexAlphaEnabled: true,
+                side: THREE.DoubleSide, // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
+            });
+
+            //console.log(gfxMaterial.lights[0]);
         }
 
         var fPositions = new Float32Array(positions);
@@ -351,11 +346,10 @@ Viewer.prototype.buildScene = function()
         geometry.setAttribute('color', new THREE.BufferAttribute(fColors, 4));
 
         var fillMesh = new THREE.Mesh(geometry, fillMaterial)
-        var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
-
         this.scene.add(fillMesh);
-        this.scene.add(wireframeMesh);
-        //console.log(this.gfx.polylists[i]);
+
+        //var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
+        //this.scene.add(wireframeMesh);
     }
 }
 

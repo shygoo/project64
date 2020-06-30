@@ -15,7 +15,7 @@ const G_TX_NOMIRROR = 0;
 const G_TX_WRAP = 0;
 const G_TX_CLAMP = 2;
 
-function DmemVertex(position, texcoords, color, normal, alpha)
+function SPVertex(position, texcoords, color, normal, alpha)
 {
     this.position = position; // THREE.Vector3
     this.texcoords = texcoords; // THREE.Vector2
@@ -24,7 +24,14 @@ function DmemVertex(position, texcoords, color, normal, alpha)
     this.normal = normal; // THREE.Vector3
 }
 
-function TileDescriptor()
+function SPLight()
+{
+    this.color = 0;
+    this.colorCopy = 0;
+    this.direction = {x: 0, y: 0, z: 0};
+}
+
+function DPTileDescriptor()
 {
     // gsSPTexture
     this.on = 0;
@@ -52,7 +59,7 @@ function TileDescriptor()
     this.lrT = 0;
 }
 
-TileDescriptor.bytesPerTexel = function(siz)
+DPTileDescriptor.bytesPerTexel = function(siz)
 {
     switch(siz)
     {
@@ -72,19 +79,8 @@ function PolyList(materialIndex)
 function GfxState()
 {
     this.dv = null; // main memory
-    this.spSegmentBuffers = new Array(16).fill(null); // overrides spSegments
-    this.spGeometryMode = {
-        zbuffer: 0,
-        shade: 0,
-        cull_front: 0,
-        cull_back: 0,
-        fog: 0,
-        lighting: 0,
-        texture_gen: 0,
-        texture_gen_linear: 0,
-        shading_smooth: 0,
-        clipping: 0
-    };
+
+
     this.commandFunctions = new Array(256).fill(null);
     this.loghtm = "";
     this.resetState();
@@ -145,7 +141,22 @@ GfxState.prototype.updateCurrentMaterial = function()
 // used to check if a material has already been generated for the current gfx state
 GfxState.prototype.generateMaterialHash = function()
 {
-    return this.lastLoadBlock + this.spGeometryMode.lighting + this.spGeometryMode.shade; // todo more
+    var hash = 0;
+
+    hash = this.lastLoadBlock*1 +
+           this.spGeometryMode.lighting*2 +
+           this.spGeometryMode.shade*3 +
+           this.dpTileDescriptors[0].on*4; // todo more
+
+    //if(this.spGeometryMode.lighting)
+    //{
+    //    for(var j = 0; j < 8; j++)
+    //    {
+    //        hash += (this.spLights[j].color >>> 8)*5;
+    //    }
+    //}
+
+    return hash;
 }
 
 // create intermediate "material" to attach to the current polygon list
@@ -153,28 +164,37 @@ GfxState.prototype.createMaterial = function()
 {
     var material = {};
 
-    var gmLighting = this.spGeometryMode.lighting;
-    var gmShade = this.spGeometryMode.shade;
+    //var gmLighting = this.spGeometryMode.lighting;
+    //var gmShade = this.spGeometryMode.shade;
     
     var renderMode = (this.dpOtherModeL >> 3) & 0b1111111111111;
     material.bFog = !!this.spGeometryMode.fog;
     material.bDecal = ((renderMode >> 7) & 3) == 3;
-    material.vertexColorsEnabled = (gmLighting == 0) && (gmShade == 1);
-    material.vertexNormalsEnabled = (gmLighting == 1) && (gmShade == 1);
-    material.imageIndex = this.getImageIndex(this.lastLoadBlock);
+    //material.vertexColorsEnabled = (gmLighting == 0) && (gmShade == 1);
+    //material.vertexNormalsEnabled = (gmLighting == 1) && (gmShade == 1);
+    
+    //if(gmLighting)
+    //{
+    //    material.numLights = this.spNumLights;
+    //    material.lights = Object.assign({}, this.spLights);
+    //}
 
     var renderTile = this.dpTileDescriptors[0];
 
-    material.cmT = renderTile.cmT;
-    material.cmS = renderTile.cmS;
-    material.scaleS = renderTile.scaleS / 0x10000;
-    material.scaleT = renderTile.scaleT / 0x10000;
-
-
-    if(material.imageIndex == -1)
+    if(renderTile.on)
     {
-        this.images.push(this.createRenderTileImage());
-        material.imageIndex = this.images.length - 1;
+        material.imageIndex = this.getImageIndex(this.lastLoadBlock);
+
+        if(material.imageIndex == -1)
+        {
+            material.cmT = renderTile.cmT;
+            material.cmS = renderTile.cmS;
+            material.scaleS = renderTile.scaleS / 0x10000;
+            material.scaleT = renderTile.scaleT / 0x10000;
+    
+            this.images.push(this.createRenderTileImage());
+            material.imageIndex = this.images.length - 1;
+        }
     }
 
     material.hash = this.generateMaterialHash(); // +...
@@ -225,7 +245,7 @@ GfxState.prototype.createRenderTileImage = function()
 
     var tmemOffset = renderTile.tmem * 8;
 
-    var convertFunc;
+    var convertFunc = null;
 
     function convertCI8(ci)
     {
@@ -277,6 +297,7 @@ GfxState.prototype.createRenderTileImage = function()
         case G_IM_FMT_I:  convertFunc = RGBA32.fromI4; break;
         case G_IM_FMT_IA: convertFunc = RGBA32.fromIA4; break;
         case G_IM_FMT_CI: convertFunc = convertCI4.bind(this); break;
+        case G_IM_FMT_RGBA: convertFunc = convertCI4.bind(this); break; // micro machines
         }
 
         for(var i = 0; i < imageSize / 2; i++)
@@ -313,7 +334,8 @@ GfxState.prototype.resetState = function()
     this.materialIndex = 0;
 
     this.spCommandAddress = 0;
-    this.spSegments = new Array(16).fill(0);
+    this.spSegments = new Array(16).fill(0); // addresses when using main memory
+    this.spSegmentBuffers = new Array(16).fill(null); // overrides spSegments
     this.spReturnStack = new Array(16).fill(0);
     this.spReturnIndex = 0;
     this.spVertices = new Array(32);
@@ -325,10 +347,30 @@ GfxState.prototype.resetState = function()
     this.dpTileDescriptors = new Array(8);
     this.dpOtherModeL = 0;
     this.dpOtherModeH = 0;
+    this.spLights = new Array(8);
+    this.spNumLights = 0;
+
+    this.spGeometryMode = {
+        zbuffer: 0,
+        shade: 0,
+        cull_front: 0,
+        cull_back: 0,
+        fog: 0,
+        lighting: 0,
+        texture_gen: 0,
+        texture_gen_linear: 0,
+        shading_smooth: 0,
+        clipping: 0
+    };
+
+    for(var i = 0; i < this.spLights.length; i++)
+    {
+        this.spLights[i] = new SPLight();
+    }
 
     for(var i = 0; i < this.dpTileDescriptors.length; i++)
     {
-        this.dpTileDescriptors[i] = new TileDescriptor();
+        this.dpTileDescriptors[i] = new DPTileDescriptor();
     }
 
     for(var i = 0; i < this.spMatrixStack.length; i++)
@@ -338,7 +380,7 @@ GfxState.prototype.resetState = function()
 
     for(var i = 0; i < this.spVertices.length; i++)
     {
-        this.spVertices[i] = new DmemVertex();
+        this.spVertices[i] = new SPVertex();
     }
 }
 
@@ -433,17 +475,45 @@ GfxState.prototype.importOpsFromChecksum = function(checksum)
     var spOps = null;
     var spOpsPatch = null;
 
-    switch(checksum)
+    const checksums = [
+        [ 0x3A1CBAC3, GfxOps.Fast3D, null], // sm64
+        [ 0xEE47381B, GfxOps.F3DEX,  null], // micro machines 64 turbo
+        [ 0x8805FFEA, GfxOps.F3DEX,  GfxOps.Patch_F3DEX_095 ], // mk64
+        [ 0x5D3099F1, GfxOps.F3DEX2, null], // zelda
+    ];
+
+    for(var i = 0; i < checksums.length; i++)
     {
-    case 0x3A1CBAC3:
-        spOps = GfxOps.Fast3D;
-        break;
-    case 0x5D3099F1:
-        spOps = GfxOps.F3DEX2;
-        break;
+        var row = checksums[i];
+        if(checksum == row[0])
+        {
+            spOps = row[1];
+            spOpsPatch = row[2];
+            break;
+        }
     }
 
     this.importOps(dpOps, spOps, spOpsPatch);
+}
+
+GfxState.prototype.loadLight = function(segmentOffset, index)
+{
+    if(index < 0 || index > 7)
+    {
+        return;
+    }
+
+    var light = new SPLight();
+
+    light.color = this.getU32(segmentOffset + 0x00);
+    light.colorCopy = this.getU32(segmentOffset + 0x04);
+    light.direction.x = this.getS8(segmentOffset + 0x08);
+    light.direction.y = this.getS8(segmentOffset + 0x09);
+    light.direction.z = this.getS8(segmentOffset + 0x0A);
+
+    this.spLights[index] = light;
+
+    console.log(light.color.toString(16), light.colorCopy.toString(16), light.direction);
 }
 
 GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
@@ -455,36 +525,58 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
         var x = this.getS16(offset + 0x00);
         var y = this.getS16(offset + 0x02);
         var z = this.getS16(offset + 0x04);
-
         var u = this.getS16(offset + 0x08) / 32;
         var v = this.getS16(offset + 0x0A) / 32;
 
-        var r = this.getU8(offset + 0x0C) / 0xFF;
-        var g = this.getU8(offset + 0x0D) / 0xFF;
-        var b = this.getU8(offset + 0x0E) / 0xFF;
-
-        var nx = this.getS8(offset + 0x0C) / 0x7F;
-        var ny = this.getS8(offset + 0x0D) / 0x7F;
-        var nz = this.getS8(offset + 0x0E) / 0x7F;
-
         var alpha = this.getU8(offset + 0x0F) / 0xFF;
 
-        var color = new THREE.Color(r, g, b);
-        var normal = new THREE.Vector3(nx, ny, nz);
+        var color = new THREE.Color(1, 1, 1);
+        var normal = new THREE.Vector3(0, 0, 0);
+
+        if(this.spGeometryMode.shade)
+        {
+            if(this.spGeometryMode.lighting)
+            {
+                var nx = this.getS8(offset + 0x0C) / 0x7F;
+                var ny = this.getS8(offset + 0x0D) / 0x7F;
+                var nz = this.getS8(offset + 0x0E) / 0x7F;
+                normal = new THREE.Vector3(nx, ny, nz);
+                color = new THREE.Color(this.spLights[0].color >>> 8);
+
+                for(var j = 0; j < this.spNumLights; j++)
+                {
+                    var lx = this.spLights[1+j].direction.x / 0x7F;
+                    var ly = this.spLights[1+j].direction.y / 0x7F;
+                    var lz = this.spLights[1+j].direction.z / 0x7F;
+                    var lNormal = new THREE.Vector3(lx, ly, lz);
+                    var dp = normal.dot(lNormal);
+
+                    if(dp >= 0)
+                    {
+                        // todo proper calculation
+                        color = new THREE.Color(this.spLights[1].color >>> 8);
+                    }
+                }
+            }
+            else
+            {
+                var r = this.getU8(offset + 0x0C) / 0xFF;
+                var g = this.getU8(offset + 0x0D) / 0xFF;
+                var b = this.getU8(offset + 0x0E) / 0xFF;
+                color = new THREE.Color(r, g, b);
+            }
+        }
+        
         var position = new THREE.Vector3(x, y, z);
         var texcoords = new THREE.Vector2(u, v);
         position.applyMatrix4(this.spMatrixStack[this.spMatrixIndex]);
 
-        this.spVertices[index + i] = new DmemVertex(position, texcoords, color, normal, alpha);
+        this.spVertices[index + i] = new SPVertex(position, texcoords, color, normal, alpha);
     }
 }
 
 GfxState.prototype.loadMatrix = function(segmentOffset, bPush, bLoad, bProj)
 {
-    //var bPush = !!(flags & 0x01);
-    //var bLoad = !!(flags & 0x02);
-    //var bProj = !!(flags & 0x04);
-
     var dmemSrcMtx = null;
     var dmemDstMtx = null;
     var dramSrcMtx = new THREE.Matrix4();
