@@ -238,8 +238,9 @@ Viewer.prototype.buildScene = function()
             dataTextures.push(dataTexture);
         }
     }
+
     var fillMaterial = new THREE.MeshBasicMaterial({
-        transparent: true,
+        color: 0xFFFFFF,
         side: THREE.DoubleSide});
 
     // build a threejs geometry for each polylist and add to scene
@@ -256,13 +257,19 @@ Viewer.prototype.buildScene = function()
         var positions = [];
         var colors = [];
         var uvs = [];
+        var debugNormals = [];
 
         for(var j = 0; j < triangles.length; j++)
         {
             var tri = triangles[j];
+
             positions.push(tri[0].position.x, tri[0].position.y, tri[0].position.z);
             positions.push(tri[1].position.x, tri[1].position.y, tri[1].position.z);
             positions.push(tri[2].position.x, tri[2].position.y, tri[2].position.z);
+
+            debugNormals.push(tri[0].normal.x, tri[0].normal.y, tri[0].normal.z);
+            debugNormals.push(tri[1].normal.x, tri[1].normal.y, tri[1].normal.z);
+            debugNormals.push(tri[2].normal.x, tri[2].normal.y, tri[2].normal.z);
 
             if(dataTexture != null)
             {
@@ -328,13 +335,13 @@ Viewer.prototype.buildScene = function()
         else
         {
             fillMaterial = new THREE.MeshBasicMaterial({
-                //color: gfxMaterial.lights[0].colorA >> 8,
                 vertexColors: THREE.VertexColors,
-                vertexAlphaEnabled: true,
+                vertexAlphaEnabled: false,
                 side: THREE.DoubleSide, // todo geometrymode cull (THREE.FrontSide, THREE.BackSide, THREE.DoubleSide)
+                polygonOffset: true,
+                polygonOffsetFactor: 1,
+                polygonOffsetUnits: 1,
             });
-
-            //console.log(gfxMaterial.lights[0]);
         }
 
         var fPositions = new Float32Array(positions);
@@ -348,9 +355,52 @@ Viewer.prototype.buildScene = function()
         var fillMesh = new THREE.Mesh(geometry, fillMaterial)
         this.scene.add(fillMesh);
 
-        //var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial)
+        /* show triangle borders*/
+        //var wireframeMaterial = new THREE.MeshBasicMaterial({wireframe: true, color: 0xFFFFFF});
+        //var wireframeMesh = new THREE.Mesh(geometry, wireframeMaterial);
         //this.scene.add(wireframeMesh);
+
+        /* show normal lines */
+        //var geomDebugNormals = new THREE.Geometry();
+        //for(var j = 0; j < positions.length; j += 3)
+        //{
+        //    geomDebugNormals.vertices.push(new THREE.Vector3(
+        //        positions[j+0],
+        //        positions[j+1],
+        //        positions[j+2]
+        //    ));
+        //    geomDebugNormals.vertices.push(new THREE.Vector3(
+        //        positions[j+0] + debugNormals[j+0]*5,
+        //        positions[j+1] + debugNormals[j+1]*5,
+        //        positions[j+2] + debugNormals[j+2]*5
+        //    ));
+        //}
+        //var debugNormalMaterial = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 });
+        //var debugNormalLines = new THREE.LineSegments(geomDebugNormals, debugNormalMaterial);
+        //this.scene.add(debugNormalLines);
     }
+
+    sceneAddOriginGuide(this.scene);
+}
+
+function sceneAddOriginGuide(scene)
+{
+    var fOriginPositions = new Float32Array([
+        0,0,0, 300,0,0,
+        0,0,0, 0,300,0,
+        0,0,0, 0,0,300
+    ]);
+    var fOriginColors = new Float32Array([
+        1,0,0, 1,0,0,
+        0,1,0, 0,1,0,
+        0,0,1, 0,0,1
+    ]);
+    var originGeometry = new THREE.BufferGeometry();
+    originGeometry.setAttribute('position', new THREE.BufferAttribute(fOriginPositions, 3));
+    originGeometry.setAttribute('color', new THREE.BufferAttribute(fOriginColors, 3));
+    var originMaterial = new THREE.LineBasicMaterial({ vertexColors: THREE.VertexColors });
+    var originLines = new THREE.LineSegments(originGeometry, originMaterial);
+    scene.add(originLines);
 }
 
 function hex(n)

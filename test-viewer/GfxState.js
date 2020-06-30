@@ -143,18 +143,10 @@ GfxState.prototype.generateMaterialHash = function()
 {
     var hash = 0;
 
-    hash = this.lastLoadBlock*1 +
-           this.spGeometryMode.lighting*2 +
-           this.spGeometryMode.shade*3 +
-           this.dpTileDescriptors[0].on*4; // todo more
-
-    //if(this.spGeometryMode.lighting)
-    //{
-    //    for(var j = 0; j < 8; j++)
-    //    {
-    //        hash += (this.spLights[j].color >>> 8)*5;
-    //    }
-    //}
+    if(this.dpTileDescriptors[0].on)
+    {
+        hash = this.lastLoadBlock;
+    }
 
     return hash;
 }
@@ -163,21 +155,10 @@ GfxState.prototype.generateMaterialHash = function()
 GfxState.prototype.createMaterial = function()
 {
     var material = {};
-
-    //var gmLighting = this.spGeometryMode.lighting;
-    //var gmShade = this.spGeometryMode.shade;
     
     var renderMode = (this.dpOtherModeL >> 3) & 0b1111111111111;
     material.bFog = !!this.spGeometryMode.fog;
     material.bDecal = ((renderMode >> 7) & 3) == 3;
-    //material.vertexColorsEnabled = (gmLighting == 0) && (gmShade == 1);
-    //material.vertexNormalsEnabled = (gmLighting == 1) && (gmShade == 1);
-    
-    //if(gmLighting)
-    //{
-    //    material.numLights = this.spNumLights;
-    //    material.lights = Object.assign({}, this.spLights);
-    //}
 
     var renderTile = this.dpTileDescriptors[0];
 
@@ -507,13 +488,13 @@ GfxState.prototype.loadLight = function(segmentOffset, index)
 
     light.color = this.getU32(segmentOffset + 0x00);
     light.colorCopy = this.getU32(segmentOffset + 0x04);
-    light.direction.x = this.getS8(segmentOffset + 0x08);
-    light.direction.y = this.getS8(segmentOffset + 0x09);
-    light.direction.z = this.getS8(segmentOffset + 0x0A);
+    light.direction.x = this.getS8(segmentOffset + 0x08) / 0x7F;
+    light.direction.y = this.getS8(segmentOffset + 0x09) / 0x7F;
+    light.direction.z = this.getS8(segmentOffset + 0x0A) / 0x7F;
 
     this.spLights[index] = light;
 
-    console.log(light.color.toString(16), light.colorCopy.toString(16), light.direction);
+    //console.log(light.color.toString(16), light.colorCopy.toString(16), light.direction);
 }
 
 GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
@@ -531,7 +512,7 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
         var alpha = this.getU8(offset + 0x0F) / 0xFF;
 
         var color = new THREE.Color(1, 1, 1);
-        var normal = new THREE.Vector3(0, 0, 0);
+        var normal = new THREE.Vector4(0, 0, 0, 0);
 
         if(this.spGeometryMode.shade)
         {
@@ -540,22 +521,27 @@ GfxState.prototype.loadVertices = function(segmentOffset, index, numVertices)
                 var nx = this.getS8(offset + 0x0C) / 0x7F;
                 var ny = this.getS8(offset + 0x0D) / 0x7F;
                 var nz = this.getS8(offset + 0x0E) / 0x7F;
-                normal = new THREE.Vector3(nx, ny, nz);
+                normal = new THREE.Vector4(nx, ny, nz, 0);
+                normal.applyMatrix4(this.spMatrixStack[this.spMatrixIndex]);
+                normal.normalize();
                 color = new THREE.Color(this.spLights[0].color >>> 8);
 
                 for(var j = 0; j < this.spNumLights; j++)
                 {
-                    var lx = this.spLights[1+j].direction.x / 0x7F;
-                    var ly = this.spLights[1+j].direction.y / 0x7F;
-                    var lz = this.spLights[1+j].direction.z / 0x7F;
-                    var lNormal = new THREE.Vector3(lx, ly, lz);
-                    var dp = normal.dot(lNormal);
+                    var light = this.spLights[1+j];
+                    var lr = ((light.color >>> 24) & 0xFF) / 0xFF;
+                    var lg = ((light.color >>> 16) & 0xFF) / 0xFF;
+                    var lb = ((light.color >>>  8) & 0xFF) / 0xFF;
 
-                    if(dp >= 0)
-                    {
-                        // todo proper calculation
-                        color = new THREE.Color(this.spLights[1].color >>> 8);
-                    }
+                    var direction = new THREE.Vector4(light.direction.x, light.direction.y, light.direction.z, 0);
+                    direction.normalize();
+                    var dp = -normal.dot(direction);
+                    
+                    color = new THREE.Color(
+                        Math.min(1, color.r + lr * dp),
+                        Math.min(1, color.g + lg * dp),
+                        Math.min(1, color.b + lb * dp),
+                    );
                 }
             }
             else
