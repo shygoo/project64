@@ -524,9 +524,9 @@ void CDebugDisplayList::UpdateStateCanvas(CHleGfxState* state)
 		CGfxLabels::LookupName(CGfxLabels::ACMuxA_B_D, state->m_dpCombiner.Ad1));
 
 	scv->SetItemText(m_ITM_CC1_COLOR, strCycle1Color.ToUTF16().c_str());
-	scv->SetItemText(m_ITM_CC1_ALPHA, strCycle1Color.ToUTF16().c_str());
-	scv->SetItemText(m_ITM_CC2_COLOR, strCycle1Color.ToUTF16().c_str());
-	scv->SetItemText(m_ITM_CC2_ALPHA, strCycle1Color.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC1_ALPHA, strCycle1Alpha.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC2_COLOR, strCycle2Color.ToUTF16().c_str());
+	scv->SetItemText(m_ITM_CC2_ALPHA, strCycle2Alpha.ToUTF16().c_str());
 
 	// Othermode HI
 	othermode_h_t* omh = &state->m_dpOtherMode_h;
