@@ -302,7 +302,7 @@ void RSP_Opcode_BGEZAL ( void ) {
 void RSP_Cop0_MF (void) {
 	if (LogRDP && CPUCore == InterpreterCPU)
 	{		
-		RDP_LogMF0(*PrgCount,RSPOpC.rd);
+		//RDP_LogMF0(*PrgCount,RSPOpC.rd);
 	}
 	switch (RSPOpC.rd) {
 	case 0: RSP_GPR[RSPOpC.rt].UW = *RSPInfo.SP_MEM_ADDR_REG; break;
@@ -340,7 +340,7 @@ void RSP_Cop0_MF (void) {
 void RSP_Cop0_MT (void) {
 	if (LogRDP && CPUCore == InterpreterCPU)
 	{	
-		RDP_LogMT0(*PrgCount,RSPOpC.rd, RSP_GPR[RSPOpC.rt].UW);
+		//RDP_LogMT0(*PrgCount,RSPOpC.rd, RSP_GPR[RSPOpC.rt].UW);
 	}
 	switch (RSPOpC.rd) {
 	case 0: *RSPInfo.SP_MEM_ADDR_REG  = RSP_GPR[RSPOpC.rt].UW; break;

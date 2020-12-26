@@ -40,6 +40,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeader />
+      <UndefinePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UNICODE</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link />
     <Bscmake>

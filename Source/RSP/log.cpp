@@ -163,45 +163,36 @@ void RDP_LogDlist ( void )
 	{
 		return;
 	}
+
 	DWORD Length = *RSPInfo.DPC_END_REG - *RSPInfo.DPC_CURRENT_REG;
-	RDP_Message("    Dlist length = %d bytes",Length);
-	
+	//RDP_Message("    Dlist length = %d bytes",Length);
+	bool bFrameDone = false;
+
 	DWORD Pos = *RSPInfo.DPC_CURRENT_REG;
 	while (Pos < *RSPInfo.DPC_END_REG)
 	{
- 		char Hex[100], Ascii[30];
-		DWORD count;
-
-		memset(&Hex,0,sizeof(Hex));
-		memset(&Ascii,0,sizeof(Ascii)); 
-
 		BYTE * Mem = RSPInfo.DMEM;
 		if ((*RSPInfo.DPC_STATUS_REG & DPC_STATUS_XBUS_DMEM_DMA) == 0)
 		{
 			Mem = RSPInfo.RDRAM;
 		}
 
-		for (count = 0; count < 0x10; count ++, Pos++ ) {
-			char tmp[3];
-			if ((count % 4) != 0 || count == 0) {
-				sprintf(tmp,"%02X",Mem[Pos]);
-				strcat(Hex," ");
-				strcat(Hex,tmp);
-			} else {
-				sprintf(tmp,"%02X",Mem[Pos]);
-				strcat(Hex," - ");
-				strcat(Hex,tmp);
-			}
+		uint32_t w0 = *(uint32_t*)&Mem[Pos + 0];
+		uint32_t w1 = *(uint32_t*)&Mem[Pos + 4];
 
-			
-			if (Mem[Pos] < 30 || Mem[Pos] > 127) {
-				strcat(Ascii,".");
-			} else {
-				sprintf(tmp,"%c",Mem[Pos]);
-				strcat(Ascii,tmp);
-			}
+		RDP_Message("%08X %08X", w0, w1);
+
+		if (w0 == 0xE9000000)
+		{
+			bFrameDone = true;
 		}
-		RDP_Message("   %s %s",Hex, Ascii);
+
+		Pos += 8;
+	}
+
+	if (bFrameDone)
+	{
+		StopRDPLog();
 	}
 }
 
