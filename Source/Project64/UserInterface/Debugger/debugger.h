@@ -122,6 +122,10 @@ private:
     CDMALog             * m_DMALog;
     CCPULog             * m_CPULog;
 
+    //HWND                  m_OverlayWindow;
+    //void InitOverlayWindow();
+    //static LRESULT CALLBACK OverlayProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam);
+
     SyncEvent m_StepEvent;
 
     void HandleCPUException(void);

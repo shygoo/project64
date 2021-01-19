@@ -17,6 +17,10 @@
 #include "DMALog.h"
 #include "Symbols.h"
 
+#include <gdiplus.h>
+#include <gdiplusgraphics.h>
+
+
 CPj64Module _Module;
 
 CDebuggerUI::CDebuggerUI() :
@@ -676,31 +680,28 @@ void CDebuggerUI::CPUStepEnded()
 
 void CDebuggerUI::FrameDrawn()
 {
-    static HWND hMainWnd = NULL;
-
-    static HFONT monoFont = CreateFont(-11, 0, 0, 0,
+    static HFONT monoFont = CreateFont(-13, 0, 0, 0,
         FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
         PROOF_QUALITY, FF_DONTCARE, L"Consolas"
     );
 
-    if (hMainWnd == NULL)
+    CMainGui* mainWindow = (CMainGui*)g_Plugins->MainWindow();
+
+    if (mainWindow == NULL)
     {
-        RenderWindow* mainWindow = g_Plugins->MainWindow();
-
-        if (mainWindow == NULL)
-        {
-            return;
-        }
-
-        hMainWnd = (HWND)mainWindow->GetWindowHandle();
+        return;
     }
 
-    HDC hdc = GetDC(hMainWnd);
+    HWND overlayWindow = mainWindow->GetOverlayWindow();
 
-    CRect rt;
+    if (overlayWindow == NULL)
+    {
+        return;
+    }
 
-    GetClientRect(hMainWnd, &rt);
+    HDC hdc = GetDC(overlayWindow);
+
     SetBkColor(hdc, RGB(0, 0, 0));
 
     SelectObject(hdc, monoFont);
@@ -710,7 +711,7 @@ void CDebuggerUI::FrameDrawn()
     m_ScriptSystem->SetScreenDC(hdc);
     m_ScriptSystem->HookFrameDrawn()->InvokeAll();
 
-    ReleaseDC(hMainWnd, hdc);
+    ReleaseDC(overlayWindow, hdc);
 }
 
 void CDebuggerUI::WaitForStep(void)

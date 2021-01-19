@@ -135,4 +135,12 @@ private:
     bool m_SaveRomBrowserPos;
     LONG m_SaveRomBrowserTop;
     LONG m_SaveRomBrowserLeft;
+
+    HWND m_hOverlayWindow;
+    bool RegisterOverlayWinClass();
+    void CreateOverlay();
+    void UpdateOverlayPosition();
+
+    public:
+    HWND GetOverlayWindow();
 };

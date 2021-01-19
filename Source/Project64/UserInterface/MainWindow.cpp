@@ -31,7 +31,8 @@ CMainGui::CMainGui(bool bMainWindow, const char * WindowTitle) :
     m_AttachingMenu(false),
     m_MakingVisible(false),
     m_ResetPlugins(false),
-    m_ResetInfo(NULL)
+    m_ResetInfo(NULL),
+    m_hOverlayWindow(NULL)
 {
     m_Menu = NULL;
 
@@ -67,6 +68,15 @@ CMainGui::CMainGui(bool bMainWindow, const char * WindowTitle) :
     //if this fails then it has already been created
     RegisterWinClass();
     Create(WindowTitle);
+
+    if (bMainWindow)
+    {
+        RegisterOverlayWinClass();
+        CreateOverlay();
+    }
+
+    //MessageBox(NULL, L"Created overlay", L"", MB_OK);
+    //}
 }
 
 CMainGui::~CMainGui(void)
@@ -92,6 +102,10 @@ CMainGui::~CMainGui(void)
     if (m_hMainWindow)
     {
         DestroyWindow(m_hMainWindow);
+    }
+    if (m_hOverlayWindow)
+    {
+        DestroyWindow(m_hOverlayWindow);
     }
     WriteTrace(TraceUserInterface, TraceDebug, "Done");
 }
@@ -375,6 +389,7 @@ void CMainGui::Create(const char * WindowTitle)
     m_hMainWindow = CreateWindowExW(WS_EX_ACCEPTFILES, VersionDisplay.ToUTF16().c_str(), stdstr(WindowTitle).ToUTF16().c_str(), WS_OVERLAPPED | WS_CLIPCHILDREN |
         WS_CLIPSIBLINGS | WS_SYSMENU | WS_MINIMIZEBOX, 5, 5, 640, 480,
         NULL, NULL, GetModuleHandle(NULL), this);
+
     m_Created = m_hMainWindow != NULL;
 }
 
@@ -457,6 +472,8 @@ void CMainGui::Show(bool Visible)
             RomBrowserToTop();
         }
     }
+
+    UpdateOverlayPosition();
 
     m_MakingVisible = false;
 }
@@ -668,6 +685,8 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             }
             KillTimer(hWnd, Timer_SetWindowPos);
             SetTimer(hWnd, Timer_SetWindowPos, 1000, NULL);
+
+            _this->UpdateOverlayPosition();
         }
         if (CGuiSettings::bCPURunning() && g_BaseSystem)
         {
@@ -678,6 +697,9 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 WriteTrace(TraceGFXPlugin, TraceDebug, "Done");
             }
         }
+
+
+
         break;
     case WM_TIMER:
         if (wParam == Timer_SetWindowPos)
@@ -710,6 +732,8 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                     _this->RomBrowserMaximize(false);
                 }
             }
+
+            _this->UpdateOverlayPosition();
         }
         break;
     case WM_NOTIFY:
@@ -889,6 +913,9 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             _this->SetStatusText(0, L"");
             _this->SetStatusText(1, L"");
         }
+        break;
+    case WM_LBUTTONDOWN:
+        // todo invoke script callbacks
         break;
     case WM_COMMAND:
         {
@@ -1088,4 +1115,58 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
         return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
     return TRUE;
+}
+
+
+void CMainGui::CreateOverlay()
+{
+    if (m_hOverlayWindow != NULL)
+    {
+        return;
+    }
+
+    m_hOverlayWindow = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED,
+        L"OverlayWnd", L"OverlayWnd",
+        WS_POPUP | WS_VISIBLE, 100, 100, 100, 100,
+        0, 0, GetModuleHandle(NULL), this);
+
+    SetLayeredWindowAttributes(m_hOverlayWindow, 0, RGB(255, 0, 0), LWA_COLORKEY);
+    SetWindowLong(m_hOverlayWindow, GWL_HWNDPARENT, (LONG)m_hMainWindow);
+}
+
+bool CMainGui::RegisterOverlayWinClass()
+{
+    WNDCLASSEX wcl = { 0 };
+    wcl.cbSize = sizeof(WNDCLASSEX);
+    wcl.hbrBackground = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
+    wcl.hInstance = GetModuleHandle(NULL);
+    wcl.lpfnWndProc = DefWindowProc;
+    wcl.lpszClassName = L"OverlayWnd";
+    wcl.style = CS_VREDRAW | CS_HREDRAW;
+    wcl.cbClsExtra = NULL;
+    wcl.cbWndExtra = NULL;
+    wcl.lpszMenuName = L"OverlayWnd";
+    wcl.hCursor = LoadCursor(0, IDC_ARROW);
+    wcl.hIcon = LoadIcon(0, IDI_APPLICATION);
+    wcl.hIconSm = LoadIcon(0, IDI_APPLICATION);
+
+    return (RegisterClassEx(&wcl) != 0);
+}
+
+void CMainGui::UpdateOverlayPosition()
+{
+    RECT clrect;
+    GetClientRect(m_hMainWindow, &clrect);
+    MapWindowPoints(m_hMainWindow, NULL, (POINT*)&clrect, 2);
+
+    int width = clrect.right - clrect.left;
+    int height = clrect.bottom - clrect.top;
+    int x = clrect.left;
+    int y = clrect.top;
+    SetWindowPos(m_hOverlayWindow, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+}
+
+HWND CMainGui::GetOverlayWindow()
+{
+    return m_hOverlayWindow;
 }
