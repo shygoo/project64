@@ -364,6 +364,14 @@ const screen = {
     print: function(x, y, text)
     {
         _native.screenPrint(x, y, text)
+    },
+    fillrect: function(x, y, width, height)
+    {
+        _native.screenFillRect(x, y, width, height)
+    },
+    setfillcolor: function(color)
+    {
+        _native.screenSetFillColor(color)
     }
 }
 

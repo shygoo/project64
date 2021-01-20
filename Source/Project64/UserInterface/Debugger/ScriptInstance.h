@@ -106,6 +106,12 @@ private:
 
     INSTANCE_STATE      m_State;
 
+    uint32_t m_ScreenFillColor;
+    uint32_t m_ScreenAlphaColor;
+    HBRUSH m_ScreenFillBrush;
+    HFONT m_ScreenFont;
+    uint32_t m_ScreenFontSize;
+
     static DWORD CALLBACK StartThread(CScriptInstance* _this);
     void StartScriptProc();
     void StartEventLoop();
@@ -191,6 +197,9 @@ private:
     static duk_ret_t js_ShowCommands(duk_context*); // ([address]) ; shows commands window
 
     static duk_ret_t js_ScreenPrint(duk_context*); // (x, y, text)
+    static duk_ret_t js_ScreenFillRect(duk_context*); // (x, y, width, height)
+    static duk_ret_t js_ScreenSetFillColor(duk_context*); // (color) ; returns old color
+    //static duk_ret_t js_ScreenSetFont(duk_context*); // name
 
     static duk_ret_t js_FSOpen(duk_context*); // (path, flags) ; returns fd
     static duk_ret_t js_FSClose(duk_context*); // (fd)
@@ -249,6 +258,8 @@ private:
         { "breakHere",      js_BreakHere,      DUK_VARARGS },
 
         { "screenPrint",    js_ScreenPrint,    DUK_VARARGS },
+        { "screenFillRect", js_ScreenFillRect, DUK_VARARGS },
+        { "screenSetFillColor", js_ScreenSetFillColor, DUK_VARARGS },
 
         { "fsOpen",         js_FSOpen,         DUK_VARARGS },
         { "fsClose",        js_FSClose,        DUK_VARARGS },

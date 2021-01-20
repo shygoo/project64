@@ -50,8 +50,27 @@ CScriptInstance* CScriptInstance::FetchInstance(duk_context* ctx)
     return NULL;
 }
 
-CScriptInstance::CScriptInstance(CDebuggerUI* debugger)
+CScriptInstance::CScriptInstance(CDebuggerUI* debugger) :
+    m_ScreenFillColor(0xFFFFFF),
+    m_ScreenAlphaColor(0),
+    m_ScreenFontSize(13)
 {
+
+    m_ScreenFont = CreateFont(-m_ScreenFontSize, 0, 0, 0,
+        FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+        PROOF_QUALITY, FF_DONTCARE, L"Consolas");
+
+    /*
+        static HFONT monoFont = CreateFont(-13, 0, 0, 0,
+            FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+            OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+            PROOF_QUALITY, FF_DONTCARE, L"Consolas"
+        );
+    */
+
+    m_ScreenFillBrush = CreateSolidBrush(_byteswap_ulong(m_ScreenFillColor << 8));
+
     m_Debugger = debugger;
     m_Ctx = duk_create_heap_default();
     m_ScriptSystem = m_Debugger->ScriptSystem();
@@ -68,6 +87,11 @@ CScriptInstance::CScriptInstance(CDebuggerUI* debugger)
 
 CScriptInstance::~CScriptInstance()
 {
+    if (m_ScreenFillBrush != 0)
+    {
+        DeleteObject(m_ScreenFillBrush);
+    }
+
     UncacheInstance(this);
     duk_destroy_heap(m_Ctx);
 
@@ -1543,7 +1567,77 @@ duk_ret_t CScriptInstance::js_ScreenPrint(duk_context* ctx)
 
     int nChars = strlen(text);
 
+    HFONT oldFont = (HFONT)SelectObject(hdc, _this->m_ScreenFont);
+    SetTextColor(hdc, RGB(255, 255, 255));
+    SetBkColor(hdc, RGB(0, 0, 0));
+
     TextOut(hdc, x, y, stdstr(text).ToUTF16().c_str(), nChars);
+
+    /////
+    //static HPEN pen = CreatePen(PS_SOLID, 1, RGB(1, 1, 1));
+    //SelectObject(hdc, pen);
+    //CRect rc(x, y, 50, 50);
+    ////DrawText(hdc, L"test", strlen("test"), &rc, DT_CALCRECT);
+    //BeginPath(hdc);
+    //DrawText(hdc, L"test", strlen("test"), &rc, DT_LEFT | DT_TOP);
+    //EndPath(hdc);
+    //StrokeAndFillPath(hdc);
+    /////
+
+    SelectObject(hdc, oldFont);
+
+    duk_pop_n(ctx, nargs);
+    return 1;
+}
+
+duk_ret_t CScriptInstance::js_ScreenSetFillColor(duk_context* ctx)
+{
+    CScriptInstance* _this = FetchInstance(ctx);
+
+    int nargs = duk_get_top(ctx);
+
+    if (nargs != 1)
+    {
+        duk_pop_n(ctx, nargs);
+        return 1;
+    }
+
+    uint32_t newColor = duk_to_uint(ctx, 0);
+    uint32_t oldColor = _this->m_ScreenFillColor;
+
+    _this->m_ScreenFillColor = newColor;
+
+    if (_this->m_ScreenFillBrush != 0)
+    {
+        DeleteObject(_this->m_ScreenFillBrush);
+        _this->m_ScreenFillBrush = CreateSolidBrush(newColor);
+    }
+
+    duk_push_uint(ctx, oldColor);
+    return 1;
+}
+
+duk_ret_t CScriptInstance::js_ScreenFillRect(duk_context* ctx)
+{
+    CScriptInstance* _this = FetchInstance(ctx);
+
+    HDC hdc = _this->m_ScriptSystem->GetScreenDC();
+
+    int nargs = duk_get_top(ctx);
+
+    if (nargs != 4)
+    {
+        duk_pop_n(ctx, nargs);
+        return 1;
+    }
+
+    int x = duk_to_int(ctx, 0);
+    int y = duk_to_int(ctx, 1);
+    int width = duk_to_int(ctx, 2);
+    int height = duk_to_int(ctx, 3);
+
+    CRect rect(x, y, x + width, y + height);
+    FillRect(hdc, &rect, _this->m_ScreenFillBrush);
 
     duk_pop_n(ctx, nargs);
     return 1;

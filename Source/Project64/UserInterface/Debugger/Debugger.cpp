@@ -680,12 +680,6 @@ void CDebuggerUI::CPUStepEnded()
 
 void CDebuggerUI::FrameDrawn()
 {
-    static HFONT monoFont = CreateFont(-13, 0, 0, 0,
-        FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-        OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-        PROOF_QUALITY, FF_DONTCARE, L"Consolas"
-    );
-
     CMainGui* mainWindow = (CMainGui*)g_Plugins->MainWindow();
 
     if (mainWindow == NULL)
@@ -693,25 +687,24 @@ void CDebuggerUI::FrameDrawn()
         return;
     }
 
-    HWND overlayWindow = mainWindow->GetOverlayWindow();
+    HWND hOverlayWindow = mainWindow->GetOverlayWindow();
 
-    if (overlayWindow == NULL)
+    if (hOverlayWindow == NULL)
     {
         return;
     }
 
-    HDC hdc = GetDC(overlayWindow);
+    HDC hdc = GetDC(hOverlayWindow);
 
-    SetBkColor(hdc, RGB(0, 0, 0));
-
-    SelectObject(hdc, monoFont);
-    SetTextColor(hdc, RGB(255, 255, 255));
-    SetBkColor(hdc, RGB(0, 0, 0));
+    //SendMessage(hOverlayWindow, WM_SETREDRAW, FALSE, 0);
 
     m_ScriptSystem->SetScreenDC(hdc);
     m_ScriptSystem->HookFrameDrawn()->InvokeAll();
 
-    ReleaseDC(overlayWindow, hdc);
+    //SendMessage(hOverlayWindow, WM_SETREDRAW, TRUE, 0);
+    //RedrawWindow(hOverlayWindow, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE);
+
+    ReleaseDC(hOverlayWindow, hdc);
 }
 
 void CDebuggerUI::WaitForStep(void)
