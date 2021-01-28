@@ -12,6 +12,7 @@
 
 #include "../Settings/GuiSettings.h"
 #include <Project64/UserInterface/Debugger/debugger.h>
+#include <Project64/UserInterface/Debugger/RenderWindow.h>
 #include <Project64-core/Plugins/PluginClass.h>
 #include <Project64\UserInterface\CheatClassUI.h>
 #include <Project64\UserInterface\ProjectSupport.h>
@@ -83,6 +84,8 @@ public:
 
     inline CProjectSupport & Support(void) { return m_Support; }
 
+    CDebugRenderWindow *GetDebugRenderWindow(void) { return m_DebugRenderWindow; }
+
 private:
     CMainGui(void);
     CMainGui(const CMainGui&);
@@ -136,11 +139,29 @@ private:
     LONG m_SaveRomBrowserTop;
     LONG m_SaveRomBrowserLeft;
 
-    HWND m_hOverlayWindow;
-    bool RegisterOverlayWinClass();
-    void CreateOverlay();
-    void UpdateOverlayPosition();
+    CDebugRenderWindow* m_DebugRenderWindow;
 
-    public:
-    HWND GetOverlayWindow();
+
+    // set g_plugin renderWindow to debugBackWindow
+    // FrameDrawn: let scripts draw on debugBackWindow,
+    // bitblt debugBackWindow to main window
+
+    //HWND m_DebugBackWindow;
+    //HDC  m_DebugBackDC;
+    //HBITMAP m_
+    //////////
+    //HWND    m_hOverlayWindow;
+    //HDC     m_OverlayBackDC;
+    //HBITMAP m_OverlayBackBMP;
+    //int m_OverlayWidth;
+    //int m_OverlayHeight;
+    //bool RegisterOverlayWinClass();
+    //void CreateOverlay();
+    //void UpdateOverlayPosition();
+    //void ResetOverlayBackBuffer();
+    //void DeleteOverlayBackBuffer();
+    //static LRESULT CALLBACK Overlay_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
+    //public:
+    //HDC  GetOverlayBackDC();
+    //HWND GetOverlayWindow();
 };

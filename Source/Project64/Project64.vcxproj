@@ -80,6 +80,7 @@
     <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
     <ClCompile Include="UserInterface\Debugger\DMALog.cpp" />
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp" />
+    <ClCompile Include="UserInterface\Debugger\RenderWindow.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptHook.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptInstance.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptSystem.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="UserInterface\Debugger\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\MemoryScanner.h" />
     <ClInclude Include="UserInterface\Debugger\OpInfo.h" />
+    <ClInclude Include="UserInterface\Debugger\RenderWindow.h" />
     <ClInclude Include="UserInterface\Debugger\ScriptHook.h" />
     <ClInclude Include="UserInterface\Debugger\ScriptInstance.h" />
     <ClInclude Include="UserInterface\Debugger\ScriptSystem.h" />

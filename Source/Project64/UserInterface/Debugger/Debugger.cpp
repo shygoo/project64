@@ -23,7 +23,7 @@
 
 CPj64Module _Module;
 
-CDebuggerUI::CDebuggerUI() :
+CDebuggerUI::CDebuggerUI(CMainGui* mainGui) :
     m_MemoryDump(NULL),
     m_MemoryView(NULL),
     m_MemorySearch(NULL),
@@ -41,7 +41,8 @@ CDebuggerUI::CDebuggerUI() :
     m_DMALog(NULL),
     m_CPULog(NULL),
     m_SymbolTable(NULL),
-    m_StepEvent(false)
+    m_StepEvent(false),
+    m_MainGui(mainGui)
 {
     g_Debugger = this;
 
@@ -680,31 +681,56 @@ void CDebuggerUI::CPUStepEnded()
 
 void CDebuggerUI::FrameDrawn()
 {
-    CMainGui* mainWindow = (CMainGui*)g_Plugins->MainWindow();
+    HWND hWndMain = (HWND)m_MainGui->GetWindowHandle();
+    HWND hWndDebug = (HWND)m_MainGui->GetDebugRenderWindow()->GetWindowHandle();
+    HDC hdcMain = GetDC(hWndMain);
+    HDC hdcDebug = GetDC(hWndDebug);
 
-    if (mainWindow == NULL)
-    {
-        return;
-    }
-
-    HWND hOverlayWindow = mainWindow->GetOverlayWindow();
-
-    if (hOverlayWindow == NULL)
-    {
-        return;
-    }
-
-    HDC hdc = GetDC(hOverlayWindow);
-
-    //SendMessage(hOverlayWindow, WM_SETREDRAW, FALSE, 0);
-
-    m_ScriptSystem->SetScreenDC(hdc);
+    m_ScriptSystem->SetScreenDC(hdcDebug);
     m_ScriptSystem->HookFrameDrawn()->InvokeAll();
 
-    //SendMessage(hOverlayWindow, WM_SETREDRAW, TRUE, 0);
-    //RedrawWindow(hOverlayWindow, NULL, NULL, RDW_ERASE | RDW_FRAME | RDW_INVALIDATE);
+    ReleaseDC(hWndMain, hdcMain);
+    ReleaseDC(hWndDebug, hdcDebug);
 
-    ReleaseDC(hOverlayWindow, hdc);
+    //CMainGui* mainWindow = (CMainGui*)g_Plugins->MainWindow();
+    //
+    //if (mainWindow == NULL)
+    //{
+    //    return;
+    //}
+    //
+    //CDebugRenderWindow* debugRenderWindow = mainWindow->GetDebugRenderWindow();
+    //
+    //if (debugRenderWindow == NULL)
+    //{
+    //    return;
+    //}
+    //
+   // HWND hWndMain = (HWND)mainWindow->GetWindowHandle();
+    //HWND hWndDebug = (HWND)debugRenderWindow->GetWindowHandle();
+
+    //HDC hdcMain = GetDC(hWndMain);
+    //HDC hdcDebug = GetDC(hWndDebug);
+
+    //int width = mainWindow->Width();
+    //int height = mainWindow->Height();
+
+    //m_ScriptSystem->SetScreenDC(hdcDebug);
+    //m_ScriptSystem->HookFrameDrawn()->InvokeAll();
+
+    //BitBlt(hdcMain, 0, 0, width, height, hdcDebug, 0, 0, SRCCOPY);
+
+    //ReleaseDC(hWndMain, hdcMain);
+    //ReleaseDC(hWndDebug, hdcDebug);
+    // create bitmap from main window
+    // let script to draw to bitmap
+    // bitblt bitmap to overlay window
+
+    //HDC hdc = mainWindow->GetOverlayBackDC();
+    //HWND hOverlayWnd = mainWindow->GetOverlayWindow();
+
+    //RedrawWindow(hOverlayWnd, NULL, NULL, RDW_INVALIDATE);
+    //InvalidateRect(hOverlayWnd, NULL, FALSE);
 }
 
 void CDebuggerUI::WaitForStep(void)

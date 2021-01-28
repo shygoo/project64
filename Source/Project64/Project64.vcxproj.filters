@@ -252,6 +252,9 @@
     <ClCompile Include="UserInterface\About.cpp">
       <Filter>Source Files\User Interface Source</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\RenderWindow.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -487,6 +490,9 @@
     </ClInclude>
     <ClInclude Include="UserInterface\About.h">
       <Filter>Header Files\User Interface Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\Debugger\RenderWindow.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

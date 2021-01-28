@@ -32,7 +32,12 @@ CMainGui::CMainGui(bool bMainWindow, const char * WindowTitle) :
     m_MakingVisible(false),
     m_ResetPlugins(false),
     m_ResetInfo(NULL),
-    m_hOverlayWindow(NULL)
+    m_DebugRenderWindow(NULL)//,
+    //m_hOverlayWindow(NULL),
+    //m_OverlayBackDC(NULL),
+    //m_OverlayBackBMP(NULL),
+    //m_OverlayWidth(0),
+    //m_OverlayHeight(0)
 {
     m_Menu = NULL;
 
@@ -71,12 +76,8 @@ CMainGui::CMainGui(bool bMainWindow, const char * WindowTitle) :
 
     if (bMainWindow)
     {
-        RegisterOverlayWinClass();
-        CreateOverlay();
+        m_DebugRenderWindow = new CDebugRenderWindow(this);
     }
-
-    //MessageBox(NULL, L"Created overlay", L"", MB_OK);
-    //}
 }
 
 CMainGui::~CMainGui(void)
@@ -103,10 +104,10 @@ CMainGui::~CMainGui(void)
     {
         DestroyWindow(m_hMainWindow);
     }
-    if (m_hOverlayWindow)
-    {
-        DestroyWindow(m_hOverlayWindow);
-    }
+    //if (m_hOverlayWindow)
+    //{
+    //    DestroyWindow(m_hOverlayWindow);
+    //}
     WriteTrace(TraceUserInterface, TraceDebug, "Done");
 }
 
@@ -473,7 +474,7 @@ void CMainGui::Show(bool Visible)
         }
     }
 
-    UpdateOverlayPosition();
+    //UpdateOverlayPosition();
 
     m_MakingVisible = false;
 }
@@ -686,7 +687,7 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             KillTimer(hWnd, Timer_SetWindowPos);
             SetTimer(hWnd, Timer_SetWindowPos, 1000, NULL);
 
-            _this->UpdateOverlayPosition();
+            //_this->UpdateOverlayPosition();
         }
         if (CGuiSettings::bCPURunning() && g_BaseSystem)
         {
@@ -733,7 +734,8 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 }
             }
 
-            _this->UpdateOverlayPosition();
+            //_this->UpdateOverlayPosition();
+            //_this->ResetOverlayBackBuffer();
         }
         break;
     case WM_NOTIFY:
@@ -1117,56 +1119,175 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
     return TRUE;
 }
 
-
-void CMainGui::CreateOverlay()
-{
-    if (m_hOverlayWindow != NULL)
-    {
-        return;
-    }
-
-    m_hOverlayWindow = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED,
-        L"OverlayWnd", L"OverlayWnd",
-        WS_POPUP | WS_VISIBLE, 100, 100, 100, 100,
-        0, 0, GetModuleHandle(NULL), this);
-
-    SetLayeredWindowAttributes(m_hOverlayWindow, 0, RGB(255, 0, 0), LWA_COLORKEY);
-    SetWindowLong(m_hOverlayWindow, GWL_HWNDPARENT, (LONG)m_hMainWindow);
-}
-
-bool CMainGui::RegisterOverlayWinClass()
-{
-    WNDCLASSEX wcl = { 0 };
-    wcl.cbSize = sizeof(WNDCLASSEX);
-    wcl.hbrBackground = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
-    wcl.hInstance = GetModuleHandle(NULL);
-    wcl.lpfnWndProc = DefWindowProc;
-    wcl.lpszClassName = L"OverlayWnd";
-    wcl.style = CS_VREDRAW | CS_HREDRAW;
-    wcl.cbClsExtra = NULL;
-    wcl.cbWndExtra = NULL;
-    wcl.lpszMenuName = L"OverlayWnd";
-    wcl.hCursor = LoadCursor(0, IDC_ARROW);
-    wcl.hIcon = LoadIcon(0, IDI_APPLICATION);
-    wcl.hIconSm = LoadIcon(0, IDI_APPLICATION);
-
-    return (RegisterClassEx(&wcl) != 0);
-}
-
-void CMainGui::UpdateOverlayPosition()
-{
-    RECT clrect;
-    GetClientRect(m_hMainWindow, &clrect);
-    MapWindowPoints(m_hMainWindow, NULL, (POINT*)&clrect, 2);
-
-    int width = clrect.right - clrect.left;
-    int height = clrect.bottom - clrect.top;
-    int x = clrect.left;
-    int y = clrect.top;
-    SetWindowPos(m_hOverlayWindow, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
-}
-
-HWND CMainGui::GetOverlayWindow()
-{
-    return m_hOverlayWindow;
-}
+//LRESULT CALLBACK CMainGui::Overlay_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
+//{
+//    switch (uMsg)
+//    {
+//    case WM_CREATE:
+//        {
+//            LPCREATESTRUCT lpcs = (LPCREATESTRUCT)lParam;
+//            CMainGui * _this = (CMainGui *)lpcs->lpCreateParams;
+//            SetProp(hWnd, L"Class", _this);
+//            return 0;
+//        }
+//
+//
+//    //case WM_DESTROY:
+//    //    return 0;
+//    case WM_PAINT:
+//        {
+//            static int c = 0;
+//
+//            CMainGui* _this = (CMainGui*)GetProp(hWnd, L"Class");
+//
+//            RECT clrect;
+//            GetClientRect(_this->m_hMainWindow, &clrect);
+//            MapWindowPoints(_this->m_hMainWindow, NULL, (POINT*)&clrect, 2);
+//            int width = clrect.right - clrect.left;
+//            int height = clrect.bottom - clrect.top;
+//
+//            HDC hdcMain = GetDC(_this->m_hMainWindow);
+//            HBITMAP bmp = CreateCompatibleBitmap(hdcMain, width, height);
+//            ReleaseDC(_this->m_hMainWindow, hdcMain);
+//
+//
+//
+//
+//
+//            //HBITMAP hOldBmp = (HBITMAP)SelectObject(_this->m_OverlayBackDC, _this->m_OverlayBackBMP);
+//
+//            HBRUSH hbr = CreateSolidBrush(RGB(255, 0, 0));
+//            CRect rect(0, 0, 50, 50);
+//            if (FillRect(_this->m_OverlayBackDC, &rect, hbr) == 0)
+//            {
+//                SetWindowTextA((HWND)_this->GetWindowHandle(), stdstr_f("%d", GetLastError()).c_str());
+//            }
+//            DeleteObject(hbr);
+//
+//            PAINTSTRUCT ps;
+//            BeginPaint(hWnd, &ps);
+//
+//            if (_this->m_OverlayBackDC != NULL)
+//            {
+//                if (BitBlt(ps.hdc, 0, 0,
+//                    _this->m_OverlayWidth, _this->m_OverlayHeight,
+//                    _this->m_OverlayBackDC, 0, 0, DSTINVERT) == 0)
+//                {
+//                    //SetWindowTextA((HWND)_this->GetWindowHandle(), stdstr_f("%d", GetLastError()).c_str());
+//                }
+//                else
+//                {
+//                    //SetWindowTextA((HWND)_this->GetWindowHandle(), stdstr_f("ok %d %d %d", _this->m_OverlayWidth, _this->m_OverlayHeight, c).c_str());
+//                    c++;
+//                }
+//
+//            }
+//
+//            //SelectObject(_this->m_OverlayBackDC, hOldBmp);
+//
+//            EndPaint(hWnd, &ps);
+//            break;
+//        }
+//    }
+//
+//    return DefWindowProc(hWnd, uMsg, wParam, lParam);
+//}
+//
+//void CMainGui::CreateOverlay()
+//{
+//
+//    g_Plugins->SetRenderWindows()
+//
+//    if (m_hOverlayWindow != NULL)
+//    {
+//        return;
+//    }
+//
+//    m_hOverlayWindow = CreateWindowEx(WS_EX_TRANSPARENT | WS_EX_LAYERED,
+//        L"OverlayWnd", L"OverlayWnd",
+//        WS_POPUP | WS_VISIBLE, 100, 100, 100, 100,
+//        0, 0, GetModuleHandle(NULL), this);
+//
+//    SetLayeredWindowAttributes(m_hOverlayWindow, 0, RGB(255, 0, 0), LWA_COLORKEY);
+//    SetWindowLong(m_hOverlayWindow, GWL_HWNDPARENT, (LONG)m_hMainWindow);
+//}
+//
+//void CMainGui::ResetOverlayBackBuffer()
+//{
+//    DeleteOverlayBackBuffer();
+//
+//    RECT clrect;
+//    GetClientRect(m_hMainWindow, &clrect);
+//    MapWindowPoints(m_hMainWindow, NULL, (POINT*)&clrect, 2);
+//    int width = clrect.right - clrect.left;
+//    int height = clrect.bottom - clrect.top;
+//
+//    m_OverlayWidth = width;
+//    m_OverlayHeight = height;
+//
+//    HDC hdc = GetDC(m_hMainWindow);
+//    m_OverlayBackDC = CreateCompatibleDC(hdc);
+//    m_OverlayBackBMP = CreateCompatibleBitmap(hdc, width, height);
+//    
+//    SelectObject(m_OverlayBackDC, m_OverlayBackBMP);
+//    // todo put back old bmp?
+//
+//    ReleaseDC(m_hMainWindow, hdc);
+//}
+//
+//HDC CMainGui::GetOverlayBackDC()
+//{
+//    return m_OverlayBackDC;
+//}
+//
+//void CMainGui::DeleteOverlayBackBuffer()
+//{
+//    if (m_OverlayBackDC != NULL)
+//    {
+//        DeleteDC(m_OverlayBackDC);
+//        m_OverlayBackDC = NULL;
+//    }
+//
+//    if (m_OverlayBackBMP != NULL)
+//    {
+//        DeleteObject(m_OverlayBackBMP);
+//        m_OverlayBackBMP = NULL;
+//    }
+//}
+//
+//bool CMainGui::RegisterOverlayWinClass()
+//{
+//    WNDCLASSEX wcl = { 0 };
+//    wcl.cbSize = sizeof(WNDCLASSEX);
+//    wcl.hbrBackground = (HBRUSH)CreateSolidBrush(RGB(0, 0, 0));
+//    wcl.hInstance = GetModuleHandle(NULL);
+//    wcl.lpfnWndProc = (WNDPROC)Overlay_Proc;
+//    wcl.lpszClassName = L"OverlayWnd";
+//    wcl.style = CS_VREDRAW | CS_HREDRAW;
+//    wcl.cbClsExtra = NULL;
+//    wcl.cbWndExtra = NULL;
+//    wcl.lpszMenuName = L"OverlayWnd";
+//    wcl.hCursor = LoadCursor(0, IDC_ARROW);
+//    wcl.hIcon = LoadIcon(0, IDI_APPLICATION);
+//    wcl.hIconSm = LoadIcon(0, IDI_APPLICATION);
+//
+//    return (RegisterClassEx(&wcl) != 0);
+//}
+//
+//void CMainGui::UpdateOverlayPosition()
+//{
+//    RECT clrect;
+//    GetClientRect(m_hMainWindow, &clrect);
+//    MapWindowPoints(m_hMainWindow, NULL, (POINT*)&clrect, 2);
+//
+//    int width = clrect.right - clrect.left;
+//    int height = clrect.bottom - clrect.top;
+//    int x = clrect.left;
+//    int y = clrect.top;
+//    SetWindowPos(m_hOverlayWindow, HWND_TOP, x, y, width, height, SWP_SHOWWINDOW | SWP_NOACTIVATE);
+//}
+//
+//HWND CMainGui::GetOverlayWindow()
+//{
+//    return m_hOverlayWindow;
+//}
