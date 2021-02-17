@@ -255,6 +255,9 @@
     <ClCompile Include="UserInterface\Settings\SettingsPage-Game-DiskDrive.cpp">
       <Filter>Source Files\User Interface Source\Settings Source</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\DebugUtil.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">
@@ -488,11 +491,16 @@
     <ClInclude Include="UserInterface\About.h">
       <Filter>Header Files\User Interface Headers</Filter>
     </ClInclude>
+<<<<<<< Updated upstream
     <ClInclude Include="UserInterface\EnhancementUI.h">
       <Filter>Header Files\User Interface Headers</Filter>
     </ClInclude>
     <ClInclude Include="UserInterface\Settings\SettingsPage-Game-DiskDrive.h">
       <Filter>Header Files\User Interface Headers\Settings Header</Filter>
+=======
+    <ClInclude Include="UserInterface\Debugger\DebugUtil.h">
+      <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+>>>>>>> Stashed changes
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -39,8 +39,8 @@ Source: "{#BaseDir}\Plugin\GFX\GLideN64\*"; DestDir: "{app}\Plugin\GLideN64"; Fl
 Source: "{#BaseDir}\Plugin\Input\PJ64_NRage.dll"; DestDir: "{app}\Plugin\Input"
 Source: "{#BaseDir}\Plugin\Input\Project64-Input.dll"; DestDir: "{app}\Plugin\Input"
 Source: "{#BaseDir}\Plugin\RSP\RSP 1.7.dll"; DestDir: "{app}\Plugin\RSP"
-Source: "{#BaseDir}\Scripts\example.js"; DestDir: "{app}\Scripts"
-Source: "{#BaseDir}\apidoc.htm"; DestDir: "{app}"
+Source: "{#BaseDir}\Debugger\Scripts\example.js"; DestDir: "{app}\Debugger\Scripts"
+Source: "{#BaseDir}\Debugger\JS-API-Documentation.htm"; DestDir: "{app}\Debugger"
 
 [Dirs]
 Name: "{app}\Config"; Permissions: everyone-full
@@ -49,6 +49,12 @@ Name: "{app}\Logs"; Permissions: everyone-full
 Name: "{app}\Save"; Permissions: everyone-full
 Name: "{app}\Screenshots"; Permissions: everyone-full
 Name: "{app}\Textures"; Permissions: everyone-full
+Name: "{app}\Debugger"; Permissions: everyone-full
+Name: "{app}\Debugger\Dumps"; Permissions: everyone-full
+Name: "{app}\Debugger\ScriptModules"; Permissions: everyone-full
+Name: "{app}\Debugger\Scripts"; Permissions: everyone-full
+Name: "{app}\Debugger\SearchProfiles"; Permissions: everyone-full
+Name: "{app}\Debugger\Symbols"; Permissions: everyone-full
 
 [Icons]
 Name: "{commondesktop}\Project64"; Filename: "{app}\Project64.exe"; Tasks: desktopicon

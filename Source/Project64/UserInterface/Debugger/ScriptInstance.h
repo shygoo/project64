@@ -83,7 +83,7 @@ public:
     INSTANCE_STATE GetState();
 
     friend class PendingEval;
-    const char* Eval(const char* jsCode);
+    void Eval(const char* jsCode);
 
 private:
     duk_context*        m_Ctx;
@@ -115,6 +115,8 @@ private:
     void SetState(INSTANCE_STATE state);
     void StateChanged();
     void CleanUp();
+
+    void LogErrorStack();
 
     void QueueAPC(PAPCFUNC userProc, ULONG_PTR param = 0);
 

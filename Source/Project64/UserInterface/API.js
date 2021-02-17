@@ -1006,3 +1006,46 @@ function Server(settings)
         }
     }
 }
+
+Duktape.modSearch = function(id)
+{
+    if (id === 'test')
+    {
+        return 'exports.test = function(){return 123;};';
+    }
+
+    var testPaths = [
+        "Debugger/ScriptModules/" + id,
+        "Debugger/Scripts/" + id,
+        id
+    ];
+
+    for (var i in testPaths)
+    {
+        var curPath = testPaths[i];
+        var stats = fs.stat(curPath);
+
+        if (!stats.isFile())
+        {
+            curPath = testPaths[i] + ".js";
+            stats = fs.stat(curPath);
+        }
+
+        if (stats.isFile())
+        {
+            var code = fs.readFile(curPath);
+
+            if(code)
+            {
+                //console.log(code);
+                return code;
+            }
+            else
+            {
+                break;
+            }
+        }
+    }
+
+    throw new Error("module not found: " + id);
+}

@@ -10,6 +10,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include "Symbols.h"
+#include "DebugUtil.h"
 
 CSymbolTable::CSymbolTable(CDebuggerUI* debugger) :
     m_Debugger(debugger),
@@ -84,15 +85,13 @@ int CSymbolTable::GetTypeSize(int typeId)
 // Open symbols file for game and parse into list
 CPath CSymbolTable::GetSymFilePath()
 {
+    char uniqueRomName[64];
+    GetUniqueRomName(uniqueRomName, sizeof(uniqueRomName));
+
     stdstr symFileName;
-    symFileName.Format("%s.sym", g_Settings->LoadStringVal(Game_GameName).c_str());
+    symFileName.Format("%s.sym", uniqueRomName);
 
-    CPath symFilePath(g_Settings->LoadStringVal(Directory_NativeSave).c_str(), symFileName.c_str());
-
-    if (g_Settings->LoadBool(Setting_UniqueSaveDir))
-    {
-        symFilePath.AppendDirectory(g_Settings->LoadStringVal(Game_UniqueSaveDir).c_str());
-    }
+    CPath symFilePath(DEBUG_DIR_SYMBOLS, symFileName.c_str());
 
     symFilePath.NormalizePath(CPath(CPath::MODULE_DIRECTORY));
 

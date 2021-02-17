@@ -176,8 +176,6 @@ public:
     bool SetSearchType(SearchType searchType);
     void SetAddressType(AddressType addressType);
 
-    static int ParseHexString(char* dst, const char* src);
-
     static bool AddrCheck(uint32_t addr, uint32_t rangeStart, uint32_t rangeEnd);
     static bool RangeCheck(uint32_t addrStart, uint32_t addrEnd, uint32_t rangeStart, uint32_t rangeEnd);
     static bool PAddrValid(uint32_t physAddr);

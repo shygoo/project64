@@ -14,6 +14,14 @@
 #include <Project64-core/Settings/DebugSettings.h>
 #include "DebugMMU.h"
 
+#define DEBUG_DIR                "Debugger"
+#define DEBUG_DIR_DUMPS          DEBUG_DIR "\\Dumps"
+#define DEBUG_DIR_SCRIPTMODULES  DEBUG_DIR "\\ScriptModules"
+#define DEBUG_DIR_SCRIPTS        DEBUG_DIR "\\Scripts"
+#define DEBUG_DIR_SEARCHPROFILES DEBUG_DIR "\\SearchProfiles"
+#define DEBUG_DIR_SYMBOLS        DEBUG_DIR "\\Symbols"
+#define _L(s) L ## #s
+
 class CDumpMemory;
 class CDebugMemoryView;
 class CDebugMemorySearch;

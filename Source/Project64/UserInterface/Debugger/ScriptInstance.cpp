@@ -143,28 +143,31 @@ void CScriptInstance::StartScriptProc()
     const char* apiScript = m_ScriptSystem->APIScript();
 
     duk_int_t apiresult = duk_peval_string(ctx, apiScript);
-
+    
     if (apiresult != 0)
     {
-        MessageBox(NULL, stdstr(duk_safe_to_string(ctx, -1)).ToUTF16().c_str(), L"API Script Error", MB_OK | MB_ICONERROR);
+        LogErrorStack();
+        duk_pop(ctx);
         return;
     }
 
+    duk_pop(ctx);
+    
     if (m_TempPath)
     {
-        stdstr fullPath = stdstr_f("Scripts/%s", m_TempPath);
+        stdstr fullPath = stdstr_f("%s/%s", DEBUG_DIR_SCRIPTS, m_TempPath);
         duk_int_t scriptresult = duk_peval_file(ctx, fullPath.c_str());
         m_TempPath = NULL;
 
         if (scriptresult != 0)
         {
-            const char* errorText = duk_safe_to_string(ctx, -1);
-            //MessageBox(NULL, duk_safe_to_string(ctx, -1), "Script error", MB_OK | MB_ICONWARNING);
-            m_Debugger->Debug_LogScriptsWindow(errorText);
-            m_Debugger->Debug_LogScriptsWindow("\r\n");
+            LogErrorStack();
+            duk_pop(ctx);
             SetState(STATE_STOPPED);
             return;
         }
+
+        duk_pop(ctx);
     }
 
     if (HaveEvents())
@@ -183,6 +186,26 @@ void CScriptInstance::CleanUp()
     m_ScriptSystem->ClearCallbacksForInstance(this);
     CloseAllAsyncFiles();
     CloseAllFiles();
+}
+
+void CScriptInstance::LogErrorStack()
+{
+    duk_context* ctx = m_Ctx;
+    const char *errorText;
+
+    if (duk_is_error(ctx, -1))
+    {
+        duk_get_prop_string(ctx, -1, "stack");
+        errorText = duk_safe_to_string(ctx, -1);
+        duk_pop(ctx);
+    }
+    else
+    {
+        errorText = duk_safe_to_string(ctx, -1);
+    }
+
+    m_Debugger->Debug_LogScriptsWindow(errorText);
+    m_Debugger->Debug_LogScriptsWindow("\n");
 }
 
 void CScriptInstance::StartEventLoop()
@@ -450,30 +473,29 @@ void CScriptInstance::InvokeListenerCallback(IOLISTENER* lpListener)
 
     if (status != DUK_EXEC_SUCCESS)
     {
-        const char* msg = duk_safe_to_string(m_Ctx, -1);
-        MessageBox(NULL, stdstr(msg).ToUTF16().c_str(), L"Script error", MB_OK | MB_ICONWARNING);
+        LogErrorStack();
     }
 
     duk_pop(m_Ctx);
 }
 
-const char* CScriptInstance::Eval(const char* jsCode)
+void CScriptInstance::Eval(const char* jsCode)
 {
     CGuard guard(m_CS);
     int result = duk_peval_string(m_Ctx, jsCode);
-    const char* msg = NULL;
 
     if (result != 0)
     {
-        MessageBox(NULL, stdstr(msg).ToUTF16().c_str(), L"Script error", MB_OK | MB_ICONWARNING);
+        LogErrorStack();
     }
     else
     {
-        msg = duk_safe_to_string(m_Ctx, -1);
+        const char* msg = duk_safe_to_string(m_Ctx, -1);
+        m_Debugger->Debug_LogScriptsWindow(msg);
+        m_Debugger->Debug_LogScriptsWindow("\n");
     }
 
     duk_pop(m_Ctx);
-    return msg;
 }
 
 bool CScriptInstance::AddFile(const char* path, const char* mode, int* fd)
@@ -559,9 +581,7 @@ void CScriptInstance::Invoke(void* heapptr, uint32_t param)
 
     if (status != DUK_EXEC_SUCCESS)
     {
-        const char* errorText = duk_safe_to_string(m_Ctx, -1);
-        m_Debugger->Debug_LogScriptsWindow(errorText);
-        m_Debugger->Debug_LogScriptsWindow("\r\n");
+        LogErrorStack();
     }
 
     duk_pop(m_Ctx);
@@ -578,9 +598,7 @@ void CScriptInstance::Invoke2(void* heapptr, uint32_t param, uint32_t param2)
 
     if (status != DUK_EXEC_SUCCESS)
     {
-        const char* errorText = duk_safe_to_string(m_Ctx, -1);
-        m_Debugger->Debug_LogScriptsWindow(errorText);
-        m_Debugger->Debug_LogScriptsWindow("\r\n");
+        LogErrorStack();
     }
 
     duk_pop(m_Ctx);

@@ -11,6 +11,7 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
 #include "MemoryScanner.h"
+#include "DebugUtil.h"
 
 CDebugMemorySearch* CDebugMemorySearch::_this = NULL;
 HHOOK CDebugMemorySearch::hWinMessageHook = NULL;
@@ -138,6 +139,8 @@ LRESULT CDebugMemorySearch::OnDestroy(void)
 {
     UnhookWindowsHookEx(hWinMessageHook);
     KillTimer(TIMER_ID_AUTO_REFRESH);
+
+    FlushWatchList();
 
     m_UnsignedCheckbox.Detach();
     m_IgnoreCaseCheckbox.Detach();
@@ -2155,17 +2158,13 @@ void CDebugMemorySearch::FixListHeader(CListViewCtrl& listCtrl)
 
 CPath CDebugMemorySearch::GetWatchListPath(void)
 {
-    stdstr strSaveDir = g_Settings->LoadStringVal(Directory_NativeSave);
+    char uniqueRomName[64];
+    GetUniqueRomName(uniqueRomName, sizeof(uniqueRomName));
 
-    stdstr wlFileName = stdstr_f("%s.wlst", m_StrGame.c_str());
+    stdstr wlFileName;
+    wlFileName.Format("%s.wlst", uniqueRomName);
 
-    CPath wlFilePath(strSaveDir.c_str(), wlFileName.c_str());
-
-    if (g_Settings->LoadBool(Setting_UniqueSaveDir))
-    {
-        stdstr strUniqueSaveDir = g_Settings->LoadStringVal(Game_UniqueSaveDir);
-        wlFilePath.AppendDirectory(strUniqueSaveDir.c_str());
-    }
+    CPath wlFilePath(DEBUG_DIR_SEARCHPROFILES, wlFileName.c_str());
 
     wlFilePath.NormalizePath(CPath(CPath::MODULE_DIRECTORY));
 
@@ -2550,7 +2549,7 @@ bool CEditMixed::GetValueHexString(const wchar_t*& value, int& length)
     }
 
     stdstr string = stdstr().FromUTF16(m_String);
-    int numBytes = CMemoryScanner::ParseHexString(NULL, string.c_str());
+    int numBytes = ParseHexString(NULL, string.c_str());
 
     if (numBytes == 0)
     {
@@ -2561,7 +2560,7 @@ bool CEditMixed::GetValueHexString(const wchar_t*& value, int& length)
     char *hexString = new char[numBytes];
     wchar_t *wchexString = new wchar_t[numBytes];
 
-    CMemoryScanner::ParseHexString(hexString, string.c_str());
+    ParseHexString(hexString, string.c_str());
     wcscpy(wchexString, stdstr(hexString).ToUTF16().c_str());
 
     delete[] hexString;

@@ -99,7 +99,7 @@ DWORD WINAPI CDebugScripts::ScriptDirWatchProc(void* ctx)
 
     HANDLE hEvents[2];
 
-    hEvents[0] = FindFirstChangeNotification(L"Scripts", FALSE, FILE_NOTIFY_CHANGE_FILE_NAME);
+    hEvents[0] = FindFirstChangeNotification(_L(DEBUG_DIR_SCRIPTS), FALSE, FILE_NOTIFY_CHANGE_FILE_NAME);
 
     if (hEvents[0] == INVALID_HANDLE_VALUE)
     {
@@ -206,7 +206,7 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
         ConsoleCopy();
         break;
     case IDC_SCRIPTDIR_BTN:
-        ShellExecute(NULL, L"open", L"Scripts", NULL, NULL, SW_SHOW);
+        ShellExecute(NULL, L"open", _L(DEBUG_DIR_SCRIPTS), NULL, NULL, SW_SHOW);
         break;
     }
     return FALSE;
@@ -233,7 +233,7 @@ void CDebugScripts::RefreshStatus()
     INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
 
     stdstr statusText;
-    CPath(stdstr_f("Scripts\\%s", m_SelectedScriptName.c_str())).GetFullyQualified(statusText);
+    CPath(stdstr_f("%s\\%s", DEBUG_DIR_SCRIPTS, m_SelectedScriptName.c_str())).GetFullyQualified(statusText);
     
     if (state == STATE_RUNNING)
     {
@@ -347,7 +347,33 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
 
 LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    const char *text = (const char*)wParam;
+    const char* text = (const char*)wParam;
+    char* formattedText;
+    size_t formattedLength = 0;
+
+    // convert unix line endings to windows
+
+    for (size_t i = 0; text[i] != '\0'; i++)
+    {
+        formattedLength += (text[i] == '\n') ? 2 : 1;
+    }
+
+    formattedText = new char[formattedLength + 1];
+
+    for (size_t i = 0, j = 0; text[i] != '\0'; i++)
+    {
+        if (text[i] == '\n')
+        {
+            formattedText[j++] = '\r';
+            formattedText[j++] = '\n';
+        }
+        else
+        {
+            formattedText[j++] = text[i];
+        }
+    }
+
+    formattedText[formattedLength] = '\0';
 
     ::ShowWindow(*this, SW_SHOWNOACTIVATE);
 
@@ -357,13 +383,15 @@ LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPara
     m_ConsoleEdit.GetScrollInfo(SB_VERT, &scroll);
 
     m_ConsoleEdit.SetRedraw(FALSE);
-    m_ConsoleEdit.AppendText(stdstr(text).ToUTF16().c_str());
+    m_ConsoleEdit.AppendText(stdstr(formattedText).ToUTF16().c_str());
     m_ConsoleEdit.SetRedraw(TRUE);
 
     if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
     {
         m_ConsoleEdit.ScrollCaret();
     }
+
+    delete[] formattedText;
     return FALSE;
 }
 
@@ -377,9 +405,9 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 {
     int nIndex = m_ScriptList.GetSelectedIndex();
 
-    CPath SearchPath("Scripts", "*");
+    CPath searchPath(DEBUG_DIR_SCRIPTS, "*");
 
-    if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
+    if (!searchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
     {
         return FALSE;
     }
@@ -391,7 +419,7 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 
     do
     {
-        stdstr scriptFileName = SearchPath.GetNameExtension();
+        stdstr scriptFileName = searchPath.GetNameExtension();
         INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptFileName.c_str());
         const wchar_t *statusIcon = L"";
 
@@ -411,7 +439,7 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
         m_ScriptList.AddItem(nItem, 0, statusIcon);
         m_ScriptList.SetItemText(nItem, 1, scriptFileName.ToUTF16().c_str());
         nItem++;
-    } while (SearchPath.FindNext());
+    } while (searchPath.FindNext());
 
     m_ScriptList.SetRedraw(true);
     m_ScriptList.Invalidate();
@@ -475,7 +503,7 @@ void CDebugScripts::ToggleSelected()
 
 void CDebugScripts::EditSelected()
 {
-    ShellExecute(NULL, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), NULL, L"Scripts", SW_SHOWNORMAL);
+    ShellExecute(NULL, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), NULL, _L(DEBUG_DIR_SCRIPTS), SW_SHOWNORMAL);
 }
 
 // Console input

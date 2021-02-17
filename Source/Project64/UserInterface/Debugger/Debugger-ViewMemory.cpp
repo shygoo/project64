@@ -17,6 +17,7 @@
 #include "DebuggerUI.h"
 #include "Symbols.h"
 #include "DMALog.h"
+#include "DebugUtil.h"
 
 CDebugMemoryView::jump_item_t CDebugMemoryView::JumpItems[] = {
     { 0x80000000, 0x00000000, 0x0800000, "RDRAM" },
@@ -983,13 +984,12 @@ LRESULT CDebugMemoryView::OnHxPaste(LPNMHDR lpNMHDR)
     if (nmp->column == HX_COL_HEXDATA)
     {
         char* data = NULL;
-        // todo move this function to some utility class
-        int length = CMemoryScanner::ParseHexString(NULL, text);
+        int length = ParseHexString(NULL, text);
 
         if (length != 0)
         {
             data = (char*)malloc(length);
-            CMemoryScanner::ParseHexString(data, text);
+            ParseHexString(data, text);
 
             for (int i = 0; i < length; i++)
             {

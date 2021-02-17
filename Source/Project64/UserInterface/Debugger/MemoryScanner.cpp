@@ -10,6 +10,7 @@
 ****************************************************************************/
 #include "stdafx.h"
 #include "MemoryScanner.h"
+#include "DebugUtil.h"
 
 CMixed::TypeNameEntry CMixed::TypeNames[] = {
     { "uint8",   ValueType_uint8 },
@@ -376,14 +377,14 @@ bool CScanResult::SetMemoryValueFromString(const char* str)
     case ValueType_unkstring:
         if (bHex)
         {
-            int size = CMemoryScanner::ParseHexString(NULL, str);
+            int size = ParseHexString(NULL, str);
             if (size == 0)
             {
                 return false;
             }
 
             char* buff = new char[size];
-            CMemoryScanner::ParseHexString(buff, str);
+            ParseHexString(buff, str);
 
             for (int i = 0; i < m_StrLength; i++)
             {
@@ -1004,61 +1005,4 @@ bool CMemoryScanner::NextScan()
     }
     
     return true;
-}
-
-
-int CMemoryScanner::HexDigitVal(char c)
-{
-    if (c >= '0' && c <= '9') return (c - '0');
-    if (c >= 'A' && c <= 'F') return (c - 'A') + 0x0A;
-    if (c >= 'a' && c <= 'f') return (c - 'a') + 0x0A;
-    return 0;
-}
-
-int CMemoryScanner::ParseHexString(char *dst, const char* src)
-{
-    bool bHiNibble = true;
-    uint8_t curByte = 0;
-    int size = 0;
-
-    for (int i = 0; src[i] != '\0'; i++)
-    {
-        if (!isxdigit(src[i]))
-        {
-            if (!bHiNibble)
-            {
-                return 0;
-            }
-
-            if (isspace(src[i]))
-            {
-                continue;
-            }
-
-            return 0;
-        }
-
-        if (bHiNibble)
-        {
-            curByte = (HexDigitVal(src[i]) << 4) & 0xF0;
-            bHiNibble = false;
-        }
-        else
-        {
-            curByte |= HexDigitVal(src[i]);
-            if (dst != NULL)
-            {
-                dst[size] = curByte;
-            }
-            size++;
-            bHiNibble = true;
-        }
-    }
-
-    if (!bHiNibble)
-    {
-        return 0;
-    }
-
-    return size;
 }

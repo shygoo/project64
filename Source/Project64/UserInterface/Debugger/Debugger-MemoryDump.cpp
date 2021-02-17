@@ -89,7 +89,7 @@ LRESULT    CDumpMemory::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 
         CPath FileName;
         
-        if (FileName.SelectFile(m_hWnd, CPath(CPath::MODULE_DIRECTORY), FileFilter, false))
+        if (FileName.SelectFile(m_hWnd, DEBUG_DIR_DUMPS, FileFilter, false))
         {
             if (FileName.GetExtension().length() == 0)
             {
