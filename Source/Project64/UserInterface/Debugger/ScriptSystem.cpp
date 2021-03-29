@@ -1,202 +1,318 @@
+#include <sys/stat.h>
+
 #include <stdafx.h>
+#include "ScriptTypes.h"
 #include "ScriptSystem.h"
-#include "Debugger-Scripts.h"
-
 #include "ScriptInstance.h"
-#include "ScriptHook.h"
+#include "ScriptAPI.h"
+#include "Debugger.h"
 
-CScriptSystem::CScriptSystem(CDebuggerUI* debugger)
+CScriptSystem::CScriptSystem(CDebuggerUI *debugger) :
+    m_Debugger(debugger),
+    m_NextAppCallbackId(0),
+    m_AppCallbackCount(0)
 {
-    WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-
-    m_NextCallbackId = 0;
-    m_NumCallbacks = 0;
-
-    m_Debugger = debugger;
-
-    m_HookCPUExec = new CScriptHook(this);
-    m_HookCPUExecOpcode = new CScriptHook(this);
-    m_HookCPURead = new CScriptHook(this);
-    m_HookCPUWrite = new CScriptHook(this);
-    m_HookCPUGPRValue = new CScriptHook(this);
-    m_HookFrameDrawn = new CScriptHook(this);
-
-    RegisterHook("exec", m_HookCPUExec);
-    RegisterHook("read", m_HookCPURead);
-    RegisterHook("write", m_HookCPUWrite);
-    RegisterHook("opcode", m_HookCPUExecOpcode);
-    RegisterHook("gprvalue", m_HookCPUGPRValue);
-    RegisterHook("draw", m_HookFrameDrawn);
-
-    HMODULE hInst = GetModuleHandle(NULL);
-    HRSRC hRes = FindResource(hInst, MAKEINTRESOURCE(IDR_JSAPI_TEXT), L"TEXT");
-
-    HGLOBAL hGlob = LoadResource(hInst, hRes);
-    DWORD resSize = SizeofResource(hInst, hRes);
-    m_APIScript = (char*)malloc(resSize + 1);
-
-    void* resData = LockResource(hGlob);
-    memcpy(m_APIScript, resData, resSize);
-    m_APIScript[resSize] = '\0';
-    FreeResource(hGlob);
+    m_Cmd.id = CMD_IDLE;
+    m_Cmd.hWakeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    m_Cmd.hIdleEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+    m_hMutex = CreateMutex(NULL, FALSE, NULL);
+    m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
 }
 
 CScriptSystem::~CScriptSystem()
 {
-    for (size_t i = 0; i < m_Hooks.size(); i++)
+    m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: shutting down\n");
+
+    LockCommand(true);
+    SetCommand(CMD_SHUTDOWN);
+    UnlockCommand();
+    WaitForSingleObject(m_hThread, INFINITE);
+    CloseHandle(m_hThread);
+    CloseHandle(m_hMutex);
+    CloseHandle(m_Cmd.hWakeEvent);
+    CloseHandle(m_Cmd.hIdleEvent);
+}
+
+bool CScriptSystem::StartScript(const char *name, const char *path)
+{
+    m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: starting script...\n");
+
+    if(!LockCommand())
     {
-        delete m_Hooks[i].cbList;
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: START_SCRIPT timed out; system is busy\n");
+        return false;
     }
 
-    UnregisterHooks();
-    free(m_APIScript);
-}
-
-const char* CScriptSystem::APIScript()
-{
-    return m_APIScript;
-}
-
-void CScriptSystem::RunScript(const char * path)
-{
-    CGuard guard(m_CS);
-    CScriptInstance* scriptInstance = new CScriptInstance(m_Debugger);
-    char* pathSaved = (char*)malloc(strlen(path)+1); // Freed via DeleteStoppedInstances
-    strcpy(pathSaved, path);
-
-    m_RunningInstances.push_back({ pathSaved, scriptInstance });
-    scriptInstance->Start(pathSaved);
-}
-
-void CScriptSystem::StopScript(const char* path)
-{
-    CScriptInstance* scriptInstance = GetInstance(path);
-
-    if (scriptInstance == NULL)
+    if(m_Instances.count(name) != 0)
     {
+        
+        m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: START_SCRIPT aborted; '%s' is already instanced\n", name).c_str());
+        UnlockCommand();
+        return false;
+    }
+
+    SetCommand(CMD_START_SCRIPT, name, path);
+    UnlockCommand();
+    return true;
+}
+
+bool CScriptSystem::StopScript(const char *name)
+{
+    if(!LockCommand())
+    {
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: STOP_SCRIPT timed out; system is busy\n");
+        return false;
+    }
+    SetCommand(CMD_STOP_SCRIPT, name);
+    UnlockCommand();
+    return true;
+}
+
+bool CScriptSystem::Eval(const char *name, const char *code)
+{
+    if(!LockCommand())
+    {
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: EVAL timed out; system is busy\n");
+        return false;
+    }
+    SetCommand(CMD_EVAL, name, code);
+    UnlockCommand();
+    return true;
+}
+
+jsstatus_t CScriptSystem::GetStatus(const char* name)
+{
+    if (WaitForSingleObject(m_hMutex, JS_EXEC_TIMEOUT) == WAIT_TIMEOUT)
+    {
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: status check operation timed out\n");
+        return JS_STATUS_STOPPED;
+    }
+
+    if (m_Instances.count(name) != 0)
+    {
+        ReleaseMutex(m_hMutex);
+        return JS_STATUS_STARTED;
+    }
+    else
+    {
+        ReleaseMutex(m_hMutex);
+        return JS_STATUS_STOPPED;
+    }
+}
+
+void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
+{
+    if(!LockCommand())
+    {
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: app callback invocation timed out; system is busy\n");
+    }
+
+    if(m_AppHooks.count(hookId) == 0 ||
+       m_AppHooks[hookId].size() == 0)
+    {
+        UnlockCommand();
         return;
     }
 
-    scriptInstance->ForceStop();
-    DeleteStoppedInstances();
+    jscb_map_t& callbacks = m_AppHooks[hookId];
+
+    jscb_map_t::iterator it;
+    for(it = callbacks.begin(); it != callbacks.end(); it++)
+    {
+        jscallback_t& cb = it->second;
+        if(env == NULL || cb.fnCondition(&cb, env))
+        {
+            cb.inst->RawCall(cb.heapptr, cb.fnPushArgs, env);
+        }
+    }
+
+    SetCommand(CMD_SWEEP);
+    UnlockCommand();
 }
 
-void CScriptSystem::DeleteStoppedInstances()
+void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs, void *argsParam)
 {
-    CGuard guard(m_CS);
-
-    int lastIndex = m_RunningInstances.size() - 1;
-    for (int i = lastIndex; i >= 0; i--)
+    if(!LockCommand())
     {
-        if (m_RunningInstances[i].scriptInstance->GetState() == STATE_STOPPED)
+        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: worker callback invocation timed out; system is busy\n");
+        return;
+    }
+
+    inst->RawCall(heapptr, fnPushArgs, argsParam);
+
+    if(inst->GetRefCount() == 0)
+    {
+        SetCommand(CMD_STOP_SCRIPT, inst->Name().c_str());
+    }
+
+    UnlockCommand();
+}
+
+bool CScriptSystem::LockCommand(bool bWaitInfinite)
+{
+    HANDLE handles[] = { m_hMutex, m_Cmd.hIdleEvent };
+    if(bWaitInfinite)
+    {
+        WaitForMultipleObjects(2, handles, TRUE, INFINITE);
+        return true;
+    }
+    return WaitForMultipleObjects(2, handles, TRUE, JS_EXEC_TIMEOUT) != WAIT_TIMEOUT;
+}
+
+void CScriptSystem::UnlockCommand()
+{
+    ResetEvent(m_Cmd.hIdleEvent);
+    SetEvent(m_Cmd.hWakeEvent);
+    ReleaseMutex(m_hMutex);
+}
+
+void CScriptSystem::SetCommand(jssyscmd_id_t cmd, const char *paramA, const char *paramB)
+{
+    m_Cmd.id = cmd;
+    m_Cmd.paramA = paramA;
+    m_Cmd.paramB = paramB;
+}
+
+DWORD CScriptSystem::ThreadProc(void *_this)
+{
+    ((CScriptSystem *)_this)->ThreadProc();
+    return 0;
+}
+
+void CScriptSystem::ThreadProc()
+{
+    HANDLE handles[] = { m_Cmd.hWakeEvent, m_hMutex };
+    bool bRunning = true;
+
+    while(bRunning)
+    {
+        WaitForMultipleObjects(2, handles, TRUE, INFINITE);
+
+        switch(m_Cmd.id)
         {
-            free(m_RunningInstances[i].path);
-            CScriptInstance* instance = m_RunningInstances[i].scriptInstance;
-            delete instance;
-            m_RunningInstances.erase(m_RunningInstances.begin() + i);
+        case CMD_START_SCRIPT:
+            OnStartScript(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
+            break;
+        case CMD_STOP_SCRIPT:
+            OnStopScript(m_Cmd.paramA.c_str());
+            break;
+        case CMD_EVAL:
+            OnEval(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
+            break;
+        case CMD_SWEEP:
+            OnSweep(true);
+            break;
+        case CMD_SHUTDOWN:
+            OnSweep(false);
+            bRunning = false;
+            break;
+        }
+
+        m_Cmd.id = CMD_IDLE;
+        SetEvent(m_Cmd.hIdleEvent);
+        ResetEvent(m_Cmd.hWakeEvent);
+        ReleaseMutex(m_hMutex);
+    }
+}
+
+void CScriptSystem::OnStartScript(const char *name, const char *path)
+{
+    CScriptInstance *inst = new CScriptInstance(this, name);
+    
+    if(inst->Run(path) && inst->GetRefCount() > 0)
+    {
+        // SendMessage(m_hScriptWnd, WM_JS_STATUS, (WPARAM)STATUS_STARTED, (LPARAM)name);
+        m_Instances[name] = inst;
+    }
+    else
+    {
+        delete inst;
+    }
+}
+
+void CScriptSystem::OnStopScript(const char *name)
+{
+    RawRemoveInstance(name);
+}
+
+void CScriptSystem::OnEval(const char *name, const char *code)
+{
+    if(m_Instances.count(name) == 0)
+    {
+        m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: eval aborted; instance '%s' does not exist\n", name).c_str());
+        return;
+    }
+
+    CScriptInstance* inst = m_Instances[name];
+
+    inst->RawEval(code);
+
+    if(inst->GetRefCount() == 0)
+    {
+        RawRemoveInstance(name);
+    }
+}
+
+void CScriptSystem::OnSweep(bool bIfDone)
+{
+    jsinst_map_t::iterator it = m_Instances.begin();
+    while(it != m_Instances.end())
+    {
+        CScriptInstance*& inst = it->second;
+        if(!bIfDone || inst->GetRefCount() == 0)
+        {
+            delete inst;
+            m_Instances.erase(it++);
+        }
+        else
+        {
+            it++;
         }
     }
 }
 
-INSTANCE_STATE CScriptSystem::GetInstanceState(const char* path)
+bool CScriptSystem::RawRemoveInstance(const char *name)
 {
-    CGuard guard(m_CS);
-
-    for (size_t i = 0; i < m_RunningInstances.size(); i++)
+    if(m_Instances.count(name) == 0)
     {
-        if (strcmp(m_RunningInstances[i].path, path) == 0)
-        {
-            INSTANCE_STATE ret = m_RunningInstances[i].scriptInstance->GetState();
-            return ret;
-        }
+        return false;
     }
 
-    return STATE_INVALID;
+    CScriptInstance*& inst = m_Instances[name];
+    delete inst;
+    m_Instances.erase(name);
+    return true;
 }
 
-CScriptInstance* CScriptSystem::GetInstance(const char* path)
+jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, jscallback_t& callback)
 {
-    CGuard guard(m_CS);
-
-    for (size_t i = 0; i < m_RunningInstances.size(); i++)
+    if(hookId >= JS_NUM_APP_HOOKS)
     {
-        if (strcmp(m_RunningInstances[i].path, path) == 0)
-        {
-            CScriptInstance *ret = m_RunningInstances[i].scriptInstance;
-            return ret;
-        }
+        return JS_INVALID_CALLBACK;
     }
 
-    return NULL;
+    m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' added callback %d to hook %d\n", callback.inst->Name().c_str(), m_NextAppCallbackId, hookId).c_str());
+
+    m_AppHooks[hookId][m_NextAppCallbackId] = callback;
+    m_AppCallbackCount++;
+    return m_NextAppCallbackId++;
 }
 
-bool CScriptSystem::HasCallbacksForInstance(CScriptInstance* scriptInstance)
+bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
 {
-    for (size_t i = 0; i < m_Hooks.size(); i++)
+    if(m_AppHooks[hookId].count(callbackId) == 0)
     {
-        if (m_Hooks[i].cbList->HasContext(scriptInstance))
-        {
-            return true;
-        }
+        return false;
     }
-    return false;
+
+    m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' removed callback %d from hook %d\n", m_AppHooks[hookId][callbackId].inst->Name().c_str(), callbackId, hookId).c_str());
+
+    m_AppHooks[hookId].erase(callbackId);
+    m_AppCallbackCount--;
+    return true;
 }
 
-void CScriptSystem::ClearCallbacksForInstance(CScriptInstance* scriptInstance)
+CDebuggerUI* CScriptSystem::Debugger()
 {
-    for (size_t i = 0; i < m_Hooks.size(); i++)
-    {
-        m_Hooks[i].cbList->RemoveByInstance(scriptInstance);
-    }
-}
-
-void CScriptSystem::RemoveCallbackById(int callbackId)
-{
-    for (size_t i = 0; i < m_Hooks.size(); i++)
-    {
-        m_Hooks[i].cbList->RemoveById(callbackId);
-    }
-}
-
-void CScriptSystem::RegisterHook(const char* hookId, CScriptHook* cbList)
-{
-    HOOKENTRY hook = { hookId, cbList };
-    m_Hooks.push_back(hook);
-}
-
-void CScriptSystem::UnregisterHooks()
-{
-    m_Hooks.clear();
-}
-
-CScriptHook* CScriptSystem::GetHook(const char* hookId)
-{
-    size_t size = m_Hooks.size();
-    for (size_t i = 0; i < size; i++)
-    {
-        if (strcmp(m_Hooks[i].hookId, hookId) == 0)
-        {
-            return m_Hooks[i].cbList;
-        }
-    }
-    return NULL;
-}
-
-int CScriptSystem::GetNextCallbackId()
-{
-    return m_NextCallbackId++;
-}
-
-void CScriptSystem::CallbackAdded()
-{
-    m_NumCallbacks++;
-}
-
-void CScriptSystem::CallbackRemoved()
-{
-    if (m_NumCallbacks > 0)
-    {
-        m_NumCallbacks--;
-    }
+    return m_Debugger;
 }

@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
-#include "ScriptHook.h"
+//#include "ScriptHook.h"
 
 #include "CPULog.h"
 #include "DMALog.h"
@@ -552,29 +552,37 @@ void CDebuggerUI::CPUStepStarted()
         }
     }
 
-    if (m_ScriptSystem->HaveCallbacks())
-    {
-        m_ScriptSystem->HookCPUExec()->InvokeByAddressInRange(pc);
-        if (SkipOp()) { return; }
+    jshook_env_cpustep_t hookEnv;
+    hookEnv.bReadOp = opInfo.IsLoadCommand();
+    hookEnv.bWriteOp = opInfo.IsStoreCommand();
+    hookEnv.pc = pc;
 
-        m_ScriptSystem->HookCPUExecOpcode()->InvokeByAddressInRange_MaskedOpcode(pc, R4300iOp::m_Opcode.Hex);
-        if (SkipOp()) { return; }
 
-        m_ScriptSystem->HookCPUGPRValue()->InvokeByAddressInRange_GPRValue(pc);
-        if (SkipOp()) { return; }
+    m_ScriptSystem->Invoke(JS_HOOK_CPUSTEP, (void*)&hookEnv);
 
-        if (bStoreOp)
-        {
-            m_ScriptSystem->HookCPUWrite()->InvokeByAddressInRange(storeAddress);
-            if (SkipOp()) { return; }
-        }
-
-        if (opInfo.IsLoadCommand())
-        {
-            m_ScriptSystem->HookCPURead()->InvokeByAddressInRange(opInfo.GetLoadStoreAddress());
-            if (SkipOp()) { return; }
-        }
-    }
+    //if (m_ScriptSystem->HaveCallbacks())
+    //{
+    //    m_ScriptSystem->HookCPUExec()->InvokeByAddressInRange(pc);
+    //    if (SkipOp()) { return; }
+    //
+    //    m_ScriptSystem->HookCPUExecOpcode()->InvokeByAddressInRange_MaskedOpcode(pc, R4300iOp::m_Opcode.Hex);
+    //    if (SkipOp()) { return; }
+    //
+    //    m_ScriptSystem->HookCPUGPRValue()->InvokeByAddressInRange_GPRValue(pc);
+    //    if (SkipOp()) { return; }
+    //
+    //    if (bStoreOp)
+    //    {
+    //        m_ScriptSystem->HookCPUWrite()->InvokeByAddressInRange(storeAddress);
+    //        if (SkipOp()) { return; }
+    //    }
+    //
+    //    if (opInfo.IsLoadCommand())
+    //    {
+    //        m_ScriptSystem->HookCPURead()->InvokeByAddressInRange(opInfo.GetLoadStoreAddress());
+    //        if (SkipOp()) { return; }
+    //    }
+    //}
 
     if (bStoreOp && storeAddress == 0xA460000C) // PI_WR_LEN_REG
     {
@@ -696,8 +704,8 @@ void CDebuggerUI::FrameDrawn()
     SetTextColor(hdc, RGB(255, 255, 255));
     SetBkColor(hdc, RGB(0, 0, 0));
 
-    m_ScriptSystem->SetScreenDC(hdc);
-    m_ScriptSystem->HookFrameDrawn()->InvokeAll();
+    //m_ScriptSystem->SetScreenDC(hdc);
+    //m_ScriptSystem->HookFrameDrawn()->InvokeAll();
 
     ReleaseDC(hMainWnd, hdc);
 }

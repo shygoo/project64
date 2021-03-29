@@ -1,0 +1,558 @@
+#include <stdafx.h>
+#include "../ScriptAPI.h"
+#include <sys/stat.h>
+
+enum fsop { FS_READ, FS_WRITE };
+static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op); // (fd, buffer, offset, length, position)
+static duk_ret_t FileFinalizer(duk_context *ctx);
+
+void ScriptAPI::Define_fs(duk_context *ctx)
+{
+    const duk_function_list_entry funcs[] = {
+        { "open",      js_fs_open,      2 },
+        { "close",     js_fs_close,     1 },
+        { "write",     js_fs_write,     DUK_VARARGS },
+        { "writeFile", js_fs_writeFile, 2 },
+        { "read",      js_fs_read,      DUK_VARARGS },
+        { "readFile",  js_fs_readFile,  2 },
+        { "fstat",     js_fs_fstat,     1 },
+        { "stat",      js_fs_stat,      1 },
+        { "unlink",    js_fs_unlink,    1 },
+        { "mkdir",     js_fs_mkdir,     1 },
+        { "rmdir",     js_fs_rmdir,     1 },
+        { "readdir",   js_fs_readdir,   1 },
+        { "Stats", js_fs_Stats__constructor, 1 },
+        { NULL, NULL, 0 }
+    };
+
+    const duk_function_list_entry Stats_funcs[] = {
+        { "isFile",      js_fs_Stats_isFile,      0 },
+        { "isDirectory", js_fs_Stats_isDirectory, 0 },
+        { NULL, NULL, 0 }
+    };
+
+    duk_push_global_object(ctx);
+    duk_push_string(ctx, "fs");
+    duk_push_object(ctx);
+    duk_put_function_list(ctx, -1, funcs);
+
+    duk_get_prop_string(ctx, -1, "Stats");
+    duk_push_object(ctx);
+    duk_put_function_list(ctx, -1, Stats_funcs);
+    duk_put_prop_string(ctx, -2, "prototype");
+    duk_pop(ctx);
+
+    duk_freeze(ctx, -1);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
+    duk_pop(ctx);
+}
+
+duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
+{
+    CScriptInstance* inst = GetInstance(ctx);
+
+    if(duk_get_top(ctx) != 2 ||
+       !duk_is_string(ctx, 0) ||
+       !duk_is_string(ctx, 1))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* path = duk_get_string(ctx, 0);
+    const char* mode = duk_get_string(ctx, 1);
+
+    FILE *fp = fopen(path, mode);
+
+    if(fp == NULL)
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: '%s')", path, mode);
+        return duk_throw(ctx);
+    }
+
+    int fd = fileno(fp);
+
+    //  FILES[fd] = {fp: fp}
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+
+    duk_push_object(ctx);
+    duk_push_pointer(ctx, fp);
+    duk_put_prop_string(ctx, -2, "fp");
+    duk_push_c_function(ctx, FileFinalizer, 1);
+    duk_set_finalizer(ctx, -2);
+
+    duk_put_prop_index(ctx, -2, fd);
+    duk_pop_n(ctx, 2);
+
+    duk_push_number(ctx, fd);
+
+    printf("[ScriptSys]: '%s' opened file (fd: %d, fp: 0x%08X)\n", inst->Name().c_str(), fd, fp);
+
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
+{
+    if(!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    CScriptInstance* inst = GetInstance(ctx);
+
+    int fd = duk_get_int(ctx, 0);
+    int rc = -1;
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+
+    if(duk_has_prop_index(ctx, -1, fd))
+    {
+        duk_get_prop_index(ctx, -1, fd);
+        duk_get_prop_string(ctx, -1, "fp");
+
+        FILE* fp = (FILE*)duk_get_pointer(ctx, -1);
+        rc = fclose(fp);
+
+        // unset finalizer before deleting
+        duk_push_undefined(ctx);
+        duk_set_finalizer(ctx, -3); 
+        duk_del_prop_index(ctx, -3, fd);
+
+        printf("[ScriptSys]: '%s' closed file (fd: %d, fp: 0x%08X)\n", inst->Name().c_str(), fd, fp);
+        
+        duk_pop_n(ctx, 2);
+        rc = 0;
+    }
+    else
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid file descriptor");
+        return duk_throw(ctx);
+    }
+
+    duk_pop_n(ctx, 2);
+    duk_push_number(ctx, rc);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_write(duk_context *ctx)
+{
+    return ReadWriteImpl(ctx, FS_WRITE);
+}
+
+duk_ret_t ScriptAPI::js_fs_writeFile(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 2 || !duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* path = duk_get_string(ctx, 0);
+
+    void* buffer;
+    duk_size_t bufferSize;
+
+    if(duk_is_string(ctx, 1))
+    {
+        buffer = (void*)duk_get_lstring(ctx, 1, &bufferSize);
+    }
+    else if(duk_is_buffer_data(ctx, 1))
+    {
+        buffer = duk_get_buffer_data(ctx, 1, &bufferSize);
+    }
+
+    FILE* fp = fopen(path, "wb");
+
+    if(fp == NULL)
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: 'wb')", path);
+        return duk_throw(ctx);
+    }
+
+    if(fwrite(buffer, 1, bufferSize, fp) != bufferSize)
+    {
+        fclose(fp);
+        return DUK_RET_ERROR;
+    }
+
+    fclose(fp);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_fs_read(duk_context *ctx)
+{
+    return ReadWriteImpl(ctx, FS_READ);
+}
+
+duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* path = duk_get_string(ctx, 0);
+
+    FILE* fp = fopen(path, "rb");
+
+    if(fp == NULL)
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: 'rb')", path);
+        return duk_throw(ctx);
+    }
+
+    struct stat s;
+    if(fstat(fileno(fp), &s) != 0)
+    {
+        fclose(fp);
+        return DUK_RET_ERROR;
+    }
+
+    void *data = duk_push_fixed_buffer(ctx, s.st_size);
+
+    if(fread(data, 1, s.st_size, fp) != s.st_size)
+    {
+        duk_pop(ctx);
+        fclose(fp);
+        return DUK_RET_ERROR;
+    }
+
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    int fd = duk_get_int(ctx, 0);
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "fs");
+    duk_get_prop_string(ctx, -1, "Stats");
+    duk_push_number(ctx, fd);
+    duk_new(ctx, 1);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_stat(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char *path = duk_get_string(ctx, 0);
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "fs");
+    duk_get_prop_string(ctx, -1, "Stats");
+    duk_push_string(ctx, path);
+    duk_new(ctx, 1);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1)
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char *path = duk_get_string(ctx, 0);
+    duk_push_boolean(ctx, unlink(path) == 0);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1)
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char *path = duk_get_string(ctx, 0);
+    duk_push_boolean(ctx, CreateDirectoryA(path, NULL) != 0);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_rmdir(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1)
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char *path = duk_get_string(ctx, 0);
+    duk_push_boolean(ctx, RemoveDirectoryA(path) != 0);
+    return 1;
+}
+
+// todo make sure failure behavior is similar to nodejs's fs.readdirSync
+duk_ret_t ScriptAPI::js_fs_readdir(duk_context *ctx)
+{
+    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* path = duk_get_string(ctx, 0);
+
+    char findFileName[MAX_PATH];
+    snprintf(findFileName, sizeof(findFileName), "%s%s", path, "\\*");
+
+    WIN32_FIND_DATAA ffd;
+    HANDLE hFind = FindFirstFileA(findFileName, &ffd);
+
+    if(hFind == INVALID_HANDLE_VALUE)
+    {
+        return DUK_RET_ERROR;
+    }
+
+    duk_uarridx_t idx = 0;
+    duk_push_array(ctx);
+
+    do
+    {
+        if(strcmp(ffd.cFileName, ".") == 0 ||
+           strcmp(ffd.cFileName, "..") == 0)
+        {
+            continue;
+        }
+        duk_push_string(ctx, ffd.cFileName);
+        duk_put_prop_index(ctx, -2, idx++);
+    } while(FindNextFileA(hFind, &ffd));
+    
+    FindClose(hFind);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
+{
+    if(!duk_is_constructor_call(ctx))
+    {
+        return DUK_RET_TYPE_ERROR;
+    }
+
+    if(duk_get_top(ctx) != 1)
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    struct stat s;
+    
+    if(duk_is_number(ctx, 0))
+    {
+        int fd = duk_get_int(ctx, 0);
+        if(fstat(fd, &s) != 0)
+        {
+            return DUK_RET_ERROR;
+        }
+    }
+    else if(duk_is_string(ctx, 0))
+    {
+        const char *path = duk_get_string(ctx, 0);
+        if(stat(path, &s) != 0)
+        {
+            return DUK_RET_ERROR;
+        }
+    }
+    else
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const duk_number_list_entry numbers[] = {
+        { "dev",     (double)s.st_dev },
+        { "ino",     (double)s.st_ino },
+        { "mode",    (double)s.st_mode },
+        { "nlink",   (double)s.st_nlink },
+        { "uid",     (double)s.st_uid },
+        { "gid",     (double)s.st_gid },
+        { "rdev",    (double)s.st_rdev },
+        { "size",    (double)s.st_size },
+        { "atimeMs", (double)s.st_atime * 1000 },
+        { "mtimeMs", (double)s.st_mtime * 1000 },
+        { "ctimeMs", (double)s.st_ctime * 1000 },
+        { NULL, 0 }
+    };
+
+    struct { const char *key; time_t time; } dates[3] = {
+        { "atime", s.st_atime * 1000 },
+        { "mtime", s.st_mtime * 1000 },
+        { "ctime", s.st_ctime * 1000 },
+    };
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "Date");
+    duk_remove(ctx, -2);
+
+    duk_push_this(ctx);
+    duk_put_number_list(ctx, -1, numbers);
+
+    for(int i = 0; i < 3; i++)
+    {
+        duk_dup(ctx, -2);
+        duk_push_number(ctx, dates[i].time);
+        duk_new(ctx, 1);
+        duk_put_prop_string(ctx, -2, dates[i].key);
+    }
+
+    duk_remove(ctx, -2);
+    duk_freeze(ctx, -1);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_fs_Stats_isDirectory(duk_context *ctx)
+{
+    duk_push_this(ctx);
+    duk_get_prop_string(ctx, -1, "mode");
+    duk_uint_t mode = duk_get_uint(ctx, -1);
+    duk_push_boolean(ctx, (mode & S_IFDIR) != 0);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_fs_Stats_isFile(duk_context *ctx)
+{
+    duk_push_this(ctx);
+    duk_get_prop_string(ctx, -1, "mode");
+    duk_uint_t mode = duk_get_uint(ctx, -1);
+    duk_push_boolean(ctx, (mode & S_IFREG) != 0);
+    return 1;
+}
+
+static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op)
+{
+    int fd;
+    const char* buffer;
+    size_t offset = 0;
+    size_t length = 0;
+    size_t position = 0;
+
+    bool bHavePos = false;
+    duk_size_t bufferSize;
+    FILE* fp;
+    size_t rc;
+
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    if(nargs < 2 || !duk_is_number(ctx, 0))
+    {
+        goto err_invalid_args;
+    }
+
+    fd = duk_get_int(ctx, 0);
+
+    if(duk_is_buffer_data(ctx, 1))
+    {
+        buffer = (const char*)duk_get_buffer_data(ctx, 1, &bufferSize);
+    }
+    else if(duk_is_string(ctx, 1) && op == FS_WRITE)
+    {
+        buffer = duk_get_lstring(ctx, 1, &bufferSize);
+    }
+    else
+    {
+        goto err_invalid_args;
+    }
+
+    if(nargs >= 3)
+    {
+        if(!duk_is_number(ctx, 2))
+        {
+            goto err_invalid_args;
+        }
+
+        offset = duk_get_uint(ctx, 2);
+
+        if(offset >= bufferSize)
+        {
+            goto err_invalid_range;
+        }
+    }
+
+    length = bufferSize - offset;
+
+    if(nargs >= 4)
+    {
+        if(!duk_is_number(ctx, 3))
+        {
+            goto err_invalid_args;
+        }
+        length = duk_get_uint(ctx, 3);
+    }
+
+    if(nargs >= 5)
+    {
+        if(!duk_is_number(ctx, 4))
+        {
+            goto err_invalid_args;
+        }
+        position = duk_get_uint(ctx, 4);
+        bHavePos = true;
+    }
+
+    if(offset + length > bufferSize)
+    {
+        goto err_invalid_range;
+    }
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+
+    if(!duk_has_prop_index(ctx, -1, fd))
+    {
+        goto err_invalid_fd;
+    }
+
+    duk_get_prop_index(ctx, -1, fd);
+    duk_get_prop_string(ctx, -1, "fp");
+    fp = (FILE*)duk_get_pointer(ctx, -1);
+    
+    duk_pop_n(ctx, 4);
+
+    if(bHavePos)
+    {
+        fseek(fp, position, SEEK_SET);
+    }
+
+    switch(op)
+    {
+    case FS_READ:
+        rc = fread((void*)&buffer[offset], 1, length, fp);
+        break;
+    case FS_WRITE:
+        rc = fwrite((void*)&buffer[offset], 1, length, fp);
+        break;
+    default:
+        return DUK_RET_ERROR;
+    }
+
+    duk_push_number(ctx, rc);
+    return 1;
+
+err_invalid_args:
+    return ScriptAPI::ThrowInvalidArgsError(ctx);
+
+err_invalid_range:
+    duk_push_error_object(ctx, DUK_ERR_RANGE_ERROR, "invalid range");
+    return duk_throw(ctx);
+
+err_invalid_fd:
+    duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid file descriptor");
+    return duk_throw(ctx);
+}
+
+static duk_ret_t FileFinalizer(duk_context *ctx)
+{
+    duk_get_prop_string(ctx, 0, "fp");
+    FILE *fp = (FILE *)duk_get_pointer(ctx, -1);
+    duk_pop(ctx);
+    fclose(fp);
+
+    printf("[ScriptSys]: '%s' gc closed leftover file (fp: 0x%08X)\n",
+        ScriptAPI::GetInstance(ctx)->Name().c_str(), fp);
+    return 0;
+}

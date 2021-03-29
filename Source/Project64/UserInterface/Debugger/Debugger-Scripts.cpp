@@ -219,25 +219,27 @@ LRESULT CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 
 void CDebugScripts::RefreshStatus()
 {
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
+    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    //
     stdstr statusText;
     CPath(stdstr_f("Scripts\\%s", m_SelectedScriptName.c_str())).GetFullyQualified(statusText);
-    
-    if (state == STATE_RUNNING)
+    //
+    if (status == JS_STATUS_STARTED)
     {
-        statusText += " (Running)";
+        statusText += " (Started)";
         m_EvalEdit.EnableWindow(TRUE);
     }
     else
     {
-        if (state == STATE_STARTED)
+        if (status == JS_STATUS_STARTING)
         {
-            statusText += " (Started)";
+            statusText += " (Starting)";
         }
         m_EvalEdit.EnableWindow(FALSE);
     }
-
+    
     m_StatusBar.SetText(0, statusText.ToUTF16().c_str());
 }
 
@@ -251,12 +253,12 @@ LRESULT CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
         return 0;
     }
 
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
     HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_SCRIPT_POPUP));
     HMENU hPopupMenu = GetSubMenu(hMenu, 0);
 
-    if (state == STATE_STARTED || state == STATE_RUNNING)
+    if (status == JS_STATUS_STARTING || status == JS_STATUS_STARTED)
     {
         EnableMenuItem(hPopupMenu, ID_POPUP_RUN, MF_DISABLED | MF_GRAYED);
     }
@@ -295,16 +297,16 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
     wchar_t scriptName[MAX_PATH];
     m_ScriptList.GetItemText(nItem, 1, scriptName, MAX_PATH);
 
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(stdstr("").FromUTF16(scriptName).c_str());
-
-    if (state == STATE_STARTED)
-    {
-        pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
-    }
-    else if (state == STATE_RUNNING)
-    {
-        pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
-    }
+    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(stdstr("").FromUTF16(scriptName).c_str());
+    //
+    //if (state == STATE_STARTED)
+    //{
+    //    pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+    //}
+    //else if (state == STATE_RUNNING)
+    //{
+    //    pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
+    //}
 
     return CDRF_DODEFAULT;
 }
@@ -324,12 +326,18 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
         m_ScriptList.GetItemText(lpStateChange->iItem, 1, ScriptName, MAX_PATH);
         m_SelectedScriptName = stdstr().FromUTF16(ScriptName).c_str();
 
-        INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+        jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
-        ::EnableWindow(GetDlgItem(IDC_STOP_BTN), state == STATE_RUNNING || state == STATE_STARTED);
-        ::EnableWindow(GetDlgItem(IDC_RUN_BTN), state == STATE_STOPPED || state == STATE_INVALID);
+        ::EnableWindow(GetDlgItem(IDC_STOP_BTN), status == JS_STATUS_STARTING || status == JS_STATUS_STARTED);
+        ::EnableWindow(GetDlgItem(IDC_RUN_BTN), status == JS_STATUS_STOPPED);
 
         RefreshStatus();
+        //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+        //
+        //::EnableWindow(GetDlgItem(IDC_STOP_BTN), state == STATE_RUNNING || state == STATE_STARTED);
+        //::EnableWindow(GetDlgItem(IDC_RUN_BTN), state == STATE_STOPPED || state == STATE_INVALID);
+        //
+        //
     }
     return FALSE;
 }
@@ -345,8 +353,17 @@ LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPara
     scroll.fMask = SIF_ALL;
     m_ConsoleEdit.GetScrollInfo(SB_VERT, &scroll);
 
+    stdstr formattedStr = "";
+
+    size_t len = strlen(text);
+    for (size_t i = 0; i < len; i++)
+    {
+        if (text[i] == '\n') formattedStr += "\r";
+        formattedStr += text[i];
+    }
+
     m_ConsoleEdit.SetRedraw(FALSE);
-    m_ConsoleEdit.AppendText(stdstr(text).ToUTF16().c_str());
+    m_ConsoleEdit.AppendText(formattedStr.ToUTF16().c_str());
     m_ConsoleEdit.SetRedraw(TRUE);
 
     if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
@@ -381,22 +398,23 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     do
     {
         stdstr scriptFileName = SearchPath.GetNameExtension();
-        INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptFileName.c_str());
+        //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptFileName.c_str());
+        jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(scriptFileName.c_str());
         const wchar_t *statusIcon = L"";
-
-        switch (state)
+    
+        switch (status)
         {
-        case STATE_STARTED:
+        case JS_STATUS_STARTED:
             statusIcon = L"*";
             break;
-        case STATE_RUNNING:
+        case JS_STATUS_STARTING:
             statusIcon = L">";
             break;
         default:
             statusIcon = L"-";
             break;
         }
-
+    
         m_ScriptList.AddItem(nItem, 0, statusIcon);
         m_ScriptList.SetItemText(nItem, 1, scriptFileName.ToUTF16().c_str());
         nItem++;
@@ -413,15 +431,22 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     return FALSE;
 }
 
+//LRESULT OnStatusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+//{
+//
+//}
+
 void CDebugScripts::EvaluateInSelectedInstance(const char* code)
 {
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    m_Debugger->ScriptSystem()->Eval(m_SelectedScriptName.c_str(), code);
 
-    if (state == STATE_RUNNING || state == STATE_STARTED)
-    {
-        CScriptInstance* instance = m_Debugger->ScriptSystem()->GetInstance(m_SelectedScriptName.c_str());
-        instance->Eval(code);
-    }
+    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    //
+    //if (state == STATE_RUNNING || state == STATE_STARTED)
+    //{
+    //    CScriptInstance* instance = m_Debugger->ScriptSystem()->GetInstance(m_SelectedScriptName.c_str());
+    //    instance->Eval(code);
+    //}
 }
 
 void CDebugScripts::RunSelected()
@@ -431,16 +456,20 @@ void CDebugScripts::RunSelected()
         return;
     }
 
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    stdstr path = stdstr("scripts/") + m_SelectedScriptName;
 
-    if (state == STATE_INVALID || state == STATE_STOPPED)
-    {
-        m_Debugger->ScriptSystem()->RunScript(m_SelectedScriptName.c_str());
-    }
-    else
-    {
-        m_Debugger->Debug_LogScriptsWindow("[Error: script is already running]\n");
-    }
+    m_Debugger->ScriptSystem()->StartScript(m_SelectedScriptName.c_str(), path.c_str());
+
+    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    //
+    //if (state == STATE_INVALID || state == STATE_STOPPED)
+    //{
+    //    m_Debugger->ScriptSystem()->RunScript(m_SelectedScriptName.c_str());
+    //}
+    //else
+    //{
+    //    m_Debugger->Debug_LogScriptsWindow("[Error: script is already running]\n");
+    //}
 }
 
 void CDebugScripts::StopSelected()
@@ -450,16 +479,18 @@ void CDebugScripts::StopSelected()
 
 void CDebugScripts::ToggleSelected()
 {
-    INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    RunSelected();
 
-    if (state == STATE_INVALID || state == STATE_STOPPED)
-    {
-        RunSelected();
-    }
-    else
-    {
-        StopSelected();
-    }
+    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
+    //
+    //if (state == STATE_INVALID || state == STATE_STOPPED)
+    //{
+    //    RunSelected();
+    //}
+    //else
+    //{
+    //    StopSelected();
+    //}
 }
 
 void CDebugScripts::EditSelected()

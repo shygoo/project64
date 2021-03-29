@@ -1,0 +1,57 @@
+#include <stdafx.h>
+#include "../ScriptAPI.h"
+#include <windows.h>
+
+void ScriptAPI::Define_console(duk_context *ctx)
+{
+    const duk_function_list_entry funcs[] = {
+        { "print", js_console_print, DUK_VARARGS },
+        { "log", js_console_log, DUK_VARARGS },
+        { "clear", js_console_clear, 0 },
+        { NULL, NULL, 0 }
+    };
+
+    duk_push_global_object(ctx);
+    duk_push_string(ctx, "console");
+    duk_push_object(ctx);
+    duk_put_function_list(ctx, -1, funcs);
+    duk_freeze(ctx, -1);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
+    duk_pop(ctx);
+}
+
+duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
+{
+    CScriptInstance* inst = GetInstance(ctx);
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    stdstr str;
+
+    for(duk_idx_t n = 0; n < nargs; n++)
+    {
+        if(n != 0)
+        {
+            str += " ";
+        }
+
+        str += duk_safe_to_string(ctx, n - nargs);
+    }
+
+    inst->Debugger()->Debug_LogScriptsWindow(str.c_str());
+
+    duk_pop_n(ctx, nargs);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_console_log(duk_context *ctx)
+{
+    js_console_print(ctx);
+    GetInstance(ctx)->Debugger()->Debug_LogScriptsWindow("\n");
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_console_clear(duk_context* ctx)
+{
+    GetInstance(ctx)->Debugger()->Debug_ClearScriptsWindow();
+    return 0;
+}

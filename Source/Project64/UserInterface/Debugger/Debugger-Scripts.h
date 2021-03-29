@@ -19,6 +19,7 @@ private:
     vector<wchar_t*> m_History;
     int m_HistoryIdx;
     CDebugScripts* m_ScriptWindow;
+    std::map<stdstr, bool> m_InstanceStates;
 
 public:
     CEditEval()
@@ -76,8 +77,9 @@ class CDebugScripts :
 private:
     enum {
         WM_REFRESH_LIST = WM_USER + 1,
-        WM_CONSOLE_PRINT = WM_USER + 2,
-        WM_CONSOLE_CLEAR = WM_USER + 3
+        WM_SCRIPT_STATUS = WM_USER + 2,
+        WM_CONSOLE_PRINT = WM_USER + 3,
+        WM_CONSOLE_CLEAR = WM_USER + 4
     };
 
     CEditEval m_EvalEdit;
@@ -121,6 +123,7 @@ public:
     LRESULT OnConsoleLog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnConsoleClear(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnRefreshList(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    //LRESULT OnStatusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
     BEGIN_MSG_MAP_EX(CDebugScripts)
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
@@ -135,6 +138,7 @@ public:
         MESSAGE_HANDLER(WM_CONSOLE_PRINT, OnConsoleLog)
         MESSAGE_HANDLER(WM_CONSOLE_CLEAR, OnConsoleClear)
         MESSAGE_HANDLER(WM_REFRESH_LIST, OnRefreshList)
+        //MESSAGE_HANDLER(WM_SCRIPT_STATUS, OnStatusChange)
         CHAIN_MSG_MAP(CDialogResize<CDebugScripts>)
         CHAIN_MSG_MAP_MEMBER(m_ScriptList)
     END_MSG_MAP()
