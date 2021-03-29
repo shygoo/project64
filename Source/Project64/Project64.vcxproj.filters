@@ -282,6 +282,9 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Server.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\resource.h">

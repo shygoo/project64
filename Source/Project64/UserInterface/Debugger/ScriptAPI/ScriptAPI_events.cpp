@@ -74,13 +74,21 @@ duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx){ return 0; }
 
 duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
 {
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
     jscb_id_t callbackId = (jscb_id_t)duk_get_uint(ctx, -1);
     duk_pop(ctx);
 
-    bool bRemoved = RemoveCallback(ctx, callbackId);
+    if (!RemoveCallback(ctx, callbackId))
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid callback ID");
+        return duk_throw(ctx);
+    }
 
-    duk_push_boolean(ctx, bRemoved);
-    return 1;
+    return 0;
 }
 
 // onread

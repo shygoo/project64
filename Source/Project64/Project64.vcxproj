@@ -82,6 +82,7 @@
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_AddressRange.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_console.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_events.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_fs.cpp" />

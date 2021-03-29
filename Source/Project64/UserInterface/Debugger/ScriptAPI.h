@@ -97,8 +97,8 @@ namespace ScriptAPI
     //duk_ret_t js_debug_breakhere(duk_context* ctx);
 
     // ScriptAPI_asm
-    //void Define_asm(duk_context* ctx);
-    //duk_ret_t js_asm_gprname(duk_context* ctx);
+    void Define_asm(duk_context* ctx);
+    duk_ret_t js_asm_gprname(duk_context* ctx);
 
     // ScriptAPI_alert
     //void Define_alert(duk_context* ctx);

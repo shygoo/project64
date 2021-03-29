@@ -20,6 +20,7 @@ void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
     Define_mem(ctx);
     Define_fs(ctx);
     Define_AddressRange(ctx);
+    Define_asm(ctx);
 
     //Define_Server(ctx);
     Define_Number_prototype_hex(ctx);

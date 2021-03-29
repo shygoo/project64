@@ -43,20 +43,20 @@ mods.forEach(mod => {
             `<div class="prop"><span class="title" id="${idfmt(prop.name)}">${prop.js}</span>${propTags}</div>\n` +
             (prop.js2 ? `<div><span class="title2">${prop.js2}</span></div>`: '') +
             (prop.ts ? `<div class="tsproto">${prop.ts}</div>\n` : '') +
-            `<div class="space"></div>\n` +
+            `<div class="vtab"></div>\n` +
             format(prop.desc) + `\n`
         );
     });
 
-    modlinks += `<li><a href="#${idfmt(mod.name)}">${mod.name}</a></li>\n`;
-    modlinks += `<ul>\n${propLinks}</ul>\n`;
+    modlinks += `<li><a href="#${idfmt(mod.name)}">${mod.name}</a>${mod.tagline ? `: ${mod.tagline}` : ''}${propLinks!=''?`<ul>\n${propLinks}</ul>`:''}<div class="vtab"></div></li>\n`;
 
     content += (
         `<!-- ${mod.name} -->\n` +
         `<div class="module">\n` +
         `<div class="modtitle"><span class="title" id="${idfmt(mod.name)}">${mod.name}</span></div>\n` +
-        (mod.desc ? `<div class="moddesc">${format(mod.desc)}</div>\n` : '') +
-        `<div class="space"></div>\n` +
+        (mod.desc ? `${format(mod.desc)}\n` :
+         mod.tagline ? `${format(mod.tagline)}\n`: '') +
+        `<div class="vtab"></div>\n` +
         `<ul>\n` +
         `${propLinks}` +
         `</ul>\n` +

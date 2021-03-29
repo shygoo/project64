@@ -114,6 +114,7 @@ void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
         return;
     }
 
+    bool bDidExec = false;
     jscb_map_t& callbacks = m_AppHooks[hookId];
 
     jscb_map_t::iterator it;
@@ -123,10 +124,11 @@ void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
         if(env == NULL || cb.fnCondition(&cb, env))
         {
             cb.inst->RawCall(cb.heapptr, cb.fnPushArgs, env);
+            bDidExec = true;
         }
     }
 
-    SetCommand(CMD_SWEEP);
+    SetCommand(bDidExec ? CMD_SWEEP : CMD_IDLE);
     UnlockCommand();
 }
 
@@ -291,7 +293,7 @@ jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, jscallback_t& callba
         return JS_INVALID_CALLBACK;
     }
 
-    m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' added callback %d to hook %d\n", callback.inst->Name().c_str(), m_NextAppCallbackId, hookId).c_str());
+    //m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' added callback %d to hook %d\n", callback.inst->Name().c_str(), m_NextAppCallbackId, hookId).c_str());
 
     m_AppHooks[hookId][m_NextAppCallbackId] = callback;
     m_AppCallbackCount++;
@@ -305,7 +307,7 @@ bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
         return false;
     }
 
-    m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' removed callback %d from hook %d\n", m_AppHooks[hookId][callbackId].inst->Name().c_str(), callbackId, hookId).c_str());
+    //m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' removed callback %d from hook %d\n", m_AppHooks[hookId][callbackId].inst->Name().c_str(), callbackId, hookId).c_str());
 
     m_AppHooks[hookId].erase(callbackId);
     m_AppCallbackCount--;

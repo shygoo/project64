@@ -77,7 +77,7 @@ bool CScriptInstance::Run(const char* path)
 
     m_SourceFile.read(m_SourceCode, statBuf.st_size);
 
-    if(m_SourceFile.tellg() != statBuf.st_size)
+    if((size_t)m_SourceFile.tellg() != statBuf.st_size)
     {
         Debugger()->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: failed to read '%s'\n", path).c_str());
         goto error_cleanup;

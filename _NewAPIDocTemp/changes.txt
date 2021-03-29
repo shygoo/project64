@@ -1,0 +1,26 @@
+- update duktape library to version 2.6.0
+- run all script instance startup routines on the same thread
+- add default execution timeout of 500ms for script startups/callback invocations
+- replace socket async IO with worker threads (fix Windows XP incompatibility)
+- remove API.js, make all API functions native
+- rewrite API documentation file
+
+- add script.listen(inputListener) function for console input handling
+- add script.keepalive(bKeepAlive) function to keep instance from automatically being destroyed
+- add script.timeout(ms) function for timeout override
+
+- rename global `float` constant to `f32`, `double` to `f64`
+- rename `mem.float` to `mem.f32`, `mem.double` to `mem.f64`
+- remove `rom` interface (`mem` interface should suffice)
+- remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
+- do not pass pc to `events.*` callbacks
+
+---------------------
+TODO:
+- script auto-run feature?
+- finish implementing new server/socket
+- finish implementing new events interface
+- full test suite
+- 'pj64' interface for high level control (savestate/pause etc.)
+- mem.setblock
+- mem.getblock/getstring doc

@@ -80,7 +80,7 @@ pre.ex::before {
     font-family: "Open Sans", sans-serif;
 }
 
-div.space {
+div.vtab {
     margin-top: 10px;
 }
 
@@ -98,7 +98,6 @@ a:hover {
 }
 
 div.tag {
-    /*display: inline-block;*/
     float:right;
     font-size: 12px;
     padding: 2px 8px;

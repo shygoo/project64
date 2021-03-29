@@ -552,37 +552,16 @@ void CDebuggerUI::CPUStepStarted()
         }
     }
 
-    jshook_env_cpustep_t hookEnv;
-    hookEnv.bReadOp = opInfo.IsLoadCommand();
-    hookEnv.bWriteOp = opInfo.IsStoreCommand();
+    jshook_env_cpustep_t hookEnv = { 0 };
     hookEnv.pc = pc;
-
-
+    if (opInfo.IsLoadStoreCommand())
+    {
+        hookEnv.bReadOp = opInfo.IsLoadCommand();
+        hookEnv.bWriteOp = opInfo.IsStoreCommand();
+        hookEnv.readWriteAddr = opInfo.GetLoadStoreAddress();
+    }
+    
     m_ScriptSystem->Invoke(JS_HOOK_CPUSTEP, (void*)&hookEnv);
-
-    //if (m_ScriptSystem->HaveCallbacks())
-    //{
-    //    m_ScriptSystem->HookCPUExec()->InvokeByAddressInRange(pc);
-    //    if (SkipOp()) { return; }
-    //
-    //    m_ScriptSystem->HookCPUExecOpcode()->InvokeByAddressInRange_MaskedOpcode(pc, R4300iOp::m_Opcode.Hex);
-    //    if (SkipOp()) { return; }
-    //
-    //    m_ScriptSystem->HookCPUGPRValue()->InvokeByAddressInRange_GPRValue(pc);
-    //    if (SkipOp()) { return; }
-    //
-    //    if (bStoreOp)
-    //    {
-    //        m_ScriptSystem->HookCPUWrite()->InvokeByAddressInRange(storeAddress);
-    //        if (SkipOp()) { return; }
-    //    }
-    //
-    //    if (opInfo.IsLoadCommand())
-    //    {
-    //        m_ScriptSystem->HookCPURead()->InvokeByAddressInRange(opInfo.GetLoadStoreAddress());
-    //        if (SkipOp()) { return; }
-    //    }
-    //}
 
     if (bStoreOp && storeAddress == 0xA460000C) // PI_WR_LEN_REG
     {
