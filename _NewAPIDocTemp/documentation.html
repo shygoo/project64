@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<!-- Generated Mar 29 2021 -->
+<!-- Source: https://github.com/shygoo/pj64d-docs -->
+<head>
+<title>Project64 JavaScript API</title>
+<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
+<style>
+body {
+    margin: 50px auto 50px auto;
+    width: 800px;
+    background: #EEE;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    color: #222;
+}
+
+ul {
+    color: #222;
+    padding-inline-start: 30px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ECC;
+}
+
+div.module {
+    border-top: 1px solid #ECC;
+    padding: 20px;
+    margin-top: 10px;
+    background: #FFF;
+}
+
+div.modtitle {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+span.title:target {
+    background: #DFD;
+}
+
+div.prop {
+    border-top: 1px solid #DDD;
+    padding-top: 20px;
+    margin-top: 20px;
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+span.title2 {
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+div.tsproto {
+    font-size: 0.8em;
+    font-family: monospace;
+}
+
+div.desc {
+    margin-top: 10px;
+    padding: 5px;
+}
+
+div.snip {
+    display: inline-block;
+    background: #EEE;
+    font-family: monospace;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+pre.ex {
+    margin-top: 10px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: #EEE;
+}
+
+pre.ex::before {
+    content: "Example";
+    float: right;
+    opacity: 0.5;
+    font-size: 0.9em;
+    font-family: "Open Sans", sans-serif;
+}
+
+div.space {
+    margin-top: 10px;
+}
+
+td {
+    padding: 0px;
+}
+
+a {
+    color: #090;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #070;
+}
+
+div.tag {
+    /*display: inline-block;*/
+    float:right;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: normal;
+}
+
+div.tag.blue {
+    background-color: #8AD;
+}
+
+div.tag.red {
+    background-color: #D77;
+}
+
+@media (prefers-color-scheme: dark) {
+    body { background: #222; color: #FFF; }
+    div.module { background: #2a2a2a; border-top: 1px solid #744;}
+    pre.ex { background: #222; }
+    div.prop { border-top: 1px solid #222; }
+    div.snip { background: #222; }
+    a { color: #8d8; }
+    a:hover { color: #7c7; }
+    span.title:target { background: #552; }
+    ul { color: #FFF; }
+    hr { border-top: 1px solid #744; }
+    div.tag.blue { background: #247; }
+    div.tag.red { background: #722; }
+}
+</style>
+</head>
+<body>
+<div class="modtitle">Project64 JavaScript API</div>
+<hr>
+<ul>
+<li><a href="#console">console</a></li>
+<ul>
+<li><a href="#console_log">console.log(message[, ...])</a></li>
+<li><a href="#console_print">console.print(message)</a></li>
+<li><a href="#console_clear">console.clear()</a></li>
+</ul>
+<li><a href="#mem">mem</a></li>
+<ul>
+<li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
+<li><a href="#mem_bindvar">mem.bindvar(object, address, name, typeId)</a></li>
+<li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
+<li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
+<li><a href="#mem_typedef">mem.typedef(properties)</a></li>
+</ul>
+<li><a href="#events">events</a></li>
+<ul>
+<li><a href="#events_onexec">events.onexec(address, callback)</a></li>
+<li><a href="#events_onread">events.onread(address, callback)</a></li>
+<li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
+<li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
+<li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
+<li><a href="#events_ongprvalue">events.ongprvalue(address, registers, value, callback)</a></li>
+<li><a href="#events_ondraw">events.ondraw(callback)</a></li>
+<li><a href="#events_remove">events.remove(callbackId)</a></li>
+</ul>
+<li><a href="#screen">screen</a></li>
+<ul>
+<li><a href="#screen_print">screen.print(x, y, text)</a></li>
+</ul>
+<li><a href="#gpr">gpr</a></li>
+<ul>
+<li><a href="#gpr__">gpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#gpr_hi">gpr.hi</a></li>
+<li><a href="#gpr_lo">gpr.lo</a></li>
+<li><a href="#gpr_pc">gpr.pc</a></li>
+</ul>
+<li><a href="#ugpr">ugpr</a></li>
+<ul>
+<li><a href="#ugpr__">ugpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#ugpr_hi">ugpr.hi</a></li>
+<li><a href="#ugpr_lo">ugpr.lo</a></li>
+</ul>
+<li><a href="#fpr">fpr</a></li>
+<ul>
+<li><a href="#fpr__">fpr.f0..f31</a></li>
+</ul>
+<li><a href="#dfpr">dfpr</a></li>
+<ul>
+<li><a href="#dfpr__">dfpr.f0..f30</a></li>
+</ul>
+<li><a href="#cop0">cop0</a></li>
+<ul>
+<li><a href="#cop0_cause">cop0.cause</a></li>
+</ul>
+<li><a href="#debug">debug</a></li>
+<ul>
+<li><a href="#debug_breakhere">debug.breakhere()</a></li>
+</ul>
+<li><a href="#asm">asm</a></li>
+<ul>
+<li><a href="#asm_gprname">asm.gprname(regIndex)</a></li>
+</ul>
+<li><a href="#fs">fs</a></li>
+<ul>
+<li><a href="#fs_open">fs.open(path, mode)</a></li>
+<li><a href="#fs_close">fs.close(fd)</a></li>
+<li><a href="#fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</a></li>
+<li><a href="#fs_writeFile">fs.writeFile(path, buffer)</a></li>
+<li><a href="#fs_read">fs.read(fd, buffer, offset, length, position)</a></li>
+<li><a href="#fs_readFile">fs.readFile(path)</a></li>
+<li><a href="#fs_fstat">fs.fstat(fd)</a></li>
+<li><a href="#fs_stat">fs.stat(path)</a></li>
+<li><a href="#fs_unlink">fs.unlink(path)</a></li>
+<li><a href="#fs_mkdir">fs.mkdir(path)</a></li>
+<li><a href="#fs_rmdir">fs.rmdir(path)</a></li>
+<li><a href="#fs_readdir">fs.readdir(path)</a></li>
+<li><a href="#fs_Stats">fs.Stats</a></li>
+</ul>
+<li><a href="#script">script</a></li>
+<ul>
+<li><a href="#script_listen">script.listen(inputlistener)</a></li>
+<li><a href="#script_keepalive">script.keepalive(bKeepAlive)</a></li>
+<li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
+</ul>
+<li><a href="#Global definitions">Global definitions</a></li>
+<ul>
+<li><a href="#alert">alert(message[, caption])</a></li>
+<li><a href="#number_hex">number.hex([numChars])</a></li>
+<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
+<li><a href="#type_ids">Type IDs</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
+</ul>
+<li><a href="#JavaScript environment">JavaScript environment</a></li>
+<ul>
+</ul>
+</ul>
+<!-- console -->
+<div class="module">
+<div class="modtitle"><span class="title" id="console">console</span></div>
+<div class="moddesc">Console interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#console_log">console.log(message[, ...])</a></li>
+<li><a href="#console_print">console.print(message)</a></li>
+<li><a href="#console_clear">console.clear()</a></li>
+</ul>
+<!-- console.log -->
+<div class="prop"><span class="title" id="console_log">console.log(message[, ...])</span></div>
+<div class="tsproto">console.log(message: any, ...optionalParams): void</div>
+<div class="space"></div>
+Concatenates all provided text arguments with spaces and prints the result to the console with a trailing newline.
+<pre class="ex">
+console.log("Hello world!");
+</pre>
+<!-- console.print -->
+<div class="prop"><span class="title" id="console_print">console.print(message)</span></div>
+<div class="tsproto">console.print(message: any): void</div>
+<div class="space"></div>
+Prints <div class="snip">message</div> to the console.
+<!-- console.clear -->
+<div class="prop"><span class="title" id="console_clear">console.clear()</span></div>
+<div class="tsproto">console.clear(): void</div>
+<div class="space"></div>
+Clears the console.
+
+</div>
+<!-- mem -->
+<div class="module">
+<div class="modtitle"><span class="title" id="mem">mem</span></div>
+<div class="moddesc">N64 memory interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
+<li><a href="#mem_bindvar">mem.bindvar(object, address, name, typeId)</a></li>
+<li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
+<li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
+<li><a href="#mem_typedef">mem.typedef(properties)</a></li>
+</ul>
+<!-- mem._ -->
+<div class="prop"><span class="title" id="mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</span></div>
+<div class="space"></div>
+Arrays for reading and writing virtual memory. Virtual addresses are used as indices.
+<pre class="ex">
+// Read some data from ROM and RAM
+var firstWordInROM = mem.u32[0xB0000000];
+var firstWordInRAM = mem.u32[0x80000000];
+</pre>
+<pre class="ex">
+// Move player to 0,0,0 (SM64 US)
+const pPlayerX = 0x8033B1AC;
+const pPlayerY = 0x8033B1B0;
+const pPlayerZ = 0x8033B1B4;
+
+mem.f32[pPlayerX] = 0;
+mem.f32[pPlayerY] = 0;
+mem.f32[pPlayerZ] = 0;
+</pre>
+<!-- mem.bindvar -->
+<div class="prop"><span class="title" id="mem_bindvar">mem.bindvar(object, address, name, typeId)</span></div>
+<div class="tsproto">mem.bindvar(object: Object, address: number, name: string, typeId: number): void</div>
+<div class="space"></div>
+Adds a memory-bound property to <div class="snip">object</div>.
+Valid types are <div class="snip">u8</div>, <div class="snip">u16</div>, <div class="snip">u32</div>, <div class="snip">s8</div>, <div class="snip">s16</div>, <div class="snip">s32</div>, <div class="snip">f32</div>, <div class="snip">f64</div>.
+See <a href="#type_ids">Type IDs</a> for more details.
+<pre class="ex">
+mem.bindvar(this, 0x8033B1AC, 'playerX', f32);
+mem.bindvar(this, 0x8033B1B0, 'playerY', f32);
+mem.bindvar(this, 0x8033B1B4, 'playerZ', f32);
+
+console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+</pre>
+<!-- mem.bindvars -->
+<div class="prop"><span class="title" id="mem_bindvars">mem.bindvars(object, vars)</span></div>
+<div class="tsproto">mem.bindvars(object: Object, vars: any[]): Object</div>
+<div class="space"></div>
+Adds multiple memory-bound properties to <div class="snip">object</div>.
+<div class="snip">vars</div> must be an array in which each item is an array containing an address, name, and <a href="#type_ids">type ID</a> (in order) describing a variable.
+<div class="space"></div>
+Returns <div class="snip">object</div>.
+<pre class="ex">
+mem.bindvars(this, [
+    [ 0x8033B1AC, 'playerX', f32 ],
+    [ 0x8033B1B0, 'playerY', f32 ],
+    [ 0x8033B1B4, 'playerZ', f32 ]
+]);
+
+console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+</pre>
+<!-- mem.bindstruct -->
+<div class="prop"><span class="title" id="mem_bindstruct">mem.bindstruct(object, address, properties)</span></div>
+<div class="tsproto">mem.bindstruct(object: Object, address: number, properties: Object): Object</div>
+<div class="space"></div>
+Adds multiple memory-bound properties to <div class="snip">object</div>.
+<div class="snip">properties</div> must be an object in which each key/value pair specifies the name and <a href="#type_ids">type ID</a> of a variable.
+The offset of a variable is determined by its definition order and the sum of type sizes of the variables preceding it.
+<div class="space"></div>
+Returns <div class="snip">object</div>.
+<div class="space"></div>
+<pre class="ex">
+var playerPos = mem.bindstruct({}, 0x8033B1AC, { x: f32, y: f32, z: f32 });
+
+console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
+</pre>
+<!-- mem.typedef -->
+<div class="prop"><span class="title" id="mem_typedef">mem.typedef(properties)</span></div>
+<div class="tsproto">mem.typedef(properties: Object): MemTypeConstructor</div>
+<div class="space"></div>
+Returns a constructor function that will create an object representing a structure in memory, given its address.
+<pre class="ex">
+const vec3f = mem.typedef({ x: f32, y: f32, z: f32 });
+var playerAngle = new vec3f(0x8033B19C);
+var playerPos = new vec3f(0x8033B1AC);
+</pre>
+
+</div>
+<!-- events -->
+<div class="module">
+<div class="modtitle"><span class="title" id="events">events</span></div>
+<div class="moddesc">Emulation event hooking interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#events_onexec">events.onexec(address, callback)</a></li>
+<li><a href="#events_onread">events.onread(address, callback)</a></li>
+<li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
+<li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
+<li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
+<li><a href="#events_ongprvalue">events.ongprvalue(address, registers, value, callback)</a></li>
+<li><a href="#events_ondraw">events.ondraw(callback)</a></li>
+<li><a href="#events_remove">events.remove(callbackId)</a></li>
+</ul>
+<!-- events.onexec -->
+<div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.onexec(address: number | AddressRange, callback: () => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
+<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<font color=red>TODO API change: callback no longer receives pc.</font>
+<div class="space"></div>
+Returns a callback ID.
+<pre class="ex">
+events.onexec(0x802CB1C0, function() {
+    console.log("func_802CB1C0 was called");
+})
+</pre>
+<pre class="ex">
+// Log every CPU step
+events.onexec(ADDR_ANY, function() {
+    console.log("PC is at", gpr.pc.hex());
+})
+</pre>
+<!-- events.onread -->
+<div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.onread(address: number | AddressRange, callback: (readAddress: number) => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <div class="snip">address</div>.
+<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<div class="snip">callback</div> receives the address the CPU is going to read from.
+<div class="space"></div>
+Returns a callback ID.
+<!-- events.onwrite -->
+<div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.onwrite(address: number | AddressRange, callback: (writeAddress: number) => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
+<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<div class="snip">callback</div> receives the address the CPU is going to write to.
+<div class="space"></div>
+Returns a callback ID.
+<!-- events.onopcode -->
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
+<div class="snip">opcode</div> is equal to the current opcode ANDed with <div class="snip">mask</div>.
+<div class="space"></div>
+Returns a callback ID.
+<pre class="ex">
+const JAL = 0x0C000000; // 'JAL 0x00000000'
+const NO_TARGET = 0xFC000000; // Mask off target field
+
+events.onopcode(ADDR_ANY, JAL, NO_TARGET, function() {
+    // Log PC at every JAL
+    console.log(gpr.pc.hex());
+});
+</pre>
+<!-- events.onopcode -->
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: () => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
+<div class="snip">opcode</div> is equal to the current opcode.
+<div class="space"></div>
+Returns a callback ID.
+<!-- events.ongprvalue -->
+<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, registers, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one
+of the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div>. <div class="snip">callback</div> receives the index of the first register that is
+equal to <div class="snip">value</div>.
+<div class="space"></div>
+Returns a callback ID.
+<div class="space"></div>
+See <a href="#GPR_flags">General purpose register flags</a> for a list of valid flags. Multiple registers may be specified via bitwise OR.
+<pre class="ex">
+const IS64_MAGIC_NUMBER = 0x49533634;
+events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_MAGIC_NUMBER, function() {
+    // Break when any general purpose register contains 0x49533634
+    debug.breakhere();
+});
+</pre>
+<!-- events.ondraw -->
+<div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
+<div class="tsproto">events.ondraw(callback: () => void): number</div>
+<div class="space"></div>
+Registers a callback that will be invoked immediately after Project64 requests a screen update from the graphics plugin.
+<div class="space"></div>
+Returns a callback ID.
+<!-- events.remove -->
+<div class="prop"><span class="title" id="events_remove">events.remove(callbackId)</span></div>
+<div class="tsproto">events.remove(callbackId: number): void</div>
+<div class="space"></div>
+Unregisters the callback specified by <div class="snip">callbackId</div>.
+<pre class="ex">
+var id = events.onexec(0x802CB1C0, function() {
+    // This is only invoked once
+    console.log("func_802CB1C0 was called");
+    events.remove(id);
+});
+</pre>
+
+</div>
+<!-- screen -->
+<div class="module">
+<div class="modtitle"><span class="title" id="screen">screen</span></div>
+<div class="moddesc">Screen drawing interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#screen_print">screen.print(x, y, text)</a></li>
+</ul>
+<!-- screen.print -->
+<div class="prop"><span class="title" id="screen_print">screen.print(x, y, text)</span><div class="tag red">Unstable</div></div>
+<div class="tsproto">screen.print(x: number, y: number, text: string): void</div>
+<div class="space"></div>
+Prints text to the screen at the provided <div class="snip">x</div> and <div class="snip">y</div> coordinates.
+Should be called from an <a href="#events_ondraw">events.ondraw</a> callback.
+<pre class="ex">
+events.ondraw(function() {
+    screen.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
+});
+</pre>
+
+</div>
+<!-- gpr -->
+<div class="module">
+<div class="modtitle"><span class="title" id="gpr">gpr</span></div>
+<div class="moddesc">CPU general purpose register interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#gpr__">gpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#gpr_hi">gpr.hi</a></li>
+<li><a href="#gpr_lo">gpr.lo</a></li>
+<li><a href="#gpr_pc">gpr.pc</a></li>
+</ul>
+<!-- gpr._ -->
+<div class="prop"><span class="title" id="gpr__">gpr.r0|at|v0|v1..ra</span></div>
+<div><span class="title2">gpr[0..31]</span></div><div class="tsproto">gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
+<div class="space"></div>
+Variables representing the lower 32 bits of the CPU's general purpose registers.
+<!-- gpr.hi -->
+<div class="prop"><span class="title" id="gpr_hi">gpr.hi</span></div>
+<div class="space"></div>
+Variable representing the lower 32 bits of the CPU's HI register.
+<!-- gpr.lo -->
+<div class="prop"><span class="title" id="gpr_lo">gpr.lo</span></div>
+<div class="space"></div>
+Variable representing the lower 32 bits of the CPU's LO register.
+<!-- gpr.pc -->
+<div class="prop"><span class="title" id="gpr_pc">gpr.pc</span></div>
+<div class="space"></div>
+Variable representing the CPU's program counter.
+
+</div>
+<!-- ugpr -->
+<div class="module">
+<div class="modtitle"><span class="title" id="ugpr">ugpr</span></div>
+<div class="moddesc">CPU general purpose register interface (upper bits)</div>
+<div class="space"></div>
+<ul>
+<li><a href="#ugpr__">ugpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#ugpr_hi">ugpr.hi</a></li>
+<li><a href="#ugpr_lo">ugpr.lo</a></li>
+</ul>
+<!-- ugpr._ -->
+<div class="prop"><span class="title" id="ugpr__">ugpr.r0|at|v0|v1..ra</span></div>
+<div><span class="title2">ugpr[0..31]</span></div><div class="tsproto">ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
+<div class="space"></div>
+Variables representing the upper 32 bits of the CPU's general purpose registers.
+<!-- ugpr.hi -->
+<div class="prop"><span class="title" id="ugpr_hi">ugpr.hi</span></div>
+<div class="space"></div>
+Variable representing the upper 32 bits of the CPU's HI register.
+<!-- ugpr.lo -->
+<div class="prop"><span class="title" id="ugpr_lo">ugpr.lo</span></div>
+<div class="space"></div>
+Variable representing the upper 32 bits of the CPU's LO register.
+
+</div>
+<!-- fpr -->
+<div class="module">
+<div class="modtitle"><span class="title" id="fpr">fpr</span></div>
+<div class="moddesc">CPU floating-point register interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#fpr__">fpr.f0..f31</a></li>
+</ul>
+<!-- fpr._ -->
+<div class="prop"><span class="title" id="fpr__">fpr.f0..f31</span></div>
+<div><span class="title2">fpr[0..31]</span></div><div class="space"></div>
+Variables representing the CPU's 32-bit floating-point registers.
+
+</div>
+<!-- dfpr -->
+<div class="module">
+<div class="modtitle"><span class="title" id="dfpr">dfpr</span></div>
+<div class="moddesc">CPU floating-point register interface (64-bit)</div>
+<div class="space"></div>
+<ul>
+<li><a href="#dfpr__">dfpr.f0..f30</a></li>
+</ul>
+<!-- dfpr._ -->
+<div class="prop"><span class="title" id="dfpr__">dfpr.f0..f30</span></div>
+<div><span class="title2">dfpr[0..30]</span></div><div class="space"></div>
+Variables representing the CPU's 64-bit floating-point registers.
+
+</div>
+<!-- cop0 -->
+<div class="module">
+<div class="modtitle"><span class="title" id="cop0">cop0</span></div>
+<div class="moddesc">CPU Coprocessor 0 register interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#cop0_cause">cop0.cause</a></li>
+</ul>
+<!-- cop0.cause -->
+<div class="prop"><span class="title" id="cop0_cause">cop0.cause</span></div>
+<div class="space"></div>
+Variable representing the Cause register. Updates interrupts when written.
+
+</div>
+<!-- debug -->
+<div class="module">
+<div class="modtitle"><span class="title" id="debug">debug</span></div>
+<div class="moddesc">Debugger interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#debug_breakhere">debug.breakhere()</a></li>
+</ul>
+<!-- debug.breakhere -->
+<div class="prop"><span class="title" id="debug_breakhere">debug.breakhere()</span></div>
+<div class="tsproto">debug.breakhere(): void</div>
+<div class="space"></div>
+Pauses emulation and shows the CPU commands window. Useful for creating conditional breakpoints.
+<pre class="ex">
+events.onexec(0x802CB1C0, function() {
+    if(gpr.a0 == 21) {
+        console.log("21 passed to func_802CB1C0, breaking...");
+        debug.breakhere();
+    }
+});
+</pre>
+
+</div>
+<!-- asm -->
+<div class="module">
+<div class="modtitle"><span class="title" id="asm">asm</span></div>
+<div class="moddesc">ASM utilities</div>
+<div class="space"></div>
+<ul>
+<li><a href="#asm_gprname">asm.gprname(regIndex)</a></li>
+</ul>
+<!-- asm.gprname -->
+<div class="prop"><span class="title" id="asm_gprname">asm.gprname(regIndex)</span></div>
+<div class="tsproto">asm.gprname(regIndex: number): string</div>
+<div class="space"></div>
+Returns the name of the general purpose register specified by <div class="snip">regIndex</div>.
+<pre class="ex">
+asm.gprname(4); // returns 'a0'
+</pre>
+
+</div>
+<!-- fs -->
+<div class="module">
+<div class="modtitle"><span class="title" id="fs">fs</span></div>
+<div class="moddesc">File system interface</div>
+<div class="space"></div>
+<ul>
+<li><a href="#fs_open">fs.open(path, mode)</a></li>
+<li><a href="#fs_close">fs.close(fd)</a></li>
+<li><a href="#fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</a></li>
+<li><a href="#fs_writeFile">fs.writeFile(path, buffer)</a></li>
+<li><a href="#fs_read">fs.read(fd, buffer, offset, length, position)</a></li>
+<li><a href="#fs_readFile">fs.readFile(path)</a></li>
+<li><a href="#fs_fstat">fs.fstat(fd)</a></li>
+<li><a href="#fs_stat">fs.stat(path)</a></li>
+<li><a href="#fs_unlink">fs.unlink(path)</a></li>
+<li><a href="#fs_mkdir">fs.mkdir(path)</a></li>
+<li><a href="#fs_rmdir">fs.rmdir(path)</a></li>
+<li><a href="#fs_readdir">fs.readdir(path)</a></li>
+<li><a href="#fs_Stats">fs.Stats</a></li>
+</ul>
+<!-- fs.open -->
+<div class="prop"><span class="title" id="fs_open">fs.open(path, mode)</span></div>
+<div class="tsproto">fs.open(path: string, mode: string): number</div>
+<div class="space"></div>
+Opens the file pointed to by <div class="snip">path</div> in the mode specified by <div class="snip">mode</div>.
+See <a target="blank" href="https://pubs.opengroup.org/onlinepubs/009604599/functions/fopen.html">fopen</a> for a list of valid modes.
+<div class="space"></div>
+Returns a file descriptor.
+<!-- fs.close -->
+<div class="prop"><span class="title" id="fs_close">fs.close(fd)</span></div>
+<div class="tsproto">fs.close(fd): void</div>
+<div class="space"></div>
+Closes the file referenced by <div class="snip">fd</div>.
+<!-- fs.write -->
+<div class="prop"><span class="title" id="fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</span></div>
+<div class="tsproto">fs.write(fd: number, buffer: string | Buffer | ArrayBuffer, offset?: number, length?: number, position?: number): number</div>
+<div class="space"></div>
+Writes <div class="snip">buffer</div> to the file referenced by file descriptor <div class="snip">fd</div>. <div class="snip">buffer</div> may be one of the following types&#58;
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
+<a target="blank" href="https://nodejs.org/api/buffer.html">Buffer</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.<br><br>
+<div class="snip">offset</div>&#58; optional position in the source buffer.<br>
+<div class="snip">length</div>&#58; optional maximum number of bytes to write.<br>
+<div class="snip">position</div>&#58; optional file position.
+<div class="space"></div>
+Returns the number of bytes written.
+<pre class="ex">
+var fd = fs.open("file.txt", "wb");
+fs.write(fd, "hello\n");
+fs.write(fd, "world\n");
+fs.close();
+</pre>
+<!-- fs.writeFile -->
+<div class="prop"><span class="title" id="fs_writeFile">fs.writeFile(path, buffer)</span></div>
+<div class="tsproto">fs.writeFile(path: string, buffer: string | Buffer | ArrayBuffer): void</div>
+<div class="space"></div>
+Writes <div class="snip">buffer</div> to the file specified by <div class="snip">path</div>. Uses mode "wb" internally.
+<pre class="ex">
+var ramdump = mem.getblock(0x80000000, 0x00400000);
+fs.writeFile("ramdump.bin", ramdump);
+</pre>
+<!-- fs.read -->
+<div class="prop"><span class="title" id="fs_read">fs.read(fd, buffer, offset, length, position)</span></div>
+<div class="tsproto">fs.read(fd: number, buffer: Buffer | ArrayBuffer, offset: number, length: number, position: number) : number</div>
+<div class="space"></div>
+Reads data from the file referenced by <div class="snip">fd</div> into <div class="snip">buffer</div>. <div class="snip">buffer</div> may be one of the following types&#58;
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
+<a target="blank" href="https://nodejs.org/api/buffer.html">Buffer</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>.<br><br>
+<div class="snip">offset</div>&#58; position in the source buffer.<br>
+<div class="snip">length</div>&#58; number of bytes to read.<br>
+<div class="snip">position</div>&#58; file position.
+<div class="space"></div>
+Returns the number of bytes read.
+<!-- fs.readFile -->
+<div class="prop"><span class="title" id="fs_readFile">fs.readFile(path)</span></div>
+<div class="tsproto">fs.readFile(path: string): Uint8Array</div>
+<div class="space"></div>
+Returns a <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a> representing the data of the file specified by <div class="snip">path</div>.
+Uses mode "rb" internally.
+<!-- fs.fstat -->
+<div class="prop"><span class="title" id="fs_fstat">fs.fstat(fd)</span></div>
+<div class="tsproto">fs.fstat(fd: number): fs.Stats</div>
+<div class="space"></div>
+Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file referenced by <div class="snip">fd</div>.
+<!-- fs.stat -->
+<div class="prop"><span class="title" id="fs_stat">fs.stat(path)</span></div>
+<div class="tsproto">fs.stat(path: string): fs.Stats</div>
+<div class="space"></div>
+Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file specified by <div class="snip">path</div>.
+<!-- fs.unlink -->
+<div class="prop"><span class="title" id="fs_unlink">fs.unlink(path)</span></div>
+<div class="tsproto">fs.unlink(path: string): boolean</div>
+<div class="space"></div>
+Deletes the file specified by <div class="snip">path</div>. Returns <div class="snip">true</div> if the operation is successful.
+<!-- fs.mkdir -->
+<div class="prop"><span class="title" id="fs_mkdir">fs.mkdir(path)</span></div>
+<div class="tsproto">fs.mkdir(path: string): boolean</div>
+<div class="space"></div>
+Creates a directory. Returns <div class="snip">true</div> if the operation is successful.
+<!-- fs.rmdir -->
+<div class="prop"><span class="title" id="fs_rmdir">fs.rmdir(path)</span></div>
+<div class="tsproto">fs.rmdir(path: string): boolean</div>
+<div class="space"></div>
+Deletes a directory. The directory must be empty. Returns <div class="snip">true</div> if the operation is successful.
+<!-- fs.readdir -->
+<div class="prop"><span class="title" id="fs_readdir">fs.readdir(path)</span></div>
+<div class="tsproto">fs.readdir(path: string): string[]</div>
+<div class="space"></div>
+Returns an array of file names from a directory.
+<!-- fs.Stats -->
+<div class="prop"><span class="title" id="fs_Stats">fs.Stats</span></div>
+<div class="space"></div>
+Object containing information about a file or directory. Generated by <a href="#fs_fstat">fs.fstat/fs.stat</a>.
+<div class="space"></div>
+<table style="width: 100%">
+<tr><td><b>stats.dev</b></td><td>ID of the device the file resides on</td></tr>
+<tr><td><b>stats.ino</b></td><td>inode number</td></tr>
+<tr><td><b>stats.mode</b></td><td>File permissions</td></tr>
+<tr><td><b>stats.nlink</b></td><td>Number of links to the file</td></tr>
+<tr><td><b>stats.uid</b></td><td>User ID</td></tr>
+<tr><td><b>stats.gid</b></td><td>Group ID</td></tr>
+<tr><td><b>stats.rdev</b></td><td>Device ID (if file is character or block special)</td></tr>
+<tr><td><b>stats.size</b></td><td>Size of the file in bytes</td></tr>
+<tr><td><b>stats.atimeMs</b></td><td>Last access timestamp in milliseconds</td></tr>
+<tr><td><b>stats.mtimeMs</b></td><td>Last modification timestamp in milliseconds</td></tr>
+<tr><td><b>stats.ctimeMs</b></td><td>Creation timestamp in milliseconds</td></tr>
+<tr><td><b>stats.atime</b></td><td>JS Date object representing the last access time</td></tr>
+<tr><td><b>stats.mtime</b></td><td>JS Date object representing the last modification time</td></tr>
+<tr><td><b>stats.ctime</b></td><td>JS Date object representing the creation time</td></tr>
+</table>
+<div class="space"></div>
+<b>stats.isDirectory()</b><br>
+<div class="tsproto">stats.isDirectory(): boolean</div>
+<div class="space"></div>
+Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> object describes a directory.
+<div class="space"></div>
+<b>stats.isFile()</b><br>
+<div class="tsproto">stats.isFile(): boolean</div>
+<div class="space"></div>
+Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> object describes a regular file.
+
+</div>
+<!-- script -->
+<div class="module">
+<div class="modtitle"><span class="title" id="script">script</span></div>
+<div class="space"></div>
+<ul>
+<li><a href="#script_listen">script.listen(inputlistener)</a></li>
+<li><a href="#script_keepalive">script.keepalive(bKeepAlive)</a></li>
+<li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
+</ul>
+<!-- script.listen -->
+<div class="prop"><span class="title" id="script_listen">script.listen(inputlistener)</span></div>
+<div class="tsproto">script.listen(inputlistener: (input: string) => void): void</div>
+<div class="space"></div>
+Sets a console input listener function.
+Console input will be passed to <div class="snip">inputlistener</div> rather than being evaluated as JS code.
+The listener may be unset by calling <div class="snip">script.listen(undefined)</div>.
+<pre class="ex">
+script.listen(function(input) {
+    input = input.split(' ');
+    var command = input.shift();
+    var args = input;
+    switch(command) {
+        case "ping":
+            console.log("pong (args were:", args.join(', '), ")");
+            return;
+        case "end":
+            console.log("done");
+            script.listen(undefined);
+            return;
+        default:
+            console.log("unknown command '" + command + "'");
+    }
+});
+</pre>
+<!-- script.keepalive -->
+<div class="prop"><span class="title" id="script_keepalive">script.keepalive(bKeepAlive)</span></div>
+<div class="tsproto">script.keepalive(bKeepAlive: boolean): void</div>
+<div class="space"></div>
+Prevents the script instance from being destroyed when it has nothing left to do.
+Useful when the default console input behavior is desired.
+<!-- script.timeout -->
+<div class="prop"><span class="title" id="script_timeout">script.timeout(milliseconds)</span></div>
+<div class="tsproto">script.timeout(milliseconds: number): void</div>
+<div class="space"></div>
+Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
+Setting this value to zero will allow tasks to run indefinitely.
+
+</div>
+<!-- Global definitions -->
+<div class="module">
+<div class="modtitle"><span class="title" id="Global definitions">Global definitions</span></div>
+<div class="space"></div>
+<ul>
+<li><a href="#alert">alert(message[, caption])</a></li>
+<li><a href="#number_hex">number.hex([numChars])</a></li>
+<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
+<li><a href="#type_ids">Type IDs</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
+</ul>
+<!-- alert -->
+<div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
+<div class="tsproto">alert(message: string, caption?: string): number</div>
+<div class="space"></div>
+Shows a message box with an optional caption. The calling thread is blocked until the message box is dismissed.
+<!-- number.hex -->
+<div class="prop"><span class="title" id="number_hex">number.hex([numChars])</span></div>
+<div class="tsproto">number.hex(numChars?: number): string</div>
+<div class="space"></div>
+Returns a hexadecimal string representation of the number object.
+The returned string is prepended with zeroes until its character length meets <div class="snip">numChars</div> or 8 by default.
+<pre class="ex">
+var n = 123;
+n.hex();  // 0000007B
+n.hex(4); // 007B
+</pre>
+<!-- AddressRange -->
+<div class="prop"><span class="title" id="AddressRange">new AddressRange(start, end)</span></div>
+<div class="tsproto">new AddressRange(start: number, end: number)</div>
+<div class="space"></div>
+Creates an immutable object with <div class="snip">start</div> and <div class="snip">end</div> address properties.
+
+The following <div class="snip">AddressRange</div> objects are defined globally&#58;<br>
+<pre>
+<div class="snip">ADDR_ANY</div>              0x00000000 &#58; 0xFFFFFFFF Any address
+<div class="snip">ADDR_ANY_KUSEG</div>        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
+<div class="snip">ADDR_ANY_KSEG0</div>        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
+<div class="snip">ADDR_ANY_KSEG1</div>        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
+<div class="snip">ADDR_ANY_KSEG2</div>        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
+<div class="snip">ADDR_ANY_RDRAM</div>        0x80000000 &#58; 0x807FFFFF Cached RDRAM
+<div class="snip">ADDR_ANY_RDRAM_UNC</div>    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
+<div class="snip">ADDR_ANY_CART_ROM</div>     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
+<div class="snip">ADDR_ANY_CART_ROM_UNC</div> 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
+</pre>
+<!-- type_ids -->
+<div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
+<div class="space"></div>
+Global type IDs for <a href="#mem_typedef">mem.typedef</a> and <a href="#mem_bindvar">mem.bind*</a> APIs.
+<pre>
+<div class="snip">u8</div>  Unsigned 8-bit integer
+<div class="snip">u16</div> Unsigned 16-bit integer
+<div class="snip">u32</div> Unsigned 32-bit integer
+<div class="snip">s8</div>  Signed 8-bit integer
+<div class="snip">s16</div> Signed 16-bit integer
+<div class="snip">s32</div> Signed 32-bit integer
+<div class="snip">f32</div> 32-bit single precision floating-point
+<div class="snip">f64</div> 64-bit double precision floating-point
+</pre>
+<!-- GPR_flags -->
+<div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
+<div class="space"></div>
+Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
+<pre>
+<div class="snip">GPR_ANY</div>
+
+<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
+<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
+<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
+<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
+</pre>
+
+</div>
+<!-- JavaScript environment -->
+<div class="module">
+<div class="modtitle"><span class="title" id="JavaScript environment">JavaScript environment</span></div>
+<div class="moddesc"><div class="space"></div>
+Project64's script system uses <a target="blank" href="https://duktape.org/">duktape</a>. duktape supports ECMAScript E5 and some features from ES2015+.<br>
+See <a target="blank" href="https://duktape.org/">https://duktape.org/</a> for more information.</div>
+<div class="space"></div>
+<ul>
+</ul>
+
+</div>
+</body>

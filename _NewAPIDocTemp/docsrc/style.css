@@ -1,0 +1,130 @@
+body {
+    margin: 50px auto 50px auto;
+    width: 800px;
+    background: #EEE;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    color: #222;
+}
+
+ul {
+    color: #222;
+    padding-inline-start: 30px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ECC;
+}
+
+div.module {
+    border-top: 1px solid #ECC;
+    padding: 20px;
+    margin-top: 10px;
+    background: #FFF;
+}
+
+div.modtitle {
+    font-size: 2em;
+    font-weight: bold;
+}
+
+span.title:target {
+    background: #DFD;
+}
+
+div.prop {
+    border-top: 1px solid #DDD;
+    padding-top: 20px;
+    margin-top: 20px;
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+span.title2 {
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+div.tsproto {
+    font-size: 0.8em;
+    font-family: monospace;
+}
+
+div.desc {
+    margin-top: 10px;
+    padding: 5px;
+}
+
+div.snip {
+    display: inline-block;
+    background: #EEE;
+    font-family: monospace;
+    padding-left: 2px;
+    padding-right: 2px;
+}
+
+pre.ex {
+    margin-top: 10px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: #EEE;
+}
+
+pre.ex::before {
+    content: "Example";
+    float: right;
+    opacity: 0.5;
+    font-size: 0.9em;
+    font-family: "Open Sans", sans-serif;
+}
+
+div.space {
+    margin-top: 10px;
+}
+
+td {
+    padding: 0px;
+}
+
+a {
+    color: #090;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #070;
+}
+
+div.tag {
+    /*display: inline-block;*/
+    float:right;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: normal;
+}
+
+div.tag.blue {
+    background-color: #8AD;
+}
+
+div.tag.red {
+    background-color: #D77;
+}
+
+@media (prefers-color-scheme: dark) {
+    body { background: #222; color: #FFF; }
+    div.module { background: #2a2a2a; border-top: 1px solid #744;}
+    pre.ex { background: #222; }
+    div.prop { border-top: 1px solid #222; }
+    div.snip { background: #222; }
+    a { color: #8d8; }
+    a:hover { color: #7c7; }
+    span.title:target { background: #552; }
+    ul { color: #FFF; }
+    hr { border-top: 1px solid #744; }
+    div.tag.blue { background: #247; }
+    div.tag.red { background: #722; }
+}
