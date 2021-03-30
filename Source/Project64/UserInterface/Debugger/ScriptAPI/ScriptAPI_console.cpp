@@ -22,14 +22,20 @@ void ScriptAPI::Define_console(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
 {
-    CScriptInstance* inst = GetInstance(ctx);
+    const char* str = duk_safe_to_string(ctx, 0);
+    GetInstance(ctx)->System()->Log(str);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_console_log(duk_context *ctx)
+{
     duk_idx_t nargs = duk_get_top(ctx);
 
     stdstr str;
 
-    for(duk_idx_t n = 0; n < nargs; n++)
+    for (duk_idx_t n = 0; n < nargs; n++)
     {
-        if(n != 0)
+        if (n != 0)
         {
             str += " ";
         }
@@ -37,21 +43,12 @@ duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
         str += duk_safe_to_string(ctx, n - nargs);
     }
 
-    inst->Debugger()->Debug_LogScriptsWindow(str.c_str());
-
-    duk_pop_n(ctx, nargs);
-    return 0;
-}
-
-duk_ret_t ScriptAPI::js_console_log(duk_context *ctx)
-{
-    js_console_print(ctx);
-    GetInstance(ctx)->Debugger()->Debug_LogScriptsWindow("\n");
+    GetInstance(ctx)->System()->Log(str.c_str());
     return 0;
 }
 
 duk_ret_t ScriptAPI::js_console_clear(duk_context* ctx)
 {
-    GetInstance(ctx)->Debugger()->Debug_ClearScriptsWindow();
+    GetInstance(ctx)->System()->ClearLog();
     return 0;
 }

@@ -547,7 +547,6 @@
     <None Include="UserInterface\icons\javascri.bin">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="UserInterface\API.js" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ListItems.bmp">

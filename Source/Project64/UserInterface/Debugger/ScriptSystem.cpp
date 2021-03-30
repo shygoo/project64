@@ -14,103 +14,111 @@ CScriptSystem::CScriptSystem(CDebuggerUI *debugger) :
 {
     m_Cmd.id = CMD_IDLE;
     m_Cmd.hWakeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    m_Cmd.hIdleEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
-    m_hMutex = CreateMutex(NULL, FALSE, NULL);
     m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
 }
 
 CScriptSystem::~CScriptSystem()
 {
-    m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: shutting down\n");
-
-    LockCommand(true);
+    m_CS.enter();
     SetCommand(CMD_SHUTDOWN);
-    UnlockCommand();
+    m_CS.leave();
+
     WaitForSingleObject(m_hThread, INFINITE);
     CloseHandle(m_hThread);
-    CloseHandle(m_hMutex);
     CloseHandle(m_Cmd.hWakeEvent);
-    CloseHandle(m_Cmd.hIdleEvent);
+}
+
+void CScriptSystem::Log(const char* message)
+{
+    // todo fix unix line endings here
+    CGuard guard(m_LogCS);
+    stdstr formattedMsg = stdstr(message) + "\r\n";
+    m_Log += formattedMsg;
+    m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
+}
+
+void CScriptSystem::Print(const char* message)
+{
+    // todo fix unix line endings here
+    CGuard guard(m_LogCS);
+    m_Log += message;
+    m_Debugger->Debug_LogScriptsWindow(message);
+}
+
+void CScriptSystem::ClearLog()
+{
+    CGuard guard(m_LogCS);
+    m_Log.clear();
+    m_Debugger->Debug_ClearScriptsWindow();
+}
+
+stdstr CScriptSystem::GetLog()
+{
+    CGuard guard(m_LogCS);
+    return stdstr(m_Log);
 }
 
 bool CScriptSystem::StartScript(const char *name, const char *path)
 {
-    m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: starting script...\n");
-
-    if(!LockCommand())
+    CGuard guard(m_CS);
+    if (m_Instances.count(name) != 0)
     {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: START_SCRIPT timed out; system is busy\n");
-        return false;
-    }
-
-    if(m_Instances.count(name) != 0)
-    {
-        
-        m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: START_SCRIPT aborted; '%s' is already instanced\n", name).c_str());
-        UnlockCommand();
+        Log(stdstr_f("[ScriptSys]: START_SCRIPT aborted; '%s' is already instanced\n", name).c_str());
         return false;
     }
 
     SetCommand(CMD_START_SCRIPT, name, path);
-    UnlockCommand();
     return true;
 }
 
 bool CScriptSystem::StopScript(const char *name)
 {
-    if(!LockCommand())
-    {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: STOP_SCRIPT timed out; system is busy\n");
-        return false;
-    }
+    CGuard guard(m_CS);
     SetCommand(CMD_STOP_SCRIPT, name);
-    UnlockCommand();
     return true;
 }
 
 bool CScriptSystem::Eval(const char *name, const char *code)
 {
-    if(!LockCommand())
-    {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: EVAL timed out; system is busy\n");
-        return false;
-    }
+    CGuard guard(m_CS);
     SetCommand(CMD_EVAL, name, code);
-    UnlockCommand();
     return true;
+}
+
+void CScriptSystem::UpdateStatus(const char* name, jsstatus_t status)
+{
+    CGuard guard(m_InstanceStatusCS);
+    if (status == JS_STATUS_STOPPED)
+    {
+        m_InstanceStatus.erase(name);
+    }
+    else
+    {
+        m_InstanceStatus[name] = status;
+    }
+    m_Debugger->Debug_RefreshScriptsWindow();
 }
 
 jsstatus_t CScriptSystem::GetStatus(const char* name)
 {
-    if (WaitForSingleObject(m_hMutex, JS_EXEC_TIMEOUT) == WAIT_TIMEOUT)
+    CGuard guard(m_InstanceStatusCS);
+    if (m_InstanceStatus.count(name) == 0)
     {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: status check operation timed out\n");
         return JS_STATUS_STOPPED;
-    }
-
-    if (m_Instances.count(name) != 0)
-    {
-        ReleaseMutex(m_hMutex);
-        return JS_STATUS_STARTED;
     }
     else
     {
-        ReleaseMutex(m_hMutex);
-        return JS_STATUS_STOPPED;
+        return m_InstanceStatus[name];
     }
 }
 
 void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
 {
-    if(!LockCommand())
-    {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: app callback invocation timed out; system is busy\n");
-    }
+    CGuard guard(m_CS);
 
     if(m_AppHooks.count(hookId) == 0 ||
        m_AppHooks[hookId].size() == 0)
     {
-        UnlockCommand();
         return;
     }
 
@@ -129,16 +137,11 @@ void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
     }
 
     SetCommand(bDidExec ? CMD_SWEEP : CMD_IDLE);
-    UnlockCommand();
 }
 
 void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs, void *argsParam)
 {
-    if(!LockCommand())
-    {
-        m_Debugger->Debug_LogScriptsWindow("[ScriptSys]: error: worker callback invocation timed out; system is busy\n");
-        return;
-    }
+    CGuard guard(m_CS);
 
     inst->RawCall(heapptr, fnPushArgs, argsParam);
 
@@ -146,26 +149,6 @@ void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t f
     {
         SetCommand(CMD_STOP_SCRIPT, inst->Name().c_str());
     }
-
-    UnlockCommand();
-}
-
-bool CScriptSystem::LockCommand(bool bWaitInfinite)
-{
-    HANDLE handles[] = { m_hMutex, m_Cmd.hIdleEvent };
-    if(bWaitInfinite)
-    {
-        WaitForMultipleObjects(2, handles, TRUE, INFINITE);
-        return true;
-    }
-    return WaitForMultipleObjects(2, handles, TRUE, JS_EXEC_TIMEOUT) != WAIT_TIMEOUT;
-}
-
-void CScriptSystem::UnlockCommand()
-{
-    ResetEvent(m_Cmd.hIdleEvent);
-    SetEvent(m_Cmd.hWakeEvent);
-    ReleaseMutex(m_hMutex);
 }
 
 void CScriptSystem::SetCommand(jssyscmd_id_t cmd, const char *paramA, const char *paramB)
@@ -173,6 +156,7 @@ void CScriptSystem::SetCommand(jssyscmd_id_t cmd, const char *paramA, const char
     m_Cmd.id = cmd;
     m_Cmd.paramA = paramA;
     m_Cmd.paramB = paramB;
+    SetEvent(m_Cmd.hWakeEvent);
 }
 
 DWORD CScriptSystem::ThreadProc(void *_this)
@@ -183,12 +167,12 @@ DWORD CScriptSystem::ThreadProc(void *_this)
 
 void CScriptSystem::ThreadProc()
 {
-    HANDLE handles[] = { m_Cmd.hWakeEvent, m_hMutex };
     bool bRunning = true;
 
     while(bRunning)
     {
-        WaitForMultipleObjects(2, handles, TRUE, INFINITE);
+        WaitForSingleObject(m_Cmd.hWakeEvent, INFINITE);
+        CGuard guard(m_CS);
 
         switch(m_Cmd.id)
         {
@@ -211,9 +195,7 @@ void CScriptSystem::ThreadProc()
         }
 
         m_Cmd.id = CMD_IDLE;
-        SetEvent(m_Cmd.hIdleEvent);
         ResetEvent(m_Cmd.hWakeEvent);
-        ReleaseMutex(m_hMutex);
     }
 }
 
@@ -221,19 +203,23 @@ void CScriptSystem::OnStartScript(const char *name, const char *path)
 {
     CScriptInstance *inst = new CScriptInstance(this, name);
     
+    UpdateStatus(name, JS_STATUS_STARTING);
+
     if(inst->Run(path) && inst->GetRefCount() > 0)
     {
-        // SendMessage(m_hScriptWnd, WM_JS_STATUS, (WPARAM)STATUS_STARTED, (LPARAM)name);
         m_Instances[name] = inst;
+        UpdateStatus(name, JS_STATUS_STARTED);
     }
     else
     {
+        UpdateStatus(name, JS_STATUS_STOPPED);
         delete inst;
     }
 }
 
 void CScriptSystem::OnStopScript(const char *name)
 {
+    UpdateStatus(name, JS_STATUS_STOPPED);
     RawRemoveInstance(name);
 }
 
@@ -241,7 +227,7 @@ void CScriptSystem::OnEval(const char *name, const char *code)
 {
     if(m_Instances.count(name) == 0)
     {
-        m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: eval aborted; instance '%s' does not exist\n", name).c_str());
+        Log(stdstr_f("[ScriptSys]: error: eval aborted; instance '%s' does not exist\n", name).c_str());
         return;
     }
 
@@ -293,8 +279,6 @@ jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, jscallback_t& callba
         return JS_INVALID_CALLBACK;
     }
 
-    //m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' added callback %d to hook %d\n", callback.inst->Name().c_str(), m_NextAppCallbackId, hookId).c_str());
-
     m_AppHooks[hookId][m_NextAppCallbackId] = callback;
     m_AppCallbackCount++;
     return m_NextAppCallbackId++;
@@ -306,9 +290,7 @@ bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
     {
         return false;
     }
-
-    //m_Debugger->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: '%s' removed callback %d from hook %d\n", m_AppHooks[hookId][callbackId].inst->Name().c_str(), callbackId, hookId).c_str());
-
+    
     m_AppHooks[hookId].erase(callbackId);
     m_AppCallbackCount--;
     return true;

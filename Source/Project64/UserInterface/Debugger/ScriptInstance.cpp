@@ -61,7 +61,7 @@ bool CScriptInstance::Run(const char* path)
     struct stat statBuf;
     if(stat(path, &statBuf) != 0)
     {
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: could not stat '%s'\n", path).c_str());
+        System()->Log(stdstr_f("[ScriptSys]: error: could not stat '%s'\n", path).c_str());
         goto error_cleanup;
     }
 
@@ -71,7 +71,7 @@ bool CScriptInstance::Run(const char* path)
     m_SourceFile.open(path, std::ios::in | std::ios::binary);
     if(!m_SourceFile.is_open())
     {
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: could not open '%s'\n", path).c_str());
+        System()->Log(stdstr_f("[ScriptSys]: error: could not open '%s'\n", path).c_str());
         goto error_cleanup;
     }
 
@@ -79,7 +79,7 @@ bool CScriptInstance::Run(const char* path)
 
     if((size_t)m_SourceFile.tellg() != statBuf.st_size)
     {
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("[ScriptSys]: error: failed to read '%s'\n", path).c_str());
+        System()->Log(stdstr_f("[ScriptSys]: error: could not read '%s'\n", path).c_str());
         goto error_cleanup;
     }
 
@@ -92,13 +92,12 @@ bool CScriptInstance::Run(const char* path)
        duk_pcall(m_Ctx, 0) == DUK_EXEC_ERROR)
     {
         duk_get_prop_string(m_Ctx, -1, "stack");
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
+        System()->Log(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
         duk_pop_n(m_Ctx, 2);
         goto error_cleanup;
     }
 
     duk_pop(m_Ctx);
-
     return true;
 
 error_cleanup:
@@ -133,7 +132,7 @@ void CScriptInstance::RawCall(void *heapptr, jsargs_fn_t fnPushArgs, void *param
     if(duk_pcall(m_Ctx, nargs) == DUK_EXEC_ERROR)
     {
         duk_get_prop_string(m_Ctx, -1, "stack");
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
+        System()->Log(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
         duk_pop(m_Ctx);
     }
 
@@ -144,14 +143,6 @@ void CScriptInstance::SyncCall(void *heapptr, jsargs_fn_t fnPushArgs, void *para
 {
     m_System->SyncCall(this, heapptr, fnPushArgs, NULL);
 }
-
-/*
-RawInput(const char* code)
-{
-    m_ExecStartTime = Timestamp();
-
-}
-*/
 
 void CScriptInstance::RawEval(const char* code)
 {
@@ -164,7 +155,7 @@ void CScriptInstance::RawEval(const char* code)
         if (duk_pcall(m_Ctx, 1) != DUK_EXEC_SUCCESS)
         {
             duk_get_prop_string(m_Ctx, -1, "stack");
-            Debugger()->Debug_LogScriptsWindow(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
+            System()->Log(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
             duk_pop_n(m_Ctx, 3);
             return;
         }
@@ -180,12 +171,12 @@ void CScriptInstance::RawEval(const char* code)
     m_ExecStartTime = Timestamp();
     if(duk_peval_string(m_Ctx, code) == 0)
     {
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
+        System()->Log(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
     }
     else
     {
         duk_get_prop_string(m_Ctx, -1, "stack");
-        Debugger()->Debug_LogScriptsWindow(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
+        System()->Log(stdstr_f("%s\n", duk_safe_to_string(m_Ctx, -1)).c_str());
         duk_pop(m_Ctx);
     }
     duk_pop(m_Ctx);

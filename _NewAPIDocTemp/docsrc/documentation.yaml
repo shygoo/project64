@@ -518,7 +518,7 @@
     ts:   "script.timeout(milliseconds: number): void"
     desc: |
           Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
-          Setting this value to zero will allow tasks to run indefinitely.
+          Setting this value to zero will allow tasks to run indefinitely (not recommended; may cause deadlocks).
 
 # global definitions
 - name: Global definitions

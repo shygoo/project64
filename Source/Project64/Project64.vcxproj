@@ -252,7 +252,6 @@
   <ItemGroup>
     <None Include="res\divider.cur" />
     <None Include="res\hand.cur" />
-    <None Include="UserInterface\API.js" />
     <None Include="UserInterface\icons\bin00001.bin" />
     <None Include="UserInterface\Icons\divider.cur" />
     <None Include="UserInterface\Icons\hand.cur" />

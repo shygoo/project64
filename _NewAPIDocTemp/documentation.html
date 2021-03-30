@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Mar 29 2021 -->
+<!-- Generated Mar 30 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -429,8 +429,8 @@ Returns a callback ID.
 <div class="vtab""></div>
 See <a href="#GPR_flags">General purpose register flags</a> for a list of valid flags. Multiple registers may be specified via bitwise OR.
 <pre class="ex">
-const IS64_MAGIC_NUMBER = 0x49533634;
-events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_MAGIC_NUMBER, function() {
+const IS64_SIGNATURE = 0x49533634;
+events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
     // Break when any general purpose register contains 0x49533634
     debug.breakhere();
 });
@@ -806,7 +806,7 @@ Useful when the default console input behavior is desired.
 <div class="tsproto">script.timeout(milliseconds: number): void</div>
 <div class="vtab"></div>
 Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
-Setting this value to zero will allow tasks to run indefinitely.
+Setting this value to zero will allow tasks to run indefinitely (not recommended; may cause deadlocks).
 
 </div>
 <!-- Global definitions -->

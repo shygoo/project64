@@ -20,7 +20,7 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     DlgSavePos_Init(DebuggerUI_ScriptsPos);
     DlgToolTip_Init();
 
-    HFONT monoFont = CreateFont(-11, 0, 0, 0,
+    HFONT monoFont = CreateFont(-12, 0, 0, 0,
         FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         CLEARTYPE_QUALITY, FF_DONTCARE, L"Consolas"
@@ -54,6 +54,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 
     m_hQuitScriptDirWatchEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     m_hScriptDirWatchThread = CreateThread(NULL, 0, ScriptDirWatchProc, (void*)this, 0, NULL);
+
+    m_ConsoleEdit.SetWindowText(m_Debugger->ScriptSystem()->GetLog().ToUTF16().c_str());
     return 0;
 }
 
@@ -74,8 +76,9 @@ LRESULT CDebugScripts::OnCtlColorStatic(UINT /*uMsg*/, WPARAM wParam, LPARAM lPa
 
     if (ctrlId == IDC_CONSOLE_EDIT)
     {
-        SetBkColor(hDC, RGB(255, 255, 255));
-        SetDCBrushColor(hDC, RGB(255, 255, 255));
+        SetTextColor(hDC, RGB(0xEE, 0xEE, 0xEE));
+        SetBkColor(hDC, RGB(0x22, 0x22, 0x22));
+        SetDCBrushColor(hDC, RGB(0x22, 0x22, 0x22));
         return (LRESULT)GetStockObject(DC_BRUSH);
     }
 
@@ -136,7 +139,20 @@ void CDebugScripts::ConsoleCopy()
 
     HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, nChars * sizeof(wchar_t));
 
+    if (hMem == NULL)
+    {
+        return;
+    }
+
     wchar_t* memBuf = (wchar_t*)GlobalLock(hMem);
+
+    if (memBuf == NULL)
+    {
+        GlobalUnlock(hMem);
+        GlobalFree(hMem);
+        return;
+    }
+
     m_ConsoleEdit.GetWindowText(memBuf, nChars);
 
     GlobalUnlock(hMem);
@@ -297,16 +313,16 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
     wchar_t scriptName[MAX_PATH];
     m_ScriptList.GetItemText(nItem, 1, scriptName, MAX_PATH);
 
-    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(stdstr("").FromUTF16(scriptName).c_str());
-    //
-    //if (state == STATE_STARTED)
-    //{
-    //    pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
-    //}
-    //else if (state == STATE_RUNNING)
-    //{
-    //    pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
-    //}
+    jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(stdstr("").FromUTF16(scriptName).c_str());
+
+    if (status == JS_STATUS_STARTING)
+    {
+        pLVCD->clrTextBk = RGB(0xFF, 0xFF, 0xAA);
+    }
+    else if (status == JS_STATUS_STARTED)
+    {
+        pLVCD->clrTextBk = RGB(0xAA, 0xFF, 0xAA);
+    }
 
     return CDRF_DODEFAULT;
 }
@@ -398,7 +414,6 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     do
     {
         stdstr scriptFileName = SearchPath.GetNameExtension();
-        //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(scriptFileName.c_str());
         jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(scriptFileName.c_str());
         const wchar_t *statusIcon = L"";
     
@@ -439,14 +454,6 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 void CDebugScripts::EvaluateInSelectedInstance(const char* code)
 {
     m_Debugger->ScriptSystem()->Eval(m_SelectedScriptName.c_str(), code);
-
-    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
-    //
-    //if (state == STATE_RUNNING || state == STATE_STARTED)
-    //{
-    //    CScriptInstance* instance = m_Debugger->ScriptSystem()->GetInstance(m_SelectedScriptName.c_str());
-    //    instance->Eval(code);
-    //}
 }
 
 void CDebugScripts::RunSelected()
@@ -459,17 +466,6 @@ void CDebugScripts::RunSelected()
     stdstr path = stdstr("scripts/") + m_SelectedScriptName;
 
     m_Debugger->ScriptSystem()->StartScript(m_SelectedScriptName.c_str(), path.c_str());
-
-    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
-    //
-    //if (state == STATE_INVALID || state == STATE_STOPPED)
-    //{
-    //    m_Debugger->ScriptSystem()->RunScript(m_SelectedScriptName.c_str());
-    //}
-    //else
-    //{
-    //    m_Debugger->Debug_LogScriptsWindow("[Error: script is already running]\n");
-    //}
 }
 
 void CDebugScripts::StopSelected()
@@ -479,18 +475,16 @@ void CDebugScripts::StopSelected()
 
 void CDebugScripts::ToggleSelected()
 {
-    RunSelected();
+    jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
-    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
-    //
-    //if (state == STATE_INVALID || state == STATE_STOPPED)
-    //{
-    //    RunSelected();
-    //}
-    //else
-    //{
-    //    StopSelected();
-    //}
+    if (status == JS_STATUS_STOPPED)
+    {
+        RunSelected();
+    }
+    else
+    {
+        StopSelected();
+    }
 }
 
 void CDebugScripts::EditSelected()
@@ -535,30 +529,34 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
             return 0;
         }
 
-        size_t codeLength = GetWindowTextLength() + 1;
-        wchar_t* code = (wchar_t*)malloc(codeLength * sizeof(wchar_t));
-        GetWindowText(code, codeLength);
+        size_t codeLength = GetWindowTextLength();
+        wchar_t* code = new wchar_t[codeLength + 1];
+        GetWindowText(code, codeLength + 1);
 
         m_ScriptWindow->EvaluateInSelectedInstance(stdstr().FromUTF16(code).c_str());
 
         SetWindowText(L"");
         int historySize = m_History.size();
 
-        // Remove duplicate
+        // If there is a duplicate entry move it to the bottom
         for (int i = 0; i < historySize; i++)
         {
             if (wcscmp(code, m_History[i]) == 0)
             {
-                free(m_History[i]);
+                wchar_t* str = m_History[i];
                 m_History.erase(m_History.begin() + i);
-                historySize--;
-                break;
+                m_History.push_back(str);
+
+                delete[] code;
+                bHandled = TRUE;
+                return 0;
             }
         }
 
         // Remove oldest if maxed
         if (historySize >= HISTORY_MAX_ENTRIES)
         {
+            delete[] m_History[0];
             m_History.erase(m_History.begin() + 0);
             historySize--;
         }
@@ -566,6 +564,6 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
         m_History.push_back(code);
         m_HistoryIdx = ++historySize;
     }
-    bHandled = FALSE;
+    bHandled = TRUE;
     return 0;
 }

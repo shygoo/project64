@@ -13,6 +13,23 @@ static duk_idx_t CbArgs_CpuStep_Pc_AffectedRegIndex(duk_context* ctx, void* args
 
 static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd);
 
+static duk_ret_t ThrowNeedInterpreterError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_ERROR, "this feature requires the interpreter core");
+    return duk_throw(ctx);
+}
+
+static bool HaveInterpreter()
+{
+    if (!g_Settings->LoadBool(Setting_ForceInterpreterCPU) &&
+        (CPU_TYPE)g_Settings->LoadDword(Game_CpuType) != CPU_Interpreter)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void ScriptAPI::Define_events(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
@@ -37,6 +54,11 @@ void ScriptAPI::Define_events(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
 {
+    if (!HaveInterpreter())
+    {
+        return ThrowNeedInterpreterError(ctx);
+    }
+
     if(duk_get_top(ctx) != 2)
     {
         return DUK_RET_ERROR;
@@ -66,11 +88,47 @@ duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx){ return 0; }
-duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx){ return 0; }
-duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx){ return 0; }
-duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx){ return 0; }
-duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx){ return 0; }
+duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx)
+{
+    if (!HaveInterpreter())
+    {
+        return ThrowNeedInterpreterError(ctx);
+    }
+
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx)
+{
+    if (!HaveInterpreter())
+    {
+        return ThrowNeedInterpreterError(ctx);
+    }
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
+{
+    if (!HaveInterpreter())
+    {
+        return ThrowNeedInterpreterError(ctx);
+    }
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
+{
+    if (!HaveInterpreter())
+    {
+        return ThrowNeedInterpreterError(ctx);
+    }
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
+{
+    return 0;
+}
 
 duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
 {

@@ -11,15 +11,15 @@ public:
     END_MSG_MAP()
 };
 
+// todo move history to script window class,
+// just send notifications for up/down/enter keys
 class CEditEval : public CWindowImpl<CEditEval, CEdit>
 {
 private:
-    //static char* m_EvalString;
     static const int HISTORY_MAX_ENTRIES = 20;
-    vector<wchar_t*> m_History;
+    std::vector<wchar_t*> m_History;
     int m_HistoryIdx;
     CDebugScripts* m_ScriptWindow;
-    std::map<stdstr, bool> m_InstanceStates;
 
 public:
     CEditEval()

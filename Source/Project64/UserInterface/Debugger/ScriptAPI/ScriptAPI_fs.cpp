@@ -14,7 +14,7 @@ void ScriptAPI::Define_fs(duk_context *ctx)
         { "write",     js_fs_write,     DUK_VARARGS },
         { "writeFile", js_fs_writeFile, 2 },
         { "read",      js_fs_read,      DUK_VARARGS },
-        { "readFile",  js_fs_readFile,  2 },
+        { "readFile",  js_fs_readFile,  1 },
         { "fstat",     js_fs_fstat,     1 },
         { "stat",      js_fs_stat,      1 },
         { "unlink",    js_fs_unlink,    1 },
@@ -60,6 +60,33 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 
     const char* path = duk_get_string(ctx, 0);
     const char* mode = duk_get_string(ctx, 1);
+
+    bool bModeValid = false;
+
+    const char* validModes[] = {
+        "r", "rb",
+        "w", "wb",
+        "a", "ab",
+        "r+", "rb+", "r+b",
+        "w+", "wb+", "w+b",
+        "a+", "ab+", "a+b",
+        NULL
+    };
+
+    for (int i = 0; validModes[i] != NULL; i++)
+    {
+        if (strcmp(mode, validModes[i]) == 0)
+        {
+            bModeValid = true;
+            break;
+        }
+    }
+
+    if (!bModeValid)
+    {
+        duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "mode '%s' is not valid", mode);
+        return duk_throw(ctx);
+    }
 
     FILE *fp = fopen(path, mode);
 
@@ -142,7 +169,7 @@ duk_ret_t ScriptAPI::js_fs_write(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_writeFile(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 2 || !duk_is_string(ctx, 0))
+    if(duk_get_top(ctx) != 2)
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -159,6 +186,10 @@ duk_ret_t ScriptAPI::js_fs_writeFile(duk_context *ctx)
     else if(duk_is_buffer_data(ctx, 1))
     {
         buffer = duk_get_buffer_data(ctx, 1, &bufferSize);
+    }
+    else
+    {
+        return DUK_RET_TYPE_ERROR;
     }
 
     FILE* fp = fopen(path, "wb");
@@ -217,12 +248,13 @@ duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
         return DUK_RET_ERROR;
     }
 
+    fclose(fp);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    if(duk_get_top(ctx) != 1 || !duk_is_number(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -262,7 +294,7 @@ duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
     }
 
     const char *path = duk_get_string(ctx, 0);
-    duk_push_boolean(ctx, unlink(path) == 0);
+    duk_push_boolean(ctx, DeleteFileA(path) != 0);
     return 1;
 }
 
@@ -552,7 +584,7 @@ static duk_ret_t FileFinalizer(duk_context *ctx)
     duk_pop(ctx);
     fclose(fp);
 
-    printf("[ScriptSys]: '%s' gc closed leftover file (fp: 0x%08X)\n",
+    printf("[ScriptSys]: '%s' gc closed leftover file (fp: 0x%p)\n",
         ScriptAPI::GetInstance(ctx)->Name().c_str(), fp);
     return 0;
 }

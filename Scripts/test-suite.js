@@ -6,10 +6,12 @@ var handlers = {
     'mem': test_mem,
     'events': test_events,
     'number_hex': test_number_hex,
+    'fs': test_fs,
     'extra_timeout': test_extra_timeout,
     'extra_events': test_extra_events
 };
 
+const HR = "----------------------------------";
 greeting();
 
 script.listen(function(input) {
@@ -17,12 +19,10 @@ script.listen(function(input) {
     var command = input.shift();
     var args = input;
 
-    if(command in handlers)
-    {
+    if(command in handlers) {
         handlers[command](args);
     }
-    else
-    {
+    else {
         console.log("unknown command '" + command + "'");
     }
 });
@@ -31,21 +31,20 @@ function greeting()
 {
     console.clear();
     console.log("PJ64 JS API validation");
-    console.log("----------------------------------");
+    console.log(HR);
     console.log("Commands: ");
-    console.log("----------------------------------");
-    for(var key in handlers)
-    {
+    console.log(HR);
+    for(var key in handlers) {
         console.log(" - " + key);
     }
-    console.log("----------------------------------");
+    console.log(HR);
 }
 
 function runtest(caption, func)
 {
     caption += ' ';
     while(caption.length < 32) {
-        caption += '.';
+        caption += '-';
     }
 
     console.print(caption + ' ');
@@ -56,9 +55,9 @@ function runtest(caption, func)
         return res;
     } catch(e) {
         console.log('[ERROR]');
-        console.log('--------------------------------');
+        console.log(HR);
         console.log(e.stack);
-        console.log('--------------------------------');
+        console.log(HR);
         return false;
     }
 }
@@ -92,6 +91,15 @@ function cmd_end()
 }
 
 /**************************************/
+
+function test_all()
+{
+    test_mem();
+    test_events();
+    test_asm();
+    test_number_hex();
+    test_fs();
+}
 
 function test_extra_events()
 {
@@ -171,19 +179,6 @@ function test_number_hex()
             (0x64).hex(16) == '0000000000000064' &&
             (0x64).hex(2) == '64'
         );
-    });
-}
-
-function test_all()
-{
-    test_mem();
-    test_events();
-    test_asm();
-    test_number_hex();
-
-    var id = events.onexec(0x80000180, function(){
-        console.log("trapped 0x80000180");
-        //events.remove(id);
     });
 }
 
@@ -297,7 +292,6 @@ function test_mem()
         return;
     }
 
-
     runtest('mem: array read/write', function() {
         rawSetValues();
         return checkValues();
@@ -357,13 +351,96 @@ function test_asm()
     ];
 
     runtest('asm: gprname', function() {
-        for(var i = 0; i < 32; i++)
-        {
-            if(gprNames[i] != asm.gprname(i))
-            {
+        for(var i = 0; i < 32; i++) {
+            if(gprNames[i] != asm.gprname(i)) {
                 return false;
             }
         }
         return true;
     });
+}
+
+function test_fs()
+{
+    var testData = new Uint8Array(0x10000);
+    for(var i = 0; i < 0x10000; i++) {
+        testData[i] = (Math.random()*0x100)|0;
+    }
+
+    function cleanup() {
+        var stats = fs.stat('test_fs');
+        if(stats.isDirectory()) {
+            var filenames = fs.readdir('test_fs');
+            filenames.forEach(function(filename) {
+                fs.unlink('test_fs/' + filename);
+            });
+            fs.rmdir('test_fs');
+        }
+    }
+
+    runtest('fs: mkdir', function() {
+        if(fs.mkdir('test_fs')) {
+            return true;
+        } else {
+            cleanup();
+            return fs.mkdir('test_fs');
+        }
+    });
+
+    runtest('fs: open/close', function() {
+        var fd = fs.open('test_fs/0.bin', 'wb');
+        fs.close(fd);
+        return true;
+    });
+
+    runtest('fs: write/read', function() {
+        var fd = fs.open('test_fs/0.bin', 'wb');
+        fs.write(fd, testData);
+        fs.close(fd);
+
+        fd = fs.open('test_fs/0.bin', 'rb');
+        var buffer = new Uint8Array(testData.length);
+        fs.read(fd, buffer, 0, testData.length, 0);
+        fs.close(fd);
+
+        for(var i = 0; i < testData.length; i++) {
+            if(testData[i] != buffer[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    runtest('fs: stat', function() {
+        var stats0 = fs.stat('test_fs');
+        var stats1 = fs.stat('test_fs/0.bin');
+        return stats0.isDirectory() && stats1.isFile();
+    });
+
+    runtest('fs: fstat', function() {
+        var fd = fs.open('test_fs/0.bin', 'rb');
+        var stats = fs.fstat(fd);
+        fs.close(fd);
+        return stats.isFile() && stats.size == testData.length;
+    });
+
+    runtest('fs: writeFile/readFile', function() {
+        fs.writeFile('test_fs/1.bin', testData);
+        var d = fs.readFile('test_fs/1.bin');
+
+        for(var i = 0; i < d.byteLength; i++) {
+            if(d[i] != testData[i]) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    runtest('fs: readdir/unlink/rmdir', function(){
+        cleanup();
+        return true;
+    });
+
+    script.timeout(500);
 }
