@@ -1,5 +1,4 @@
 #include "stdafx.h"
-
 #include "DebuggerUI.h"
 
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
@@ -219,7 +218,6 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 
 LRESULT CDebugScripts::OnScriptListDblClicked(NMHDR* pNMHDR)
 {
-    // Run script on double click
     NMITEMACTIVATE* pIA = reinterpret_cast<NMITEMACTIVATE*>(pNMHDR);
     int nItem = pIA->iItem;
 
@@ -237,11 +235,9 @@ void CDebugScripts::RefreshStatus()
 {
     jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
-    //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
-    //
     stdstr statusText;
     CPath(stdstr_f("Scripts\\%s", m_SelectedScriptName.c_str())).GetFullyQualified(statusText);
-    //
+
     if (status == JS_STATUS_STARTED)
     {
         statusText += " (Started)";
@@ -348,12 +344,6 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
         ::EnableWindow(GetDlgItem(IDC_RUN_BTN), status == JS_STATUS_STOPPED);
 
         RefreshStatus();
-        //INSTANCE_STATE state = m_Debugger->ScriptSystem()->GetInstanceState(m_SelectedScriptName.c_str());
-        //
-        //::EnableWindow(GetDlgItem(IDC_STOP_BTN), state == STATE_RUNNING || state == STATE_STARTED);
-        //::EnableWindow(GetDlgItem(IDC_RUN_BTN), state == STATE_STOPPED || state == STATE_INVALID);
-        //
-        //
     }
     return FALSE;
 }
@@ -362,24 +352,13 @@ LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPara
 {
     const char *text = (const char*)wParam;
 
-    ::ShowWindow(*this, SW_SHOWNOACTIVATE);
-
     SCROLLINFO scroll;
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_ALL;
     m_ConsoleEdit.GetScrollInfo(SB_VERT, &scroll);
 
-    stdstr formattedStr = "";
-
-    size_t len = strlen(text);
-    for (size_t i = 0; i < len; i++)
-    {
-        if (text[i] == '\n') formattedStr += "\r";
-        formattedStr += text[i];
-    }
-
     m_ConsoleEdit.SetRedraw(FALSE);
-    m_ConsoleEdit.AppendText(formattedStr.ToUTF16().c_str());
+    m_ConsoleEdit.AppendText(stdstr(text).ToUTF16().c_str());
     m_ConsoleEdit.SetRedraw(TRUE);
 
     if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
@@ -548,7 +527,7 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
                 m_History.push_back(str);
 
                 delete[] code;
-                bHandled = TRUE;
+                bHandled = FALSE;
                 return 0;
             }
         }
@@ -564,6 +543,6 @@ LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BO
         m_History.push_back(code);
         m_HistoryIdx = ++historySize;
     }
-    bHandled = TRUE;
+    bHandled = FALSE;
     return 0;
 }

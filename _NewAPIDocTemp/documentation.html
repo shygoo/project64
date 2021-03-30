@@ -183,7 +183,24 @@ div.tag.red {
 <li><a href="#dfpr__">dfpr.f0..f30</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#cop0">cop0</a>: CPU Coprocessor 0 register interface<ul>
+<li><a href="#cop0_index">cop0.index</a></li>
+<li><a href="#cop0_random">cop0.random</a></li>
+<li><a href="#cop0_entrylo0">cop0.entrylo0</a></li>
+<li><a href="#cop0_entrylo1">cop0.entrylo1</a></li>
+<li><a href="#cop0_context">cop0.context</a></li>
+<li><a href="#cop0_pagemask">cop0.pagemask</a></li>
+<li><a href="#cop0_wired">cop0.wired</a></li>
+<li><a href="#cop0_badvaddr">cop0.badvaddr</a></li>
+<li><a href="#cop0_count">cop0.count</a></li>
+<li><a href="#cop0_entryhi">cop0.entryhi</a></li>
+<li><a href="#cop0_compare">cop0.compare</a></li>
+<li><a href="#cop0_status">cop0.status</a></li>
 <li><a href="#cop0_cause">cop0.cause</a></li>
+<li><a href="#cop0_epc">cop0.epc</a></li>
+<li><a href="#cop0_config">cop0.config</a></li>
+<li><a href="#cop0_taglo">cop0.taglo</a></li>
+<li><a href="#cop0_taghi">cop0.taghi</a></li>
+<li><a href="#cop0_errorepc">cop0.errorepc</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#debug">debug</a>: Debugger interface<ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
@@ -566,12 +583,97 @@ Variables representing the CPU's 64-bit floating-point registers.
 CPU Coprocessor 0 register interface
 <div class="vtab"></div>
 <ul>
+<li><a href="#cop0_index">cop0.index</a></li>
+<li><a href="#cop0_random">cop0.random</a></li>
+<li><a href="#cop0_entrylo0">cop0.entrylo0</a></li>
+<li><a href="#cop0_entrylo1">cop0.entrylo1</a></li>
+<li><a href="#cop0_context">cop0.context</a></li>
+<li><a href="#cop0_pagemask">cop0.pagemask</a></li>
+<li><a href="#cop0_wired">cop0.wired</a></li>
+<li><a href="#cop0_badvaddr">cop0.badvaddr</a></li>
+<li><a href="#cop0_count">cop0.count</a></li>
+<li><a href="#cop0_entryhi">cop0.entryhi</a></li>
+<li><a href="#cop0_compare">cop0.compare</a></li>
+<li><a href="#cop0_status">cop0.status</a></li>
 <li><a href="#cop0_cause">cop0.cause</a></li>
+<li><a href="#cop0_epc">cop0.epc</a></li>
+<li><a href="#cop0_config">cop0.config</a></li>
+<li><a href="#cop0_taglo">cop0.taglo</a></li>
+<li><a href="#cop0_taghi">cop0.taghi</a></li>
+<li><a href="#cop0_errorepc">cop0.errorepc</a></li>
 </ul>
+<!-- cop0.index -->
+<div class="prop"><span class="title" id="cop0_index">cop0.index</span></div>
+<div class="vtab"></div>
+Variable representing the Index register.
+<!-- cop0.random -->
+<div class="prop"><span class="title" id="cop0_random">cop0.random</span></div>
+<div class="vtab"></div>
+Variable representing the Random register.
+<!-- cop0.entrylo0 -->
+<div class="prop"><span class="title" id="cop0_entrylo0">cop0.entrylo0</span></div>
+<div class="vtab"></div>
+Variable representing the EntryLo0 register.
+<!-- cop0.entrylo1 -->
+<div class="prop"><span class="title" id="cop0_entrylo1">cop0.entrylo1</span></div>
+<div class="vtab"></div>
+Variable representing the EntryLo1 register.
+<!-- cop0.context -->
+<div class="prop"><span class="title" id="cop0_context">cop0.context</span></div>
+<div class="vtab"></div>
+Variable representing the Context register.
+<!-- cop0.pagemask -->
+<div class="prop"><span class="title" id="cop0_pagemask">cop0.pagemask</span></div>
+<div class="vtab"></div>
+Variable representing the PageMask register.
+<!-- cop0.wired -->
+<div class="prop"><span class="title" id="cop0_wired">cop0.wired</span></div>
+<div class="vtab"></div>
+Variable representing the Wired register.
+<!-- cop0.badvaddr -->
+<div class="prop"><span class="title" id="cop0_badvaddr">cop0.badvaddr</span></div>
+<div class="vtab"></div>
+Variable representing the BadVAddr register.
+<!-- cop0.count -->
+<div class="prop"><span class="title" id="cop0_count">cop0.count</span></div>
+<div class="vtab"></div>
+Variable representing the Count register.
+<!-- cop0.entryhi -->
+<div class="prop"><span class="title" id="cop0_entryhi">cop0.entryhi</span></div>
+<div class="vtab"></div>
+Variable representing the EntryHi register.
+<!-- cop0.compare -->
+<div class="prop"><span class="title" id="cop0_compare">cop0.compare</span></div>
+<div class="vtab"></div>
+Variable representing the Compare register.
+<!-- cop0.status -->
+<div class="prop"><span class="title" id="cop0_status">cop0.status</span></div>
+<div class="vtab"></div>
+Variable representing the Status register.
 <!-- cop0.cause -->
 <div class="prop"><span class="title" id="cop0_cause">cop0.cause</span></div>
 <div class="vtab"></div>
 Variable representing the Cause register. Updates interrupts when written.
+<!-- cop0.epc -->
+<div class="prop"><span class="title" id="cop0_epc">cop0.epc</span></div>
+<div class="vtab"></div>
+Variable representing the EPC register.
+<!-- cop0.config -->
+<div class="prop"><span class="title" id="cop0_config">cop0.config</span></div>
+<div class="vtab"></div>
+Variable representing the Config register.
+<!-- cop0.taglo -->
+<div class="prop"><span class="title" id="cop0_taglo">cop0.taglo</span></div>
+<div class="vtab"></div>
+Variable representing the TagLo register.
+<!-- cop0.taghi -->
+<div class="prop"><span class="title" id="cop0_taghi">cop0.taghi</span></div>
+<div class="vtab"></div>
+Variable representing the TagHi register.
+<!-- cop0.errorepc -->
+<div class="prop"><span class="title" id="cop0_errorepc">cop0.errorepc</span></div>
+<div class="vtab"></div>
+Variable representing the ErrorEPC register.
 
 </div>
 <!-- debug -->

@@ -302,9 +302,60 @@
 - name: cop0
   tagline: CPU Coprocessor 0 register interface
   props:
+  - name: cop0.index
+    js:   cop0.index
+    desc: Variable representing the Index register.
+  - name: cop0.random
+    js:   cop0.random
+    desc: Variable representing the Random register.
+  - name: cop0.entrylo0
+    js:   cop0.entrylo0
+    desc: Variable representing the EntryLo0 register.
+  - name: cop0.entrylo1
+    js:   cop0.entrylo1
+    desc: Variable representing the EntryLo1 register.
+  - name: cop0.context
+    js:   cop0.context
+    desc: Variable representing the Context register.
+  - name: cop0.pagemask
+    js:   cop0.pagemask
+    desc: Variable representing the PageMask register.
+  - name: cop0.wired
+    js:   cop0.wired
+    desc: Variable representing the Wired register.
+  - name: cop0.badvaddr
+    js:   cop0.badvaddr
+    desc: Variable representing the BadVAddr register.
+  - name: cop0.count
+    js:   cop0.count
+    desc: Variable representing the Count register.
+  - name: cop0.entryhi
+    js:   cop0.entryhi
+    desc: Variable representing the EntryHi register.
+  - name: cop0.compare
+    js:   cop0.compare
+    desc: Variable representing the Compare register.
+  - name: cop0.status
+    js:   cop0.status
+    desc: Variable representing the Status register.
   - name: cop0.cause
     js:   cop0.cause
     desc: Variable representing the Cause register. Updates interrupts when written.
+  - name: cop0.epc
+    js:   cop0.epc
+    desc: Variable representing the EPC register.
+  - name: cop0.config
+    js:   cop0.config
+    desc: Variable representing the Config register.
+  - name: cop0.taglo
+    js:   cop0.taglo
+    desc: Variable representing the TagLo register.
+  - name: cop0.taghi
+    js:   cop0.taghi
+    desc: Variable representing the TagHi register.
+  - name: cop0.errorepc
+    js:   cop0.errorepc
+    desc: Variable representing the ErrorEPC register.
 
 # debug
 - name: debug

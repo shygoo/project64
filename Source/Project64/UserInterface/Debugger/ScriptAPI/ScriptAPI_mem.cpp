@@ -63,8 +63,7 @@ duk_ret_t ScriptAPI::js_mem__get(duk_context *ctx)
 {
     CScriptInstance *inst = GetInstance(ctx);
 
-    uint32_t addr = (uint32_t)duk_to_number(ctx, -1);
-    duk_pop_n(ctx, 2);
+    uint32_t addr = (uint32_t)duk_to_number(ctx, 1);
     
     T value;
     if(inst->Debugger()->DebugLoad_VAddr<T>(addr, value))
@@ -81,9 +80,8 @@ duk_ret_t ScriptAPI::js_mem__set(duk_context *ctx)
 {
     CScriptInstance *inst = GetInstance(ctx);
 
-    uint32_t addr = (uint32_t)duk_to_number(ctx, -2);
-    T value = (T)duk_to_number(ctx, -1);
-    duk_pop_n(ctx, 3);
+    uint32_t addr = (uint32_t)duk_to_number(ctx, 1);
+    T value = (T)duk_to_number(ctx, 2);
 
     if(inst->Debugger()->DebugStore_VAddr<T>(addr, value))
     {

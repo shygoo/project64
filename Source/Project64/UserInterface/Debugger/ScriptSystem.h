@@ -42,11 +42,11 @@ class CScriptSystem
     stdstr m_Log;
 
 public:
-    CScriptSystem(CDebuggerUI *debugger);
+    CScriptSystem(CDebuggerUI* debugger);
     ~CScriptSystem();
-    bool StartScript(const char *name, const char *path);
-    bool StopScript(const char *name);
-    bool Eval(const char *name, const char *code);
+    bool StartScript(const char* name, const char* path);
+    bool StopScript(const char* name);
+    bool Eval(const char* name, const char* code);
 
     void Log(const char* message);
     void Print(const char* message);
@@ -58,7 +58,7 @@ public:
 
     void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = NULL, void *param = NULL);
 
-    inline void Invoke(jshook_id_t hookId, void *env)
+    inline void Invoke(jshook_id_t hookId, void* env)
     {
         // lock omitted here for speed, should be okay
         if(m_AppCallbackCount != 0)
@@ -74,16 +74,18 @@ public:
     CDebuggerUI* Debugger();
 
 private:
-    void _Invoke(jshook_id_t hookId, void *env);
-    void SetCommand(jssyscmd_id_t cmd, const char *paramA = "", const char *paramB = "");
+    void _Invoke(jshook_id_t hookId, void* env);
+    void SetCommand(jssyscmd_id_t cmd, const char* paramA = "", const char* paramB = "");
 
-    static DWORD WINAPI ThreadProc(void *_this);
+    static DWORD WINAPI ThreadProc(void* _this);
     void ThreadProc();
 
-    void OnStartScript(const char *key, const char *path);
-    void OnStopScript(const char *key);
-    void OnEval(const char *key, const char *code);
+    void OnStartScript(const char* key, const char* path);
+    void OnStopScript(const char* key);
+    void OnEval(const char* key, const char* code);
     void OnSweep(bool bIfDone);
 
-    bool RawRemoveInstance(const char *key);
+    bool RawRemoveInstance(const char* key);
+
+    static stdstr FixStringReturns(const char* str);
 };

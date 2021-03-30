@@ -23,7 +23,7 @@ void ScriptAPI::Define_console(duk_context *ctx)
 duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
 {
     const char* str = duk_safe_to_string(ctx, 0);
-    GetInstance(ctx)->System()->Log(str);
+    GetInstance(ctx)->System()->Print(str);
     return 0;
 }
 

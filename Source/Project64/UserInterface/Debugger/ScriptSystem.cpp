@@ -30,19 +30,18 @@ CScriptSystem::~CScriptSystem()
 
 void CScriptSystem::Log(const char* message)
 {
-    // todo fix unix line endings here
     CGuard guard(m_LogCS);
-    stdstr formattedMsg = stdstr(message) + "\r\n";
+    stdstr formattedMsg = FixStringReturns(message) + "\r\n";
     m_Log += formattedMsg;
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
 }
 
 void CScriptSystem::Print(const char* message)
 {
-    // todo fix unix line endings here
     CGuard guard(m_LogCS);
-    m_Log += message;
-    m_Debugger->Debug_LogScriptsWindow(message);
+    stdstr formattedMsg = FixStringReturns(message);
+    m_Log += formattedMsg;
+    m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
 }
 
 void CScriptSystem::ClearLog()
@@ -299,4 +298,16 @@ bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
 CDebuggerUI* CScriptSystem::Debugger()
 {
     return m_Debugger;
+}
+
+stdstr CScriptSystem::FixStringReturns(const char* str)
+{
+    stdstr fstr = str;
+    size_t pos = 0;
+    while ((pos = fstr.find("\n", pos)) != stdstr::npos)
+    {
+        fstr.replace(pos, 1, "\r\n");
+        pos += 2;
+    }
+    return fstr;
 }

@@ -26,7 +26,6 @@ namespace ScriptAPI
     duk_ret_t js_events_onopcode(duk_context* ctx); // *
     duk_ret_t js_events_ongprvalue(duk_context* ctx); // *
     duk_ret_t js_events_ondraw(duk_context* ctx); // *
-    //duk_ret_t js_events_oncommand(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console
@@ -105,15 +104,17 @@ namespace ScriptAPI
     //duk_ret_t js_alert(duk_context* ctx);
 
     // ScriptAPI_registers (gpr, ugpr, fpr, dfpr, cop0)
-    //void Define_registers(duk_context* ctx);
-    //duk_ret_t js_gpr_get(duk_context* ctx);
-    //duk_ret_t js_gpr_set(duk_context* ctx);
-    //duk_ret_t js_ugpr_get(duk_context* ctx);
-    //duk_ret_t js_ugpr_set(duk_context* ctx);
-    //duk_ret_t js_fpr_get(duk_context* ctx);
-    //duk_ret_t js_fpr_set(duk_context* ctx);
-    //duk_ret_t js_dfpr_get(duk_context* ctx);
-    //duk_ret_t js_dfpr_set(duk_context* ctx);
+    void Define_registers(duk_context* ctx);
+    duk_ret_t js_gpr_get(duk_context* ctx);
+    duk_ret_t js_gpr_set(duk_context* ctx);
+    duk_ret_t js_ugpr_get(duk_context* ctx);
+    duk_ret_t js_ugpr_set(duk_context* ctx);
+    duk_ret_t js_fpr_get(duk_context* ctx);
+    duk_ret_t js_fpr_set(duk_context* ctx);
+    duk_ret_t js_dfpr_get(duk_context* ctx);
+    duk_ret_t js_dfpr_set(duk_context* ctx);
+    duk_ret_t js_cop0_get(duk_context* ctx);
+    duk_ret_t js_cop0_set(duk_context* ctx);
 
     // ScriptAPI_screen
     //duk_ret_t js_screen(duk_context* ctx);
