@@ -1,6 +1,8 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
 
+#pragma warning(disable: 4702)
+
 void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
 {
     duk_push_global_object(ctx);
@@ -142,7 +144,7 @@ bool ScriptAPI::RemoveCallback(duk_context* ctx, jscb_id_t callbackId)
     }
 
     duk_pop_n(ctx, 2);
-    return bExists;
+    return bExists != 0;
 }
 
 duk_ret_t ScriptAPI::CallbackFinalizer(duk_context *ctx)

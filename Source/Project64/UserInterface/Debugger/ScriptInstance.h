@@ -32,7 +32,7 @@ public:
     void           SyncCall(void* heapptr, jsargs_fn_t fnPushArgs, void* param);
     void           RawEval(const char* code);
 
-    void SetExecTimeout(size_t timeout);
+    void SetExecTimeout(uint64_t timeout);
     bool IsTimedOut();
 
 private:

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <string>
 
+#pragma warning(disable: 4702)
+
 void ScriptAPI::Define_mem(duk_context *ctx)
 {
     #define MEM_PROXY_FUNCTIONS(T) { \
@@ -258,7 +260,7 @@ duk_ret_t ScriptAPI::js_mem__boundset(duk_context *ctx)
         MEM_BOUNDSET_TRY(addr, int32_t, duk_get_int(ctx, 2));
         break;
     case F32:
-        MEM_BOUNDSET_TRY(addr, float, duk_get_number(ctx, 2));
+        MEM_BOUNDSET_TRY(addr, float, (float)duk_get_number(ctx, 2));
         break;
     case F64:
         MEM_BOUNDSET_TRY(addr, double, duk_get_number(ctx, 2));
@@ -361,7 +363,7 @@ duk_ret_t ScriptAPI::js_mem_bindstruct(duk_context *ctx)
 
     while(duk_next(ctx, -1, 1))
     {
-        const char *name = duk_get_string(ctx, -2);
+        //const char *name = duk_get_string(ctx, -2);
         mem_type_t type = (mem_type_t)duk_get_int(ctx, -1);
 
         duk_push_c_function(ctx, js_mem_bindvar, 4);

@@ -112,6 +112,7 @@ public:
 
     LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnCtlColorStatic(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnCtlColorEdit(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnDestroy(void);
     LRESULT OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
     LRESULT OnScriptListDblClicked(NMHDR* pNMHDR);
@@ -120,7 +121,7 @@ public:
     LRESULT OnScriptListItemChanged(NMHDR* pNMHDR);
     void OnExitSizeMove(void);
 
-    LRESULT OnConsoleLog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
+    LRESULT OnConsolePrint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnConsoleClear(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnRefreshList(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     //LRESULT OnStatusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -129,13 +130,14 @@ public:
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
         MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
         MESSAGE_HANDLER(WM_CTLCOLORSTATIC, OnCtlColorStatic)
+        MESSAGE_HANDLER(WM_CTLCOLOREDIT, OnCtlColorEdit)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_DBLCLK, OnScriptListDblClicked)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_RCLICK, OnScriptListRClicked)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, LVN_ITEMCHANGED, OnScriptListItemChanged)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_EXITSIZEMOVE(OnExitSizeMove);
-        MESSAGE_HANDLER(WM_CONSOLE_PRINT, OnConsoleLog)
+        MESSAGE_HANDLER(WM_CONSOLE_PRINT, OnConsolePrint)
         MESSAGE_HANDLER(WM_CONSOLE_CLEAR, OnConsoleClear)
         MESSAGE_HANDLER(WM_REFRESH_LIST, OnRefreshList)
         //MESSAGE_HANDLER(WM_SCRIPT_STATUS, OnStatusChange)

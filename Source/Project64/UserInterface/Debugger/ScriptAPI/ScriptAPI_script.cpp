@@ -28,7 +28,7 @@ duk_ret_t ScriptAPI::js_script_timeout(duk_context *ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    inst->SetExecTimeout(duk_get_number(ctx, 0));
+    inst->SetExecTimeout((uint64_t)duk_get_number(ctx, 0));
     return 0;
 }
 
@@ -41,10 +41,10 @@ duk_ret_t ScriptAPI::js_script_keepalive(duk_context *ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    bool bKeepAlive = duk_get_boolean(ctx, 0);
+    duk_bool_t bKeepAlive = duk_get_boolean(ctx, 0);
 
     duk_push_global_object(ctx);
-    bool bHaveProp = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("KEEPALIVE"));
+    duk_bool_t bHaveProp = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("KEEPALIVE"));
 
     if(bKeepAlive && !bHaveProp)
     {

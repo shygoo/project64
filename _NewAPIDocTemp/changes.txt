@@ -1,6 +1,6 @@
 - update duktape library to version 2.6.0
 - run all script instance startup routines on the same thread
-- add default execution timeout of 500ms for script startups/callback invocations
+- add default execution timeout of 500ms for instance startups/callback invocations
 - replace socket async IO with worker threads (fix Windows XP incompatibility)
 - remove API.js, make all API functions native
 - rewrite API documentation file
@@ -24,3 +24,9 @@ TODO:
 - 'pj64' interface for high level control (savestate/pause etc.)
 - mem.setblock
 - mem.getblock/getstring doc
+- formatting/cleanup printfs, comments etc
+
+- debug.showmemory
+- debug.showcommands
+- debug.getsymbol?
+- debug.setsymbol?

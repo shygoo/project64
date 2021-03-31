@@ -1,6 +1,8 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
 
+#pragma warning(disable: 4702)
+
 static bool CbCond_CpuStep_ReadAddrBetween(jscallback_t* callback, void* condParam);
 static bool CbCond_CpuStep_WriteAddrBetween(jscallback_t* callback, void* condParam);
 static bool CbCond_CpuStep_PcBetween(jscallback_t* callback, void* condParam);
@@ -159,7 +161,7 @@ bool CbCond_CpuStep_ReadAddrBetween(jscallback_t* callback, void* _env)
         return false;
     }
 
-    return (env->readWriteAddr >= callback->cond.addrStart &
+    return (env->readWriteAddr >= callback->cond.addrStart &&
             env->readWriteAddr <= callback->cond.addrEnd);
 }
 
@@ -173,7 +175,7 @@ bool CbCond_CpuStep_WriteAddrBetween(jscallback_t* callback, void* _env)
         return false;
     }
 
-    return (env->readWriteAddr >= callback->cond.addrStart &
+    return (env->readWriteAddr >= callback->cond.addrStart &&
             env->readWriteAddr <= callback->cond.addrEnd);
 }
 
@@ -181,7 +183,7 @@ bool CbCond_CpuStep_WriteAddrBetween(jscallback_t* callback, void* _env)
 bool CbCond_CpuStep_PcBetween(jscallback_t* callback, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
-    return (env->pc >= callback->cond.addrStart &
+    return (env->pc >= callback->cond.addrStart &&
             env->pc <= callback->cond.addrEnd);
 }
 

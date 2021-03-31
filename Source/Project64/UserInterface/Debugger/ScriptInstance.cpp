@@ -139,7 +139,7 @@ void CScriptInstance::RawCall(void *heapptr, jsargs_fn_t fnPushArgs, void *param
     duk_pop(m_Ctx);
 }
 
-void CScriptInstance::SyncCall(void *heapptr, jsargs_fn_t fnPushArgs, void *param)
+void CScriptInstance::SyncCall(void *heapptr, jsargs_fn_t fnPushArgs, void* /*param*/)
 {
     m_System->SyncCall(this, heapptr, fnPushArgs, NULL);
 }
@@ -182,7 +182,7 @@ void CScriptInstance::RawEval(const char* code)
     duk_pop(m_Ctx);
 }
 
-void CScriptInstance::SetExecTimeout(size_t timeout)
+void CScriptInstance::SetExecTimeout(uint64_t timeout)
 {
     m_ExecTimeout = timeout;
 }

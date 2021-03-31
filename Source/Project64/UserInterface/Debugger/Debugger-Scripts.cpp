@@ -84,6 +84,23 @@ LRESULT CDebugScripts::OnCtlColorStatic(UINT /*uMsg*/, WPARAM wParam, LPARAM lPa
     return FALSE;
 }
 
+LRESULT CDebugScripts::OnCtlColorEdit(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
+{
+    HDC hDC = (HDC)wParam;
+    HWND hCtrl = (HWND)lParam;
+    WORD ctrlId = (WORD) ::GetWindowLong(hCtrl, GWL_ID);
+
+    if (ctrlId == IDC_EVAL_EDIT)
+    {
+        SetTextColor(hDC, RGB(0xEE, 0xEE, 0xEE));
+        SetBkColor(hDC, RGB(0x22, 0x22, 0x22));
+        SetDCBrushColor(hDC, RGB(0x22, 0x22, 0x22));
+        return (LRESULT)GetStockObject(DC_BRUSH);
+    }
+
+    return FALSE;
+}
+
 DWORD WINAPI CDebugScripts::ScriptDirWatchProc(void* ctx)
 {
     CDebugScripts* _this = (CDebugScripts*)ctx;
@@ -165,7 +182,8 @@ void CDebugScripts::ConsolePrint(const char* text)
 {
     if (m_hWnd != NULL)
     {
-        SendMessage(WM_CONSOLE_PRINT, (WPARAM)text);
+        char* textCopy = strdup(text); // OnConsolePrint will free this
+        PostMessage(WM_CONSOLE_PRINT, (WPARAM)textCopy);
     }
 }
 
@@ -173,7 +191,7 @@ void CDebugScripts::ConsoleClear()
 {
     if (m_hWnd != NULL)
     {
-        SendMessage(WM_CONSOLE_CLEAR);
+        PostMessage(WM_CONSOLE_CLEAR);
     }
 }
 
@@ -348,9 +366,9 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
     return FALSE;
 }
 
-LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CDebugScripts::OnConsolePrint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    const char *text = (const char*)wParam;
+    char *text = (char*)wParam;
 
     SCROLLINFO scroll;
     scroll.cbSize = sizeof(SCROLLINFO);
@@ -365,6 +383,9 @@ LRESULT CDebugScripts::OnConsoleLog(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPara
     {
         m_ConsoleEdit.ScrollCaret();
     }
+
+    free(text);
+
     return FALSE;
 }
 

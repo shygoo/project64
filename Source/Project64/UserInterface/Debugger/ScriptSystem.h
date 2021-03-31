@@ -27,6 +27,7 @@ class CScriptSystem
     jscb_id_t       m_NextAppCallbackId;
     size_t          m_AppCallbackCount;
     jsinst_map_t    m_Instances;
+    
     struct
     {
         jssyscmd_id_t id;
@@ -35,26 +36,27 @@ class CScriptSystem
         HANDLE        hWakeEvent;
     } m_Cmd;
 
-    CriticalSection m_InstanceStatusCS;
-    jsinst_status_map_t m_InstanceStatus;
 
-    CriticalSection m_LogCS;
+    CriticalSection m_UIStateCS;
+    jsinst_status_map_t m_InstanceStatus;
     stdstr m_Log;
 
 public:
     CScriptSystem(CDebuggerUI* debugger);
     ~CScriptSystem();
+
+    CDebuggerUI* Debugger();
+
     bool StartScript(const char* name, const char* path);
     bool StopScript(const char* name);
     bool Eval(const char* name, const char* code);
 
+    jsstatus_t GetStatus(const char* name);
+    void UpdateStatus(const char* name, jsstatus_t status);
     void Log(const char* message);
     void Print(const char* message);
     void ClearLog();
     stdstr GetLog();
-
-    jsstatus_t GetStatus(const char* name);
-    void UpdateStatus(const char* name, jsstatus_t status);
 
     void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = NULL, void *param = NULL);
 
@@ -67,12 +69,9 @@ public:
         }
     }
 
-    // private to ScriptAPI
     jscb_id_t RawAddCallback(jshook_id_t hookId, jscallback_t& callback);
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);
     
-    CDebuggerUI* Debugger();
-
 private:
     void _Invoke(jshook_id_t hookId, void* env);
     void SetCommand(jssyscmd_id_t cmd, const char* paramA = "", const char* paramB = "");

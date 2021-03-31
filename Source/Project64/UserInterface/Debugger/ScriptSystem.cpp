@@ -28,9 +28,36 @@ CScriptSystem::~CScriptSystem()
     CloseHandle(m_Cmd.hWakeEvent);
 }
 
+jsstatus_t CScriptSystem::GetStatus(const char* name)
+{
+    CGuard guard(m_UIStateCS);
+    if (m_InstanceStatus.count(name) == 0)
+    {
+        return JS_STATUS_STOPPED;
+    }
+    else
+    {
+        return m_InstanceStatus[name];
+    }
+}
+
+void CScriptSystem::UpdateStatus(const char* name, jsstatus_t status)
+{
+    CGuard guard(m_UIStateCS);
+    if (status == JS_STATUS_STOPPED)
+    {
+        m_InstanceStatus.erase(name);
+    }
+    else
+    {
+        m_InstanceStatus[name] = status;
+    }
+    m_Debugger->Debug_RefreshScriptsWindow();
+}
+
 void CScriptSystem::Log(const char* message)
 {
-    CGuard guard(m_LogCS);
+    CGuard guard(m_UIStateCS);
     stdstr formattedMsg = FixStringReturns(message) + "\r\n";
     m_Log += formattedMsg;
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
@@ -38,7 +65,7 @@ void CScriptSystem::Log(const char* message)
 
 void CScriptSystem::Print(const char* message)
 {
-    CGuard guard(m_LogCS);
+    CGuard guard(m_UIStateCS);
     stdstr formattedMsg = FixStringReturns(message);
     m_Log += formattedMsg;
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
@@ -46,20 +73,21 @@ void CScriptSystem::Print(const char* message)
 
 void CScriptSystem::ClearLog()
 {
-    CGuard guard(m_LogCS);
+    CGuard guard(m_UIStateCS);
     m_Log.clear();
     m_Debugger->Debug_ClearScriptsWindow();
 }
 
 stdstr CScriptSystem::GetLog()
 {
-    CGuard guard(m_LogCS);
+    CGuard guard(m_UIStateCS);
     return stdstr(m_Log);
 }
 
 bool CScriptSystem::StartScript(const char *name, const char *path)
 {
     CGuard guard(m_CS);
+
     if (m_Instances.count(name) != 0)
     {
         Log(stdstr_f("[ScriptSys]: START_SCRIPT aborted; '%s' is already instanced\n", name).c_str());
@@ -82,33 +110,6 @@ bool CScriptSystem::Eval(const char *name, const char *code)
     CGuard guard(m_CS);
     SetCommand(CMD_EVAL, name, code);
     return true;
-}
-
-void CScriptSystem::UpdateStatus(const char* name, jsstatus_t status)
-{
-    CGuard guard(m_InstanceStatusCS);
-    if (status == JS_STATUS_STOPPED)
-    {
-        m_InstanceStatus.erase(name);
-    }
-    else
-    {
-        m_InstanceStatus[name] = status;
-    }
-    m_Debugger->Debug_RefreshScriptsWindow();
-}
-
-jsstatus_t CScriptSystem::GetStatus(const char* name)
-{
-    CGuard guard(m_InstanceStatusCS);
-    if (m_InstanceStatus.count(name) == 0)
-    {
-        return JS_STATUS_STOPPED;
-    }
-    else
-    {
-        return m_InstanceStatus[name];
-    }
 }
 
 void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
@@ -236,6 +237,7 @@ void CScriptSystem::OnEval(const char *name, const char *code)
 
     if(inst->GetRefCount() == 0)
     {
+        UpdateStatus(name, JS_STATUS_STOPPED);
         RawRemoveInstance(name);
     }
 }
@@ -248,6 +250,7 @@ void CScriptSystem::OnSweep(bool bIfDone)
         CScriptInstance*& inst = it->second;
         if(!bIfDone || inst->GetRefCount() == 0)
         {
+            UpdateStatus(inst->Name().c_str(), JS_STATUS_STOPPED);
             delete inst;
             m_Instances.erase(it++);
         }

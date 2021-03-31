@@ -2,6 +2,8 @@
 #include "../ScriptAPI.h"
 #include <Project64-core/N64System/Mips/RegisterClass.h>
 
+#pragma warning(disable: 4702)
+
 static duk_ret_t ThrowRegInvalidError(duk_context* ctx);
 static duk_ret_t ThrowRegContextUnavailableError(duk_context* ctx);
 static duk_ret_t ThrowRegAssignmentTypeError(duk_context* ctx);

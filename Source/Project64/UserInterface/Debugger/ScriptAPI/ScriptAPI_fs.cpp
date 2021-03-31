@@ -2,6 +2,8 @@
 #include "../ScriptAPI.h"
 #include <sys/stat.h>
 
+#pragma warning(disable: 4702)
+
 enum fsop { FS_READ, FS_WRITE };
 static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op); // (fd, buffer, offset, length, position)
 static duk_ret_t FileFinalizer(duk_context *ctx);
@@ -96,7 +98,7 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
         return duk_throw(ctx);
     }
 
-    int fd = fileno(fp);
+    int fd = _fileno(fp);
 
     //  FILES[fd] = {fp: fp}
     duk_push_global_object(ctx);
@@ -113,7 +115,7 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 
     duk_push_number(ctx, fd);
 
-    printf("[ScriptSys]: '%s' opened file (fd: %d, fp: 0x%08X)\n", inst->Name().c_str(), fd, fp);
+    printf("[ScriptSys]: '%s' opened file (fd: %d, fp: 0x%p)\n", inst->Name().c_str(), fd, fp);
 
     return 1;
 }
@@ -146,7 +148,7 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         duk_set_finalizer(ctx, -3); 
         duk_del_prop_index(ctx, -3, fd);
 
-        printf("[ScriptSys]: '%s' closed file (fd: %d, fp: 0x%08X)\n", inst->Name().c_str(), fd, fp);
+        printf("[ScriptSys]: '%s' closed file (fd: %d, fp: 0x%p)\n", inst->Name().c_str(), fd, fp);
         
         duk_pop_n(ctx, 2);
         rc = 0;
@@ -233,7 +235,7 @@ duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
     }
 
     struct stat s;
-    if(fstat(fileno(fp), &s) != 0)
+    if(fstat(_fileno(fp), &s) != 0)
     {
         fclose(fp);
         return DUK_RET_ERROR;
@@ -427,7 +429,7 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
     for(int i = 0; i < 3; i++)
     {
         duk_dup(ctx, -2);
-        duk_push_number(ctx, dates[i].time);
+        duk_push_number(ctx, (duk_double_t)dates[i].time);
         duk_new(ctx, 1);
         duk_put_prop_string(ctx, -2, dates[i].key);
     }
