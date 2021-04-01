@@ -173,9 +173,9 @@
           Returns a callback ID.
           ```
           const JAL = 0x0C000000; // 'JAL 0x00000000'
-          const NO_TARGET = 0xFC000000; // Mask off target field
+          const ANY_TARGET = 0xFC000000; // Mask off target field
 
-          events.onopcode(ADDR_ANY, JAL, NO_TARGET, function() {
+          events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
               // Log PC at every JAL
               console.log(gpr.pc.hex());
           });
@@ -192,7 +192,7 @@
           Returns a callback ID.
 
   - name: events.ongprvalue
-    js:   events.ongprvalue(address, registers, value, callback)
+    js:   events.ongprvalue(address, regFlags, value, callback)
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number"
     tags: [[Requires interpreter core, blue]]
     desc: |

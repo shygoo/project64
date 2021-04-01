@@ -56,7 +56,6 @@ typedef struct {
     bool      bReadOp, bWriteOp;
     uint32_t  readWriteAddr;
     uint32_t  readWriteValue;
-    uint32_t  *gpr; // TODO this will need to be changed
     // below fields are set by the condition function
     int       outAffectedRegIndex;
 } jshook_env_cpustep_t;

@@ -32,9 +32,7 @@ TODO:
 - debug.getsymbol?
 - debug.setsymbol?
 
-
-
-fs.readFile and mem.getblock should return Buffer
-
-
-setcommand goes missing when 
+Duktape.modSearch/require()
+buffer console.log() so the message queue doesnt get flooded
+fix input history / write input history to a file
+make sure fs.readFile and mem.getblock return Buffer

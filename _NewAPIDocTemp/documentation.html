@@ -7,7 +7,7 @@
 <style>
 body {
     margin: 50px auto 50px auto;
-    width: 800px;
+    width: 840px;
     background: #EEE;
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
@@ -160,7 +160,7 @@ div.tag.red {
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
-<li><a href="#events_ongprvalue">events.ongprvalue(address, registers, value, callback)</a></li>
+<li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
 </ul><div class="vtab"></div></li>
@@ -382,7 +382,7 @@ Emulation event hooking interface
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
-<li><a href="#events_ongprvalue">events.ongprvalue(address, registers, value, callback)</a></li>
+<li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
 </ul>
@@ -434,9 +434,9 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 Returns a callback ID.
 <pre class="ex">
 const JAL = 0x0C000000; // 'JAL 0x00000000'
-const NO_TARGET = 0xFC000000; // Mask off target field
+const ANY_TARGET = 0xFC000000; // Mask off target field
 
-events.onopcode(ADDR_ANY, JAL, NO_TARGET, function() {
+events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
     // Log PC at every JAL
     console.log(gpr.pc.hex());
 });
@@ -450,7 +450,7 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
-<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, registers, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of

@@ -7,7 +7,7 @@ static bool CbCond_CpuStep_ReadAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_CpuStep_WriteAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_CpuStep_PcBetween(JSCallback* cb, void* env);
 static bool CbCond_CpuStep_PcBetween_Opcode(JSCallback* cb, void* env);
-static bool CbCond_CpuStep_GprValue(JSCallback* cb, void* env);
+static bool CbCond_CpuStep_PcBetween_GprValue(JSCallback* cb, void* env);
 
 static duk_idx_t CbArgs_CpuStep_ReadWriteAddr(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_CpuStep_AffectedRegIndex(duk_context* ctx, void* env);
@@ -16,24 +16,6 @@ static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* 
 
 static duk_ret_t ThrowNeedInterpreterError(duk_context* ctx);
 static bool HaveInterpreter();
-
-/*
-duk_uint_t a;
-const char *b;
-
-argsproto[] = {
-    { ArgUInt, &a },
-    { ArgString, &b },
-    { NULL, NULL }
-};
-
-if(GetArgs(ctx, argsproto))
-{
-    return ThrowInvalidArgsError(ctx);
-}
-
-*/
-
 
 void ScriptAPI::Define_events(duk_context* ctx)
 {
@@ -163,9 +145,8 @@ duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
         mask = duk_get_uint(ctx, 2);
     }
 
-    void* heapptr = duk_get_heapptr(ctx, cbidx);
-
-    JSCallback cb(GetInstance(ctx), heapptr, CbCond_CpuStep_PcBetween_Opcode, NULL);
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, cbidx),
+        CbCond_CpuStep_PcBetween_Opcode, NULL);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
     cb.params.opcode = opcode;
@@ -183,7 +164,28 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
     {
         return ThrowNeedInterpreterError(ctx);
     }
-    return 0;
+
+    uint32_t addrStart, addrEnd;
+    if (duk_get_top(ctx) != 4 ||
+        !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+        !duk_is_number(ctx, 1) ||
+        !duk_is_number(ctx, 2) ||
+        !duk_is_function(ctx, 3))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 3),
+        CbCond_CpuStep_PcBetween_GprValue, CbArgs_CpuStep_AffectedRegIndex);
+    cb.params.addrStart = addrStart;
+    cb.params.addrEnd = addrEnd;
+    cb.params.regIndices = duk_get_uint(ctx, 1);
+    cb.params.regValue = duk_get_uint(ctx, 2);
+
+    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_CPUSTEP, cb);
+
+    duk_push_uint(ctx, callbackId);
+    return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
@@ -259,24 +261,29 @@ bool CbCond_CpuStep_PcBetween_Opcode(JSCallback* cb, void* _env)
 }
 
 // ongprvalue
-//bool CbCond_CpuStep_GprValue(JSCallback* callback, void* _env)
-//{
-//    jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
-//
-//    for(int i = 0; i < 32; i++)
-//    {
-//        if(callback->cond.regIndices & (1 << i))
-//        {
-//            if(env->gpr[i] == callback->cond.regValue)
-//            {
-//                env->outAffectedRegIndex = i;
-//                return true;
-//            }
-//        }
-//    }
-//
-//    return false;
-//}
+static bool CbCond_CpuStep_PcBetween_GprValue(JSCallback* cb, void* _env)
+{
+    if (!CbCond_CpuStep_PcBetween(cb, _env))
+    {
+        return false;
+    }
+
+    jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
+
+    for(int i = 0; i < 32; i++)
+    {
+        if(cb->params.regIndices & (1 << i))
+        {
+            if(g_Reg->m_GPR[i].UW[0] == cb->params.regValue)
+            {
+                env->outAffectedRegIndex = i;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 
 // onread, onwrite
 duk_idx_t CbArgs_CpuStep_ReadWriteAddr(duk_context* ctx, void* _env)
