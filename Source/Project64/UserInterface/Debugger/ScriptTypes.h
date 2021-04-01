@@ -9,28 +9,46 @@ class CScriptInstance;
 
 typedef std::string jsname_t;
 
-struct jscallback_t;
+struct JSCallback;
 typedef duk_idx_t (*jsargs_fn_t)(duk_context *ctx, void *param);
-typedef bool (*jscond_fn_t)(struct jscallback_t *cb, void *param);
+typedef bool (*jscond_fn_t)(JSCallback* cb, void *param);
 
 typedef size_t jscb_id_t;
 #define JS_INVALID_CALLBACK ((jscb_id_t)(-1))
 
-typedef struct jscallback_t
+struct JSCallback
 {
-    CScriptInstance *inst;
-    void         *heapptr;
-    jsargs_fn_t   fnPushArgs;
-    jscond_fn_t   fnCondition;
-
+    CScriptInstance *instance;
+    void            *heapptr;
+    jscond_fn_t      Condition;
+    jsargs_fn_t      PushArguments;
+    
     struct {
         uint32_t addrStart, addrEnd;
         union {
             struct { uint32_t opcode, opcodeMask; };
             struct { uint32_t regIndices, regValue; };
         };
-    } cond;
-} jscallback_t;
+    } params;
+
+    JSCallback(CScriptInstance* inst, void* heapptr, jscond_fn_t fnCondition, jsargs_fn_t fnPushArgs) :
+        instance(inst),
+        heapptr(heapptr),
+        Condition(fnCondition),
+        PushArguments(fnPushArgs)
+    {
+        params = {};
+    }
+
+    JSCallback() :
+        instance(NULL),
+        heapptr(NULL),
+        Condition(NULL),
+        PushArguments(NULL)
+    {
+        params = {};
+    }
+};
 
 typedef struct {
     uint32_t  pc;

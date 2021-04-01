@@ -1,7 +1,8 @@
 - update duktape library to version 2.6.0
 - run all script instance startup routines on the same thread
+- use javascript "strict mode"
 - add default execution timeout of 500ms for instance startups/callback invocations
-- replace socket async IO with worker threads (fix Windows XP incompatibility)
+- replace socket overlapped IO with worker threads (fix Windows XP incompatibility)
 - remove API.js, make all API functions native
 - rewrite API documentation file
 
@@ -30,3 +31,10 @@ TODO:
 - debug.showcommands
 - debug.getsymbol?
 - debug.setsymbol?
+
+
+
+fs.readFile and mem.getblock should return Buffer
+
+
+setcommand goes missing when 

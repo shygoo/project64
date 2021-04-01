@@ -107,6 +107,7 @@ duk_ret_t ScriptAPI::js_mem_getblock(duk_context *ctx)
     duk_uint_t length = duk_to_uint(ctx, 1);
 
     uint8_t *data = (uint8_t*)duk_push_fixed_buffer(ctx, length);
+    duk_push_buffer_object(ctx, -1, 0, length, DUK_BUFOBJ_NODEJS_BUFFER);
 
     for(size_t i = 0; i < length; i++)
     {

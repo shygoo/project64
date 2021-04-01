@@ -182,7 +182,7 @@ void CDebugScripts::ConsolePrint(const char* text)
 {
     if (m_hWnd != NULL)
     {
-        char* textCopy = strdup(text); // OnConsolePrint will free this
+        char* textCopy = _strdup(text); // OnConsolePrint will free this
         PostMessage(WM_CONSOLE_PRINT, (WPARAM)textCopy);
     }
 }

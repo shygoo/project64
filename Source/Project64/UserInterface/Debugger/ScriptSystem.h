@@ -10,7 +10,7 @@
 class CScriptSystem
 {
     typedef std::map<jsname_t, CScriptInstance*> jsinst_map_t;
-    typedef std::map<jscb_id_t, jscallback_t> jscb_map_t;
+    typedef std::map<jscb_id_t, JSCallback> jscb_map_t;
     typedef std::map<jshook_id_t, jscb_map_t> jshook_map_t;
     typedef std::map<jsname_t, jsstatus_t> jsinst_status_map_t;
 
@@ -34,8 +34,8 @@ class CScriptSystem
         std::string   paramA;
         std::string   paramB;
         HANDLE        hWakeEvent;
+        HANDLE        hIdleEvent;
     } m_Cmd;
-
 
     CriticalSection m_UIStateCS;
     jsinst_status_map_t m_InstanceStatus;
@@ -60,21 +60,12 @@ public:
 
     void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = NULL, void *param = NULL);
 
-    inline void Invoke(jshook_id_t hookId, void* env)
-    {
-        // lock omitted here for speed, should be okay
-        if(m_AppCallbackCount != 0)
-        {
-            _Invoke(hookId, env);
-        }
-    }
-
-    jscb_id_t RawAddCallback(jshook_id_t hookId, jscallback_t& callback);
+    void Invoke(jshook_id_t hookId, void* env);
+    jscb_id_t RawAddCallback(jshook_id_t hookId, JSCallback& callback);
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);
     
 private:
-    void _Invoke(jshook_id_t hookId, void* env);
-    void SetCommand(jssyscmd_id_t cmd, const char* paramA = "", const char* paramB = "");
+    void SetCommand(jssyscmd_id_t cmd, const char* paramA = NULL, const char* paramB = NULL);
 
     static DWORD WINAPI ThreadProc(void* _this);
     void ThreadProc();

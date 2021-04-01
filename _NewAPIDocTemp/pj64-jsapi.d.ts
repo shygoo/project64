@@ -358,6 +358,111 @@ declare const GPR_FP: number;
 /** Register flag for `events.ongprvalue` */
 declare const GPR_RA: number;
 
+declare const RDRAM_CONFIG_REG       : 0xA3F00000;
+declare const RDRAM_DEVICE_TYPE_REG  : 0xA3F00000;
+declare const RDRAM_DEVICE_ID_REG    : 0xA3F00004;
+declare const RDRAM_DELAY_REG        : 0xA3F00008;
+declare const RDRAM_MODE_REG         : 0xA3F0000C;
+declare const RDRAM_REF_INTERVAL_REG : 0xA3F00010;
+declare const RDRAM_REF_ROW_REG      : 0xA3F00014;
+declare const RDRAM_RAS_INTERVAL_REG : 0xA3F00018;
+declare const RDRAM_MIN_INTERVAL_REG : 0xA3F0001C;
+declare const RDRAM_ADDR_SELECT_REG  : 0xA3F00020;
+declare const RDRAM_DEVICE_MANUF_REG : 0xA3F00024;
+
+declare const SP_MEM_ADDR_REG        : 0xA4040000;
+declare const SP_DRAM_ADDR_REG       : 0xA4040004;
+declare const SP_RD_LEN_REG          : 0xA4040008;
+declare const SP_WR_LEN_REG          : 0xA404000C;
+declare const SP_STATUS_REG          : 0xA4040010;
+declare const SP_DMA_FULL_REG        : 0xA4040014;
+declare const SP_DMA_BUSY_REG        : 0xA4040018;
+declare const SP_SEMAPHORE_REG       : 0xA404001C;
+
+declare const SP_PC_REG              : 0xA4080000;
+declare const SP_IBIST_REG           : 0xA4080004;
+
+declare const DPC_START_REG          : 0xA4100000;
+declare const DPC_END_REG            : 0xA4100004;
+declare const DPC_CURRENT_REG        : 0xA4100008;
+declare const DPC_STATUS_REG         : 0xA410000C;
+declare const DPC_CLOCK_REG          : 0xA4100010;
+declare const DPC_BUFBUSY_REG        : 0xA4100014;
+declare const DPC_PIPEBUSY_REG       : 0xA4100018;
+declare const DPC_TMEM_REG           : 0xA410001C;
+
+declare const DPS_TBIST_REG          : 0xA4200000;
+declare const DPS_TEST_MODE_REG      : 0xA4200004;
+declare const DPS_BUFTEST_ADDR_REG   : 0xA4200008;
+declare const DPS_BUFTEST_DATA_REG   : 0xA420000C;
+
+declare const MI_INIT_MODE_REG       : 0xA4300000;
+declare const MI_MODE_REG            : 0xA4300000;
+declare const MI_VERSION_REG         : 0xA4300004;
+declare const MI_NOOP_REG            : 0xA4300004;
+declare const MI_INTR_REG            : 0xA4300008;
+declare const MI_INTR_MASK_REG       : 0xA430000C;
+
+declare const VI_STATUS_REG          : 0xA4400000;
+declare const VI_CONTROL_REG         : 0xA4400000;
+declare const VI_ORIGIN_REG          : 0xA4400004;
+declare const VI_DRAM_ADDR_REG       : 0xA4400004;
+declare const VI_WIDTH_REG           : 0xA4400008;
+declare const VI_H_WIDTH_REG         : 0xA4400008;
+declare const VI_INTR_REG            : 0xA440000C;
+declare const VI_V_INTR_REG          : 0xA440000C;
+declare const VI_CURRENT_REG         : 0xA4400010;
+declare const VI_V_CURRENT_LINE_REG  : 0xA4400010;
+declare const VI_BURST_REG           : 0xA4400014;
+declare const VI_TIMING_REG          : 0xA4400014;
+declare const VI_V_SYNC_REG          : 0xA4400018;
+declare const VI_H_SYNC_REG          : 0xA440001C;
+declare const VI_LEAP_REG            : 0xA4400020;
+declare const VI_H_SYNC_LEAP_REG     : 0xA4400020;
+declare const VI_H_START_REG         : 0xA4400024;
+declare const VI_H_VIDEO_REG         : 0xA4400024;
+declare const VI_V_START_REG         : 0xA4400028;
+declare const VI_V_VIDEO_REG         : 0xA4400028;
+declare const VI_V_BURST_REG         : 0xA440002C;
+declare const VI_X_SCALE_REG         : 0xA4400030;
+declare const VI_Y_SCALE_REG         : 0xA4400034;
+
+declare const AI_DRAM_ADDR_REG       : 0xA4500000;
+declare const AI_LEN_REG             : 0xA4500004;
+declare const AI_CONTROL_REG         : 0xA4500008;
+declare const AI_STATUS_REG          : 0xA450000C;
+declare const AI_DACRATE_REG         : 0xA4500010;
+declare const AI_BITRATE_REG         : 0xA4500014;
+
+declare const PI_DRAM_ADDR_REG       : 0xA4600000;
+declare const PI_CART_ADDR_REG       : 0xA4600004;
+declare const PI_RD_LEN_REG          : 0xA4600008;
+declare const PI_WR_LEN_REG          : 0xA460000C;
+declare const PI_STATUS_REG          : 0xA4600010;
+declare const PI_BSD_DOM1_LAT_REG    : 0xA4600014;
+declare const PI_BSD_DOM1_PWD_REG    : 0xA4600018;
+declare const PI_BSD_DOM1_PGS_REG    : 0xA460001C;
+declare const PI_BSD_DOM1_RLS_REG    : 0xA4600020;
+declare const PI_BSD_DOM2_LAT_REG    : 0xA4600024;
+declare const PI_BSD_DOM2_PWD_REG    : 0xA4600028;
+declare const PI_BSD_DOM2_PGS_REG    : 0xA460002C;
+declare const PI_BSD_DOM2_RLS_REG    : 0xA4600030;
+
+declare const RI_MODE_REG            : 0xA4700000;
+declare const RI_CONFIG_REG          : 0xA4700004;
+declare const RI_CURRENT_LOAD_REG    : 0xA4700008;
+declare const RI_SELECT_REG          : 0xA470000C;
+declare const RI_REFRESH_REG         : 0xA4700010;
+declare const RI_COUNT_REG           : 0xA4700010;
+declare const RI_LATENCY_REG         : 0xA4700014;
+declare const RI_RERROR_REG          : 0xA4700018;
+declare const RI_WERROR_REG          : 0xA470001C;
+
+declare const SI_DRAM_ADDR_REG       : 0xA4800000;
+declare const SI_PIF_ADDR_RD64B_REG  : 0xA4800004;
+declare const SI_PIF_ADDR_WR64B_REG  : 0xA4800010;
+declare const SI_STATUS_REG          : 0xA4800018;
+
 declare const mem: MemModule;
 declare const events: EventsModule;
 declare const debug: DebugModule;
@@ -377,3 +482,5 @@ interface Number {
     /** Returns a hexadecimal string representation of the number. */
     hex(length?: number): string;
 }
+
+

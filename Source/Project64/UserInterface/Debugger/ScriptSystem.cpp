@@ -14,18 +14,17 @@ CScriptSystem::CScriptSystem(CDebuggerUI *debugger) :
 {
     m_Cmd.id = CMD_IDLE;
     m_Cmd.hWakeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    m_Cmd.hIdleEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
     m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
 }
 
 CScriptSystem::~CScriptSystem()
 {
-    m_CS.enter();
     SetCommand(CMD_SHUTDOWN);
-    m_CS.leave();
-
     WaitForSingleObject(m_hThread, INFINITE);
     CloseHandle(m_hThread);
     CloseHandle(m_Cmd.hWakeEvent);
+    CloseHandle(m_Cmd.hIdleEvent);
 }
 
 jsstatus_t CScriptSystem::GetStatus(const char* name)
@@ -112,7 +111,7 @@ bool CScriptSystem::Eval(const char *name, const char *code)
     return true;
 }
 
-void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
+void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
 {
     CGuard guard(m_CS);
 
@@ -122,21 +121,20 @@ void CScriptSystem::_Invoke(jshook_id_t hookId, void* env)
         return;
     }
 
-    bool bDidExec = false;
+    bool bNeedSweep = false;
     jscb_map_t& callbacks = m_AppHooks[hookId];
 
     jscb_map_t::iterator it;
     for(it = callbacks.begin(); it != callbacks.end(); it++)
     {
-        jscallback_t& cb = it->second;
-        if(env == NULL || cb.fnCondition(&cb, env))
-        {
-            cb.inst->RawCall(cb.heapptr, cb.fnPushArgs, env);
-            bDidExec = true;
-        }
+        JSCallback& cb = it->second;
+        cb.instance->ConditionalInvokeCallback(cb, env);
     }
 
-    SetCommand(bDidExec ? CMD_SWEEP : CMD_IDLE);
+    if (bNeedSweep)
+    {
+        SetCommand(CMD_SWEEP);
+    }
 }
 
 void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs, void *argsParam)
@@ -153,9 +151,19 @@ void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t f
 
 void CScriptSystem::SetCommand(jssyscmd_id_t cmd, const char *paramA, const char *paramB)
 {
+    CGuard guard(m_CS);
+
+    WaitForSingleObject(m_Cmd.hIdleEvent, INFINITE);
+    ResetEvent(m_Cmd.hIdleEvent);
     m_Cmd.id = cmd;
-    m_Cmd.paramA = paramA;
-    m_Cmd.paramB = paramB;
+    if (paramA != NULL)
+    {
+        m_Cmd.paramA = paramA;
+    }
+    if (paramB != NULL)
+    {
+        m_Cmd.paramB = paramB;
+    }
     SetEvent(m_Cmd.hWakeEvent);
 }
 
@@ -196,6 +204,7 @@ void CScriptSystem::ThreadProc()
 
         m_Cmd.id = CMD_IDLE;
         ResetEvent(m_Cmd.hWakeEvent);
+        SetEvent(m_Cmd.hIdleEvent);
     }
 }
 
@@ -274,7 +283,7 @@ bool CScriptSystem::RawRemoveInstance(const char *name)
     return true;
 }
 
-jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, jscallback_t& callback)
+jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, JSCallback& callback)
 {
     if(hookId >= JS_NUM_APP_HOOKS)
     {
@@ -292,7 +301,7 @@ bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
     {
         return false;
     }
-    
+
     m_AppHooks[hookId].erase(callbackId);
     m_AppCallbackCount--;
     return true;

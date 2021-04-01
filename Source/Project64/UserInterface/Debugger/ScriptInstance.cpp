@@ -139,6 +139,16 @@ void CScriptInstance::RawCall(void *heapptr, jsargs_fn_t fnPushArgs, void *param
     duk_pop(m_Ctx);
 }
 
+void CScriptInstance::ConditionalInvokeCallback(JSCallback& cb, void* _hookEnv)
+{
+    if (!cb.Condition(&cb, _hookEnv))
+    {
+        return;
+    }
+
+    RawCall(cb.heapptr, cb.PushArguments, _hookEnv);
+}
+
 void CScriptInstance::SyncCall(void *heapptr, jsargs_fn_t fnPushArgs, void* /*param*/)
 {
     m_System->SyncCall(this, heapptr, fnPushArgs, NULL);

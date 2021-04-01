@@ -12,7 +12,7 @@ namespace ScriptAPI
     
     CScriptInstance* GetInstance(duk_context* ctx);
         
-    jscb_id_t AddCallback(duk_context* ctx, jshook_id_t hookId, jscallback_t& callback);
+    jscb_id_t AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallback& callback);
     bool RemoveCallback(duk_context* ctx, jscb_id_t callbackId);
     duk_ret_t CallbackFinalizer(duk_context* ctx);
 
@@ -92,8 +92,8 @@ namespace ScriptAPI
     duk_ret_t js_AddressRange__constructor(duk_context* ctx);
 
     // ScriptAPI_debug
-    //void Define_debug(duk_context* ctx);
-    //duk_ret_t js_debug_breakhere(duk_context* ctx);
+    void Define_debug(duk_context* ctx);
+    duk_ret_t js_debug_breakhere(duk_context* ctx);
 
     // ScriptAPI_asm
     void Define_asm(duk_context* ctx);

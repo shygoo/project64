@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Mar 30 2021 -->
+<!-- Generated Apr 01 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -151,6 +151,8 @@ div.tag.red {
 <li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
 <li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
+<li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
+<li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#events">events</a>: Emulation event hooking interface<ul>
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
@@ -234,6 +236,7 @@ div.tag.red {
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#GPR_flags">General purpose register flags</a></li>
+<li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
 </ul>
@@ -278,6 +281,8 @@ N64 memory interface
 <li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
 <li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
+<li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
+<li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
 </ul>
 <!-- mem._ -->
 <div class="prop"><span class="title" id="mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</span></div>
@@ -354,6 +359,16 @@ const vec3f = mem.typedef({ x: f32, y: f32, z: f32 });
 var playerAngle = new vec3f(0x8033B19C);
 var playerPos = new vec3f(0x8033B1AC);
 </pre>
+<!-- mem.getblock -->
+<div class="prop"><span class="title" id="mem_getblock">mem.getblock(address, size)</span></div>
+<div class="tsproto">mem.getblock(address: number, size: number): Buffer</div>
+<div class="vtab"></div>
+Returns a copied block from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
+<!-- mem.getstring -->
+<div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, maxLength])</span></div>
+<div class="tsproto">mem.getblock(address: number, maxLength?: number): string</div>
+<div class="vtab"></div>
+Returns a copied zero-terminated ASCII string from memory.
 
 </div>
 <!-- events -->
@@ -438,8 +453,8 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, registers, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one
-of the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div>. <div class="snip">callback</div> receives the index of the first register that is
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
+the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div> (lower 32 bits only). <div class="snip">callback</div> receives the index of the first register that is
 equal to <div class="snip">value</div>.
 <div class="vtab""></div>
 Returns a callback ID.
@@ -756,7 +771,7 @@ Closes the file referenced by <div class="snip">fd</div>.
 <div class="vtab"></div>
 Writes <div class="snip">buffer</div> to the file referenced by file descriptor <div class="snip">fd</div>. <div class="snip">buffer</div> may be one of the following types&#58;
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
-<a target="blank" href="https://nodejs.org/api/buffer.html">Buffer</a>,
+<a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.<br><br>
 <div class="snip">offset</div>&#58; optional position in the source buffer.<br>
@@ -785,7 +800,7 @@ fs.writeFile("ramdump.bin", ramdump);
 <div class="vtab"></div>
 Reads data from the file referenced by <div class="snip">fd</div> into <div class="snip">buffer</div>. <div class="snip">buffer</div> may be one of the following types&#58;
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
-<a target="blank" href="https://nodejs.org/api/buffer.html">Buffer</a>,
+<a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>.<br><br>
 <div class="snip">offset</div>&#58; position in the source buffer.<br>
@@ -795,9 +810,9 @@ Reads data from the file referenced by <div class="snip">fd</div> into <div clas
 Returns the number of bytes read.
 <!-- fs.readFile -->
 <div class="prop"><span class="title" id="fs_readFile">fs.readFile(path)</span></div>
-<div class="tsproto">fs.readFile(path: string): Uint8Array</div>
+<div class="tsproto">fs.readFile(path: string): Buffer</div>
 <div class="vtab"></div>
-Returns a <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array">Uint8Array</a> representing the data of the file specified by <div class="snip">path</div>.
+Returns a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object representing the data of the file specified by <div class="snip">path</div>.
 Uses mode "rb" internally.
 <!-- fs.fstat -->
 <div class="prop"><span class="title" id="fs_fstat">fs.fstat(fd)</span></div>
@@ -921,6 +936,7 @@ Setting this value to zero will allow tasks to run indefinitely (not recommended
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#GPR_flags">General purpose register flags</a></li>
+<li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
 </ul>
 <!-- alert -->
 <div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
@@ -982,13 +998,122 @@ Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class
 <div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
 <div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
 </pre>
+<!-- Memory_mapped_register_addresses -->
+<div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
+<div class="vtab"></div>
+<pre>
+<div class="snip">RDRAM_CONFIG_REG</div>       0xA3F00000
+<div class="snip">RDRAM_DEVICE_TYPE_REG</div>  0xA3F00000
+<div class="snip">RDRAM_DEVICE_ID_REG</div>    0xA3F00004
+<div class="snip">RDRAM_DELAY_REG</div>        0xA3F00008
+<div class="snip">RDRAM_MODE_REG</div>         0xA3F0000C
+<div class="snip">RDRAM_REF_INTERVAL_REG</div> 0xA3F00010
+<div class="snip">RDRAM_REF_ROW_REG</div>      0xA3F00014
+<div class="snip">RDRAM_RAS_INTERVAL_REG</div> 0xA3F00018
+<div class="snip">RDRAM_MIN_INTERVAL_REG</div> 0xA3F0001C
+<div class="snip">RDRAM_ADDR_SELECT_REG</div>  0xA3F00020
+<div class="snip">RDRAM_DEVICE_MANUF_REG</div> 0xA3F00024
+
+<div class="snip">SP_MEM_ADDR_REG</div>        0xA4040000
+<div class="snip">SP_DRAM_ADDR_REG</div>       0xA4040004
+<div class="snip">SP_RD_LEN_REG</div>          0xA4040008
+<div class="snip">SP_WR_LEN_REG</div>          0xA404000C
+<div class="snip">SP_STATUS_REG</div>          0xA4040010
+<div class="snip">SP_DMA_FULL_REG</div>        0xA4040014
+<div class="snip">SP_DMA_BUSY_REG</div>        0xA4040018
+<div class="snip">SP_SEMAPHORE_REG</div>       0xA404001C
+
+<div class="snip">SP_PC_REG</div>              0xA4080000
+<div class="snip">SP_IBIST_REG</div>           0xA4080004
+
+<div class="snip">DPC_START_REG</div>          0xA4100000
+<div class="snip">DPC_END_REG</div>            0xA4100004
+<div class="snip">DPC_CURRENT_REG</div>        0xA4100008
+<div class="snip">DPC_STATUS_REG</div>         0xA410000C
+<div class="snip">DPC_CLOCK_REG</div>          0xA4100010
+<div class="snip">DPC_BUFBUSY_REG</div>        0xA4100014
+<div class="snip">DPC_PIPEBUSY_REG</div>       0xA4100018
+<div class="snip">DPC_TMEM_REG</div>           0xA410001C
+
+<div class="snip">DPS_TBIST_REG</div>          0xA4200000
+<div class="snip">DPS_TEST_MODE_REG</div>      0xA4200004
+<div class="snip">DPS_BUFTEST_ADDR_REG</div>   0xA4200008
+<div class="snip">DPS_BUFTEST_DATA_REG</div>   0xA420000C
+
+<div class="snip">MI_INIT_MODE_REG</div>       0xA4300000
+<div class="snip">MI_MODE_REG</div>            0xA4300000
+<div class="snip">MI_VERSION_REG</div>         0xA4300004
+<div class="snip">MI_NOOP_REG</div>            0xA4300004
+<div class="snip">MI_INTR_REG</div>            0xA4300008
+<div class="snip">MI_INTR_MASK_REG</div>       0xA430000C
+
+<div class="snip">VI_STATUS_REG</div>          0xA4400000
+<div class="snip">VI_CONTROL_REG</div>         0xA4400000
+<div class="snip">VI_ORIGIN_REG</div>          0xA4400004
+<div class="snip">VI_DRAM_ADDR_REG</div>       0xA4400004
+<div class="snip">VI_WIDTH_REG</div>           0xA4400008
+<div class="snip">VI_H_WIDTH_REG</div>         0xA4400008
+<div class="snip">VI_INTR_REG</div>            0xA440000C
+<div class="snip">VI_V_INTR_REG</div>          0xA440000C
+<div class="snip">VI_CURRENT_REG</div>         0xA4400010
+<div class="snip">VI_V_CURRENT_LINE_REG</div>  0xA4400010
+<div class="snip">VI_BURST_REG</div>           0xA4400014
+<div class="snip">VI_TIMING_REG</div>          0xA4400014
+<div class="snip">VI_V_SYNC_REG</div>          0xA4400018
+<div class="snip">VI_H_SYNC_REG</div>          0xA440001C
+<div class="snip">VI_LEAP_REG</div>            0xA4400020
+<div class="snip">VI_H_SYNC_LEAP_REG</div>     0xA4400020
+<div class="snip">VI_H_START_REG</div>         0xA4400024
+<div class="snip">VI_H_VIDEO_REG</div>         0xA4400024
+<div class="snip">VI_V_START_REG</div>         0xA4400028
+<div class="snip">VI_V_VIDEO_REG</div>         0xA4400028
+<div class="snip">VI_V_BURST_REG</div>         0xA440002C
+<div class="snip">VI_X_SCALE_REG</div>         0xA4400030
+<div class="snip">VI_Y_SCALE_REG</div>         0xA4400034
+
+<div class="snip">AI_DRAM_ADDR_REG</div>       0xA4500000
+<div class="snip">AI_LEN_REG</div>             0xA4500004
+<div class="snip">AI_CONTROL_REG</div>         0xA4500008
+<div class="snip">AI_STATUS_REG</div>          0xA450000C
+<div class="snip">AI_DACRATE_REG</div>         0xA4500010
+<div class="snip">AI_BITRATE_REG</div>         0xA4500014
+
+<div class="snip">PI_DRAM_ADDR_REG</div>       0xA4600000
+<div class="snip">PI_CART_ADDR_REG</div>       0xA4600004
+<div class="snip">PI_RD_LEN_REG</div>          0xA4600008
+<div class="snip">PI_WR_LEN_REG</div>          0xA460000C
+<div class="snip">PI_STATUS_REG</div>          0xA4600010
+<div class="snip">PI_BSD_DOM1_LAT_REG</div>    0xA4600014
+<div class="snip">PI_BSD_DOM1_PWD_REG</div>    0xA4600018
+<div class="snip">PI_BSD_DOM1_PGS_REG</div>    0xA460001C
+<div class="snip">PI_BSD_DOM1_RLS_REG</div>    0xA4600020
+<div class="snip">PI_BSD_DOM2_LAT_REG</div>    0xA4600024
+<div class="snip">PI_BSD_DOM2_PWD_REG</div>    0xA4600028
+<div class="snip">PI_BSD_DOM2_PGS_REG</div>    0xA460002C
+<div class="snip">PI_BSD_DOM2_RLS_REG</div>    0xA4600030
+
+<div class="snip">RI_MODE_REG</div>            0xA4700000
+<div class="snip">RI_CONFIG_REG</div>          0xA4700004
+<div class="snip">RI_CURRENT_LOAD_REG</div>    0xA4700008
+<div class="snip">RI_SELECT_REG</div>          0xA470000C
+<div class="snip">RI_REFRESH_REG</div>         0xA4700010
+<div class="snip">RI_COUNT_REG</div>           0xA4700010
+<div class="snip">RI_LATENCY_REG</div>         0xA4700014
+<div class="snip">RI_RERROR_REG</div>          0xA4700018
+<div class="snip">RI_WERROR_REG</div>          0xA470001C
+
+<div class="snip">SI_DRAM_ADDR_REG</div>       0xA4800000
+<div class="snip">SI_PIF_ADDR_RD64B_REG</div>  0xA4800004
+<div class="snip">SI_PIF_ADDR_WR64B_REG</div>  0xA4800010
+<div class="snip">SI_STATUS_REG</div>          0xA4800018
+</pre>
 
 </div>
 <!-- JavaScript environment -->
 <div class="module">
 <div class="modtitle"><span class="title" id="JavaScript environment">JavaScript environment</span></div>
 <div class="vtab""></div>
-Project64's script system uses <a target="blank" href="https://duktape.org/">duktape</a>. duktape supports ECMAScript E5 and some features from ES2015+.<br>
+Project64's script system uses <a target="blank" href="https://duktape.org/">Duktape</a>. Duktape supports ECMAScript E5 and some features from ES2015+.<br>
 See <a target="blank" href="https://duktape.org/">https://duktape.org/</a> for more information.
 <div class="vtab"></div>
 <ul>

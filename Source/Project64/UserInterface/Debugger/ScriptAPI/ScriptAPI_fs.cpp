@@ -234,16 +234,17 @@ duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
         return duk_throw(ctx);
     }
 
-    struct stat s;
-    if(fstat(_fileno(fp), &s) != 0)
+    struct stat stats;
+    if(fstat(_fileno(fp), &stats) != 0)
     {
         fclose(fp);
         return DUK_RET_ERROR;
     }
 
-    void *data = duk_push_fixed_buffer(ctx, s.st_size);
+    void *data = duk_push_fixed_buffer(ctx, stats.st_size);
+    duk_push_buffer_object(ctx, -1, 0, stats.st_size, DUK_BUFOBJ_NODEJS_BUFFER);
 
-    if(fread(data, 1, s.st_size, fp) != s.st_size)
+    if(fread(data, 1, stats.st_size, fp) != stats.st_size)
     {
         duk_pop(ctx);
         fclose(fp);
@@ -375,12 +376,12 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    struct stat s;
+    struct stat stats;
     
     if(duk_is_number(ctx, 0))
     {
         int fd = duk_get_int(ctx, 0);
-        if(fstat(fd, &s) != 0)
+        if(fstat(fd, &stats) != 0)
         {
             return DUK_RET_ERROR;
         }
@@ -388,7 +389,7 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
     else if(duk_is_string(ctx, 0))
     {
         const char *path = duk_get_string(ctx, 0);
-        if(stat(path, &s) != 0)
+        if(stat(path, &stats) != 0)
         {
             return DUK_RET_ERROR;
         }
@@ -399,24 +400,24 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
     }
 
     const duk_number_list_entry numbers[] = {
-        { "dev",     (double)s.st_dev },
-        { "ino",     (double)s.st_ino },
-        { "mode",    (double)s.st_mode },
-        { "nlink",   (double)s.st_nlink },
-        { "uid",     (double)s.st_uid },
-        { "gid",     (double)s.st_gid },
-        { "rdev",    (double)s.st_rdev },
-        { "size",    (double)s.st_size },
-        { "atimeMs", (double)s.st_atime * 1000 },
-        { "mtimeMs", (double)s.st_mtime * 1000 },
-        { "ctimeMs", (double)s.st_ctime * 1000 },
+        { "dev",     (double)stats.st_dev },
+        { "ino",     (double)stats.st_ino },
+        { "mode",    (double)stats.st_mode },
+        { "nlink",   (double)stats.st_nlink },
+        { "uid",     (double)stats.st_uid },
+        { "gid",     (double)stats.st_gid },
+        { "rdev",    (double)stats.st_rdev },
+        { "size",    (double)stats.st_size },
+        { "atimeMs", (double)stats.st_atime * 1000 },
+        { "mtimeMs", (double)stats.st_mtime * 1000 },
+        { "ctimeMs", (double)stats.st_ctime * 1000 },
         { NULL, 0 }
     };
 
     struct { const char *key; time_t time; } dates[3] = {
-        { "atime", s.st_atime * 1000 },
-        { "mtime", s.st_mtime * 1000 },
-        { "ctime", s.st_ctime * 1000 },
+        { "atime", stats.st_atime * 1000 },
+        { "mtime", stats.st_mtime * 1000 },
+        { "ctime", stats.st_ctime * 1000 },
     };
 
     duk_push_global_object(ctx);

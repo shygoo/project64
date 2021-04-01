@@ -105,6 +105,16 @@
           var playerPos = new vec3f(0x8033B1AC);
           ```
 
+  - name: mem.getblock
+    js:   mem.getblock(address, size)
+    ts:   "mem.getblock(address: number, size: number): Buffer"
+    desc: Returns a copied block from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
+
+  - name: mem.getstring
+    js:   mem.getstring(address[, maxLength])
+    ts:   "mem.getblock(address: number, maxLength?: number): string"
+    desc: Returns a copied zero-terminated ASCII string from memory.
+
 # events
 - name: events
   tagline: Emulation event hooking interface
@@ -186,8 +196,8 @@
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number"
     tags: [[Requires interpreter core, blue]]
     desc: |
-          Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one
-          of the general purpose registers specified by `regFlags` is equal to `value`. `callback` receives the index of the first register that is
+          Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
+          the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only). `callback` receives the index of the first register that is
           equal to `value`.
           <div class="vtab""></div>
           Returns a callback ID.
@@ -412,7 +422,7 @@
     desc: |
           Writes `buffer` to the file referenced by file descriptor `fd`. `buffer` may be one of the following types&#58;
           [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer),
-          [Buffer](https://nodejs.org/api/buffer.html),
+          [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html),
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
           [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.<br><br>
           `offset`&#58; optional position in the source buffer.<br>
@@ -443,7 +453,7 @@
     desc: |
           Reads data from the file referenced by `fd` into `buffer`. `buffer` may be one of the following types&#58;
           [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer),
-          [Buffer](https://nodejs.org/api/buffer.html),
+          [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html),
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
           [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray).<br><br>
           `offset`&#58; position in the source buffer.<br>
@@ -454,9 +464,9 @@
 
   - name: fs.readFile
     js:   fs.readFile(path)
-    ts:   "fs.readFile(path: string): Uint8Array"
+    ts:   "fs.readFile(path: string): Buffer"
     desc: |
-          Returns a [Uint8Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Uint8Array) representing the data of the file specified by `path`.
+          Returns a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object representing the data of the file specified by `path`.
           Uses mode "rb" internally.
 
   - name: fs.fstat
@@ -638,10 +648,120 @@
           `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
           `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
           </pre>
-    
+
+  - name: Memory_mapped_register_addresses
+    js:   Memory mapped register addresses
+    desc: |
+          <pre>
+          `RDRAM_CONFIG_REG`       0xA3F00000
+          `RDRAM_DEVICE_TYPE_REG`  0xA3F00000
+          `RDRAM_DEVICE_ID_REG`    0xA3F00004
+          `RDRAM_DELAY_REG`        0xA3F00008
+          `RDRAM_MODE_REG`         0xA3F0000C
+          `RDRAM_REF_INTERVAL_REG` 0xA3F00010
+          `RDRAM_REF_ROW_REG`      0xA3F00014
+          `RDRAM_RAS_INTERVAL_REG` 0xA3F00018
+          `RDRAM_MIN_INTERVAL_REG` 0xA3F0001C
+          `RDRAM_ADDR_SELECT_REG`  0xA3F00020
+          `RDRAM_DEVICE_MANUF_REG` 0xA3F00024
+
+          `SP_MEM_ADDR_REG`        0xA4040000
+          `SP_DRAM_ADDR_REG`       0xA4040004
+          `SP_RD_LEN_REG`          0xA4040008
+          `SP_WR_LEN_REG`          0xA404000C
+          `SP_STATUS_REG`          0xA4040010
+          `SP_DMA_FULL_REG`        0xA4040014
+          `SP_DMA_BUSY_REG`        0xA4040018
+          `SP_SEMAPHORE_REG`       0xA404001C
+
+          `SP_PC_REG`              0xA4080000
+          `SP_IBIST_REG`           0xA4080004
+
+          `DPC_START_REG`          0xA4100000
+          `DPC_END_REG`            0xA4100004
+          `DPC_CURRENT_REG`        0xA4100008
+          `DPC_STATUS_REG`         0xA410000C
+          `DPC_CLOCK_REG`          0xA4100010
+          `DPC_BUFBUSY_REG`        0xA4100014
+          `DPC_PIPEBUSY_REG`       0xA4100018
+          `DPC_TMEM_REG`           0xA410001C
+
+          `DPS_TBIST_REG`          0xA4200000
+          `DPS_TEST_MODE_REG`      0xA4200004
+          `DPS_BUFTEST_ADDR_REG`   0xA4200008
+          `DPS_BUFTEST_DATA_REG`   0xA420000C
+
+          `MI_INIT_MODE_REG`       0xA4300000
+          `MI_MODE_REG`            0xA4300000
+          `MI_VERSION_REG`         0xA4300004
+          `MI_NOOP_REG`            0xA4300004
+          `MI_INTR_REG`            0xA4300008
+          `MI_INTR_MASK_REG`       0xA430000C
+
+          `VI_STATUS_REG`          0xA4400000
+          `VI_CONTROL_REG`         0xA4400000
+          `VI_ORIGIN_REG`          0xA4400004
+          `VI_DRAM_ADDR_REG`       0xA4400004
+          `VI_WIDTH_REG`           0xA4400008
+          `VI_H_WIDTH_REG`         0xA4400008
+          `VI_INTR_REG`            0xA440000C
+          `VI_V_INTR_REG`          0xA440000C
+          `VI_CURRENT_REG`         0xA4400010
+          `VI_V_CURRENT_LINE_REG`  0xA4400010
+          `VI_BURST_REG`           0xA4400014
+          `VI_TIMING_REG`          0xA4400014
+          `VI_V_SYNC_REG`          0xA4400018
+          `VI_H_SYNC_REG`          0xA440001C
+          `VI_LEAP_REG`            0xA4400020
+          `VI_H_SYNC_LEAP_REG`     0xA4400020
+          `VI_H_START_REG`         0xA4400024
+          `VI_H_VIDEO_REG`         0xA4400024
+          `VI_V_START_REG`         0xA4400028
+          `VI_V_VIDEO_REG`         0xA4400028
+          `VI_V_BURST_REG`         0xA440002C
+          `VI_X_SCALE_REG`         0xA4400030
+          `VI_Y_SCALE_REG`         0xA4400034
+
+          `AI_DRAM_ADDR_REG`       0xA4500000
+          `AI_LEN_REG`             0xA4500004
+          `AI_CONTROL_REG`         0xA4500008
+          `AI_STATUS_REG`          0xA450000C
+          `AI_DACRATE_REG`         0xA4500010
+          `AI_BITRATE_REG`         0xA4500014
+
+          `PI_DRAM_ADDR_REG`       0xA4600000
+          `PI_CART_ADDR_REG`       0xA4600004
+          `PI_RD_LEN_REG`          0xA4600008
+          `PI_WR_LEN_REG`          0xA460000C
+          `PI_STATUS_REG`          0xA4600010
+          `PI_BSD_DOM1_LAT_REG`    0xA4600014
+          `PI_BSD_DOM1_PWD_REG`    0xA4600018
+          `PI_BSD_DOM1_PGS_REG`    0xA460001C
+          `PI_BSD_DOM1_RLS_REG`    0xA4600020
+          `PI_BSD_DOM2_LAT_REG`    0xA4600024
+          `PI_BSD_DOM2_PWD_REG`    0xA4600028
+          `PI_BSD_DOM2_PGS_REG`    0xA460002C
+          `PI_BSD_DOM2_RLS_REG`    0xA4600030
+
+          `RI_MODE_REG`            0xA4700000
+          `RI_CONFIG_REG`          0xA4700004
+          `RI_CURRENT_LOAD_REG`    0xA4700008
+          `RI_SELECT_REG`          0xA470000C
+          `RI_REFRESH_REG`         0xA4700010
+          `RI_COUNT_REG`           0xA4700010
+          `RI_LATENCY_REG`         0xA4700014
+          `RI_RERROR_REG`          0xA4700018
+          `RI_WERROR_REG`          0xA470001C
+
+          `SI_DRAM_ADDR_REG`       0xA4800000
+          `SI_PIF_ADDR_RD64B_REG`  0xA4800004
+          `SI_PIF_ADDR_WR64B_REG`  0xA4800010
+          `SI_STATUS_REG`          0xA4800018
+          </pre>
+
 - name: JavaScript environment
   desc: |
         <div class="vtab""></div>
-        Project64's script system uses [duktape](https://duktape.org/). duktape supports ECMAScript E5 and some features from ES2015+.<br>
+        Project64's script system uses [Duktape](https://duktape.org/). Duktape supports ECMAScript E5 and some features from ES2015+.<br>
         See [https://duktape.org/](https://duktape.org/) for more information.
 

@@ -28,6 +28,8 @@ public:
     void           IncRefCount();
     void           DecRefCount();
 
+    void           ConditionalInvokeCallback(JSCallback& cb, void *_hookEnv);
+
     void           RawCall(void* heapptr, jsargs_fn_t fnPushArgs, void* param);
     void           SyncCall(void* heapptr, jsargs_fn_t fnPushArgs, void* param);
     void           RawEval(const char* code);
