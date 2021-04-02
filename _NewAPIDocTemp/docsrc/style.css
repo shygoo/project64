@@ -13,7 +13,7 @@ table {
 }
 
 td {
-    border: 1px solid #444;
+    border: 1px solid #CCC;
     padding: 2px 6px;
 }
 
@@ -132,4 +132,5 @@ div.tag.red {
     hr { border-top: 1px solid #744; }
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
+    td { border: 1px solid #444; }
 }

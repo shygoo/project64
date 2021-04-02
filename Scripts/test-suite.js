@@ -1,13 +1,3 @@
-function hexobj(object) {
-    return JSON.stringify(object, function(key, value) { 
-        if(typeof this[key] == 'number') {
-            return '0x' + this[key].hex();
-        }
-        return value;
-    });
-}
-
-
 var handlers = {
     '.end': cmd_end,
     '.eval': cmd_eval,
@@ -70,6 +60,15 @@ function runtest(caption, func)
         console.log(HR);
         return false;
     }
+}
+
+function hexobj(object) {
+    return JSON.stringify(object, function(key, value) { 
+        if(typeof this[key] == 'number') {
+            return '0x' + this[key].hex();
+        }
+        return value;
+    });
 }
 
 /**************************************/
@@ -199,8 +198,8 @@ function test_mem()
     const TEST_AREA_SIZE = 256;
     const TEST_AREA_ADDR = 0x80400000 - TEST_AREA_SIZE;
     
-    const o_f64 = 0x00;
-    const o_f32 = 0x08;
+    const o_double = 0x00;
+    const o_float = 0x08;
     const o_u32 = 0x0C;
     const o_s32 = 0x10;
     const o_u16 = 0x14;
@@ -208,8 +207,8 @@ function test_mem()
     const o_u8  = 0x18;
     const o_s8  = 0x19;
 
-    const p_f64 = TEST_AREA_ADDR + o_f64;
-    const p_f32 = TEST_AREA_ADDR + o_f32;
+    const p_double = TEST_AREA_ADDR + o_double;
+    const p_float = TEST_AREA_ADDR + o_float;
     const p_u32 = TEST_AREA_ADDR + o_u32;
     const p_s32 = TEST_AREA_ADDR + o_s32;
     const p_u16 = TEST_AREA_ADDR + o_u16;
@@ -218,8 +217,8 @@ function test_mem()
     const p_s8  = TEST_AREA_ADDR + o_s8;
 
     const structProps = {
-        'v_f64': f64,
-        'v_f32': f32,
+        'v_double': double,
+        'v_float': float,
         'v_u32': u32,
         'v_s32': s32,
         'v_u16': u16,
@@ -229,8 +228,8 @@ function test_mem()
     };
 
     const arrProps = [
-        [ p_f64, 'v_f64', f64 ],
-        [ p_f32, 'v_f32', f32 ],
+        [ p_double, 'v_double', double ],
+        [ p_float, 'v_float', float ],
         [ p_u32, 'v_u32', u32 ],
         [ p_s32, 'v_s32', s32 ],
         [ p_u16, 'v_u16', u16 ],
@@ -254,8 +253,8 @@ function test_mem()
     function rawSetValues()
     {
         resetBuffer();
-        mem.f64[p_f64] = 1;
-        mem.f32[p_f32] = 2;
+        mem.double[p_double] = 1;
+        mem.float[p_float] = 2;
         mem.u32[p_u32] = 12345678;
         mem.s32[p_s32] = -12345678;
         mem.u16[p_u16] = 12345;
@@ -267,8 +266,8 @@ function test_mem()
     function objSetValues(obj)
     {
         resetBuffer();
-        obj.v_f64 = 1;
-        obj.v_f32 = 2;
+        obj.v_double = 1;
+        obj.v_float = 2;
         obj.v_u32 = 12345678;
         obj.v_s32 = -12345678;
         obj.v_u16 = 12345;
@@ -280,8 +279,8 @@ function test_mem()
     function checkValues()
     {
         return (
-            mem.f64[p_f64] == 1 &&
-            mem.f32[p_f32] == 2 &&
+            mem.double[p_double] == 1 &&
+            mem.float[p_float] == 2 &&
             mem.u32[p_u32] == 12345678 &&
             mem.s32[p_s32] == -12345678 &&
             mem.u16[p_u16] == 12345 &&

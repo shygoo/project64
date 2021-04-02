@@ -237,6 +237,12 @@ static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper)
             return 1;
         }
 
+        if (!bUpper && strcmp(key, "pc") == 0)
+        {
+            duk_push_uint(ctx, g_Reg->m_PROGRAM_COUNTER);
+            return 1;
+        }
+
         regIndex = GPRIndex(key);
     }
 
@@ -282,6 +288,12 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
         if (strcmp("lo", key) == 0)
         {
             g_Reg->m_LO.UW[bUpper ? 1 : 0] = value;
+            return 0;
+        }
+
+        if (!bUpper && strcmp(key, "pc") == 0)
+        {
+            g_Reg->m_PROGRAM_COUNTER = value;
             return 0;
         }
 

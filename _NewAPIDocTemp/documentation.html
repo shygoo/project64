@@ -20,7 +20,7 @@ table {
 }
 
 td {
-    border: 1px solid #444;
+    border: 1px solid #CCC;
     padding: 2px 6px;
 }
 
@@ -139,6 +139,7 @@ div.tag.red {
     hr { border-top: 1px solid #744; }
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
+    td { border: 1px solid #444; }
 }
 </style>
 </head>
@@ -159,6 +160,8 @@ div.tag.red {
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
 <li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
 <li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
+<li><a href="#mem_ramsize">mem.ramsize</a></li>
+<li><a href="#mem_romsize">mem.romsize</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#events">events</a>: Emulation event hooking interface<ul>
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
@@ -215,8 +218,13 @@ div.tag.red {
 </ul><div class="vtab"></div></li>
 <li><a href="#debug">debug</a>: Debugger interface<ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
+<li><a href="#debug_skip">debug.skip()</a></li>
+<li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
+<li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#asm">asm</a>: ASM utilities<ul>
+<li><a href="#asm_encode">asm.encode(command[, address])</a></li>
+<li><a href="#asm_decode">asm.decode(opcode[, address])</a></li>
 <li><a href="#asm_gprname">asm.gprname(regIndex)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#fs">fs</a>: File system interface<ul>
@@ -290,6 +298,8 @@ N64 memory interface
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
 <li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
 <li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
+<li><a href="#mem_ramsize">mem.ramsize</a></li>
+<li><a href="#mem_romsize">mem.romsize</a></li>
 </ul>
 <!-- mem._ -->
 <div class="prop"><span class="title" id="mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</span></div>
@@ -376,6 +386,16 @@ Returns a copied block from memory as a <a target="blank" href="https://nodejs.o
 <div class="tsproto">mem.getblock(address: number, maxLength?: number): string</div>
 <div class="vtab"></div>
 Returns a copied zero-terminated ASCII string from memory.
+<!-- mem.ramsize -->
+<div class="prop"><span class="title" id="mem_ramsize">mem.ramsize</span></div>
+<div class="tsproto">mem.ramsize: number</div>
+<div class="vtab"></div>
+The size of RDRAM in bytes. <div class="snip">0</div> if RDRAM is not initialized.
+<!-- mem.romsize -->
+<div class="prop"><span class="title" id="mem_romsize">mem.romsize</span></div>
+<div class="tsproto">mem.romsize: number</div>
+<div class="vtab"></div>
+The size of cartridge ROM in bytes. <div class="snip">0</div> if ROM is not initialized.
 
 </div>
 <!-- events -->
@@ -397,7 +417,7 @@ Emulation event hooking interface
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul>
 <!-- events.onexec -->
-<div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span></div>
 <div class="tsproto">events.onexec(address: number | AddressRange, callback: () => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
@@ -412,11 +432,11 @@ events.onexec(0x802CB1C0, function() {
 <pre class="ex">
 // Log every CPU step
 events.onexec(ADDR_ANY, function() {
-    console.log("PC is at", gpr.pc.hex());
+    console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
 })
 </pre>
 <!-- events.onread -->
-<div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span></div>
 <div class="tsproto">events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <div class="snip">address</div>.
@@ -425,7 +445,7 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.onwrite -->
-<div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span></div>
 <div class="tsproto">events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
@@ -436,18 +456,18 @@ Returns a callback ID.
 <!-- CPUReadWriteEvent -->
 <div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
 <div class="vtab"></div>
-Event object describing a CPU read or write operation.
+Immutable event object describing a CPU read or write operation.
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
-<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
+<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read or write.</td></tr>
+<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read or write.</td></tr>
 <tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if the current opcode is LD or SD. <div class="snip">undefined</div> if the opcode is not LD or SD.</td></tr>
 <tr><td><div class="snip">e.type</div></td><td>The value's <a href="#type_ids">type ID</a>.</td></tr>
-<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
-<tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
+<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source or destination register is on the floating point unit.</td></tr>
+<tr><td><div class="snip">e.reg</div></td><td>Index of the source or destination register.</td></tr>
 </table>
 <!-- events.onopcode -->
-<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
@@ -455,16 +475,16 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
-const JAL = 0x0C000000; // 'JAL 0x00000000'
+const JAL = asm.encode("jal 0");
 const ANY_TARGET = 0xFC000000; // Mask off target field
 
 events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
-    // Log PC at every JAL
-    console.log(gpr.pc.hex());
+    // Log every JAL
+    console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
 });
 </pre>
 <!-- events.onopcode -->
-<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: () => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
@@ -472,7 +492,7 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
-<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
+<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span></div>
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
@@ -750,6 +770,9 @@ Debugger interface
 <div class="vtab"></div>
 <ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
+<li><a href="#debug_skip">debug.skip()</a></li>
+<li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
+<li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
 </ul>
 <!-- debug.breakhere -->
 <div class="prop"><span class="title" id="debug_breakhere">debug.breakhere()</span></div>
@@ -764,6 +787,27 @@ events.onexec(0x802CB1C0, function() {
     }
 });
 </pre>
+<!-- debug.skip -->
+<div class="prop"><span class="title" id="debug_skip">debug.skip()</span></div>
+<div class="tsproto">debug.skip(): void</div>
+<div class="vtab"></div>
+Skips the current CPU command. Useful for preventing or overriding an operation.
+<pre class="ex">
+// Do not let the CPU write to 0x8033B21E
+events.onwrite(0x8033B21E, function(e) {
+    debug.skip();
+});
+</pre>
+<!-- debug.showmemory -->
+<div class="prop"><span class="title" id="debug_showmemory">debug.showmemory(address)</span></div>
+<div class="tsproto">debug.showmemory(address: number): void</div>
+<div class="vtab"></div>
+Shows the memory window at <div class="snip">address</div>.
+<!-- debug.showcommands -->
+<div class="prop"><span class="title" id="debug_showcommands">debug.showcommands(address)</span></div>
+<div class="tsproto">debug.showcommands(address: number): void</div>
+<div class="vtab"></div>
+Shows the CPU commands window at <div class="snip">address</div>.
 
 </div>
 <!-- asm -->
@@ -772,8 +816,36 @@ events.onexec(0x802CB1C0, function() {
 ASM utilities
 <div class="vtab"></div>
 <ul>
+<li><a href="#asm_encode">asm.encode(command[, address])</a></li>
+<li><a href="#asm_decode">asm.decode(opcode[, address])</a></li>
 <li><a href="#asm_gprname">asm.gprname(regIndex)</a></li>
 </ul>
+<!-- asm.encode -->
+<div class="prop"><span class="title" id="asm_encode">asm.encode(command[, address])</span></div>
+<div class="tsproto">asm.encode(command: string, address?: number): number</div>
+<div class="vtab"></div>
+Encodes a single MIPS R4300i opcode. <div class="snip">address</div> is an optional parameter that may be used to hint the address of the instruction for branch offset calculation.
+<div class="vtab"></div>
+Returns the opcode as a number.
+<pre class="ex">
+asm.encode("nop");                      // 0x00000000
+asm.encode("addiu sp, sp, -24");        // 0x27BDFFE8
+asm.encode("b 0x80400000", 0x803FFF00); // 0x1000003F
+asm.encode("b 0x80400000", 0x80400100); // 0x1000FFBF
+</pre>
+<!-- asm.decode -->
+<div class="prop"><span class="title" id="asm_decode">asm.decode(opcode[, address])</span></div>
+<div class="tsproto">asm.decode(opcode: number, address?: number)</div>
+<div class="vtab"></div>
+Decodes a single MIPS R4300i opcode. <div class="snip">address</div> is an optional parameter that may be used to hint the address of the instruction for branch address calculation.
+<div class="vtab"></div>
+Returns a line of assembly code as a string.
+<pre class="ex">
+asm.decode(0x00000000);             // "NOP"
+asm.decode(0x27BDFFE8);             // "ADDIU SP, SP, -0x18"
+asm.decode(0x1000003F, 0x803FFF00); // "B 0x80400000"
+asm.decode(0x1000FFBF, 0x80400100); // "B 0x80400000"
+</pre>
 <!-- asm.gprname -->
 <div class="prop"><span class="title" id="asm_gprname">asm.gprname(regIndex)</span></div>
 <div class="tsproto">asm.gprname(regIndex: number): string</div>

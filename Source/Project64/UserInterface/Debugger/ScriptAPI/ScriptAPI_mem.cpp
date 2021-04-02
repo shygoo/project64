@@ -54,6 +54,14 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
     }
 
+    duk_push_string(ctx, "ramsize");
+    duk_push_c_function(ctx, js_mem__get_ramsize, 0);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_SET_ENUMERABLE);
+
+    duk_push_string(ctx, "romsize");
+    duk_push_c_function(ctx, js_mem__get_romsize, 0);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_SET_ENUMERABLE);
+
     duk_put_function_list(ctx, -1, funcs);
     duk_freeze(ctx, -1);
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
@@ -420,6 +428,18 @@ duk_ret_t ScriptAPI::js_mem_typedef(duk_context* ctx)
     duk_push_null(ctx);
     duk_dup(ctx, 0);
     duk_call_prop(ctx, -4, 2);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_mem__get_ramsize(duk_context* ctx)
+{
+    duk_push_number(ctx, g_MMU ? g_MMU->RdramSize() : 0);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_mem__get_romsize(duk_context* ctx)
+{
+    duk_push_number(ctx, g_Rom ? g_Rom->GetRomSize() : 0);
     return 1;
 }
 

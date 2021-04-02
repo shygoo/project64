@@ -6,6 +6,9 @@ void ScriptAPI::Define_debug(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
         { "breakhere", js_debug_breakhere, 1 },
+        { "skip", js_debug_skip, 1 },
+        { "showmemory", js_debug_showmemory, 1 },
+        { "showcommands", js_debug_showcommands, 1 },
         { NULL, NULL, 0 }
     };
 
@@ -21,5 +24,33 @@ void ScriptAPI::Define_debug(duk_context* ctx)
 duk_ret_t ScriptAPI::js_debug_breakhere(duk_context* /*ctx*/)
 {
     g_Settings->SaveBool(Debugger_SteppingOps, true);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_debug_skip(duk_context* /*ctx*/)
+{
+    g_Settings->SaveBool(Debugger_SkipOp, true);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_debug_showmemory(duk_context* ctx)
+{
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    GetInstance(ctx)->Debugger()->Debug_ShowMemoryLocation(duk_get_uint(ctx, 0), true);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_debug_showcommands(duk_context* ctx)
+{
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    GetInstance(ctx)->Debugger()->Debug_ShowCommandsLocation(duk_get_uint(ctx, 0), true);
     return 0;
 }

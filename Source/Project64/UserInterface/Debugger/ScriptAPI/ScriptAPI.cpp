@@ -269,6 +269,6 @@ duk_ret_t ScriptAPI::CallbackFinalizer(duk_context *ctx)
 
 duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)
 {
-    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid arguments");
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid argument(s)");
     return duk_throw(ctx);  
 }

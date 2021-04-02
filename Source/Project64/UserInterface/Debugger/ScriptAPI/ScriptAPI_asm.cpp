@@ -1,10 +1,14 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
+#include "../Assembler.h"
+#include <Project64-core/N64System/Mips/OpCodeName.h>
 
 void ScriptAPI::Define_asm(duk_context *ctx)
 {
     const duk_function_list_entry funcs[] = {
         { "gprname", js_asm_gprname, 1 },
+        { "encode", js_asm_encode, DUK_VARARGS },
+        { "decode", js_asm_decode, DUK_VARARGS },
         { NULL, NULL, 0 }
     };
 
@@ -42,5 +46,60 @@ duk_ret_t ScriptAPI::js_asm_gprname(duk_context* ctx)
         return DUK_RET_RANGE_ERROR;
     }
 
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_asm_encode(duk_context* ctx)
+{
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    if ((nargs == 0 || nargs > 2) ||
+        !duk_is_string(ctx, 0) ||
+        (nargs == 2 && !duk_is_number(ctx, 1)))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char *code = duk_get_string(ctx, 0);
+    uint32_t address = duk_get_uint_default(ctx, 1, 0);
+
+    // TODO: Not a huge deal, but CAssembler's state is not thread safe.
+    // CAssembler should be object-oriented
+
+    uint32_t opcode;
+    if (!CAssembler::AssembleLine(code, &opcode, address))
+    {
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "ASM syntax error");
+        duk_throw(ctx);
+    }
+
+    duk_push_uint(ctx, opcode);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_asm_decode(duk_context* ctx)
+{
+    duk_idx_t nargs = duk_get_top(ctx);
+    
+    if ((nargs == 0 || nargs > 2) ||
+        !duk_is_number(ctx, 0) ||
+        (nargs == 2 && !duk_is_number(ctx, 1)))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    uint32_t opcode = duk_get_uint(ctx, 0);
+    uint32_t address = duk_get_uint_default(ctx, 1, 0);
+
+    // TODO: Thread safe version of R4300iOpcodeName
+
+    char* code = (char*)R4300iOpcodeName(opcode, address);
+    char* ptab = strchr(code, '\t');
+    if (ptab != NULL)
+    {
+        *ptab = ' ';
+    }
+
+    duk_push_string(ctx, code);
     return 1;
 }

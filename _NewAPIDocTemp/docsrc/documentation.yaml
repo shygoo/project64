@@ -115,6 +115,16 @@
     ts:   "mem.getblock(address: number, maxLength?: number): string"
     desc: Returns a copied zero-terminated ASCII string from memory.
 
+  - name: mem.ramsize
+    js:   mem.ramsize
+    ts:   "mem.ramsize: number"
+    desc: The size of RDRAM in bytes. `0` if RDRAM is not initialized.
+
+  - name: mem.romsize
+    js:   mem.romsize
+    ts:   "mem.romsize: number"
+    desc: The size of cartridge ROM in bytes. `0` if ROM is not initialized.
+
 # events
 - name: events
   tagline: Emulation event hooking interface
@@ -122,7 +132,6 @@
   - name: events.onexec
     js:   events.onexec(address, callback)
     ts:   "events.onexec(address: number | AddressRange, callback: () => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -136,13 +145,12 @@
           ```
           // Log every CPU step
           events.onexec(ADDR_ANY, function() {
-              console.log("PC is at", gpr.pc.hex());
+              console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
           })
           ```
   - name: events.onread
     js:   events.onread(address, callback)
     ts:   "events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -153,7 +161,6 @@
   - name: events.onwrite
     js:   events.onwrite(address, callback)
     ts:   "events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -164,40 +171,38 @@
   - name: CPUReadWriteEvent
     js:   CPUReadWriteEvent
     desc: |
-          Event object describing a CPU read or write operation.
+          Immutable event object describing a CPU read or write operation.
           <div class="vtab"></div>
           <table>
-          <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
-          <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.address`</td><td>Address that the CPU is going to read or write.</td></tr>
+          <tr><td>`e.value`</td><td>Value that the CPU is going to read or write.</td></tr>
           <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if the current opcode is LD or SD. `undefined` if the opcode is not LD or SD.</td></tr>
           <tr><td>`e.type`</td><td>The value's [type ID](#type_ids).</td></tr>
-          <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
-          <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
+          <tr><td>`e.fpu`</td><td>`true` if the source or destination register is on the floating point unit.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the source or destination register.</td></tr>
           </table>
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
     ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode ANDed with `mask`.
           <div class="vtab""></div>
           Returns a callback ID.
           ```
-          const JAL = 0x0C000000; // 'JAL 0x00000000'
+          const JAL = asm.encode("jal 0");
           const ANY_TARGET = 0xFC000000; // Mask off target field
 
           events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
-              // Log PC at every JAL
-              console.log(gpr.pc.hex());
+              // Log every JAL
+              console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
           });
           ```
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, callback)
     ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: () => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode.
@@ -207,7 +212,6 @@
   - name: events.ongprvalue
     js:   events.ongprvalue(address, regFlags, value, callback)
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number"
-    tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
           the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only). `callback` receives the index of the first register that is
@@ -257,6 +261,7 @@
               events.remove(id);
           });
           ```
+
   - name: AddressRange
     js:   new AddressRange(start, end)
     ts:   "new AddressRange(start: number, end: number)"
@@ -275,10 +280,6 @@
           `ADDR_ANY_CART_ROM`     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
           `ADDR_ANY_CART_ROM_UNC` 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
           </pre>
-
-
-
-
 
 # screen
 - name: screen
@@ -433,10 +434,62 @@
           });
           ```
 
+  - name: debug.skip
+    js:   debug.skip()
+    ts:   "debug.skip(): void"
+    desc: |
+          Skips the current CPU command. Useful for preventing or overriding an operation.
+          ```
+          // Do not let the CPU write to 0x8033B21E
+          events.onwrite(0x8033B21E, function(e) {
+              debug.skip();
+          });
+          ```
+
+  - name: debug.showmemory
+    js:   debug.showmemory(address)
+    ts:   "debug.showmemory(address: number): void"
+    desc: Shows the memory window at `address`.
+
+  - name: debug.showcommands
+    js:   debug.showcommands(address)
+    ts:   "debug.showcommands(address: number): void"
+    desc: Shows the CPU commands window at `address`.
+
+
 # asm
 - name: asm
   tagline: ASM utilities
   props:
+
+  - name: asm.encode
+    js:   "asm.encode(command[, address])"
+    ts:   "asm.encode(command: string, address?: number): number"
+    desc: |
+          Encodes a single MIPS R4300i opcode. `address` is an optional parameter that may be used to hint the address of the instruction for branch offset calculation.
+          <div class="vtab"></div>
+          Returns the opcode as a number.
+          ```
+          asm.encode("nop");                      // 0x00000000
+          asm.encode("addiu sp, sp, -24");        // 0x27BDFFE8
+          asm.encode("b 0x80400000", 0x803FFF00); // 0x1000003F
+          asm.encode("b 0x80400000", 0x80400100); // 0x1000FFBF
+          ```
+
+  - name: asm.decode
+    js:   asm.decode(opcode[, address])
+    ts:   "asm.decode(opcode: number, address?: number)"
+    desc: |
+          Decodes a single MIPS R4300i opcode. `address` is an optional parameter that may be used to hint the address of the instruction for branch address calculation.
+          <div class="vtab"></div>
+          Returns a line of assembly code as a string.
+          ```
+          asm.decode(0x00000000);             // "NOP"
+          asm.decode(0x27BDFFE8);             // "ADDIU SP, SP, -0x18"
+          asm.decode(0x1000003F, 0x803FFF00); // "B 0x80400000"
+          asm.decode(0x1000FFBF, 0x80400100); // "B 0x80400000"
+          ```
+
   - name: asm.gprname
     js:   asm.gprname(regIndex)
     ts:   "asm.gprname(regIndex: number): string"

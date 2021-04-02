@@ -47,13 +47,14 @@ namespace ScriptAPI
     duk_ret_t js_mem_bindstruct(duk_context* ctx);
     duk_ret_t js_mem_typedef(duk_context* ctx);
     duk_ret_t js_mem__type_constructor(duk_context* ctx);
+    duk_ret_t js_mem__get_ramsize(duk_context* ctx);
+    duk_ret_t js_mem__get_romsize(duk_context* ctx);
     enum mem_type_t {
         U8, U16, U32, S8, S16, S32, F32, F64,
         U64 // only used in CPUReadWriteEvent
     };
     size_t MemTypeSize(mem_type_t t);
     duk_ret_t ThrowMemoryError(duk_context* ctx, uint32_t address);
-    
 
     // ScriptAPI_Server
     //void Define_Server(duk_context* ctx);
@@ -98,10 +99,17 @@ namespace ScriptAPI
     // ScriptAPI_debug
     void Define_debug(duk_context* ctx);
     duk_ret_t js_debug_breakhere(duk_context* ctx);
+    duk_ret_t js_debug_skip(duk_context* ctx);
+    //duk_ret_t js_debug_resume(duk_context* ctx);
+    duk_ret_t js_debug_showmemory(duk_context* ctx);
+    duk_ret_t js_debug_showcommands(duk_context* ctx);
+
 
     // ScriptAPI_asm
     void Define_asm(duk_context* ctx);
     duk_ret_t js_asm_gprname(duk_context* ctx);
+    duk_ret_t js_asm_encode(duk_context* ctx);
+    duk_ret_t js_asm_decode(duk_context* ctx);
 
     // ScriptAPI_alert
     //void Define_alert(duk_context* ctx);
