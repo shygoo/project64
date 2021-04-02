@@ -25,8 +25,8 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         { "s32", MEM_PROXY_FUNCTIONS(int32_t) },
         { "s16", MEM_PROXY_FUNCTIONS(int16_t) },
         { "s8",  MEM_PROXY_FUNCTIONS(int8_t) },
-        { "f64", MEM_PROXY_FUNCTIONS(double) },
-        { "f32", MEM_PROXY_FUNCTIONS(float) },
+        { "double", MEM_PROXY_FUNCTIONS(double) },
+        { "float", MEM_PROXY_FUNCTIONS(float) },
         { NULL, NULL }
     };
 

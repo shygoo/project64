@@ -7,6 +7,16 @@ body {
     color: #222;
 }
 
+table {
+    border-collapse: collapse;
+    border-spacing: 0px;
+}
+
+td {
+    border: 1px solid #444;
+    padding: 2px 6px;
+}
+
 ul {
     color: #222;
     padding-inline-start: 30px;
@@ -82,10 +92,6 @@ pre.ex::before {
 
 div.vtab {
     margin-top: 10px;
-}
-
-td {
-    padding: 0px;
 }
 
 a {

@@ -84,7 +84,7 @@
     desc: |
           Adds multiple memory-bound properties to `object`.
           `properties` must be an object in which each key/value pair specifies the name and [type ID](#type_ids) of a variable.
-          The offset of a variable is determined by its definition order and the sum of type sizes of the variables preceding it.
+          The offset of a variable is determined by the sum of type sizes of the variables preceding it.
           <div class="vtab""></div>
           Returns `object`.
           <div class="vtab""></div>
@@ -126,7 +126,6 @@
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
-          <font color=red>TODO API change: callback no longer receives pc.</font>
           <div class="vtab""></div>
           Returns a callback ID.
           ```
@@ -142,25 +141,39 @@
           ```
   - name: events.onread
     js:   events.onread(address, callback)
-    ts:   "events.onread(address: number | AddressRange, callback: (readAddress: number) => void): number"
+    ts:   "events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
     tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
-          `callback` receives the address the CPU is going to read from.
+          `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
 
   - name: events.onwrite
     js:   events.onwrite(address, callback)
-    ts:   "events.onwrite(address: number | AddressRange, callback: (writeAddress: number) => void): number"
+    ts:   "events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
     tags: [[Requires interpreter core, blue]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
-          `callback` receives the address the CPU is going to write to.
+          `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object. (TODO)
           <div class="vtab""></div>
           Returns a callback ID.
+
+  - name: CPUReadWriteEvent
+    js:   CPUReadWriteEvent
+    desc: |
+          Event object describing a CPU read or write operation.
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if the current opcode is LD or SD. `undefined` if the opcode is not LD or SD.</td></tr>
+          <tr><td>`e.type`</td><td>The value's [type ID](#type_ids).</td></tr>
+          <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
+          </table>
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
@@ -211,6 +224,19 @@
           });
           ```
 
+  - name: GPR_flags
+    js:   General purpose register flags
+    desc: |
+          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
+          <pre>
+          `GPR_ANY`
+
+          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
+          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
+          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
+          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
+          </pre>
+          
   - name: events.ondraw
     js:   events.ondraw(callback)
     ts:   "events.ondraw(callback: () => void): number"
@@ -231,6 +257,28 @@
               events.remove(id);
           });
           ```
+  - name: AddressRange
+    js:   new AddressRange(start, end)
+    ts:   "new AddressRange(start: number, end: number)"
+    desc: |
+          Creates an immutable object with `start` and `end` address properties.
+
+          The following `AddressRange` objects are defined globally&#58;<br>
+          <pre>
+          `ADDR_ANY`              0x00000000 &#58; 0xFFFFFFFF Any address
+          `ADDR_ANY_KUSEG`        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
+          `ADDR_ANY_KSEG0`        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
+          `ADDR_ANY_KSEG1`        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
+          `ADDR_ANY_KSEG2`        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
+          `ADDR_ANY_RDRAM`        0x80000000 &#58; 0x807FFFFF Cached RDRAM
+          `ADDR_ANY_RDRAM_UNC`    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
+          `ADDR_ANY_CART_ROM`     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
+          `ADDR_ANY_CART_ROM_UNC` 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
+          </pre>
+
+
+
+
 
 # screen
 - name: screen
@@ -510,21 +558,21 @@
     desc: |
           Object containing information about a file or directory. Generated by [fs.fstat/fs.stat](#fs_fstat).
           <div class="vtab""></div>
-          <table style="width: 100%">
-          <tr><td><b>stats.dev</b></td><td>ID of the device the file resides on</td></tr>
-          <tr><td><b>stats.ino</b></td><td>inode number</td></tr>
-          <tr><td><b>stats.mode</b></td><td>File permissions</td></tr>
-          <tr><td><b>stats.nlink</b></td><td>Number of links to the file</td></tr>
-          <tr><td><b>stats.uid</b></td><td>User ID</td></tr>
-          <tr><td><b>stats.gid</b></td><td>Group ID</td></tr>
-          <tr><td><b>stats.rdev</b></td><td>Device ID (if file is character or block special)</td></tr>
-          <tr><td><b>stats.size</b></td><td>Size of the file in bytes</td></tr>
-          <tr><td><b>stats.atimeMs</b></td><td>Last access timestamp in milliseconds</td></tr>
-          <tr><td><b>stats.mtimeMs</b></td><td>Last modification timestamp in milliseconds</td></tr>
-          <tr><td><b>stats.ctimeMs</b></td><td>Creation timestamp in milliseconds</td></tr>
-          <tr><td><b>stats.atime</b></td><td>JS Date object representing the last access time</td></tr>
-          <tr><td><b>stats.mtime</b></td><td>JS Date object representing the last modification time</td></tr>
-          <tr><td><b>stats.ctime</b></td><td>JS Date object representing the creation time</td></tr>
+          <table>
+          <tr><td>`stats.dev`</td><td>ID of the device the file resides on</td></tr>
+          <tr><td>`stats.ino`</td><td>inode number</td></tr>
+          <tr><td>`stats.mode`</td><td>File permissions</td></tr>
+          <tr><td>`stats.nlink`</td><td>Number of links to the file</td></tr>
+          <tr><td>`stats.uid`</td><td>User ID</td></tr>
+          <tr><td>`stats.gid`</td><td>Group ID</td></tr>
+          <tr><td>`stats.rdev`</td><td>Device ID (if file is character or block special)</td></tr>
+          <tr><td>`stats.size`</td><td>Size of the file in bytes</td></tr>
+          <tr><td>`stats.atimeMs`</td><td>Last access timestamp in milliseconds</td></tr>
+          <tr><td>`stats.mtimeMs`</td><td>Last modification timestamp in milliseconds</td></tr>
+          <tr><td>`stats.ctimeMs`</td><td>Creation timestamp in milliseconds</td></tr>
+          <tr><td>`stats.atime`</td><td>JS Date object representing the last access time</td></tr>
+          <tr><td>`stats.mtime`</td><td>JS Date object representing the last modification time</td></tr>
+          <tr><td>`stats.ctime`</td><td>JS Date object representing the creation time</td></tr>
           </table>
           <div class="vtab""></div>
           <b>stats.isDirectory()</b><br>
@@ -602,29 +650,10 @@
           n.hex(4); // 007B
           ```
 
-  - name: AddressRange
-    js:   new AddressRange(start, end)
-    ts:   "new AddressRange(start: number, end: number)"
-    desc: |
-          Creates an immutable object with `start` and `end` address properties.
-
-          The following `AddressRange` objects are defined globally&#58;<br>
-          <pre>
-          `ADDR_ANY`              0x00000000 &#58; 0xFFFFFFFF Any address
-          `ADDR_ANY_KUSEG`        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
-          `ADDR_ANY_KSEG0`        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
-          `ADDR_ANY_KSEG1`        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
-          `ADDR_ANY_KSEG2`        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
-          `ADDR_ANY_RDRAM`        0x80000000 &#58; 0x807FFFFF Cached RDRAM
-          `ADDR_ANY_RDRAM_UNC`    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
-          `ADDR_ANY_CART_ROM`     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
-          `ADDR_ANY_CART_ROM_UNC` 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
-          </pre>
-
   - name: type_ids
     js:   Type IDs
     desc: |
-          Global type IDs for [mem.typedef](#mem_typedef) and [mem.bind*](#mem_bindvar) APIs.
+          Global type IDs.
           <pre>
           `u8`  Unsigned 8-bit integer
           `u16` Unsigned 16-bit integer
@@ -634,20 +663,11 @@
           `s32` Signed 32-bit integer
           `f32` 32-bit single precision floating-point
           `f64` 64-bit double precision floating-point
+
+          `u64` Unsigned 64-bit integer
           </pre>
 
-  - name: GPR_flags
-    js:   General purpose register flags
-    desc: |
-          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
-          <pre>
-          `GPR_ANY`
-
-          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
-          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
-          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
-          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
-          </pre>
+          Note: The [mem.bind*](#mem_bindvar)/[mem.typedef](#mem_typedef) APIs do not currently support `u64`.
 
   - name: Memory_mapped_register_addresses
     js:   Memory mapped register addresses

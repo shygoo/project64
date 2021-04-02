@@ -184,6 +184,7 @@ void CDebugScripts::ConsolePrint(const char* text)
     {
         char* textCopy = _strdup(text); // OnConsolePrint will free this
         PostMessage(WM_CONSOLE_PRINT, (WPARAM)textCopy);
+        Sleep(5); // Prevent flooding of the message queue
     }
 }
 

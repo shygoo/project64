@@ -45,8 +45,11 @@ void ScriptAPI::DefineGlobalConstants(duk_context *ctx)
         { "s8",   S8 },
         { "s16", S16 },
         { "s32", S32 },
-        { "f32", F32 },
-        { "f64", F64 },
+        { "float", F32 },
+        { "double", F64 },
+
+        { "u64", U64 },
+
         { "GPR_R0", GPR_R0 },
         { "GPR_AT", GPR_AT },
         { "GPR_V0", GPR_V0 },

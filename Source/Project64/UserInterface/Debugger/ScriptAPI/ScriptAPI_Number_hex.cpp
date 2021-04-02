@@ -19,12 +19,17 @@ duk_ret_t ScriptAPI::js_Number_prototype_hex(duk_context *ctx)
 
     if(!duk_is_undefined(ctx, 0))
     {
+        if (!duk_is_number(ctx, 0))
+        {
+            return ThrowInvalidArgsError(ctx);
+        }
+
         length = duk_to_uint(ctx, 0);
         duk_pop(ctx);
     }
 
     duk_push_this(ctx);
-    value = duk_get_uint(ctx, -1);
+    value = (duk_uint_t)duk_get_number(ctx, -1);
     duk_pop(ctx);
 
     snprintf(hexString, sizeof(hexString), "%0*X", length, value);

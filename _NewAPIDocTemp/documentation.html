@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 01 2021 -->
+<!-- Generated Apr 02 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -12,6 +12,16 @@ body {
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
     color: #222;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0px;
+}
+
+td {
+    border: 1px solid #444;
+    padding: 2px 6px;
 }
 
 ul {
@@ -91,10 +101,6 @@ div.vtab {
     margin-top: 10px;
 }
 
-td {
-    padding: 0px;
-}
-
 a {
     color: #090;
     text-decoration: none;
@@ -158,11 +164,14 @@ div.tag.red {
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
 <li><a href="#events_onread">events.onread(address, callback)</a></li>
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
+<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
+<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#screen">screen</a>: Screen drawing interface<ul>
 <li><a href="#screen_print">screen.print(x, y, text)</a></li>
@@ -233,9 +242,7 @@ div.tag.red {
 <li><a href="#Global definitions">Global definitions</a><ul>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
-<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
-<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
@@ -340,7 +347,7 @@ console.log("Player's coordinates are ", this.playerX, this.playerY, this.player
 <div class="vtab"></div>
 Adds multiple memory-bound properties to <div class="snip">object</div>.
 <div class="snip">properties</div> must be an object in which each key/value pair specifies the name and <a href="#type_ids">type ID</a> of a variable.
-The offset of a variable is determined by its definition order and the sum of type sizes of the variables preceding it.
+The offset of a variable is determined by the sum of type sizes of the variables preceding it.
 <div class="vtab""></div>
 Returns <div class="snip">object</div>.
 <div class="vtab""></div>
@@ -380,11 +387,14 @@ Emulation event hooking interface
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
 <li><a href="#events_onread">events.onread(address, callback)</a></li>
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
+<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
+<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul>
 <!-- events.onexec -->
 <div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
@@ -392,7 +402,6 @@ Emulation event hooking interface
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
 <div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<font color=red>TODO API change: callback no longer receives pc.</font>
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
@@ -408,22 +417,35 @@ events.onexec(ADDR_ANY, function() {
 </pre>
 <!-- events.onread -->
 <div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.onread(address: number | AddressRange, callback: (readAddress: number) => void): number</div>
+<div class="tsproto">events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <div class="snip">address</div>.
 <div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives the address the CPU is going to read from.
+<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.onwrite -->
 <div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.onwrite(address: number | AddressRange, callback: (writeAddress: number) => void): number</div>
+<div class="tsproto">events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
 <div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives the address the CPU is going to write to.
+<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object. (TODO)
 <div class="vtab""></div>
 Returns a callback ID.
+<!-- CPUReadWriteEvent -->
+<div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
+<div class="vtab"></div>
+Event object describing a CPU read or write operation.
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
+<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
+<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if the current opcode is LD or SD. <div class="snip">undefined</div> if the opcode is not LD or SD.</td></tr>
+<tr><td><div class="snip">e.type</div></td><td>The value's <a href="#type_ids">type ID</a>.</td></tr>
+<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
+<tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
+</table>
 <!-- events.onopcode -->
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number</div>
@@ -467,6 +489,18 @@ events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
     debug.breakhere();
 });
 </pre>
+<!-- GPR_flags -->
+<div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
+<div class="vtab"></div>
+Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
+<pre>
+<div class="snip">GPR_ANY</div>
+
+<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
+<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
+<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
+<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
+</pre>
 <!-- events.ondraw -->
 <div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
 <div class="tsproto">events.ondraw(callback: () => void): number</div>
@@ -485,6 +519,24 @@ var id = events.onexec(0x802CB1C0, function() {
     console.log("func_802CB1C0 was called");
     events.remove(id);
 });
+</pre>
+<!-- AddressRange -->
+<div class="prop"><span class="title" id="AddressRange">new AddressRange(start, end)</span></div>
+<div class="tsproto">new AddressRange(start: number, end: number)</div>
+<div class="vtab"></div>
+Creates an immutable object with <div class="snip">start</div> and <div class="snip">end</div> address properties.
+
+The following <div class="snip">AddressRange</div> objects are defined globally&#58;<br>
+<pre>
+<div class="snip">ADDR_ANY</div>              0x00000000 &#58; 0xFFFFFFFF Any address
+<div class="snip">ADDR_ANY_KUSEG</div>        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
+<div class="snip">ADDR_ANY_KSEG0</div>        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
+<div class="snip">ADDR_ANY_KSEG1</div>        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
+<div class="snip">ADDR_ANY_KSEG2</div>        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
+<div class="snip">ADDR_ANY_RDRAM</div>        0x80000000 &#58; 0x807FFFFF Cached RDRAM
+<div class="snip">ADDR_ANY_RDRAM_UNC</div>    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
+<div class="snip">ADDR_ANY_CART_ROM</div>     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
+<div class="snip">ADDR_ANY_CART_ROM_UNC</div> 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
 </pre>
 
 </div>
@@ -849,21 +901,21 @@ Returns an array of file names from a directory.
 <div class="vtab"></div>
 Object containing information about a file or directory. Generated by <a href="#fs_fstat">fs.fstat/fs.stat</a>.
 <div class="vtab""></div>
-<table style="width: 100%">
-<tr><td><b>stats.dev</b></td><td>ID of the device the file resides on</td></tr>
-<tr><td><b>stats.ino</b></td><td>inode number</td></tr>
-<tr><td><b>stats.mode</b></td><td>File permissions</td></tr>
-<tr><td><b>stats.nlink</b></td><td>Number of links to the file</td></tr>
-<tr><td><b>stats.uid</b></td><td>User ID</td></tr>
-<tr><td><b>stats.gid</b></td><td>Group ID</td></tr>
-<tr><td><b>stats.rdev</b></td><td>Device ID (if file is character or block special)</td></tr>
-<tr><td><b>stats.size</b></td><td>Size of the file in bytes</td></tr>
-<tr><td><b>stats.atimeMs</b></td><td>Last access timestamp in milliseconds</td></tr>
-<tr><td><b>stats.mtimeMs</b></td><td>Last modification timestamp in milliseconds</td></tr>
-<tr><td><b>stats.ctimeMs</b></td><td>Creation timestamp in milliseconds</td></tr>
-<tr><td><b>stats.atime</b></td><td>JS Date object representing the last access time</td></tr>
-<tr><td><b>stats.mtime</b></td><td>JS Date object representing the last modification time</td></tr>
-<tr><td><b>stats.ctime</b></td><td>JS Date object representing the creation time</td></tr>
+<table>
+<tr><td><div class="snip">stats.dev</div></td><td>ID of the device the file resides on</td></tr>
+<tr><td><div class="snip">stats.ino</div></td><td>inode number</td></tr>
+<tr><td><div class="snip">stats.mode</div></td><td>File permissions</td></tr>
+<tr><td><div class="snip">stats.nlink</div></td><td>Number of links to the file</td></tr>
+<tr><td><div class="snip">stats.uid</div></td><td>User ID</td></tr>
+<tr><td><div class="snip">stats.gid</div></td><td>Group ID</td></tr>
+<tr><td><div class="snip">stats.rdev</div></td><td>Device ID (if file is character or block special)</td></tr>
+<tr><td><div class="snip">stats.size</div></td><td>Size of the file in bytes</td></tr>
+<tr><td><div class="snip">stats.atimeMs</div></td><td>Last access timestamp in milliseconds</td></tr>
+<tr><td><div class="snip">stats.mtimeMs</div></td><td>Last modification timestamp in milliseconds</td></tr>
+<tr><td><div class="snip">stats.ctimeMs</div></td><td>Creation timestamp in milliseconds</td></tr>
+<tr><td><div class="snip">stats.atime</div></td><td>JS Date object representing the last access time</td></tr>
+<tr><td><div class="snip">stats.mtime</div></td><td>JS Date object representing the last modification time</td></tr>
+<tr><td><div class="snip">stats.ctime</div></td><td>JS Date object representing the creation time</td></tr>
 </table>
 <div class="vtab""></div>
 <b>stats.isDirectory()</b><br>
@@ -933,9 +985,7 @@ Setting this value to zero will allow tasks to run indefinitely (not recommended
 <ul>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
-<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
-<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
 </ul>
 <!-- alert -->
@@ -954,28 +1004,10 @@ var n = 123;
 n.hex();  // 0000007B
 n.hex(4); // 007B
 </pre>
-<!-- AddressRange -->
-<div class="prop"><span class="title" id="AddressRange">new AddressRange(start, end)</span></div>
-<div class="tsproto">new AddressRange(start: number, end: number)</div>
-<div class="vtab"></div>
-Creates an immutable object with <div class="snip">start</div> and <div class="snip">end</div> address properties.
-
-The following <div class="snip">AddressRange</div> objects are defined globally&#58;<br>
-<pre>
-<div class="snip">ADDR_ANY</div>              0x00000000 &#58; 0xFFFFFFFF Any address
-<div class="snip">ADDR_ANY_KUSEG</div>        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
-<div class="snip">ADDR_ANY_KSEG0</div>        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
-<div class="snip">ADDR_ANY_KSEG1</div>        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
-<div class="snip">ADDR_ANY_KSEG2</div>        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
-<div class="snip">ADDR_ANY_RDRAM</div>        0x80000000 &#58; 0x807FFFFF Cached RDRAM
-<div class="snip">ADDR_ANY_RDRAM_UNC</div>    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
-<div class="snip">ADDR_ANY_CART_ROM</div>     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
-<div class="snip">ADDR_ANY_CART_ROM_UNC</div> 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
-</pre>
 <!-- type_ids -->
 <div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
 <div class="vtab"></div>
-Global type IDs for <a href="#mem_typedef">mem.typedef</a> and <a href="#mem_bindvar">mem.bind*</a> APIs.
+Global type IDs.
 <pre>
 <div class="snip">u8</div>  Unsigned 8-bit integer
 <div class="snip">u16</div> Unsigned 16-bit integer
@@ -985,19 +1017,11 @@ Global type IDs for <a href="#mem_typedef">mem.typedef</a> and <a href="#mem_bin
 <div class="snip">s32</div> Signed 32-bit integer
 <div class="snip">f32</div> 32-bit single precision floating-point
 <div class="snip">f64</div> 64-bit double precision floating-point
-</pre>
-<!-- GPR_flags -->
-<div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
-<div class="vtab"></div>
-Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
-<pre>
-<div class="snip">GPR_ANY</div>
 
-<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
-<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
-<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
-<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
+<div class="snip">u64</div> Unsigned 64-bit integer
 </pre>
+
+Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <div class="snip">u64</div>.
 <!-- Memory_mapped_register_addresses -->
 <div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
 <div class="vtab"></div>

@@ -1,3 +1,13 @@
+function hexobj(object) {
+    return JSON.stringify(object, function(key, value) { 
+        if(typeof this[key] == 'number') {
+            return '0x' + this[key].hex();
+        }
+        return value;
+    });
+}
+
+
 var handlers = {
     '.end': cmd_end,
     '.eval': cmd_eval,
@@ -177,7 +187,7 @@ function test_number_hex()
             (-1).hex() == 'FFFFFFFF' &&
             (0x64).hex() == '00000064' &&
             (0x64).hex(16) == '0000000000000064' &&
-            (0x64).hex(2) == '64',
+            (0x64).hex(2) == '64' &&
             (0x80000000).hex() == '80000000'
         );
     });

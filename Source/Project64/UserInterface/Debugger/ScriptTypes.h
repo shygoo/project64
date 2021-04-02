@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 
+#include "OpInfo.h"
+
 #pragma once
 
 class CScriptSystem;
@@ -52,10 +54,11 @@ struct JSCallback
 
 typedef struct {
     uint32_t  pc;
-    uint32_t  opcode;
-    bool      bReadOp, bWriteOp;
-    uint32_t  readWriteAddr;
-    uint32_t  readWriteValue;
+    COpInfo opInfo;
+    //uint32_t  opcode;
+    //bool      bReadOp, bWriteOp;
+    //uint32_t  readWriteAddr;
+    //uint32_t  readWriteValue;
     // below fields are set by the condition function
     int       outAffectedRegIndex;
 } jshook_env_cpustep_t;

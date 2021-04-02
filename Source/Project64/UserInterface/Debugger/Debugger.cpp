@@ -554,13 +554,14 @@ void CDebuggerUI::CPUStepStarted()
 
     jshook_env_cpustep_t hookEnv = { 0 };
     hookEnv.pc = pc;
-    hookEnv.opcode = R4300iOp::m_Opcode.Hex;
-    if (opInfo.IsLoadStoreCommand())
-    {
-        hookEnv.bReadOp = opInfo.IsLoadCommand();
-        hookEnv.bWriteOp = opInfo.IsStoreCommand();
-        hookEnv.readWriteAddr = opInfo.GetLoadStoreAddress();
-    }
+    hookEnv.opInfo = opInfo;
+    //hookEnv.opcode = R4300iOp::m_Opcode.Hex;
+    //if (opInfo.IsLoadStoreCommand())
+    //{
+    //    hookEnv.bReadOp = opInfo.IsLoadCommand();
+    //    hookEnv.bWriteOp = opInfo.IsStoreCommand();
+    //    hookEnv.readWriteAddr = opInfo.GetLoadStoreAddress();
+    //}
     
     m_ScriptSystem->Invoke(JS_HOOK_CPUSTEP, (void*)&hookEnv);
 

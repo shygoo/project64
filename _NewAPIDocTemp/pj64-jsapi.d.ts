@@ -7,6 +7,15 @@ declare class AddressRange {
     end: number;
 }
 
+class CPUReadWriteEvent {
+    address: number;
+    value: number;
+    valueHi: number;
+    type: number;
+    fpu: boolean;
+    reg: number;
+}
+
 class ConsoleModule {
     log(message, ...optionalParams): void;
     print(...any): void;
@@ -179,8 +188,8 @@ class EventsModule {
      * Returns a callback ID. The callback ID may be passed to `events.remove` to unregister the callback.
      * 
     */
-    onread(address: number | AddressRange, callback: (targetAddress: number) => void): number;
-    onwrite(address: number | AddressRange, callback: (targetAddress: number) => void): number;
+    onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
+    onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
     onopcode(address: number | AddressRange, opcode: number, callback: (pc: number) => void): number;
     onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (pc: number) => void): number;
     ongprvalue(address: number | AddressRange, registers: number, value: number, callback: (pc: number, registerIndex: number) => void): number;

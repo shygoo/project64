@@ -5,16 +5,16 @@
 - replace socket overlapped IO with worker threads (fix Windows XP incompatibility)
 - remove API.js, make all API functions native
 - rewrite API documentation file
-
 - add script.listen(inputListener) function for console input handling
 - add script.keepalive(bKeepAlive) function to keep instance from automatically being destroyed
 - add script.timeout(ms) function for timeout override
 
-- rename global `float` constant to `f32`, `double` to `f64`
-- rename `mem.float` to `mem.f32`, `mem.double` to `mem.f64`
-- remove `rom` interface (`mem` interface should suffice)
+Changes which may break compatibility with old scripts:
+
+- remove redundant `rom` interface because `mem` interface can access ROM
+- remove redundant pc argument from events.onexec/onopcode/ongprvalue callbacks since there is `gpr.pc`
+- change the `address` argument of `events.onread/onwrite` to more informative `CPUReadWriteEvent` object
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
-- do not pass pc to `events.*` callbacks
 
 ---------------------
 TODO:
@@ -22,17 +22,22 @@ TODO:
 - finish implementing new server/socket
 - finish implementing new events interface
 - full test suite
-- 'pj64' interface for high level control (savestate/pause etc.)
-- mem.setblock
-- mem.getblock/getstring doc
 - formatting/cleanup printfs, comments etc
 
+- 'pj64' interface for high level control (savestate/pause etc.)
+- mem.setblock
+- mem.dramsize
+- mem.saveaddress
 - debug.showmemory
 - debug.showcommands
 - debug.getsymbol?
 - debug.setsymbol?
+- asm.encode
+- asm.decode
 
 Duktape.modSearch/require()
 buffer console.log() so the message queue doesnt get flooded
 fix input history / write input history to a file
 make sure fs.readFile and mem.getblock return Buffer
+
+
