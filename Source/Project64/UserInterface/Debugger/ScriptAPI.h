@@ -112,11 +112,13 @@ namespace ScriptAPI
     duk_ret_t js_asm_decode(duk_context* ctx);
 
     // ScriptAPI_alert
-    //void Define_alert(duk_context* ctx);
-    //duk_ret_t js_alert(duk_context* ctx);
+    void Define_alert(duk_context* ctx);
+    duk_ret_t js_alert(duk_context* ctx);
 
-    // ScriptAPI_registers (gpr, ugpr, fpr, dfpr, cop0)
-    void Define_registers(duk_context* ctx);
+    // ScriptAPI_cpu
+    void Define_cpu(duk_context* ctx);
+    duk_ret_t js_cpu_get(duk_context* ctx);
+    duk_ret_t js_cpu_set(duk_context* ctx);
     duk_ret_t js_gpr_get(duk_context* ctx);
     duk_ret_t js_gpr_set(duk_context* ctx);
     duk_ret_t js_ugpr_get(duk_context* ctx);

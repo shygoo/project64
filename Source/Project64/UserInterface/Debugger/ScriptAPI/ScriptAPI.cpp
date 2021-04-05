@@ -23,8 +23,9 @@ void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
     Define_fs(ctx);
     Define_AddressRange(ctx);
     Define_asm(ctx);
-    Define_registers(ctx);
+    Define_cpu(ctx);
     Define_debug(ctx);
+    Define_alert(ctx);
 
     //Define_Server(ctx);
     Define_Number_prototype_hex(ctx);
@@ -32,7 +33,7 @@ void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
 
     if(duk_get_top(ctx) > 0) 
     {
-        printf("[ScriptSys]: warning: duk stack dirty after API init\n");
+        inst->System()->Log("[SCRIPTSYS]: warning: duk stack dirty after API init");
     }
 }
 
@@ -203,7 +204,7 @@ jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallbac
 
     if(callbackId == JS_INVALID_CALLBACK)
     {
-        printf("invalid callback id was generated\n");
+        inst->System()->Log("[SCRIPTSYS]: error: callback was not added");
         return JS_INVALID_CALLBACK;
     }
 

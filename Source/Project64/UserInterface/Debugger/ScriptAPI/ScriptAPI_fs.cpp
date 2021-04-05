@@ -115,8 +115,6 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 
     duk_push_number(ctx, fd);
 
-    printf("[ScriptSys]: '%s' opened file (fd: %d, fp: 0x%p)\n", inst->Name().c_str(), fd, fp);
-
     return 1;
 }
 
@@ -148,8 +146,6 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         duk_set_finalizer(ctx, -3); 
         duk_del_prop_index(ctx, -3, fd);
 
-        printf("[ScriptSys]: '%s' closed file (fd: %d, fp: 0x%p)\n", inst->Name().c_str(), fd, fp);
-        
         duk_pop_n(ctx, 2);
         rc = 0;
     }
@@ -582,12 +578,15 @@ err_invalid_fd:
 
 static duk_ret_t FileFinalizer(duk_context *ctx)
 {
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+
     duk_get_prop_string(ctx, 0, "fp");
     FILE *fp = (FILE *)duk_get_pointer(ctx, -1);
     duk_pop(ctx);
     fclose(fp);
 
-    printf("[ScriptSys]: '%s' gc closed leftover file (fp: 0x%p)\n",
-        ScriptAPI::GetInstance(ctx)->Name().c_str(), fp);
+    inst->System()->Log("[SCRIPTSYS]: warning ('%s'): gc closed leftover file descriptor",
+        inst->Name().c_str());
+
     return 0;
 }

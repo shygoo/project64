@@ -1,6 +1,6 @@
 #include <stdafx.h>
-#include "../ScriptAPI.h"
 #include <windows.h>
+#include "../ScriptAPI.h"
 
 void ScriptAPI::Define_console(duk_context *ctx)
 {
@@ -23,7 +23,7 @@ void ScriptAPI::Define_console(duk_context *ctx)
 duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
 {
     const char* str = duk_safe_to_string(ctx, 0);
-    GetInstance(ctx)->System()->Print(str);
+    GetInstance(ctx)->System()->Print("%s", str);
     return 0;
 }
 
@@ -43,7 +43,7 @@ duk_ret_t ScriptAPI::js_console_log(duk_context *ctx)
         str += duk_safe_to_string(ctx, n - nargs);
     }
 
-    GetInstance(ctx)->System()->Log(str.c_str());
+    GetInstance(ctx)->System()->Log("%s", str.c_str());
     return 0;
 }
 

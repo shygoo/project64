@@ -4,16 +4,17 @@
 
 #pragma warning(disable: 4702)
 
-static bool CbCond_CpuStep_ReadAddrBetween(JSCallback* cb, void* env);
-static bool CbCond_CpuStep_WriteAddrBetween(JSCallback* cb, void* env);
-static bool CbCond_CpuStep_PcBetween(JSCallback* cb, void* env);
-static bool CbCond_CpuStep_PcBetween_Opcode(JSCallback* cb, void* env);
-static bool CbCond_CpuStep_PcBetween_GprValue(JSCallback* cb, void* env);
+static bool CbCond_PcBetween(JSCallback* cb, void* env);
+static bool CbCond_ReadAddrBetween(JSCallback* cb, void* env);
+static bool CbCond_WriteAddrBetween(JSCallback* cb, void* env);
+static bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* env);
+static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* env);
 
-static duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* env);
-static duk_idx_t CbArgs_CpuStep_WriteAddr_Value(duk_context* ctx, void* env);
-
-static duk_idx_t CbArgs_CpuStep_AffectedRegIndex(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* env);
 
 static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd);
 
@@ -58,7 +59,7 @@ duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
     }
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
-        CbCond_CpuStep_PcBetween, NULL);
+        CbCond_PcBetween, CbArgs_ExecEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
 
@@ -84,7 +85,7 @@ duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx)
     }
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
-        CbCond_CpuStep_ReadAddrBetween, CbArgs_CpuStep_ReadEventObject);
+        CbCond_ReadAddrBetween, CbArgs_ReadEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
 
@@ -110,7 +111,7 @@ duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx)
     }
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
-        CbCond_CpuStep_WriteAddrBetween, CbArgs_CpuStep_WriteAddr_Value);
+        CbCond_WriteAddrBetween, CbArgs_WriteEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
 
@@ -149,7 +150,7 @@ duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
     }
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, cbidx),
-        CbCond_CpuStep_PcBetween_Opcode, NULL);
+        CbCond_PcBetween_OpcodeEquals, CbArgs_OpcodeEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
     cb.params.opcode = opcode;
@@ -179,7 +180,7 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
     }
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 3),
-        CbCond_CpuStep_PcBetween_GprValue, CbArgs_CpuStep_AffectedRegIndex);
+        CbCond_PcBetween_GprValueEquals, CbArgs_RegValueEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;
     cb.params.regIndices = duk_get_uint(ctx, 1);
@@ -191,7 +192,7 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
+duk_ret_t ScriptAPI::js_events_ondraw(duk_context* /*ctx*/)
 {
     return 0;
 }
@@ -216,7 +217,7 @@ duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
 }
 
 // onread
-bool CbCond_CpuStep_ReadAddrBetween(JSCallback* cb, void* _env)
+bool CbCond_ReadAddrBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
 
@@ -232,7 +233,7 @@ bool CbCond_CpuStep_ReadAddrBetween(JSCallback* cb, void* _env)
 }
 
 // onwrite
-bool CbCond_CpuStep_WriteAddrBetween(JSCallback* cb, void* _env)
+bool CbCond_WriteAddrBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
 
@@ -248,7 +249,7 @@ bool CbCond_CpuStep_WriteAddrBetween(JSCallback* cb, void* _env)
 }
 
 // onexec
-bool CbCond_CpuStep_PcBetween(JSCallback* cb, void* _env)
+bool CbCond_PcBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     return (env->pc >= cb->params.addrStart &&
@@ -256,9 +257,9 @@ bool CbCond_CpuStep_PcBetween(JSCallback* cb, void* _env)
 }
 
 // onopcode
-bool CbCond_CpuStep_PcBetween_Opcode(JSCallback* cb, void* _env)
+bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* _env)
 {
-    if (!CbCond_CpuStep_PcBetween(cb, _env))
+    if (!CbCond_PcBetween(cb, _env))
     {
         return false;
     }
@@ -268,9 +269,9 @@ bool CbCond_CpuStep_PcBetween_Opcode(JSCallback* cb, void* _env)
 }
 
 // ongprvalue
-static bool CbCond_CpuStep_PcBetween_GprValue(JSCallback* cb, void* _env)
+static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* _env)
 {
-    if (!CbCond_CpuStep_PcBetween(cb, _env))
+    if (!CbCond_PcBetween(cb, _env))
     {
         return false;
     }
@@ -292,18 +293,48 @@ static bool CbCond_CpuStep_PcBetween_GprValue(JSCallback* cb, void* _env)
     return false;
 }
 
-// onread
-duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* _env)
+// onexec -> { pc, callbackId }
+duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* _env)
 {
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
-    CDebuggerUI* debugger = ScriptAPI::GetInstance(ctx)->Debugger();
+    duk_push_object(ctx);
+    duk_push_uint(ctx, env->pc);
+    duk_put_prop_string(ctx, -2, "pc");
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+    duk_freeze(ctx, -1);
+    return 1;
+}
 
+// onread -> { pc, callbackId, address, fpu, reg, type, value, [valueHi] }
+duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CDebuggerUI* debugger = inst->Debugger();
+    jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
+    
     uint32_t address = env->opInfo.GetLoadStoreAddress();
 
-    duk_push_object(ctx); // CPUReadWriteEvent
+    uint8_t op = env->opInfo.m_OpCode.op;
+    uint8_t rt = env->opInfo.m_OpCode.rt;
+    bool bFPU = (op == R4300i_LWC1 || op == R4300i_LDC1);
 
-    duk_push_uint(ctx, address);
-    duk_put_prop_string(ctx, -2, "address");
+    // CPUReadWriteEvent
+    duk_push_object(ctx); 
+
+    duk_number_list_entry numbers[] = {
+        { "pc", (duk_double_t)env->pc },
+        { "callbackId", (duk_double_t)inst->CallbackId() },
+        { "address", (duk_double_t)address },
+        { "reg", (duk_double_t)rt },
+        { NULL, 0 }
+    };
+
+    duk_put_number_list(ctx, -1, numbers);
+
+    duk_push_boolean(ctx, bFPU);
+    duk_put_prop_string(ctx, -2, "fpu");
 
     union {
         uint8_t u8;
@@ -318,8 +349,7 @@ duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* _env)
     } value = {0};
     
     bool bNeedUpper32 = false;
-    bool bCop1 = false;
-
+    
     switch (env->opInfo.m_OpCode.op)
     {
     case R4300i_LB:
@@ -342,6 +372,7 @@ duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* _env)
         duk_push_uint(ctx, value.u16);
         duk_push_int(ctx, ScriptAPI::U16);
         break;
+    case R4300i_LL:
     case R4300i_LW:
         debugger->DebugLoad_VAddr(address, value.s32);
         duk_push_int(ctx, value.s32);
@@ -356,26 +387,62 @@ duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address, value.f32);
         duk_push_number(ctx, value.f32);
         duk_push_int(ctx, ScriptAPI::F32);
-        bCop1 = true;
         break;
     case R4300i_LDC1:
         debugger->DebugLoad_VAddr(address, value.f64);
         duk_push_number(ctx, value.f64);
         duk_push_int(ctx, ScriptAPI::F64);
-        bCop1 = true;
         break;
     case R4300i_LD:
         debugger->DebugLoad_VAddr(address, value.u64);
-        duk_push_number(ctx, value.u64 & 0xFFFFFFFF);
+        duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
         duk_push_int(ctx, ScriptAPI::U64);
         bNeedUpper32 = true;
         break;
-    //R4300i_LL
-    //R4300i_LDL
-    //R4300i_LDR
-    //R4300i_LWL
-    //R4300i_LWR
+    case R4300i_LDL:
+        {
+        int shift = (address & 7) * 8;
+        uint64_t mask = ~(((uint64_t)-1) << shift);
+        debugger->DebugLoad_VAddr(address & ~7, value.u64);
+        value.u64 = (g_Reg->m_GPR[rt].DW & mask) + (value.u64 << shift);
+        duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
+        duk_push_int(ctx, ScriptAPI::U64);
+        bNeedUpper32 = true;
+        }
+        break;
+    case R4300i_LDR:
+        {
+        int shift = 56 - (address & 7) * 8;
+        uint64_t mask = (((uint64_t)-1) << shift);
+        debugger->DebugLoad_VAddr(address & ~7, value.u64);
+        value.u64 = (g_Reg->m_GPR[rt].DW & mask) + (value.u64 >> shift);
+        duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
+        duk_push_int(ctx, ScriptAPI::U64);
+        bNeedUpper32 = true;
+        }
+        break;
+    case R4300i_LWL:
+        {
+        int shift = (address & 3) * 8;
+        uint32_t mask = ~(((uint32_t)-1) << shift);
+        debugger->DebugLoad_VAddr(address & ~3, value.s32);
+        value.s32 = (g_Reg->m_GPR[rt].W[0] & mask) + (value.s32 << shift);
+        duk_push_number(ctx, value.s32);
+        duk_push_int(ctx, ScriptAPI::S32);
+        }
+        break;
+    case R4300i_LWR:
+        {
+        int shift = 24 - ((address & 3) * 8);
+        uint32_t mask = (((uint32_t)-1) << shift);
+        debugger->DebugLoad_VAddr(address & ~3, value.s32);
+        value.s32 = (g_Reg->m_GPR[rt].W[0] & mask) + (value.s32 >> shift);
+        duk_push_number(ctx, value.s32);
+        duk_push_int(ctx, ScriptAPI::S32);
+        }
+        break;
     default:
+        duk_push_number(ctx, 0);
         duk_push_number(ctx, 0);
         break;
     }
@@ -385,43 +452,127 @@ duk_idx_t CbArgs_CpuStep_ReadEventObject(duk_context* ctx, void* _env)
 
     if (bNeedUpper32)
     {
-        duk_push_number(ctx, value.u64 >> 32);
+        duk_push_number(ctx, (duk_double_t)(value.u64 >> 32));
         duk_put_prop_string(ctx, -2, "valueHi");
     }
 
-    duk_push_boolean(ctx, bCop1);
+    duk_freeze(ctx, -1);
+    return 1;
+}
+
+// onwrite -> { pc, callbackId, address, fpu, reg, type, value, [valueHi] }
+duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    //CDebuggerUI* debugger = inst->Debugger();
+    jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
+
+    uint32_t address = env->opInfo.GetLoadStoreAddress();
+
+    uint8_t op = env->opInfo.m_OpCode.op;
+    uint8_t rt = env->opInfo.m_OpCode.rt;
+    bool bFPU = (op == R4300i_SWC1 || op == R4300i_SDC1);
+
+    // CPUReadWriteEvent
+    duk_push_object(ctx);
+
+    duk_number_list_entry numbers[] = {
+        { "pc", (duk_double_t)env->pc },
+        { "callbackId", (duk_double_t)inst->CallbackId() },
+        { "address", (duk_double_t)address },
+        { "reg", (duk_double_t)rt },
+        { NULL, 0 }
+    };
+
+    duk_put_number_list(ctx, -1, numbers);
+
+    duk_push_boolean(ctx, bFPU);
     duk_put_prop_string(ctx, -2, "fpu");
 
-    duk_push_number(ctx, env->opInfo.m_OpCode.rt);
-    duk_put_prop_string(ctx, -2, "reg");
+    bool bNeedUpper32 = false;
+
+    switch (env->opInfo.m_OpCode.op)
+    {
+    case R4300i_SB:
+        duk_push_int(ctx, g_Reg->m_GPR[rt].B[0]);
+        duk_push_int(ctx, ScriptAPI::S8);
+        break;
+    case R4300i_SH:
+        duk_push_int(ctx, g_Reg->m_GPR[rt].HW[0]);
+        duk_push_int(ctx, ScriptAPI::S16);
+        break;
+    case R4300i_SW:
+        duk_push_int(ctx, g_Reg->m_GPR[rt].W[0]);
+        duk_push_int(ctx, ScriptAPI::S32);
+        break;
+    case R4300i_SWC1:
+        duk_push_number(ctx, *g_Reg->m_FPR_S[rt]);
+        duk_push_int(ctx, ScriptAPI::F32);
+        break;
+    case R4300i_SDC1:
+        duk_push_number(ctx, *g_Reg->m_FPR_D[rt]);
+        duk_push_int(ctx, ScriptAPI::F64);
+        break;
+    case R4300i_SD:
+        duk_push_number(ctx, g_Reg->m_GPR[rt].UW[0]);
+        duk_push_int(ctx, ScriptAPI::U64);
+        bNeedUpper32 = true;
+        break;
+    // R4300i_SWL = 42
+    // R4300i_SWR = 46
+    // R4300i_SDL = 44
+    // R4300i_SDR = 45, 
+    default:
+        duk_push_number(ctx, 0);
+        duk_push_number(ctx, 0);
+        break;
+    }
+
+    duk_put_prop_string(ctx, -3, "type");
+    duk_put_prop_string(ctx, -2, "value");
+
+    if (bNeedUpper32)
+    {
+        duk_push_number(ctx, g_Reg->m_GPR[rt].UW[1]);
+        duk_put_prop_string(ctx, -2, "valueHi");
+    }
 
     duk_freeze(ctx, -1);
-
+    
     return 1;
 }
 
-// onwrite
-duk_idx_t CbArgs_CpuStep_WriteAddr_Value(duk_context* ctx, void* _env)
+// onopcode -> { pc, callbackId }
+duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* _env)
 {
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
-    duk_push_uint(ctx, env->opInfo.GetLoadStoreAddress());
-
-    //COpInfo info();
-
-    /*
-    * todo if int write pass g_Reg->m_GPR[(env->opcode >> 16) & 0x1F]
-    * if float write pass g_Reg->m_FPR_S/D[etc]
-    * add 'wantUnsigned' argument to onread/onwrite?
-    */
-
+    duk_push_object(ctx);
+    duk_push_uint(ctx, env->pc);
+    duk_put_prop_string(ctx, -2, "pc");
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+    duk_push_uint(ctx, env->opInfo.m_OpCode.Hex);
+    duk_put_prop_string(ctx, -2, "opcode");
+    duk_freeze(ctx, -1);
     return 1;
 }
 
-// ongprvalue
-duk_idx_t CbArgs_CpuStep_AffectedRegIndex(duk_context* ctx, void* _env)
+// ongprvalue -> { pc, callbackId, value, reg }
+duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* _env)
 {
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
+    duk_push_object(ctx);
+    duk_push_uint(ctx, env->pc);
+    duk_put_prop_string(ctx, -2, "pc");
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+    duk_push_uint(ctx, g_Reg->m_GPR[env->outAffectedRegIndex].UW[0]);
+    duk_put_prop_string(ctx, -2, "value");
     duk_push_uint(ctx, env->outAffectedRegIndex);
+    duk_put_prop_string(ctx, -2, "reg");
+    duk_freeze(ctx, -1);
     return 1;
 }
 
@@ -429,6 +580,11 @@ bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrSta
 {
     if(duk_is_number(ctx, idx))
     {
+        if (abs(duk_get_number(ctx, idx)) > 0xFFFFFFFF)
+        {
+            return false;
+        }
+
         uint32_t addr = duk_get_uint(ctx, idx);
         *addrStart = addr;
         *addrEnd = addr;

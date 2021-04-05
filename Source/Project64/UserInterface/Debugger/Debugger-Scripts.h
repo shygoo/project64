@@ -1,73 +1,9 @@
 #pragma once
 #include "DebuggerUI.h"
 #include "ScriptSystem.h"
+#include <Project64/UserInterface/WTLControls/EditConInput.h>
 #include <Project64/UserInterface/WTLControls/TooltipDialog.h>
 #include <string>
-
-class CScriptList : public CListViewCtrl
-{
-public:
-    BEGIN_MSG_MAP_EX(CScriptList)
-    END_MSG_MAP()
-};
-
-// todo move history to script window class,
-// just send notifications for up/down/enter keys
-class CEditEval : public CWindowImpl<CEditEval, CEdit>
-{
-private:
-    static const int HISTORY_MAX_ENTRIES = 20;
-    std::vector<wchar_t*> m_History;
-    int m_HistoryIdx;
-    CDebugScripts* m_ScriptWindow;
-
-public:
-    CEditEval()
-    {
-        m_HistoryIdx = 0;
-    }
-
-    void SetScriptWindow(CDebugScripts* scriptWindow)
-    {
-        m_ScriptWindow = scriptWindow;
-    }
-
-    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-
-    BOOL Attach(HWND hWndNew)
-    {
-        return SubclassWindow(hWndNew);
-    }
-
-    BEGIN_MSG_MAP_EX(CEditEval)
-        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
-    END_MSG_MAP()
-};
-
-class CEditConsole : public CWindowImpl<CEditEval, CEdit>
-{
-private:
-    LRESULT OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-    {
-        if (GetKeyState(VK_CONTROL) < 0)
-        {
-            if (wParam == 'A')
-            {
-                this->SetSelAll();
-            }
-        }
-        return FALSE;
-    }
-public:
-    BOOL Attach(HWND hWndNew)
-    {
-        return SubclassWindow(hWndNew);
-    }
-
-    BEGIN_MSG_MAP_EX(CEditEval)
-        MESSAGE_HANDLER(WM_KEYDOWN, OnKeyDown)
-    END_MSG_MAP()
-};
 
 class CDebugScripts :
     public CDebugDialog<CDebugScripts>,
@@ -82,11 +18,16 @@ private:
         WM_CONSOLE_CLEAR = WM_USER + 4
     };
 
-    CEditEval m_EvalEdit;
-    CEditConsole m_ConsoleEdit;
-    CScriptList m_ScriptList;
+    CEditConInput m_ConInputEdit;
+    CEditConOutput m_ConOutputEdit;
+    CListViewCtrl m_ScriptList;
     CStatusBarCtrl m_StatusBar;
-    std::string m_SelectedScriptName;
+
+    HFONT m_MonoFont, m_MonoBoldFont;
+
+    stdstr m_SelectedScriptName;
+    std::vector<wchar_t*> m_InputHistory;
+    size_t m_InputHistoryIndex;
 
     HANDLE m_hQuitScriptDirWatchEvent;
     HANDLE m_hScriptDirWatchThread;
@@ -119,12 +60,12 @@ public:
     LRESULT OnScriptListRClicked(NMHDR* pNMHDR);
     LRESULT OnScriptListCustomDraw(NMHDR* pNMHDR);
     LRESULT OnScriptListItemChanged(NMHDR* pNMHDR);
+    LRESULT OnInputSpecialKey(NMHDR* pNMHDR);
     void OnExitSizeMove(void);
 
     LRESULT OnConsolePrint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnConsoleClear(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnRefreshList(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-    //LRESULT OnStatusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 
     BEGIN_MSG_MAP_EX(CDebugScripts)
         COMMAND_CODE_HANDLER(BN_CLICKED, OnClicked)
@@ -135,14 +76,13 @@ public:
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_RCLICK, OnScriptListRClicked)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, LVN_ITEMCHANGED, OnScriptListItemChanged)
+        NOTIFY_HANDLER_EX(IDC_EVAL_EDIT, CIN_SPECIALKEY, OnInputSpecialKey)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_EXITSIZEMOVE(OnExitSizeMove);
         MESSAGE_HANDLER(WM_CONSOLE_PRINT, OnConsolePrint)
         MESSAGE_HANDLER(WM_CONSOLE_CLEAR, OnConsoleClear)
         MESSAGE_HANDLER(WM_REFRESH_LIST, OnRefreshList)
-        //MESSAGE_HANDLER(WM_SCRIPT_STATUS, OnStatusChange)
         CHAIN_MSG_MAP(CDialogResize<CDebugScripts>)
-        CHAIN_MSG_MAP_MEMBER(m_ScriptList)
     END_MSG_MAP()
 
     BEGIN_DLGRESIZE_MAP(CDebugScripts)

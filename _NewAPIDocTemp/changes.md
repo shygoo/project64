@@ -22,16 +22,20 @@ Changes:
 
 Changes that will break compatibility with old scripts:
 
+- move `gpr`, `ugpr`, `fpr`, `dfpr`, `cop0` interfaces into new `cpu` interface
+- move `gpr.pc` to `cpu.pc`
+- move `gpr.hi`/`ugpr.hi` to `cpu.hi`/`cpu.uhi`
+- move `gpr.lo`/`ugpr.lo` to `cpu.hi`/`cpu.ulo`
 - remove redundant `rom` interface because `mem` interface can access ROM
 - remove redundant `pc` argument from `events.onexec/onopcode/ongprvalue` callbacks since there is `gpr.pc`
 - change the `address` argument of `events.onread/onwrite` callbacks to more informative `CPUReadWriteEvent` object
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 
 I am not sure what the situation is with `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`,
-but I changed `cop0.cause` to include them both.
+but I changed `cpu.cop0.cause` to include them both.
 
-- reads from `cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
-- writes to `cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
+- reads from `cpu.cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
+- writes to `cpu.cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
 
 ---------------------
 TODO:
@@ -39,7 +43,6 @@ TODO:
 - script auto-run feature?
 - finish implementing new server/socket
 - finish implementing new events interface
-- finish implementing new alert
 - finish implementing new screen interface
 - full test suite
 - mem.setblock
@@ -49,7 +52,6 @@ TODO:
 - debug.resume()
 
 - Duktape.modSearch/require()
-- fix input history
 - formatting/cleanup printfs, comments etc
 
 - pj64.openrom()
@@ -60,8 +62,9 @@ TODO:
 - pj64.limitfps(limitFps = true)
 - pj64.pause()
 - pj64.resume()
-- pj64.loadsetting(section, name)
 - pj64.savesetting(section, name, value)
+- pj64.loadsetting(section, name)
+
 
 - pj64.addmenu(null, caption, callback, menuKey)
 - pj64.delmenu()

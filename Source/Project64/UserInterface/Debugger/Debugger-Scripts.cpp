@@ -5,12 +5,20 @@ CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
     CDebugDialog<CDebugScripts>(debugger),
     CToolTipDialog<CDebugScripts>(),
     m_hQuitScriptDirWatchEvent(NULL),
-    m_hScriptDirWatchThread(NULL)
+    m_hScriptDirWatchThread(NULL),
+    m_InputHistoryIndex(0),
+    m_MonoFont(NULL),
+    m_MonoBoldFont(NULL)
 {
 }
 
 CDebugScripts::~CDebugScripts(void)
 {
+    for (size_t i = 0; i < m_InputHistory.size(); i++)
+    {
+        delete[] m_InputHistory[i];
+    }
+    m_InputHistory.clear();
 }
 
 LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -19,11 +27,15 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     DlgSavePos_Init(DebuggerUI_ScriptsPos);
     DlgToolTip_Init();
 
-    HFONT monoFont = CreateFont(-12, 0, 0, 0,
+    m_MonoFont = CreateFont(-12, 0, 0, 0,
         FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        CLEARTYPE_QUALITY, FF_DONTCARE, L"Consolas"
-    );
+        CLEARTYPE_QUALITY, FF_DONTCARE, L"Consolas");
+
+    m_MonoBoldFont = CreateFont(-13, 0, 0, 0,
+        FW_BOLD, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        CLEARTYPE_QUALITY, FF_DONTCARE, L"Consolas");
 
     m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
     m_ScriptList.AddColumn(L"Status", 0);
@@ -33,14 +45,15 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     m_ScriptList.ModifyStyle(LVS_OWNERDRAWFIXED, 0, 0);
 
-    m_EvalEdit.Attach(GetDlgItem(IDC_EVAL_EDIT));
-    m_EvalEdit.SetScriptWindow(this);
-    m_EvalEdit.SetFont(monoFont);
-    m_EvalEdit.EnableWindow(FALSE);
+    m_ConInputEdit.Attach(GetDlgItem(IDC_EVAL_EDIT));
+    m_ConInputEdit.SetFont(m_MonoFont);
+    m_ConInputEdit.EnableWindow(FALSE);
 
-    m_ConsoleEdit.Attach(GetDlgItem(IDC_CONSOLE_EDIT));
-    m_ConsoleEdit.SetLimitText(0);
-    m_ConsoleEdit.SetFont(monoFont);
+    m_ConOutputEdit.Attach(GetDlgItem(IDC_CONSOLE_EDIT));
+    m_ConOutputEdit.SetLimitText(0);
+    m_ConOutputEdit.SetFont(m_MonoFont);
+
+    ::SendMessage(GetDlgItem(IDC_EVAL_LBL), WM_SETFONT, (WPARAM)m_MonoBoldFont, 0);
 
     int statusPaneWidths[] = { -1 };
     m_StatusBar.Attach(GetDlgItem(IDC_STATUSBAR));
@@ -54,7 +67,7 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     m_hQuitScriptDirWatchEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     m_hScriptDirWatchThread = CreateThread(NULL, 0, ScriptDirWatchProc, (void*)this, 0, NULL);
 
-    m_ConsoleEdit.SetWindowText(m_Debugger->ScriptSystem()->GetLog().ToUTF16().c_str());
+    m_ConOutputEdit.SetWindowText(m_Debugger->ScriptSystem()->GetLog().ToUTF16().c_str());
     return 0;
 }
 
@@ -64,6 +77,9 @@ LRESULT CDebugScripts::OnDestroy(void)
     WaitForSingleObject(m_hScriptDirWatchThread, INFINITE);
     CloseHandle(m_hQuitScriptDirWatchEvent);
     CloseHandle(m_hScriptDirWatchThread);
+
+    DeleteObject(m_MonoFont);
+    DeleteObject(m_MonoBoldFont);
     return 0;
 }
 
@@ -151,7 +167,7 @@ void CDebugScripts::ConsoleCopy()
 
     EmptyClipboard();
 
-    size_t nChars = m_ConsoleEdit.GetWindowTextLength() + 1;
+    size_t nChars = m_ConOutputEdit.GetWindowTextLength() + 1;
 
     HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, nChars * sizeof(wchar_t));
 
@@ -169,7 +185,7 @@ void CDebugScripts::ConsoleCopy()
         return;
     }
 
-    m_ConsoleEdit.GetWindowText(memBuf, nChars);
+    m_ConOutputEdit.GetWindowText(memBuf, nChars);
 
     GlobalUnlock(hMem);
     SetClipboardData(CF_UNICODETEXT, hMem);
@@ -184,7 +200,7 @@ void CDebugScripts::ConsolePrint(const char* text)
     {
         char* textCopy = _strdup(text); // OnConsolePrint will free this
         PostMessage(WM_CONSOLE_PRINT, (WPARAM)textCopy);
-        Sleep(5); // Prevent flooding of the message queue
+        Sleep(5); // Prevent flooding
     }
 }
 
@@ -212,11 +228,12 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
         EndDialog(0);
         break;
     case ID_POPUP_RUN:
-    case IDC_RUN_BTN:
         RunSelected();
         break;
+    case IDC_RUN_BTN:
+        ToggleSelected();
+        break;
     case ID_POPUP_STOP:
-    case IDC_STOP_BTN:
         StopSelected();
         break;
     case ID_POPUP_SCRIPT_EDIT:
@@ -260,7 +277,8 @@ void CDebugScripts::RefreshStatus()
     if (status == JS_STATUS_STARTED)
     {
         statusText += " (Started)";
-        m_EvalEdit.EnableWindow(TRUE);
+        m_ConInputEdit.EnableWindow(TRUE);
+        m_ConInputEdit.SetFocus();
     }
     else
     {
@@ -268,7 +286,7 @@ void CDebugScripts::RefreshStatus()
         {
             statusText += " (Starting)";
         }
-        m_EvalEdit.EnableWindow(FALSE);
+        m_ConInputEdit.EnableWindow(FALSE);
     }
     
     m_StatusBar.SetText(0, statusText.ToUTF16().c_str());
@@ -359,8 +377,7 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
 
         jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
-        ::EnableWindow(GetDlgItem(IDC_STOP_BTN), status == JS_STATUS_STARTING || status == JS_STATUS_STARTED);
-        ::EnableWindow(GetDlgItem(IDC_RUN_BTN), status == JS_STATUS_STOPPED);
+        ::SetWindowText(GetDlgItem(IDC_RUN_BTN), status == JS_STATUS_STOPPED ? L"Run" : L"Stop");
 
         RefreshStatus();
     }
@@ -374,15 +391,15 @@ LRESULT CDebugScripts::OnConsolePrint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPa
     SCROLLINFO scroll;
     scroll.cbSize = sizeof(SCROLLINFO);
     scroll.fMask = SIF_ALL;
-    m_ConsoleEdit.GetScrollInfo(SB_VERT, &scroll);
+    m_ConOutputEdit.GetScrollInfo(SB_VERT, &scroll);
 
-    m_ConsoleEdit.SetRedraw(FALSE);
-    m_ConsoleEdit.AppendText(stdstr(text).ToUTF16().c_str());
-    m_ConsoleEdit.SetRedraw(TRUE);
+    m_ConOutputEdit.SetRedraw(FALSE);
+    m_ConOutputEdit.AppendText(stdstr(text).ToUTF16().c_str());
+    m_ConOutputEdit.SetRedraw(TRUE);
 
     if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
     {
-        m_ConsoleEdit.ScrollCaret();
+        m_ConOutputEdit.ScrollCaret();
     }
 
     free(text);
@@ -392,7 +409,7 @@ LRESULT CDebugScripts::OnConsolePrint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lPa
 
 LRESULT CDebugScripts::OnConsoleClear(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    m_ConsoleEdit.SetWindowText(L"");
+    m_ConOutputEdit.SetWindowText(L"");
     return FALSE;
 }
 
@@ -420,10 +437,10 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     
         switch (status)
         {
-        case JS_STATUS_STARTED:
+        case JS_STATUS_STARTING:
             statusIcon = L"*";
             break;
-        case JS_STATUS_STARTING:
+        case JS_STATUS_STARTED:
             statusIcon = L">";
             break;
         default:
@@ -447,14 +464,9 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     return FALSE;
 }
 
-//LRESULT OnStatusChange(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
-//{
-//
-//}
-
 void CDebugScripts::EvaluateInSelectedInstance(const char* code)
 {
-    m_Debugger->ScriptSystem()->Eval(m_SelectedScriptName.c_str(), code);
+    m_Debugger->ScriptSystem()->Input(m_SelectedScriptName.c_str(), code);
 }
 
 void CDebugScripts::RunSelected()
@@ -493,78 +505,80 @@ void CDebugScripts::EditSelected()
     ShellExecute(NULL, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), NULL, L"Scripts", SW_SHOWNORMAL);
 }
 
-// Console input
-LRESULT CEditEval::OnKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
+LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
 {
-    if (wParam == VK_UP)
+    NMCISPECIALKEY* pnmsk = (NMCISPECIALKEY*)pNMHDR;
+
+    if (pnmsk->key == CI_KEY_UP)
     {
-        if (m_HistoryIdx > 0)
+        if (m_InputHistoryIndex > 0)
         {
-            wchar_t* code = m_History[--m_HistoryIdx];
-            SetWindowText(code);
+            wchar_t* code = m_InputHistory[--m_InputHistoryIndex];
+            m_ConInputEdit.SetWindowText(code);
             int selEnd = wcslen(code);
-            SetSel(selEnd, selEnd);
+            m_ConInputEdit.SetSel(selEnd, selEnd);
         }
+
+        return 0;
     }
-    else if (wParam == VK_DOWN)
+
+    if (pnmsk->key == CI_KEY_DOWN)
     {
-        int size = m_History.size();
-        if (m_HistoryIdx < size - 1)
+        size_t size = m_InputHistory.size();
+
+        if (m_InputHistoryIndex < size)
         {
-            wchar_t* code = m_History[++m_HistoryIdx];
-            SetWindowText(code);
+            m_InputHistoryIndex++;
+        }
+
+        if (m_InputHistoryIndex < size)
+        {
+            wchar_t* code = m_InputHistory[m_InputHistoryIndex];
+            m_ConInputEdit.SetWindowText(code);
             int selEnd = wcslen(code);
-            SetSel(selEnd, selEnd);
+            m_ConInputEdit.SetSel(selEnd, selEnd);
         }
-        else if (m_HistoryIdx < size)
+        else
         {
-            SetWindowText(L"");
-            m_HistoryIdx++;
+            m_ConInputEdit.SetWindowText(L"");
         }
+
+        return 0;
     }
-    else if (wParam == VK_RETURN)
+
+    if (pnmsk->key == CI_KEY_ENTER)
     {
-        if (m_ScriptWindow == NULL)
+        size_t codeLength = m_ConInputEdit.GetWindowTextLength();
+
+        if (codeLength == 0)
         {
-            bHandled = FALSE;
             return 0;
         }
 
-        size_t codeLength = GetWindowTextLength();
         wchar_t* code = new wchar_t[codeLength + 1];
-        GetWindowText(code, codeLength + 1);
+        m_ConInputEdit.GetWindowText(code, codeLength + 1);
+        m_ConInputEdit.SetWindowText(L"");
 
-        m_ScriptWindow->EvaluateInSelectedInstance(stdstr().FromUTF16(code).c_str());
-
-        SetWindowText(L"");
-        int historySize = m_History.size();
+        EvaluateInSelectedInstance(stdstr().FromUTF16(code).c_str());
 
         // If there is a duplicate entry move it to the bottom
-        for (int i = 0; i < historySize; i++)
+        for (size_t i = 0; i < m_InputHistory.size(); i++)
         {
-            if (wcscmp(code, m_History[i]) == 0)
+            if (wcscmp(code, m_InputHistory[i]) == 0)
             {
-                wchar_t* str = m_History[i];
-                m_History.erase(m_History.begin() + i);
-                m_History.push_back(str);
-
+                wchar_t* str = m_InputHistory[i];
+                m_InputHistory.erase(m_InputHistory.begin() + i);
+                m_InputHistory.push_back(str);
+                m_InputHistoryIndex = m_InputHistory.size();
                 delete[] code;
-                bHandled = FALSE;
                 return 0;
             }
         }
 
-        // Remove oldest if maxed
-        if (historySize >= HISTORY_MAX_ENTRIES)
-        {
-            delete[] m_History[0];
-            m_History.erase(m_History.begin() + 0);
-            historySize--;
-        }
-
-        m_History.push_back(code);
-        m_HistoryIdx = ++historySize;
+        m_InputHistory.push_back(code);
+        m_InputHistoryIndex = m_InputHistory.size();
+        return 0;
     }
-    bHandled = FALSE;
+
     return 0;
 }

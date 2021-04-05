@@ -49,12 +49,12 @@ public:
 
     bool StartScript(const char* name, const char* path);
     bool StopScript(const char* name);
-    bool Eval(const char* name, const char* code);
+    bool Input(const char* name, const char* code);
 
     jsstatus_t GetStatus(const char* name);
     void UpdateStatus(const char* name, jsstatus_t status);
-    void Log(const char* message);
-    void Print(const char* message);
+    void Log(const char* format, ...);
+    void Print(const char* format, ...);
     void ClearLog();
     stdstr GetLog();
 
@@ -70,9 +70,9 @@ private:
     static DWORD WINAPI ThreadProc(void* _this);
     void ThreadProc();
 
-    void OnStartScript(const char* key, const char* path);
-    void OnStopScript(const char* key);
-    void OnEval(const char* key, const char* code);
+    void OnStartScript(const char* name, const char* path);
+    void OnStopScript(const char* name);
+    void OnInput(const char* name, const char* code);
     void OnSweep(bool bIfDone);
 
     bool RawRemoveInstance(const char* key);

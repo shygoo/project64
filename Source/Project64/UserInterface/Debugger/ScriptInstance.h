@@ -13,6 +13,7 @@ class CScriptInstance
     uint64_t       m_ExecStartTime;
     std::ifstream  m_SourceFile;
     char*          m_SourceCode;
+    jscb_id_t      m_CurExecCallbackId;
 
 public:
     CScriptInstance(CScriptSystem* sys, const char* name);
@@ -21,6 +22,7 @@ public:
     jsname_t&      Name();
     CScriptSystem* System();
     CDebuggerUI*   Debugger();
+    jscb_id_t      CallbackId();
 
     bool           Run(const char* path);
 
@@ -32,7 +34,7 @@ public:
 
     void           RawCall(void* heapptr, jsargs_fn_t fnPushArgs, void* param);
     void           SyncCall(void* heapptr, jsargs_fn_t fnPushArgs, void* param);
-    void           RawEval(const char* code);
+    void           RawInput(const char* code);
 
     void SetExecTimeout(uint64_t timeout);
     bool IsTimedOut();

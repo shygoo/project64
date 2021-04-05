@@ -24,7 +24,9 @@ struct JSCallback
     void            *heapptr;
     jscond_fn_t      Condition;
     jsargs_fn_t      PushArguments;
-    
+    // assigned by scriptsys when this is added to the callback map
+    jscb_id_t        id;
+
     struct {
         uint32_t addrStart, addrEnd;
         union {
@@ -37,7 +39,8 @@ struct JSCallback
         instance(inst),
         heapptr(heapptr),
         Condition(fnCondition),
-        PushArguments(fnPushArgs)
+        PushArguments(fnPushArgs),
+        id(JS_INVALID_CALLBACK)
     {
         params = {};
     }
@@ -46,7 +49,8 @@ struct JSCallback
         instance(NULL),
         heapptr(NULL),
         Condition(NULL),
-        PushArguments(NULL)
+        PushArguments(NULL),
+        id(JS_INVALID_CALLBACK)
     {
         params = {};
     }
@@ -54,11 +58,7 @@ struct JSCallback
 
 typedef struct {
     uint32_t  pc;
-    COpInfo opInfo;
-    //uint32_t  opcode;
-    //bool      bReadOp, bWriteOp;
-    //uint32_t  readWriteAddr;
-    //uint32_t  readWriteValue;
+    COpInfo   opInfo;
     // below fields are set by the condition function
     int       outAffectedRegIndex;
 } jshook_env_cpustep_t;
@@ -84,6 +84,6 @@ typedef enum {
     CMD_START_SCRIPT,
     CMD_STOP_SCRIPT,
     CMD_SWEEP,
-    CMD_EVAL,
+    CMD_INPUT,
     CMD_SHUTDOWN
 } jssyscmd_id_t;

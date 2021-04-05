@@ -4,21 +4,21 @@
 
 #pragma warning(disable: 4702)
 
+static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper);
+static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper);
+static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble);
+static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble);
+
+static int FPRIndex(const char* regName);
+static int GPRIndex(const char* regName);
+static uint32_t* COP0RegPtr(const char* regName);
+static uint32_t* CPURegPtr(const char *regName);
+
 static duk_ret_t ThrowRegInvalidError(duk_context* ctx);
 static duk_ret_t ThrowRegContextUnavailableError(duk_context* ctx);
 static duk_ret_t ThrowRegAssignmentTypeError(duk_context* ctx);
 
-static int GPRIndex(const char *regName);
-static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper);
-static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper);
-
-static int FPRIndex(const char *regName);
-static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble);
-static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble);
-
-static uint32_t* COP0RegPtr(const char *regName);
-
-void ScriptAPI::Define_registers(duk_context* ctx)
+void ScriptAPI::Define_cpu(duk_context* ctx)
 {
     #define REG_PROXY_FUNCTIONS(getter, setter) { \
         { "get", getter, 2 }, \
@@ -38,7 +38,10 @@ void ScriptAPI::Define_registers(duk_context* ctx)
         { NULL, NULL }
     };
 
+    const duk_function_list_entry cpufuncs[] = REG_PROXY_FUNCTIONS(js_cpu_get, js_cpu_set);
+
     duk_push_global_object(ctx);
+    duk_push_object(ctx);
 
     for (size_t i = 0; proxies[i].key != NULL; i++)
     {
@@ -51,7 +54,51 @@ void ScriptAPI::Define_registers(duk_context* ctx)
         duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
     }
 
+    duk_push_object(ctx);
+    duk_put_function_list(ctx, -1, cpufuncs);
+    duk_push_proxy(ctx, 0);
+    duk_freeze(ctx, -1);
+
+    duk_put_prop_string(ctx, -2, "cpu");
     duk_pop(ctx);
+}
+
+duk_ret_t ScriptAPI::js_cpu_get(duk_context* ctx)
+{
+    if (g_Reg == NULL)
+    {
+        return ThrowRegContextUnavailableError(ctx);
+    }
+
+    const char* key = duk_get_string(ctx, 1);
+    uint32_t* pReg = CPURegPtr(key);
+
+    if (pReg == NULL)
+    {
+        duk_get_prop_string(ctx, 0, key);
+        return 1;
+    }
+
+    duk_push_uint(ctx, *pReg);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_cpu_set(duk_context* ctx)
+{
+    if (g_Reg == NULL)
+    {
+        return ThrowRegContextUnavailableError(ctx);
+    }
+
+    uint32_t* pReg = CPURegPtr(duk_get_string(ctx, 1));
+
+    if (!duk_is_number(ctx, 2) || pReg == NULL)
+    {
+        return ThrowRegAssignmentTypeError(ctx);
+    }
+
+    *pReg = duk_get_number(ctx, 2);
+    return 0;
 }
 
 duk_ret_t ScriptAPI::js_gpr_get(duk_context* ctx)
@@ -170,44 +217,6 @@ duk_ret_t ScriptAPI::js_cop0_set(duk_context* ctx)
     return 0;
 }
 
-static duk_ret_t ThrowRegInvalidError(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid register name or number");
-    return duk_throw(ctx);
-}
-
-static duk_ret_t ThrowRegContextUnavailableError(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_ERROR, "CPU register context is unavailable");
-    return duk_throw(ctx);
-}
-
-static duk_ret_t ThrowRegAssignmentTypeError(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid register value assignment");
-    return duk_throw(ctx);
-}
-
-static int GPRIndex(const char *regName)
-{
-    const char* names[] = {
-        "r0", "at", "v0", "v1", "a0", "a1", "a2", "a3",
-        "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
-        "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-        "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
-    };
-
-    for (int i = 0; i < 32; i++)
-    {
-        if (strcmp(names[i], regName) == 0)
-        {
-            return i;
-        }
-    }
-
-    return -1;
-}
-
 static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper)
 {
     int regIndex = -1;
@@ -223,27 +232,7 @@ static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper)
     }
     else if (duk_is_string(ctx, 1))
     {
-        const char* key = duk_get_string(ctx, 1);
-
-        if (strcmp(key, "hi") == 0)
-        {
-            duk_push_uint(ctx, g_Reg->m_HI.UW[bUpper ? 1 : 0]);
-            return 1;
-        }
-
-        if (strcmp(key, "lo") == 0)
-        {
-            duk_push_uint(ctx, g_Reg->m_LO.UW[bUpper ? 1 : 0]);
-            return 1;
-        }
-
-        if (!bUpper && strcmp(key, "pc") == 0)
-        {
-            duk_push_uint(ctx, g_Reg->m_PROGRAM_COUNTER);
-            return 1;
-        }
-
-        regIndex = GPRIndex(key);
+        regIndex = GPRIndex(duk_get_string(ctx, 1));
     }
 
     if (regIndex < 0 || regIndex > 31)
@@ -277,27 +266,7 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
     }
     else if (duk_is_string(ctx, 1))
     {
-        const char* key = duk_get_string(ctx, 1);
-
-        if (strcmp("hi", key) == 0)
-        {
-            g_Reg->m_HI.UW[bUpper ? 1 : 0] = value;
-            return 0;
-        }
-
-        if (strcmp("lo", key) == 0)
-        {
-            g_Reg->m_LO.UW[bUpper ? 1 : 0] = value;
-            return 0;
-        }
-
-        if (!bUpper && strcmp(key, "pc") == 0)
-        {
-            g_Reg->m_PROGRAM_COUNTER = value;
-            return 0;
-        }
-
-        regIndex = GPRIndex(key);
+        regIndex = GPRIndex(duk_get_string(ctx, 1));
     }
 
     if (regIndex == 0)
@@ -312,26 +281,6 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
 
     g_Reg->m_GPR[regIndex].UW[bUpper ? 1 : 0] = value;
     return 0;
-}
-
-static int FPRIndex(const char *regName)
-{
-    const char* names[32] = {
-        "f0", "f1", "f2", "f3", "f4","f5", "f6", "f7", "f8",
-        "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16",
-        "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24",
-        "f25", "f26", "f27", "f28", "f29", "f30", "f31"
-    };
-
-    for (int i = 0; i < 32; i++)
-    {
-        if (strcmp(names[i], regName) == 0)
-        {
-            return i;
-        }
-    }
-
-    return -1;
 }
 
 static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
@@ -349,9 +298,8 @@ static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
     }
     else if (duk_is_string(ctx, 1))
     {
-        const char* key = duk_get_string(ctx, 1);
         // todo status reg
-        regIndex = FPRIndex(key);
+        regIndex = FPRIndex(duk_get_string(ctx, 1));
     }
 
     if (regIndex < 0 || regIndex > 31)
@@ -391,9 +339,8 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
     }
     else if (duk_is_string(ctx, 1))
     {
-        const char* key = duk_get_string(ctx, 1);
         // todo status reg
-        regIndex = FPRIndex(key);
+        regIndex = FPRIndex(duk_get_string(ctx, 1));
     }
 
     if (regIndex < 0 || regIndex > 31)
@@ -413,6 +360,46 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
     }
 
     return 0;
+}
+
+static int GPRIndex(const char* regName)
+{
+    const char* names[] = {
+        "r0", "at", "v0", "v1", "a0", "a1", "a2", "a3",
+        "t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7",
+        "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
+        "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
+    };
+
+    for (int i = 0; i < 32; i++)
+    {
+        if (strcmp(names[i], regName) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+static int FPRIndex(const char* regName)
+{
+    const char* names[32] = {
+        "f0", "f1", "f2", "f3", "f4","f5", "f6", "f7", "f8",
+        "f9", "f10", "f11", "f12", "f13", "f14", "f15", "f16",
+        "f17", "f18", "f19", "f20", "f21", "f22", "f23", "f24",
+        "f25", "f26", "f27", "f28", "f29", "f30", "f31"
+    };
+
+    for (int i = 0; i < 32; i++)
+    {
+        if (strcmp(names[i], regName) == 0)
+        {
+            return i;
+        }
+    }
+
+    return -1;
 }
 
 static uint32_t* COP0RegPtr(const char *regName)
@@ -457,4 +444,53 @@ static uint32_t* COP0RegPtr(const char *regName)
     }
 
     return NULL;
+}
+
+static uint32_t* CPURegPtr(const char* key)
+{
+    if (g_Reg == NULL)
+    {
+        return NULL;
+    }
+
+    if (strcmp(key, "pc") == 0)
+    {
+        return &g_Reg->m_PROGRAM_COUNTER;
+    }
+    else if (strcmp(key, "hi") == 0)
+    {
+        return &g_Reg->m_HI.UW[0];
+    }
+    else if (strcmp(key, "uhi") == 0)
+    {
+        return &g_Reg->m_HI.UW[1];
+    }
+    else if (strcmp(key, "lo") == 0)
+    {
+        return &g_Reg->m_LO.UW[0];
+    }
+    else if (strcmp(key, "ulo") == 0)
+    {
+        return &g_Reg->m_LO.UW[1];
+    }
+
+    return NULL;
+}
+
+static duk_ret_t ThrowRegInvalidError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR, "invalid register name or number");
+    return duk_throw(ctx);
+}
+
+static duk_ret_t ThrowRegContextUnavailableError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_ERROR, "CPU register context is unavailable");
+    return duk_throw(ctx);
+}
+
+static duk_ret_t ThrowRegAssignmentTypeError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid register value assignment");
+    return duk_throw(ctx);
 }

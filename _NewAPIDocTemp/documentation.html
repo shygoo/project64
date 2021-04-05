@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 02 2021 -->
+<!-- Generated Apr 03 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -167,54 +167,49 @@ div.tag.red {
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
 <li><a href="#events_onread">events.onread(address, callback)</a></li>
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
-<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
-<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
+<li><a href="#CPUExecEvent">CPUExecEvent</a></li>
+<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
+<li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
+<li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#screen">screen</a>: Screen drawing interface<ul>
 <li><a href="#screen_print">screen.print(x, y, text)</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#gpr">gpr</a>: CPU general purpose register interface<ul>
-<li><a href="#gpr__">gpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#gpr_hi">gpr.hi</a></li>
-<li><a href="#gpr_lo">gpr.lo</a></li>
-<li><a href="#gpr_pc">gpr.pc</a></li>
-</ul><div class="vtab"></div></li>
-<li><a href="#ugpr">ugpr</a>: CPU general purpose register interface (upper bits)<ul>
-<li><a href="#ugpr__">ugpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#ugpr_hi">ugpr.hi</a></li>
-<li><a href="#ugpr_lo">ugpr.lo</a></li>
-</ul><div class="vtab"></div></li>
-<li><a href="#fpr">fpr</a>: CPU floating-point register interface<ul>
-<li><a href="#fpr__">fpr.f0..f31</a></li>
-</ul><div class="vtab"></div></li>
-<li><a href="#dfpr">dfpr</a>: CPU floating-point register interface (64-bit)<ul>
-<li><a href="#dfpr__">dfpr.f0..f30</a></li>
-</ul><div class="vtab"></div></li>
-<li><a href="#cop0">cop0</a>: CPU Coprocessor 0 register interface<ul>
-<li><a href="#cop0_index">cop0.index</a></li>
-<li><a href="#cop0_random">cop0.random</a></li>
-<li><a href="#cop0_entrylo0">cop0.entrylo0</a></li>
-<li><a href="#cop0_entrylo1">cop0.entrylo1</a></li>
-<li><a href="#cop0_context">cop0.context</a></li>
-<li><a href="#cop0_pagemask">cop0.pagemask</a></li>
-<li><a href="#cop0_wired">cop0.wired</a></li>
-<li><a href="#cop0_badvaddr">cop0.badvaddr</a></li>
-<li><a href="#cop0_count">cop0.count</a></li>
-<li><a href="#cop0_entryhi">cop0.entryhi</a></li>
-<li><a href="#cop0_compare">cop0.compare</a></li>
-<li><a href="#cop0_status">cop0.status</a></li>
-<li><a href="#cop0_cause">cop0.cause</a></li>
-<li><a href="#cop0_epc">cop0.epc</a></li>
-<li><a href="#cop0_config">cop0.config</a></li>
-<li><a href="#cop0_taglo">cop0.taglo</a></li>
-<li><a href="#cop0_taghi">cop0.taghi</a></li>
-<li><a href="#cop0_errorepc">cop0.errorepc</a></li>
+<li><a href="#cpu">cpu</a>: CPU interface<ul>
+<li><a href="#cpu_pc">cpu.pc</a></li>
+<li><a href="#cpu_hi">cpu.hi</a></li>
+<li><a href="#cpu_lo">cpu.lo</a></li>
+<li><a href="#cpu_uhi">cpu.uhi</a></li>
+<li><a href="#cpu_ulo">cpu.ulo</a></li>
+<li><a href="#cpu_gpr__">cpu.gpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#cpu_ugpr__">cpu.ugpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#cpu_fpr__">cpu.fpr.f0..f31</a></li>
+<li><a href="#cpu_dfpr__">cpu.dfpr.f0..f30</a></li>
+<li><a href="#cpu_cop0_index">cpu.cop0.index</a></li>
+<li><a href="#cpu_cop0_random">cpu.cop0.random</a></li>
+<li><a href="#cpu_cop0_entrylo0">cpu.cop0.entrylo0</a></li>
+<li><a href="#cpu_cop0_entrylo1">cpu.cop0.entrylo1</a></li>
+<li><a href="#cpu_cop0_context">cpu.cop0.context</a></li>
+<li><a href="#cpu_cop0_pagemask">cpu.cop0.pagemask</a></li>
+<li><a href="#cpu_cop0_wired">cpu.cop0.wired</a></li>
+<li><a href="#cpu_cop0_badvaddr">cpu.cop0.badvaddr</a></li>
+<li><a href="#cpu_cop0_count">cpu.cop0.count</a></li>
+<li><a href="#cpu_cop0_entryhi">cpu.cop0.entryhi</a></li>
+<li><a href="#cpu_cop0_compare">cpu.cop0.compare</a></li>
+<li><a href="#cpu_cop0_status">cpu.cop0.status</a></li>
+<li><a href="#cpu_cop0_cause">cpu.cop0.cause</a></li>
+<li><a href="#cpu_cop0_epc">cpu.cop0.epc</a></li>
+<li><a href="#cpu_cop0_config">cpu.cop0.config</a></li>
+<li><a href="#cpu_cop0_taglo">cpu.cop0.taglo</a></li>
+<li><a href="#cpu_cop0_taghi">cpu.cop0.taghi</a></li>
+<li><a href="#cpu_cop0_errorepc">cpu.cop0.errorepc</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#debug">debug</a>: Debugger interface<ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
@@ -380,12 +375,19 @@ var playerPos = new vec3f(0x8033B1AC);
 <div class="prop"><span class="title" id="mem_getblock">mem.getblock(address, size)</span></div>
 <div class="tsproto">mem.getblock(address: number, size: number): Buffer</div>
 <div class="vtab"></div>
-Returns a copied block from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
+Returns a block of data from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
+<pre class="ex">
+var ramDump = mem.getblock(0x80000000, mem.ramsize)
+fs.writeFile("ram-dump.bin", ramDump);
+</pre>
 <!-- mem.getstring -->
 <div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, maxLength])</span></div>
 <div class="tsproto">mem.getblock(address: number, maxLength?: number): string</div>
 <div class="vtab"></div>
-Returns a copied zero-terminated ASCII string from memory.
+Returns a zero-terminated ASCII string from memory.
+<pre class="ex">
+const romName = mem.getstring(0xB0000020, 0x14);
+</pre>
 <!-- mem.ramsize -->
 <div class="prop"><span class="title" id="mem_ramsize">mem.ramsize</span></div>
 <div class="tsproto">mem.ramsize: number</div>
@@ -407,21 +409,25 @@ Emulation event hooking interface
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
 <li><a href="#events_onread">events.onread(address, callback)</a></li>
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
-<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
-<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
+<li><a href="#CPUExecEvent">CPUExecEvent</a></li>
+<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
+<li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
+<li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
+<li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul>
 <!-- events.onexec -->
 <div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span></div>
-<div class="tsproto">events.onexec(address: number | AddressRange, callback: () => void): number</div>
+<div class="tsproto">events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
 <div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<div class="snip">callback</div> receives a <a href="#CPUExecEvent">CPUExecEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
@@ -431,8 +437,8 @@ events.onexec(0x802CB1C0, function() {
 </pre>
 <pre class="ex">
 // Log every CPU step
-events.onexec(ADDR_ANY, function() {
-    console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
+events.onexec(ADDR_ANY, function(e) {
+    console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
 })
 </pre>
 <!-- events.onread -->
@@ -453,25 +459,13 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object. (TODO)
 <div class="vtab""></div>
 Returns a callback ID.
-<!-- CPUReadWriteEvent -->
-<div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
-<div class="vtab"></div>
-Immutable event object describing a CPU read or write operation.
-<div class="vtab"></div>
-<table>
-<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read or write.</td></tr>
-<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read or write.</td></tr>
-<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if the current opcode is LD or SD. <div class="snip">undefined</div> if the opcode is not LD or SD.</td></tr>
-<tr><td><div class="snip">e.type</div></td><td>The value's <a href="#type_ids">type ID</a>.</td></tr>
-<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source or destination register is on the floating point unit.</td></tr>
-<tr><td><div class="snip">e.reg</div></td><td>Index of the source or destination register.</td></tr>
-</table>
 <!-- events.onopcode -->
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span></div>
-<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number</div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
 <div class="snip">opcode</div> is equal to the current opcode ANDed with <div class="snip">mask</div>.
+<div class="snip">callback</div> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
@@ -485,10 +479,11 @@ events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
 </pre>
 <!-- events.onopcode -->
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span></div>
-<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: () => void): number</div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
 <div class="snip">opcode</div> is equal to the current opcode.
+<div class="snip">callback</div> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
@@ -498,6 +493,7 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
 the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div> (lower 32 bits only). <div class="snip">callback</div> receives the index of the first register that is
 equal to <div class="snip">value</div>.
+<div class="snip">callback</div> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <div class="vtab""></div>
@@ -508,18 +504,6 @@ events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
     // Break when any general purpose register contains 0x49533634
     debug.breakhere();
 });
-</pre>
-<!-- GPR_flags -->
-<div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
-<div class="vtab"></div>
-Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
-<pre>
-<div class="snip">GPR_ANY</div>
-
-<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
-<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
-<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
-<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
 </pre>
 <!-- events.ondraw -->
 <div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
@@ -534,11 +518,60 @@ Returns a callback ID.
 <div class="vtab"></div>
 Unregisters the callback specified by <div class="snip">callbackId</div>.
 <pre class="ex">
-var id = events.onexec(0x802CB1C0, function() {
+events.onexec(0x802CB1C0, function(e) {
     // This is only invoked once
     console.log("func_802CB1C0 was called");
-    events.remove(id);
+    events.remove(e.id);
 });
+</pre>
+<!-- CPUExecEvent -->
+<div class="prop"><span class="title" id="CPUExecEvent">CPUExecEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
+<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+</table>
+<!-- CPUReadWriteEvent -->
+<div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
+<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
+<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
+<tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
+<tr><td><div class="snip">e.type</div></td><td>The value's type ID.</td></tr>
+<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
+<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if the current opcode is LD/SD. <div class="snip">undefined</div> if the opcode is not LD/SD.</td></tr>
+</table>
+<!-- CPUOpcodeEvent -->
+<div class="prop"><span class="title" id="CPUOpcodeEvent">CPUOpcodeEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
+<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.opcode</div></td><td>The opcode.</td></tr>
+</table>
+<!-- CPURegValueEvent -->
+<div class="prop"><span class="title" id="CPURegValueEvent">CPURegValueEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
+<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.value</div></td><td>The value.</td></tr>
+<tr><td><div class="snip">e.reg</div></td><td>Index of the register containing the value.</td></tr>
+</table>
+<!-- GPR_flags -->
+<div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
+<div class="vtab"></div>
+Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
+<pre>
+<div class="snip">GPR_ANY</div>
+
+<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
+<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
+<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
+<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
 </pre>
 <!-- AddressRange -->
 <div class="prop"><span class="title" id="AddressRange">new AddressRange(start, end)</span></div>
@@ -581,184 +614,148 @@ events.ondraw(function() {
 </pre>
 
 </div>
-<!-- gpr -->
+<!-- cpu -->
 <div class="module">
-<div class="modtitle"><span class="title" id="gpr">gpr</span></div>
-CPU general purpose register interface
+<div class="modtitle"><span class="title" id="cpu">cpu</span></div>
+CPU interface
 <div class="vtab"></div>
 <ul>
-<li><a href="#gpr__">gpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#gpr_hi">gpr.hi</a></li>
-<li><a href="#gpr_lo">gpr.lo</a></li>
-<li><a href="#gpr_pc">gpr.pc</a></li>
+<li><a href="#cpu_pc">cpu.pc</a></li>
+<li><a href="#cpu_hi">cpu.hi</a></li>
+<li><a href="#cpu_lo">cpu.lo</a></li>
+<li><a href="#cpu_uhi">cpu.uhi</a></li>
+<li><a href="#cpu_ulo">cpu.ulo</a></li>
+<li><a href="#cpu_gpr__">cpu.gpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#cpu_ugpr__">cpu.ugpr.r0|at|v0|v1..ra</a></li>
+<li><a href="#cpu_fpr__">cpu.fpr.f0..f31</a></li>
+<li><a href="#cpu_dfpr__">cpu.dfpr.f0..f30</a></li>
+<li><a href="#cpu_cop0_index">cpu.cop0.index</a></li>
+<li><a href="#cpu_cop0_random">cpu.cop0.random</a></li>
+<li><a href="#cpu_cop0_entrylo0">cpu.cop0.entrylo0</a></li>
+<li><a href="#cpu_cop0_entrylo1">cpu.cop0.entrylo1</a></li>
+<li><a href="#cpu_cop0_context">cpu.cop0.context</a></li>
+<li><a href="#cpu_cop0_pagemask">cpu.cop0.pagemask</a></li>
+<li><a href="#cpu_cop0_wired">cpu.cop0.wired</a></li>
+<li><a href="#cpu_cop0_badvaddr">cpu.cop0.badvaddr</a></li>
+<li><a href="#cpu_cop0_count">cpu.cop0.count</a></li>
+<li><a href="#cpu_cop0_entryhi">cpu.cop0.entryhi</a></li>
+<li><a href="#cpu_cop0_compare">cpu.cop0.compare</a></li>
+<li><a href="#cpu_cop0_status">cpu.cop0.status</a></li>
+<li><a href="#cpu_cop0_cause">cpu.cop0.cause</a></li>
+<li><a href="#cpu_cop0_epc">cpu.cop0.epc</a></li>
+<li><a href="#cpu_cop0_config">cpu.cop0.config</a></li>
+<li><a href="#cpu_cop0_taglo">cpu.cop0.taglo</a></li>
+<li><a href="#cpu_cop0_taghi">cpu.cop0.taghi</a></li>
+<li><a href="#cpu_cop0_errorepc">cpu.cop0.errorepc</a></li>
 </ul>
-<!-- gpr._ -->
-<div class="prop"><span class="title" id="gpr__">gpr.r0|at|v0|v1..ra</span></div>
-<div><span class="title2">gpr[0..31]</span></div><div class="tsproto">gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
-<div class="vtab"></div>
-Variables representing the lower 32 bits of the CPU's general purpose registers.
-<!-- gpr.hi -->
-<div class="prop"><span class="title" id="gpr_hi">gpr.hi</span></div>
-<div class="vtab"></div>
-Variable representing the lower 32 bits of the CPU's HI register.
-<!-- gpr.lo -->
-<div class="prop"><span class="title" id="gpr_lo">gpr.lo</span></div>
-<div class="vtab"></div>
-Variable representing the lower 32 bits of the CPU's LO register.
-<!-- gpr.pc -->
-<div class="prop"><span class="title" id="gpr_pc">gpr.pc</span></div>
+<!-- cpu.pc -->
+<div class="prop"><span class="title" id="cpu_pc">cpu.pc</span></div>
 <div class="vtab"></div>
 Variable representing the CPU's program counter.
-
-</div>
-<!-- ugpr -->
-<div class="module">
-<div class="modtitle"><span class="title" id="ugpr">ugpr</span></div>
-CPU general purpose register interface (upper bits)
+<!-- cpu.hi -->
+<div class="prop"><span class="title" id="cpu_hi">cpu.hi</span></div>
 <div class="vtab"></div>
-<ul>
-<li><a href="#ugpr__">ugpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#ugpr_hi">ugpr.hi</a></li>
-<li><a href="#ugpr_lo">ugpr.lo</a></li>
-</ul>
-<!-- ugpr._ -->
-<div class="prop"><span class="title" id="ugpr__">ugpr.r0|at|v0|v1..ra</span></div>
-<div><span class="title2">ugpr[0..31]</span></div><div class="tsproto">ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
+Variable representing the lower 32 bits of the CPU's HI register.
+<!-- cpu.lo -->
+<div class="prop"><span class="title" id="cpu_lo">cpu.lo</span></div>
 <div class="vtab"></div>
-Variables representing the upper 32 bits of the CPU's general purpose registers.
-<!-- ugpr.hi -->
-<div class="prop"><span class="title" id="ugpr_hi">ugpr.hi</span></div>
+Variable representing the lower 32 bits of the CPU's LO register.
+<!-- cpu.uhi -->
+<div class="prop"><span class="title" id="cpu_uhi">cpu.uhi</span></div>
 <div class="vtab"></div>
 Variable representing the upper 32 bits of the CPU's HI register.
-<!-- ugpr.lo -->
-<div class="prop"><span class="title" id="ugpr_lo">ugpr.lo</span></div>
+<!-- cpu.ulo -->
+<div class="prop"><span class="title" id="cpu_ulo">cpu.ulo</span></div>
 <div class="vtab"></div>
 Variable representing the upper 32 bits of the CPU's LO register.
-
-</div>
-<!-- fpr -->
-<div class="module">
-<div class="modtitle"><span class="title" id="fpr">fpr</span></div>
-CPU floating-point register interface
+<!-- cpu.gpr._ -->
+<div class="prop"><span class="title" id="cpu_gpr__">cpu.gpr.r0|at|v0|v1..ra</span></div>
+<div><span class="title2">cpu.gpr[0..31]</span></div><div class="tsproto">cpu.gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
 <div class="vtab"></div>
-<ul>
-<li><a href="#fpr__">fpr.f0..f31</a></li>
-</ul>
-<!-- fpr._ -->
-<div class="prop"><span class="title" id="fpr__">fpr.f0..f31</span></div>
-<div><span class="title2">fpr[0..31]</span></div><div class="vtab"></div>
+Variables representing the lower 32 bits of the CPU's general purpose registers.
+<!-- cpu.ugpr._ -->
+<div class="prop"><span class="title" id="cpu_ugpr__">cpu.ugpr.r0|at|v0|v1..ra</span></div>
+<div><span class="title2">cpu.ugpr[0..31]</span></div><div class="tsproto">cpu.ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra</div>
+<div class="vtab"></div>
+Variables representing the upper 32 bits of the CPU's general purpose registers.
+<!-- cpu.fpr._ -->
+<div class="prop"><span class="title" id="cpu_fpr__">cpu.fpr.f0..f31</span></div>
+<div><span class="title2">cpu.fpr[0..31]</span></div><div class="vtab"></div>
 Variables representing the CPU's 32-bit floating-point registers.
-
-</div>
-<!-- dfpr -->
-<div class="module">
-<div class="modtitle"><span class="title" id="dfpr">dfpr</span></div>
-CPU floating-point register interface (64-bit)
-<div class="vtab"></div>
-<ul>
-<li><a href="#dfpr__">dfpr.f0..f30</a></li>
-</ul>
-<!-- dfpr._ -->
-<div class="prop"><span class="title" id="dfpr__">dfpr.f0..f30</span></div>
-<div><span class="title2">dfpr[0..30]</span></div><div class="vtab"></div>
+<!-- cpu.dfpr._ -->
+<div class="prop"><span class="title" id="cpu_dfpr__">cpu.dfpr.f0..f30</span></div>
+<div><span class="title2">cpu.dfpr[0..30]</span></div><div class="vtab"></div>
 Variables representing the CPU's 64-bit floating-point registers.
-
-</div>
-<!-- cop0 -->
-<div class="module">
-<div class="modtitle"><span class="title" id="cop0">cop0</span></div>
-CPU Coprocessor 0 register interface
-<div class="vtab"></div>
-<ul>
-<li><a href="#cop0_index">cop0.index</a></li>
-<li><a href="#cop0_random">cop0.random</a></li>
-<li><a href="#cop0_entrylo0">cop0.entrylo0</a></li>
-<li><a href="#cop0_entrylo1">cop0.entrylo1</a></li>
-<li><a href="#cop0_context">cop0.context</a></li>
-<li><a href="#cop0_pagemask">cop0.pagemask</a></li>
-<li><a href="#cop0_wired">cop0.wired</a></li>
-<li><a href="#cop0_badvaddr">cop0.badvaddr</a></li>
-<li><a href="#cop0_count">cop0.count</a></li>
-<li><a href="#cop0_entryhi">cop0.entryhi</a></li>
-<li><a href="#cop0_compare">cop0.compare</a></li>
-<li><a href="#cop0_status">cop0.status</a></li>
-<li><a href="#cop0_cause">cop0.cause</a></li>
-<li><a href="#cop0_epc">cop0.epc</a></li>
-<li><a href="#cop0_config">cop0.config</a></li>
-<li><a href="#cop0_taglo">cop0.taglo</a></li>
-<li><a href="#cop0_taghi">cop0.taghi</a></li>
-<li><a href="#cop0_errorepc">cop0.errorepc</a></li>
-</ul>
-<!-- cop0.index -->
-<div class="prop"><span class="title" id="cop0_index">cop0.index</span></div>
+<!-- cpu.cop0.index -->
+<div class="prop"><span class="title" id="cpu_cop0_index">cpu.cop0.index</span></div>
 <div class="vtab"></div>
 Variable representing the Index register.
-<!-- cop0.random -->
-<div class="prop"><span class="title" id="cop0_random">cop0.random</span></div>
+<!-- cpu.cop0.random -->
+<div class="prop"><span class="title" id="cpu_cop0_random">cpu.cop0.random</span></div>
 <div class="vtab"></div>
 Variable representing the Random register.
-<!-- cop0.entrylo0 -->
-<div class="prop"><span class="title" id="cop0_entrylo0">cop0.entrylo0</span></div>
+<!-- cpu.cop0.entrylo0 -->
+<div class="prop"><span class="title" id="cpu_cop0_entrylo0">cpu.cop0.entrylo0</span></div>
 <div class="vtab"></div>
 Variable representing the EntryLo0 register.
-<!-- cop0.entrylo1 -->
-<div class="prop"><span class="title" id="cop0_entrylo1">cop0.entrylo1</span></div>
+<!-- cpu.cop0.entrylo1 -->
+<div class="prop"><span class="title" id="cpu_cop0_entrylo1">cpu.cop0.entrylo1</span></div>
 <div class="vtab"></div>
 Variable representing the EntryLo1 register.
-<!-- cop0.context -->
-<div class="prop"><span class="title" id="cop0_context">cop0.context</span></div>
+<!-- cpu.cop0.context -->
+<div class="prop"><span class="title" id="cpu_cop0_context">cpu.cop0.context</span></div>
 <div class="vtab"></div>
 Variable representing the Context register.
-<!-- cop0.pagemask -->
-<div class="prop"><span class="title" id="cop0_pagemask">cop0.pagemask</span></div>
+<!-- cpu.cop0.pagemask -->
+<div class="prop"><span class="title" id="cpu_cop0_pagemask">cpu.cop0.pagemask</span></div>
 <div class="vtab"></div>
 Variable representing the PageMask register.
-<!-- cop0.wired -->
-<div class="prop"><span class="title" id="cop0_wired">cop0.wired</span></div>
+<!-- cpu.cop0.wired -->
+<div class="prop"><span class="title" id="cpu_cop0_wired">cpu.cop0.wired</span></div>
 <div class="vtab"></div>
 Variable representing the Wired register.
-<!-- cop0.badvaddr -->
-<div class="prop"><span class="title" id="cop0_badvaddr">cop0.badvaddr</span></div>
+<!-- cpu.cop0.badvaddr -->
+<div class="prop"><span class="title" id="cpu_cop0_badvaddr">cpu.cop0.badvaddr</span></div>
 <div class="vtab"></div>
 Variable representing the BadVAddr register.
-<!-- cop0.count -->
-<div class="prop"><span class="title" id="cop0_count">cop0.count</span></div>
+<!-- cpu.cop0.count -->
+<div class="prop"><span class="title" id="cpu_cop0_count">cpu.cop0.count</span></div>
 <div class="vtab"></div>
 Variable representing the Count register.
-<!-- cop0.entryhi -->
-<div class="prop"><span class="title" id="cop0_entryhi">cop0.entryhi</span></div>
+<!-- cpu.cop0.entryhi -->
+<div class="prop"><span class="title" id="cpu_cop0_entryhi">cpu.cop0.entryhi</span></div>
 <div class="vtab"></div>
 Variable representing the EntryHi register.
-<!-- cop0.compare -->
-<div class="prop"><span class="title" id="cop0_compare">cop0.compare</span></div>
+<!-- cpu.cop0.compare -->
+<div class="prop"><span class="title" id="cpu_cop0_compare">cpu.cop0.compare</span></div>
 <div class="vtab"></div>
 Variable representing the Compare register.
-<!-- cop0.status -->
-<div class="prop"><span class="title" id="cop0_status">cop0.status</span></div>
+<!-- cpu.cop0.status -->
+<div class="prop"><span class="title" id="cpu_cop0_status">cpu.cop0.status</span></div>
 <div class="vtab"></div>
 Variable representing the Status register.
-<!-- cop0.cause -->
-<div class="prop"><span class="title" id="cop0_cause">cop0.cause</span></div>
+<!-- cpu.cop0.cause -->
+<div class="prop"><span class="title" id="cpu_cop0_cause">cpu.cop0.cause</span></div>
 <div class="vtab"></div>
 Variable representing the Cause register. Updates interrupts when written.
-<!-- cop0.epc -->
-<div class="prop"><span class="title" id="cop0_epc">cop0.epc</span></div>
+<!-- cpu.cop0.epc -->
+<div class="prop"><span class="title" id="cpu_cop0_epc">cpu.cop0.epc</span></div>
 <div class="vtab"></div>
 Variable representing the EPC register.
-<!-- cop0.config -->
-<div class="prop"><span class="title" id="cop0_config">cop0.config</span></div>
+<!-- cpu.cop0.config -->
+<div class="prop"><span class="title" id="cpu_cop0_config">cpu.cop0.config</span></div>
 <div class="vtab"></div>
 Variable representing the Config register.
-<!-- cop0.taglo -->
-<div class="prop"><span class="title" id="cop0_taglo">cop0.taglo</span></div>
+<!-- cpu.cop0.taglo -->
+<div class="prop"><span class="title" id="cpu_cop0_taglo">cpu.cop0.taglo</span></div>
 <div class="vtab"></div>
 Variable representing the TagLo register.
-<!-- cop0.taghi -->
-<div class="prop"><span class="title" id="cop0_taghi">cop0.taghi</span></div>
+<!-- cpu.cop0.taghi -->
+<div class="prop"><span class="title" id="cpu_cop0_taghi">cpu.cop0.taghi</span></div>
 <div class="vtab"></div>
 Variable representing the TagHi register.
-<!-- cop0.errorepc -->
-<div class="prop"><span class="title" id="cop0_errorepc">cop0.errorepc</span></div>
+<!-- cpu.cop0.errorepc -->
+<div class="prop"><span class="title" id="cpu_cop0_errorepc">cpu.cop0.errorepc</span></div>
 <div class="vtab"></div>
 Variable representing the ErrorEPC register.
 

@@ -82,6 +82,7 @@
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_AddressRange.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_alert.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_console.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp" />
@@ -89,7 +90,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_fs.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_mem.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Number_hex.cpp" />
-    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_registers.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_cpu.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_script.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Server.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptInstance.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="UserInterface\SupportWindow.h" />
     <ClInclude Include="UserInterface\WelcomeScreen.h" />
     <ClInclude Include="UserInterface\WTLControls\DisplayMode.h" />
+    <ClInclude Include="UserInterface\WTLControls\EditConInput.h" />
     <ClInclude Include="UserInterface\WTLControls\EditNumber32.h" />
     <ClInclude Include="UserInterface\WTLControls\GetCWindowText.h" />
     <ClInclude Include="UserInterface\WTLControls\HexEditCtrl.h" />

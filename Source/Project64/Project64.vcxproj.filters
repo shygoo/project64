@@ -285,10 +285,13 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_registers.cpp">
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_cpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_alert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -532,6 +535,9 @@
     </ClInclude>
     <ClInclude Include="UserInterface\Debugger\ScriptAPI.h">
       <Filter>Header Files\User Interface Headers\Debugger Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="UserInterface\WTLControls\EditConInput.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

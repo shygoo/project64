@@ -121,12 +121,12 @@ function test_extra_events()
         console.log("Interrupt trapped. Injecting events test program...");
         // ...
         console.log("Redirecting PC...");
-        gpr.pc = 0x80400000;
+        cpu.pc = 0x80400000;
 
         var cbid_test_program_completed = events.onexec(0x80400020, function() {
             events.remove(cbid_test_program_completed);
             console.log("Resuming game...");
-            gpr.pc = 0x80000180;
+            cpu.pc = 0x80000180;
         });
     });
 }

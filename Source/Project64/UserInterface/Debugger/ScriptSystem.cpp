@@ -54,20 +54,44 @@ void CScriptSystem::UpdateStatus(const char* name, jsstatus_t status)
     m_Debugger->Debug_RefreshScriptsWindow();
 }
 
-void CScriptSystem::Log(const char* message)
+void CScriptSystem::Log(const char* format, ...)
 {
     CGuard guard(m_UIStateCS);
-    stdstr formattedMsg = FixStringReturns(message) + "\r\n";
-    m_Log += formattedMsg;
+
+    va_list args;
+    va_start(args, format);
+
+    int size = vsnprintf(NULL, 0, format, args) + 1;
+    char* str = new char[size];
+    vsnprintf(str, size, format, args);
+
+    stdstr formattedMsg = FixStringReturns(str) + "\r\n";
+    
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
+    m_Log += formattedMsg;
+
+    delete[] str;
+    va_end(args);
 }
 
-void CScriptSystem::Print(const char* message)
+void CScriptSystem::Print(const char* format, ...)
 {
     CGuard guard(m_UIStateCS);
-    stdstr formattedMsg = FixStringReturns(message);
-    m_Log += formattedMsg;
+
+    va_list args;
+    va_start(args, format);
+
+    int size = vsnprintf(NULL, 0, format, args) + 1;
+    char* str = new char[size];
+    vsnprintf(str, size, format, args);
+    
+    stdstr formattedMsg = FixStringReturns(str);
+    
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
+    m_Log += formattedMsg;
+
+    delete[] str;
+    va_end(args);
 }
 
 void CScriptSystem::ClearLog()
@@ -89,7 +113,7 @@ bool CScriptSystem::StartScript(const char *name, const char *path)
 
     if (m_Instances.count(name) != 0)
     {
-        Log(stdstr_f("[ScriptSys]: START_SCRIPT aborted; '%s' is already instanced\n", name).c_str());
+        Log("[SCRIPTSYS]: error: START_SCRIPT aborted; '%s' is already instanced", name);
         return false;
     }
 
@@ -104,10 +128,10 @@ bool CScriptSystem::StopScript(const char *name)
     return true;
 }
 
-bool CScriptSystem::Eval(const char *name, const char *code)
+bool CScriptSystem::Input(const char *name, const char *code)
 {
     CGuard guard(m_CS);
-    SetCommand(CMD_EVAL, name, code);
+    SetCommand(CMD_INPUT, name, code);
     return true;
 }
 
@@ -190,8 +214,8 @@ void CScriptSystem::ThreadProc()
         case CMD_STOP_SCRIPT:
             OnStopScript(m_Cmd.paramA.c_str());
             break;
-        case CMD_EVAL:
-            OnEval(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
+        case CMD_INPUT:
+            OnInput(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
             break;
         case CMD_SWEEP:
             OnSweep(true);
@@ -232,17 +256,17 @@ void CScriptSystem::OnStopScript(const char *name)
     RawRemoveInstance(name);
 }
 
-void CScriptSystem::OnEval(const char *name, const char *code)
+void CScriptSystem::OnInput(const char *name, const char *code)
 {
     if(m_Instances.count(name) == 0)
     {
-        Log(stdstr_f("[ScriptSys]: error: eval aborted; instance '%s' does not exist\n", name).c_str());
+        Log("[SCRIPTSYS]: error: input aborted; instance '%s' does not exist", name);
         return;
     }
 
     CScriptInstance* inst = m_Instances[name];
 
-    inst->RawEval(code);
+    inst->RawInput(code);
 
     if(inst->GetRefCount() == 0)
     {
@@ -290,6 +314,7 @@ jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, JSCallback& callback
         return JS_INVALID_CALLBACK;
     }
 
+    callback.id = m_NextAppCallbackId;
     m_AppHooks[hookId][m_NextAppCallbackId] = callback;
     m_AppCallbackCount++;
     return m_NextAppCallbackId++;

@@ -1,5 +1,5 @@
 # console
-- name: console
+- name:    console
   tagline: Console interface
   props:
   - name: console.log
@@ -22,7 +22,7 @@
     desc: Clears the console.
 
 # mem
-- name: mem
+- name:    mem
   tagline: N64 memory interface
   props:
   - name: mem._
@@ -108,12 +108,21 @@
   - name: mem.getblock
     js:   mem.getblock(address, size)
     ts:   "mem.getblock(address: number, size: number): Buffer"
-    desc: Returns a copied block from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
+    desc: |
+          Returns a block of data from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
+          ```
+          var ramDump = mem.getblock(0x80000000, mem.ramsize)
+          fs.writeFile("ram-dump.bin", ramDump);
+          ```
 
   - name: mem.getstring
     js:   mem.getstring(address[, maxLength])
     ts:   "mem.getblock(address: number, maxLength?: number): string"
-    desc: Returns a copied zero-terminated ASCII string from memory.
+    desc: | 
+          Returns a zero-terminated ASCII string from memory.
+          ```
+          const romName = mem.getstring(0xB0000020, 0x14);
+          ```
 
   - name: mem.ramsize
     js:   mem.ramsize
@@ -126,15 +135,16 @@
     desc: The size of cartridge ROM in bytes. `0` if ROM is not initialized.
 
 # events
-- name: events
+- name:    events
   tagline: Emulation event hooking interface
   props:
   - name: events.onexec
     js:   events.onexec(address, callback)
-    ts:   "events.onexec(address: number | AddressRange, callback: () => void): number"
+    ts:   "events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number"
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
+          `callback` receives a [CPUExecEvent](#CPUExecEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
           ```
@@ -144,10 +154,11 @@
           ```
           ```
           // Log every CPU step
-          events.onexec(ADDR_ANY, function() {
-              console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
+          events.onexec(ADDR_ANY, function(e) {
+              console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
           })
           ```
+
   - name: events.onread
     js:   events.onread(address, callback)
     ts:   "events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
@@ -168,26 +179,13 @@
           <div class="vtab""></div>
           Returns a callback ID.
 
-  - name: CPUReadWriteEvent
-    js:   CPUReadWriteEvent
-    desc: |
-          Immutable event object describing a CPU read or write operation.
-          <div class="vtab"></div>
-          <table>
-          <tr><td>`e.address`</td><td>Address that the CPU is going to read or write.</td></tr>
-          <tr><td>`e.value`</td><td>Value that the CPU is going to read or write.</td></tr>
-          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if the current opcode is LD or SD. `undefined` if the opcode is not LD or SD.</td></tr>
-          <tr><td>`e.type`</td><td>The value's [type ID](#type_ids).</td></tr>
-          <tr><td>`e.fpu`</td><td>`true` if the source or destination register is on the floating point unit.</td></tr>
-          <tr><td>`e.reg`</td><td>Index of the source or destination register.</td></tr>
-          </table>
-
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
-    ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: () => void): number"
+    ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number"
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode ANDed with `mask`.
+          `callback` receives a [CPUOpcodeEvent](#CPUOpcodeEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
           ```
@@ -202,10 +200,11 @@
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, callback)
-    ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: () => void): number"
+    ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number"
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode.
+          `callback` receives a [CPUOpcodeEvent](#CPUOpcodeEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
 
@@ -216,6 +215,7 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
           the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only). `callback` receives the index of the first register that is
           equal to `value`.
+          `callback` receives a [CPURegValueEvent](#CPURegValueEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
           <div class="vtab""></div>
@@ -228,19 +228,6 @@
           });
           ```
 
-  - name: GPR_flags
-    js:   General purpose register flags
-    desc: |
-          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
-          <pre>
-          `GPR_ANY`
-
-          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
-          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
-          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
-          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
-          </pre>
-          
   - name: events.ondraw
     js:   events.ondraw(callback)
     ts:   "events.ondraw(callback: () => void): number"
@@ -255,12 +242,66 @@
     desc: |
           Unregisters the callback specified by `callbackId`.
           ```
-          var id = events.onexec(0x802CB1C0, function() {
+          events.onexec(0x802CB1C0, function(e) {
               // This is only invoked once
               console.log("func_802CB1C0 was called");
-              events.remove(id);
+              events.remove(e.id);
           });
           ```
+
+  - name: CPUExecEvent
+    js:   CPUExecEvent
+    desc: |
+          <table>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          </table>
+
+  - name: CPUReadWriteEvent
+    js:   CPUReadWriteEvent
+    desc: |
+          <table>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
+          <tr><td>`e.type`</td><td>The value's type ID.</td></tr>
+          <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if the current opcode is LD/SD. `undefined` if the opcode is not LD/SD.</td></tr>
+          </table>
+
+  - name: CPUOpcodeEvent
+    js:   CPUOpcodeEvent
+    desc: |
+          <table>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.opcode`</td><td>The opcode.</td></tr>
+          </table>
+
+  - name: CPURegValueEvent
+    js:   CPURegValueEvent
+    desc: |
+          <table>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.value`</td><td>The value.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
+          </table>
+
+  - name: GPR_flags
+    js:   General purpose register flags
+    desc: |
+          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
+          <pre>
+          `GPR_ANY`
+
+          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
+          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
+          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
+          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
+          </pre>
 
   - name: AddressRange
     js:   new AddressRange(start, end)
@@ -282,7 +323,7 @@
           </pre>
 
 # screen
-- name: screen
+- name:    screen
   tagline: Screen drawing interface
   props:
   - name: screen.print
@@ -297,123 +338,105 @@
               screen.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
           });
           ```
-
-
-# gpr
-- name: gpr
-  tagline: CPU general purpose register interface
+# cpu
+- name:    cpu
+  tagline: CPU interface
   props:
-  - name: gpr._
-    js:   gpr.r0|at|v0|v1..ra
-    js2:  gpr[0..31]
-    ts:   gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
-    desc: Variables representing the lower 32 bits of the CPU's general purpose registers.
-
-  - name: gpr.hi
-    js:   gpr.hi
-    desc: Variable representing the lower 32 bits of the CPU's HI register.
-
-  - name: gpr.lo
-    js:   gpr.lo
-    desc: Variable representing the lower 32 bits of the CPU's LO register.
-
-  - name: gpr.pc
-    js:   gpr.pc
+  - name: cpu.pc
+    js:   cpu.pc
     desc: Variable representing the CPU's program counter.
 
-# ugpr
-- name: ugpr
-  tagline: CPU general purpose register interface (upper bits)
-  props:
-  - name: ugpr._
-    js:   ugpr.r0|at|v0|v1..ra
-    js2:  ugpr[0..31]
-    ts:   ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
-    desc: Variables representing the upper 32 bits of the CPU's general purpose registers.
+  - name: cpu.hi
+    js:   cpu.hi
+    desc: Variable representing the lower 32 bits of the CPU's HI register.
 
-  - name: ugpr.hi
-    js:   ugpr.hi
+  - name: cpu.lo
+    js:   cpu.lo
+    desc: Variable representing the lower 32 bits of the CPU's LO register.
+
+  - name: cpu.uhi
+    js:   cpu.uhi
     desc: Variable representing the upper 32 bits of the CPU's HI register.
 
-  - name: ugpr.lo
-    js:   ugpr.lo
+  - name: cpu.ulo
+    js:   cpu.ulo
     desc: Variable representing the upper 32 bits of the CPU's LO register.
 
-# gpr
-- name: fpr
-  tagline: CPU floating-point register interface
-  props:
-  - name: fpr._
-    js:   fpr.f0..f31
-    js2:  fpr[0..31]
+  - name: cpu.gpr._
+    js:   cpu.gpr.r0|at|v0|v1..ra
+    js2:  cpu.gpr[0..31]
+    ts:   cpu.gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
+    desc: Variables representing the lower 32 bits of the CPU's general purpose registers.
+
+  - name: cpu.ugpr._
+    js:   cpu.ugpr.r0|at|v0|v1..ra
+    js2:  cpu.ugpr[0..31]
+    ts:   cpu.ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
+    desc: Variables representing the upper 32 bits of the CPU's general purpose registers.
+
+  - name: cpu.fpr._
+    js:   cpu.fpr.f0..f31
+    js2:  cpu.fpr[0..31]
     desc: Variables representing the CPU's 32-bit floating-point registers.
 
-# gpr
-- name: dfpr
-  tagline: CPU floating-point register interface (64-bit)
-  props:
-  - name: dfpr._
-    js:   dfpr.f0..f30
-    js2:  dfpr[0..30]
+  - name: cpu.dfpr._
+    js:   cpu.dfpr.f0..f30
+    js2:  cpu.dfpr[0..30]
     desc: Variables representing the CPU's 64-bit floating-point registers.
 
-# cop0
-- name: cop0
-  tagline: CPU Coprocessor 0 register interface
-  props:
-  - name: cop0.index
-    js:   cop0.index
+  - name: cpu.cop0.index
+    js:   cpu.cop0.index
     desc: Variable representing the Index register.
-  - name: cop0.random
-    js:   cop0.random
+  - name: cpu.cop0.random
+    js:   cpu.cop0.random
     desc: Variable representing the Random register.
-  - name: cop0.entrylo0
-    js:   cop0.entrylo0
+  - name: cpu.cop0.entrylo0
+    js:   cpu.cop0.entrylo0
     desc: Variable representing the EntryLo0 register.
-  - name: cop0.entrylo1
-    js:   cop0.entrylo1
+  - name: cpu.cop0.entrylo1
+    js:   cpu.cop0.entrylo1
     desc: Variable representing the EntryLo1 register.
-  - name: cop0.context
-    js:   cop0.context
+  - name: cpu.cop0.context
+    js:   cpu.cop0.context
     desc: Variable representing the Context register.
-  - name: cop0.pagemask
-    js:   cop0.pagemask
+  - name: cpu.cop0.pagemask
+    js:   cpu.cop0.pagemask
     desc: Variable representing the PageMask register.
-  - name: cop0.wired
-    js:   cop0.wired
+  - name: cpu.cop0.wired
+    js:   cpu.cop0.wired
     desc: Variable representing the Wired register.
-  - name: cop0.badvaddr
-    js:   cop0.badvaddr
+  - name: cpu.cop0.badvaddr
+    js:   cpu.cop0.badvaddr
     desc: Variable representing the BadVAddr register.
-  - name: cop0.count
-    js:   cop0.count
+  - name: cpu.cop0.count
+    js:   cpu.cop0.count
     desc: Variable representing the Count register.
-  - name: cop0.entryhi
-    js:   cop0.entryhi
+  - name: cpu.cop0.entryhi
+    js:   cpu.cop0.entryhi
     desc: Variable representing the EntryHi register.
-  - name: cop0.compare
-    js:   cop0.compare
+  - name: cpu.cop0.compare
+    js:   cpu.cop0.compare
     desc: Variable representing the Compare register.
-  - name: cop0.status
-    js:   cop0.status
+  - name: cpu.cop0.status
+    js:   cpu.cop0.status
     desc: Variable representing the Status register.
-  - name: cop0.cause
-    js:   cop0.cause
+  - name: cpu.cop0.cause
+    js:   cpu.cop0.cause
     desc: Variable representing the Cause register. Updates interrupts when written.
-  - name: cop0.epc
-    js:   cop0.epc
+  - name: cpu.cop0.epc
+    js:   cpu.cop0.epc
     desc: Variable representing the EPC register.
-  - name: cop0.config
-    js:   cop0.config
+  - name: cpu.cop0.config
+    js:   cpu.cop0.config
     desc: Variable representing the Config register.
-  - name: cop0.taglo
-    js:   cop0.taglo
+  - name: cpu.cop0.taglo
+    js:   cpu.cop0.taglo
     desc: Variable representing the TagLo register.
-  - name: cop0.taghi
-    js:   cop0.taghi
+  - name: cpu.cop0.taghi
+    js:   cpu.cop0.taghi
     desc: Variable representing the TagHi register.
-  - name: cop0.errorepc
-    js:   cop0.errorepc
+  - name: cpu.cop0.errorepc
+    js:   cpu.cop0.errorepc
     desc: Variable representing the ErrorEPC register.
 
 # debug

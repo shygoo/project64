@@ -58,8 +58,6 @@ duk_ret_t ScriptAPI::js_script_keepalive(duk_context *ctx)
         inst->DecRefCount();
     }
 
-    printf("[ScriptSys]: '%s' keepalive=%s\n", inst->Name().c_str(), bKeepAlive ? "true" : "false");
-
     duk_pop(ctx);
 
     return 0;
