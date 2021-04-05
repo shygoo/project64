@@ -412,8 +412,8 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         break;
     case R4300i_LDR:
         {
-        int shift = 56 - (address & 7) * 8;
-        uint64_t mask = (((uint64_t)-1) << shift);
+        int shift = 56 - ((address & 7) * 8);
+        uint64_t mask = ~(((uint64_t)-1) >> shift);
         debugger->DebugLoad_VAddr(address & ~7, value.u64);
         value.u64 = (g_Reg->m_GPR[rt].DW & mask) + (value.u64 >> shift);
         duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
@@ -434,7 +434,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
     case R4300i_LWR:
         {
         int shift = 24 - ((address & 3) * 8);
-        uint32_t mask = (((uint32_t)-1) << shift);
+        uint32_t mask = ~(((uint32_t)-1) >> shift);
         debugger->DebugLoad_VAddr(address & ~3, value.s32);
         value.s32 = (g_Reg->m_GPR[rt].W[0] & mask) + (value.s32 >> shift);
         duk_push_number(ctx, value.s32);
@@ -464,7 +464,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
 duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
-    //CDebuggerUI* debugger = inst->Debugger();
+    CDebuggerUI* debugger = inst->Debugger();
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
 
     uint32_t address = env->opInfo.GetLoadStoreAddress();
@@ -518,10 +518,48 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         duk_push_int(ctx, ScriptAPI::U64);
         bNeedUpper32 = true;
         break;
-    // R4300i_SWL = 42
-    // R4300i_SWR = 46
-    // R4300i_SDL = 44
-    // R4300i_SDR = 45, 
+    case R4300i_SWL:
+        {
+        int shift = (address & 3) * 8;
+        uint32_t mask = ~(((uint32_t)-1) >> shift);
+        uint32_t value;
+        debugger->DebugLoad_VAddr(address & ~3, value);
+        value = (value & mask) + (g_Reg->m_GPR[rt].UW[0] >> shift);
+        duk_push_number(ctx, value);
+        duk_push_int(ctx, ScriptAPI::S32);
+        }
+        break;
+    case R4300i_SWR:
+        {
+        int shift = 24 - ((address & 3) * 8);
+        uint32_t mask = ~(((uint32_t)-1) << shift);
+        uint32_t value;
+        debugger->DebugLoad_VAddr(address & ~3, value);
+        value = (value & mask) + (g_Reg->m_GPR[rt].UW[0] >> shift);
+        duk_push_number(ctx, value);
+        duk_push_int(ctx, ScriptAPI::S32);
+        }
+        break;
+    case R4300i_SDL:
+        {
+        int shift = (address & 7) * 8;
+        uint64_t mask = ~(((uint64_t)-1) >> shift);
+        uint64_t value;
+        debugger->DebugLoad_VAddr(address & ~7, value);
+        value = (value & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
+        duk_push_number(ctx, value & 0xFFFFFFFF);
+        duk_push_int(ctx, ScriptAPI::U64);
+        }
+    case R4300i_SDR:
+    {
+        int shift = 56 - ((address & 7) * 8);
+        uint64_t mask = ~(((uint64_t)-1) << shift);
+        uint64_t value;
+        debugger->DebugLoad_VAddr(address & ~7, value);
+        value = (value & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
+        duk_push_number(ctx, value & 0xFFFFFFFF);
+        duk_push_int(ctx, ScriptAPI::U64);
+    }
     default:
         duk_push_number(ctx, 0);
         duk_push_number(ctx, 0);
