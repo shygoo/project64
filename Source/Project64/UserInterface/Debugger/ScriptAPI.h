@@ -6,6 +6,11 @@
 
 namespace ScriptAPI
 {
+    enum mem_type_t {
+        U8, U16, U32, S8, S16, S32, F32, F64,
+        U64, S64
+    };
+
     // ScriptAPI
     void InitEnvironment(duk_context* ctx, CScriptInstance* inst);
     void DefineGlobalConstants(duk_context* ctx);
@@ -33,6 +38,7 @@ namespace ScriptAPI
     duk_ret_t js_console_print(duk_context* ctx);
     duk_ret_t js_console_log(duk_context* ctx);
     duk_ret_t js_console_clear(duk_context* ctx);
+    duk_ret_t js_console_listen(duk_context* ctx);
 
     // ScriptAPI_mem
     void Define_mem(duk_context* ctx);
@@ -49,10 +55,6 @@ namespace ScriptAPI
     duk_ret_t js_mem__type_constructor(duk_context* ctx);
     duk_ret_t js_mem__get_ramsize(duk_context* ctx);
     duk_ret_t js_mem__get_romsize(duk_context* ctx);
-    enum mem_type_t {
-        U8, U16, U32, S8, S16, S32, F32, F64,
-        U64 // only used in CPUReadWriteEvent
-    };
     size_t MemTypeSize(mem_type_t t);
     duk_ret_t ThrowMemoryError(duk_context* ctx, uint32_t address);
 
@@ -68,7 +70,6 @@ namespace ScriptAPI
     void Define_script(duk_context* ctx);
     duk_ret_t js_script_keepalive(duk_context* ctx);
     duk_ret_t js_script_timeout(duk_context* ctx);
-    duk_ret_t js_script_listen(duk_context* ctx);
 
     // ScriptAPI_Number_hex
     void Define_Number_prototype_hex(duk_context* ctx);
@@ -100,10 +101,9 @@ namespace ScriptAPI
     void Define_debug(duk_context* ctx);
     duk_ret_t js_debug_breakhere(duk_context* ctx);
     duk_ret_t js_debug_skip(duk_context* ctx);
-    //duk_ret_t js_debug_resume(duk_context* ctx);
+    duk_ret_t js_debug_resume(duk_context* ctx);
     duk_ret_t js_debug_showmemory(duk_context* ctx);
     duk_ret_t js_debug_showcommands(duk_context* ctx);
-
 
     // ScriptAPI_asm
     void Define_asm(duk_context* ctx);
@@ -134,8 +134,10 @@ namespace ScriptAPI
     //duk_ret_t js_screen(duk_context* ctx);
 
     enum {
-        R0, AT, V0, V1, A0, A1, A2, A3, T0, T1, T2, T3, T4, T5, T6, T7,
-        S0, S1, S2, S3, S4, S5, S6, S7, T8, T9, K0, K1, GP, SP, FP, RA,
+        R0, AT, V0, V1, A0, A1, A2, A3,
+        T0, T1, T2, T3, T4, T5, T6, T7,
+        S0, S1, S2, S3, S4, S5, S6, S7,
+        T8, T9, K0, K1, GP, SP, FP, RA,
         //S8 = FP
     };
 
@@ -172,7 +174,7 @@ namespace ScriptAPI
         GPR_SP = (1 << SP),
         GPR_FP = (1 << FP),
         GPR_RA = (1 << RA),
-        //GPR_S8 = (1 << S8),
+        //GPR_S8 = GPR_FP,
         GPR_ANY = 0xFFFFFFFF
     };
 };

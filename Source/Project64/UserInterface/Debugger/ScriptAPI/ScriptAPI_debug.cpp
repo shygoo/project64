@@ -1,12 +1,14 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
+#include <Project64-core/Settings/DebugSettings.h>
 
 
 void ScriptAPI::Define_debug(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "breakhere", js_debug_breakhere, 1 },
-        { "skip", js_debug_skip, 1 },
+        { "breakhere", js_debug_breakhere, 0 },
+        { "skip", js_debug_skip, 0 },
+        { "resume", js_debug_resume, 0 },
         { "showmemory", js_debug_showmemory, 1 },
         { "showcommands", js_debug_showcommands, 1 },
         { NULL, NULL, 0 }
@@ -52,5 +54,15 @@ duk_ret_t ScriptAPI::js_debug_showcommands(duk_context* ctx)
     }
 
     GetInstance(ctx)->Debugger()->Debug_ShowCommandsLocation(duk_get_uint(ctx, 0), true);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_debug_resume(duk_context* ctx)
+{
+    g_Settings->SaveBool(Debugger_SteppingOps, false);
+    if (CDebugSettings::WaitingForStep())
+    {
+        GetInstance(ctx)->Debugger()->StepEvent().Trigger();
+    }
     return 0;
 }

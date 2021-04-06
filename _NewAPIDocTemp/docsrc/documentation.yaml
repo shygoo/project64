@@ -6,20 +6,50 @@
     js:   console.log(message[, ...])
     ts:   "console.log(message: any, ...optionalParams): void"
     desc: |
-          Concatenates all provided text arguments with spaces and prints the result to the console with a trailing newline.
+          Concatenates all provided arguments with spaces and prints the result to the console with a trailing newline.
           ```
-          console.log("Hello world!");
+          console.log("Hello", "world!");
           ```
   
-  - name: console.print
-    js:   console.print(message)
-    ts:   "console.print(message: any): void"
-    desc: Prints `message` to the console.
+  - name: console.log
+    js:   console.log(message[, ...])
+    ts:   "console.log(message: any, ...optionalParams): void"
+    desc: |
+          Concatenates all provided arguments with spaces and prints the result to the console.
+          ```
+          console.print("Hello ");
+          console.print("world!\n");
+          ```
 
   - name: console.clear
     js:   console.clear()
     ts:   "console.clear(): void"
     desc: Clears the console.
+
+  - name: console.listen
+    js:   console.listen(inputListener)
+    ts:   "console.listen(inputListener: (input: string) => void): void"
+    desc: |
+          Overrides the default input behavior; console input will be passed to `inputListener` instead of being evaluated as JS code.
+          <div class="vtab"></div>
+          The listener may be unset by calling `console.listen(undefined)`.
+          ```
+          console.listen(function(input) {
+              var args = input.split(' ');
+              var command = args.shift();
+              switch(command) {
+              case "ping":
+                  console.log("pong (args were:", args.join(', '), ")");
+                  return;
+              case "end":
+                  console.log("done");
+                  console.listen(undefined);
+                  return;
+              default:
+                  console.log("unknown command '" + command + "'");
+              }
+          });
+          ```
 
 # mem
 - name:    mem
@@ -175,9 +205,17 @@
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
-          `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object. (TODO)
+          `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
+          ```
+          events.onwrite(PI_WR_LEN_REG, function(e) {
+              var romAddr = mem.u32[PI_CART_ADDR_REG] + 0xA0000000;
+              var ramAddr = mem.u32[PI_DRAM_ADDR_REG] + 0x80000000;
+              var length = e.value + 1;
+              console.log("Loaded " + romAddr.hex() + " -> " + ramAddr.hex() + " (Length: " + length.hex() + ")");
+          });
+          ```
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
@@ -192,9 +230,9 @@
           const JAL = asm.encode("jal 0");
           const ANY_TARGET = 0xFC000000; // Mask off target field
 
-          events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
+          events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function(e) {
               // Log every JAL
-              console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
+              console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
           });
           ```
 
@@ -245,7 +283,7 @@
           events.onexec(0x802CB1C0, function(e) {
               // This is only invoked once
               console.log("func_802CB1C0 was called");
-              events.remove(e.id);
+              events.remove(e.callbackId);
           });
           ```
 
@@ -266,9 +304,24 @@
           <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
           <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
           <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
-          <tr><td>`e.type`</td><td>The value's type ID.</td></tr>
+          <tr><td>`e.type`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
           <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
-          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if the current opcode is LD/SD. `undefined` if the opcode is not LD/SD.</td></tr>
+          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.type` is `u64`; otherwise `undefined`.</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <thead><tr><td><b>e.type</b></td><td><b>Opcode(s)</b></td></tr></thead>
+          <tr><td>`s8`</td><td>LB, SB</td></tr>
+          <tr><td>`u8`</td><td>LBU</td></tr>
+          <tr><td>`s16`</td><td>LH, SH</td></tr>
+          <tr><td>`u16`</td><td>LHU</td></tr>
+          <tr><td>`s32`</td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
+          <tr><td>`u32`</td><td>LWU</td></tr>
+          <tr><td>`u64`</td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
+          <tr><td>`float`</td><td>LWC1, SWC1</td></tr>
+          <tr><td>`double`</td><td>LDC1, SDC1</td></tr>
+          </table>
+          
           </table>
 
   - name: CPUOpcodeEvent
@@ -340,7 +393,7 @@
           ```
 # cpu
 - name:    cpu
-  tagline: CPU interface
+  tagline: CPU register interface
   props:
   - name: cpu.pc
     js:   cpu.pc
@@ -456,6 +509,12 @@
               }
           });
           ```
+  
+  - name: debug.resume
+    js:   debug.resume()
+    ts:   "debug.resume(): void"
+    desc: |
+          Resumes emulation after a debug break. 
 
   - name: debug.skip
     js:   debug.skip()
@@ -665,35 +724,9 @@
 - name: script
   tagline: Script instance configuration interface
   props:
-  - name: script.listen
-    js:   script.listen(inputListener)
-    ts:   "script.listen(inputListener: (input: string) => void): void"
-    desc: |
-          Sets a console input listener function.
-          Console input will be passed to `inputListener` rather than being evaluated as JS code.
-          The listener may be unset by calling `script.listen(undefined)`.
-          ```
-          script.listen(function(input) {
-              input = input.split(' ');
-              var command = input.shift();
-              var args = input;
-              switch(command) {
-                  case "ping":
-                      console.log("pong (args were:", args.join(', '), ")");
-                      return;
-                  case "end":
-                      console.log("done");
-                      script.listen(undefined);
-                      return;
-                  default:
-                      console.log("unknown command '" + command + "'");
-              }
-          });
-          ```
-
   - name: script.keepalive
-    js:   script.keepalive(bKeepAlive)
-    ts:   "script.keepalive(bKeepAlive: boolean): void"
+    js:   script.keepalive(keepAlive)
+    ts:   "script.keepalive(keepAlive: boolean): void"
     desc: |
           Prevents the script instance from being destroyed when it has nothing left to do.
           Useful when the default console input behavior is desired.
@@ -703,7 +736,7 @@
     ts:   "script.timeout(milliseconds: number): void"
     desc: |
           Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
-          Setting this value to zero will allow tasks to run indefinitely (not recommended; may cause deadlocks).
+          Setting this value to zero will allow tasks to run indefinitely.
 
 # global definitions
 - name: Global definitions
@@ -712,7 +745,7 @@
     js:   alert(message[, caption])
     ts:   "alert(message: string, caption?: string): number"
     desc: |
-          Shows a message box with an optional caption. The calling thread is blocked until the message box is dismissed.
+          Shows a message box over the main window. The calling thread is blocked until the message box is dismissed.
 
   - name: number.hex
     js:   number.hex([numChars])
@@ -741,9 +774,10 @@
           `f64` 64-bit double precision floating-point
 
           `u64` Unsigned 64-bit integer
+          `s64` Signed 64-bit integer
           </pre>
 
-          Note: The [mem.bind*](#mem_bindvar)/[mem.typedef](#mem_typedef) APIs do not currently support `u64`.
+          Note: The [mem.bind*](#mem_bindvar)/[mem.typedef](#mem_typedef) APIs do not currently support `u64` and `s64`.
 
   - name: Memory_mapped_register_addresses
     js:   Memory mapped register addresses
@@ -855,6 +889,21 @@
           `SI_STATUS_REG`          0xA4800018
           </pre>
 
+  - name: Miscellaneous
+    js:   Miscellaneous
+    desc: |
+          <pre>
+          `KUBASE`  0x00000000
+          `K0BASE`  0x80000000
+          `K1BASE`  0xA0000000
+          `K2BASE`  0xC0000000
+          `UT_VEC`  0x80000000
+          `R_VEC`   0xBFC00000
+          `XUT_VEC` 0x80000080
+          `ECC_VEC` 0x80000100
+          `E_VEC`   0x80000180
+          </pre>
+      
 - name: JavaScript environment
   desc: |
         <div class="vtab""></div>

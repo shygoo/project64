@@ -17,6 +17,11 @@ td {
     padding: 2px 6px;
 }
 
+thead {
+    font-weight: bold;
+    background: #EEE;
+}
+
 ul {
     color: #222;
     padding-inline-start: 30px;
@@ -133,4 +138,5 @@ div.tag.red {
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
     td { border: 1px solid #444; }
+    thead { background: #444; }
 }

@@ -46,9 +46,10 @@ void ScriptAPI::DefineGlobalConstants(duk_context *ctx)
         { "s8",   S8 },
         { "s16", S16 },
         { "s32", S32 },
-        { "float", F32 },
-        { "double", F64 },
+        { "f32", F32 },
+        { "f64", F64 },
 
+        { "s64", S64 },
         { "u64", U64 },
 
         { "GPR_R0", GPR_R0 },
@@ -180,6 +181,17 @@ void ScriptAPI::DefineGlobalConstants(duk_context *ctx)
         { "SI_PIF_ADDR_RD64B_REG", 0xA4800004 },
         { "SI_PIF_ADDR_WR64B_REG", 0xA4800010 },
         { "SI_STATUS_REG", 0xA4800018 },
+
+        { "KUBASE",  0x00000000 },
+        { "K0BASE",  0x80000000 },
+        { "K1BASE",  0xA0000000 },
+        { "K2BASE",  0xC0000000 },
+        { "UT_VEC",  0x80000000 },
+        { "R_VEC",   0xBFC00000 },
+        { "XUT_VEC", 0x80000080 },
+        { "ECC_VEC", 0x80000100 },
+        { "E_VEC",   0x80000180 },
+
         { NULL, 0 },
     };
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 03 2021 -->
+<!-- Generated Apr 06 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -22,6 +22,11 @@ table {
 td {
     border: 1px solid #CCC;
     padding: 2px 6px;
+}
+
+thead {
+    font-weight: bold;
+    background: #EEE;
 }
 
 ul {
@@ -140,6 +145,7 @@ div.tag.red {
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
     td { border: 1px solid #444; }
+    thead { background: #444; }
 }
 </style>
 </head>
@@ -149,8 +155,9 @@ div.tag.red {
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
 <li><a href="#console_log">console.log(message[, ...])</a></li>
-<li><a href="#console_print">console.print(message)</a></li>
+<li><a href="#console_log">console.log(message[, ...])</a></li>
 <li><a href="#console_clear">console.clear()</a></li>
+<li><a href="#console_listen">console.listen(inputListener)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#mem">mem</a>: N64 memory interface<ul>
 <li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
@@ -182,7 +189,7 @@ div.tag.red {
 <li><a href="#screen">screen</a>: Screen drawing interface<ul>
 <li><a href="#screen_print">screen.print(x, y, text)</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#cpu">cpu</a>: CPU interface<ul>
+<li><a href="#cpu">cpu</a>: CPU register interface<ul>
 <li><a href="#cpu_pc">cpu.pc</a></li>
 <li><a href="#cpu_hi">cpu.hi</a></li>
 <li><a href="#cpu_lo">cpu.lo</a></li>
@@ -213,6 +220,7 @@ div.tag.red {
 </ul><div class="vtab"></div></li>
 <li><a href="#debug">debug</a>: Debugger interface<ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
+<li><a href="#debug_resume">debug.resume()</a></li>
 <li><a href="#debug_skip">debug.skip()</a></li>
 <li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
 <li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
@@ -238,8 +246,7 @@ div.tag.red {
 <li><a href="#fs_Stats">fs.Stats</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#script">script</a>: Script instance configuration interface<ul>
-<li><a href="#script_listen">script.listen(inputListener)</a></li>
-<li><a href="#script_keepalive">script.keepalive(bKeepAlive)</a></li>
+<li><a href="#script_keepalive">script.keepalive(keepAlive)</a></li>
 <li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#Global definitions">Global definitions</a><ul>
@@ -257,27 +264,56 @@ Console interface
 <div class="vtab"></div>
 <ul>
 <li><a href="#console_log">console.log(message[, ...])</a></li>
-<li><a href="#console_print">console.print(message)</a></li>
+<li><a href="#console_log">console.log(message[, ...])</a></li>
 <li><a href="#console_clear">console.clear()</a></li>
+<li><a href="#console_listen">console.listen(inputListener)</a></li>
 </ul>
 <!-- console.log -->
 <div class="prop"><span class="title" id="console_log">console.log(message[, ...])</span></div>
 <div class="tsproto">console.log(message: any, ...optionalParams): void</div>
 <div class="vtab"></div>
-Concatenates all provided text arguments with spaces and prints the result to the console with a trailing newline.
+Concatenates all provided arguments with spaces and prints the result to the console with a trailing newline.
 <pre class="ex">
-console.log("Hello world!");
+console.log("Hello", "world!");
 </pre>
-<!-- console.print -->
-<div class="prop"><span class="title" id="console_print">console.print(message)</span></div>
-<div class="tsproto">console.print(message: any): void</div>
+<!-- console.log -->
+<div class="prop"><span class="title" id="console_log">console.log(message[, ...])</span></div>
+<div class="tsproto">console.log(message: any, ...optionalParams): void</div>
 <div class="vtab"></div>
-Prints <div class="snip">message</div> to the console.
+Concatenates all provided arguments with spaces and prints the result to the console.
+<pre class="ex">
+console.print("Hello ");
+console.print("world!\n");
+</pre>
 <!-- console.clear -->
 <div class="prop"><span class="title" id="console_clear">console.clear()</span></div>
 <div class="tsproto">console.clear(): void</div>
 <div class="vtab"></div>
 Clears the console.
+<!-- console.listen -->
+<div class="prop"><span class="title" id="console_listen">console.listen(inputListener)</span></div>
+<div class="tsproto">console.listen(inputListener: (input: string) => void): void</div>
+<div class="vtab"></div>
+Overrides the default input behavior; console input will be passed to <div class="snip">inputListener</div> instead of being evaluated as JS code.
+<div class="vtab"></div>
+The listener may be unset by calling <div class="snip">console.listen(undefined)</div>.
+<pre class="ex">
+console.listen(function(input) {
+    var args = input.split(' ');
+    var command = args.shift();
+    switch(command) {
+    case "ping":
+        console.log("pong (args were:", args.join(', '), ")");
+        return;
+    case "end":
+        console.log("done");
+        console.listen(undefined);
+        return;
+    default:
+        console.log("unknown command '" + command + "'");
+    }
+});
+</pre>
 
 </div>
 <!-- mem -->
@@ -456,7 +492,7 @@ Returns a callback ID.
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
 <div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object. (TODO)
+<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.onopcode -->
@@ -472,9 +508,9 @@ Returns a callback ID.
 const JAL = asm.encode("jal 0");
 const ANY_TARGET = 0xFC000000; // Mask off target field
 
-events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function() {
+events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function(e) {
     // Log every JAL
-    console.log(gpr.pc.hex() + ": " + asm.decode(mem.u32[gpr.pc], gpr.pc));
+    console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
 });
 </pre>
 <!-- events.onopcode -->
@@ -521,7 +557,7 @@ Unregisters the callback specified by <div class="snip">callbackId</div>.
 events.onexec(0x802CB1C0, function(e) {
     // This is only invoked once
     console.log("func_802CB1C0 was called");
-    events.remove(e.id);
+    events.remove(e.callbackId);
 });
 </pre>
 <!-- CPUExecEvent -->
@@ -540,9 +576,24 @@ events.onexec(0x802CB1C0, function(e) {
 <tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
 <tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
 <tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
-<tr><td><div class="snip">e.type</div></td><td>The value's type ID.</td></tr>
+<tr><td><div class="snip">e.type</div></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
 <tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
-<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if the current opcode is LD/SD. <div class="snip">undefined</div> if the opcode is not LD/SD.</td></tr>
+<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if <div class="snip">e.type</div> is <div class="snip">u64</div>; otherwise <div class="snip">undefined</div>.</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
+<thead><tr><td><b>e.type</b></td><td><b>Opcode(s)</b></td></tr></thead>
+<tr><td><div class="snip">s8</div></td><td>LB, SB</td></tr>
+<tr><td><div class="snip">u8</div></td><td>LBU</td></tr>
+<tr><td><div class="snip">s16</div></td><td>LH, SH</td></tr>
+<tr><td><div class="snip">u16</div></td><td>LHU</td></tr>
+<tr><td><div class="snip">s32</div></td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
+<tr><td><div class="snip">u32</div></td><td>LWU</td></tr>
+<tr><td><div class="snip">u64</div></td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
+<tr><td><div class="snip">float</div></td><td>LWC1, SWC1</td></tr>
+<tr><td><div class="snip">double</div></td><td>LDC1, SDC1</td></tr>
+</table>
+
 </table>
 <!-- CPUOpcodeEvent -->
 <div class="prop"><span class="title" id="CPUOpcodeEvent">CPUOpcodeEvent</span></div>
@@ -617,7 +668,7 @@ events.ondraw(function() {
 <!-- cpu -->
 <div class="module">
 <div class="modtitle"><span class="title" id="cpu">cpu</span></div>
-CPU interface
+CPU register interface
 <div class="vtab"></div>
 <ul>
 <li><a href="#cpu_pc">cpu.pc</a></li>
@@ -767,6 +818,7 @@ Debugger interface
 <div class="vtab"></div>
 <ul>
 <li><a href="#debug_breakhere">debug.breakhere()</a></li>
+<li><a href="#debug_resume">debug.resume()</a></li>
 <li><a href="#debug_skip">debug.skip()</a></li>
 <li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
 <li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
@@ -784,6 +836,11 @@ events.onexec(0x802CB1C0, function() {
     }
 });
 </pre>
+<!-- debug.resume -->
+<div class="prop"><span class="title" id="debug_resume">debug.resume()</span></div>
+<div class="tsproto">debug.resume(): void</div>
+<div class="vtab"></div>
+Resumes emulation after a debug break.
 <!-- debug.skip -->
 <div class="prop"><span class="title" id="debug_skip">debug.skip()</span></div>
 <div class="tsproto">debug.skip(): void</div>
@@ -1004,38 +1061,12 @@ Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> obj
 Script instance configuration interface
 <div class="vtab"></div>
 <ul>
-<li><a href="#script_listen">script.listen(inputListener)</a></li>
-<li><a href="#script_keepalive">script.keepalive(bKeepAlive)</a></li>
+<li><a href="#script_keepalive">script.keepalive(keepAlive)</a></li>
 <li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
 </ul>
-<!-- script.listen -->
-<div class="prop"><span class="title" id="script_listen">script.listen(inputListener)</span></div>
-<div class="tsproto">script.listen(inputListener: (input: string) => void): void</div>
-<div class="vtab"></div>
-Sets a console input listener function.
-Console input will be passed to <div class="snip">inputListener</div> rather than being evaluated as JS code.
-The listener may be unset by calling <div class="snip">script.listen(undefined)</div>.
-<pre class="ex">
-script.listen(function(input) {
-    input = input.split(' ');
-    var command = input.shift();
-    var args = input;
-    switch(command) {
-        case "ping":
-            console.log("pong (args were:", args.join(', '), ")");
-            return;
-        case "end":
-            console.log("done");
-            script.listen(undefined);
-            return;
-        default:
-            console.log("unknown command '" + command + "'");
-    }
-});
-</pre>
 <!-- script.keepalive -->
-<div class="prop"><span class="title" id="script_keepalive">script.keepalive(bKeepAlive)</span></div>
-<div class="tsproto">script.keepalive(bKeepAlive: boolean): void</div>
+<div class="prop"><span class="title" id="script_keepalive">script.keepalive(keepAlive)</span></div>
+<div class="tsproto">script.keepalive(keepAlive: boolean): void</div>
 <div class="vtab"></div>
 Prevents the script instance from being destroyed when it has nothing left to do.
 Useful when the default console input behavior is desired.
@@ -1044,7 +1075,7 @@ Useful when the default console input behavior is desired.
 <div class="tsproto">script.timeout(milliseconds: number): void</div>
 <div class="vtab"></div>
 Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
-Setting this value to zero will allow tasks to run indefinitely (not recommended; may cause deadlocks).
+Setting this value to zero will allow tasks to run indefinitely.
 
 </div>
 <!-- Global definitions -->
@@ -1061,7 +1092,7 @@ Setting this value to zero will allow tasks to run indefinitely (not recommended
 <div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
 <div class="tsproto">alert(message: string, caption?: string): number</div>
 <div class="vtab"></div>
-Shows a message box with an optional caption. The calling thread is blocked until the message box is dismissed.
+Shows a message box over the main window. The calling thread is blocked until the message box is dismissed.
 <!-- number.hex -->
 <div class="prop"><span class="title" id="number_hex">number.hex([numChars])</span></div>
 <div class="tsproto">number.hex(numChars?: number): string</div>
@@ -1088,9 +1119,10 @@ Global type IDs.
 <div class="snip">f64</div> 64-bit double precision floating-point
 
 <div class="snip">u64</div> Unsigned 64-bit integer
+<div class="snip">s64</div> Signed 64-bit integer
 </pre>
 
-Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <div class="snip">u64</div>.
+Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <div class="snip">u64</div> and <div class="snip">s64</div>.
 <!-- Memory_mapped_register_addresses -->
 <div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
 <div class="vtab"></div>

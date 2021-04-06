@@ -490,6 +490,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     duk_put_prop_string(ctx, -2, "fpu");
 
     bool bNeedUpper32 = false;
+    uint64_t value64;
 
     switch (env->opInfo.m_OpCode.op)
     {
@@ -544,20 +545,18 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         {
         int shift = (address & 7) * 8;
         uint64_t mask = ~(((uint64_t)-1) >> shift);
-        uint64_t value;
-        debugger->DebugLoad_VAddr(address & ~7, value);
-        value = (value & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
-        duk_push_number(ctx, value & 0xFFFFFFFF);
+        debugger->DebugLoad_VAddr(address & ~7, value64);
+        value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
+        duk_push_number(ctx, value64 & 0xFFFFFFFF);
         duk_push_int(ctx, ScriptAPI::U64);
         }
     case R4300i_SDR:
     {
         int shift = 56 - ((address & 7) * 8);
         uint64_t mask = ~(((uint64_t)-1) << shift);
-        uint64_t value;
-        debugger->DebugLoad_VAddr(address & ~7, value);
-        value = (value & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
-        duk_push_number(ctx, value & 0xFFFFFFFF);
+        debugger->DebugLoad_VAddr(address & ~7, value64);
+        value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
+        duk_push_number(ctx, value64 & 0xFFFFFFFF);
         duk_push_int(ctx, ScriptAPI::U64);
     }
     default:
@@ -571,7 +570,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 
     if (bNeedUpper32)
     {
-        duk_push_number(ctx, g_Reg->m_GPR[rt].UW[1]);
+        duk_push_number(ctx, value64 >> 32);
         duk_put_prop_string(ctx, -2, "valueHi");
     }
 

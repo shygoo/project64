@@ -8,6 +8,7 @@ void ScriptAPI::Define_console(duk_context *ctx)
         { "print", js_console_print, DUK_VARARGS },
         { "log", js_console_log, DUK_VARARGS },
         { "clear", js_console_clear, 0 },
+        { "listen", js_console_listen, 1 },
         { NULL, NULL, 0 }
     };
 
@@ -51,4 +52,34 @@ duk_ret_t ScriptAPI::js_console_clear(duk_context* ctx)
 {
     GetInstance(ctx)->System()->ClearLog();
     return 0;
+}
+
+duk_ret_t ScriptAPI::js_console_listen(duk_context* ctx)
+{
+    CScriptInstance* inst = GetInstance(ctx);
+
+    duk_push_global_object(ctx);
+    duk_bool_t haveListener = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+
+    if (duk_is_function(ctx, 0))
+    {
+        duk_pull(ctx, 0);
+        duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+        if (!haveListener)
+        {
+            inst->IncRefCount();
+        }
+        return 0;
+    }
+    else if (duk_is_undefined(ctx, 0))
+    {
+        if (haveListener)
+        {
+            duk_del_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+            inst->DecRefCount();
+        }
+        return 0;
+    }
+
+    return ThrowInvalidArgsError(ctx);
 }

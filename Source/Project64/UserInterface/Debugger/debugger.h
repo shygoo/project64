@@ -76,6 +76,7 @@ public:
     CDMALog* DMALog();
     CCPULog* CPULog();
     CSymbolTable* SymbolTable();
+    SyncEvent& StepEvent();
 
     static void GameReset(CDebuggerUI * _this);
     static void GameCpuRunningChanged(CDebuggerUI * _this);

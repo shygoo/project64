@@ -6,7 +6,6 @@ void ScriptAPI::Define_script(duk_context *ctx)
     const duk_function_list_entry funcs[] = {
         { "timeout",   js_script_timeout,   1 },
         { "keepalive", js_script_keepalive, 1 },
-        { "listen",    js_script_listen, 1 },
         { NULL, NULL, 0 }
     };
 
@@ -61,34 +60,4 @@ duk_ret_t ScriptAPI::js_script_keepalive(duk_context *ctx)
     duk_pop(ctx);
 
     return 0;
-}
-
-duk_ret_t ScriptAPI::js_script_listen(duk_context* ctx)
-{
-    CScriptInstance* inst = GetInstance(ctx);
-
-    duk_push_global_object(ctx);
-    duk_bool_t haveListener = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
-
-    if (duk_is_function(ctx, 0))
-    {
-        duk_pull(ctx, 0);
-        duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
-        if (!haveListener)
-        {
-            inst->IncRefCount();
-        }
-        return 0;
-    }
-    else if (duk_is_undefined(ctx, 0))
-    {
-        if (haveListener)
-        {
-            duk_del_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
-            inst->DecRefCount();
-        }
-        return 0;
-    }
-
-    return ThrowInvalidArgsError(ctx);
 }

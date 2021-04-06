@@ -9,12 +9,13 @@ Changes:
 - add better error throwing for all API functions
 - rewrite API documentation file
 - add remaining registers to `cop0` interface
-- add script.listen(inputListener) for console input handling
+- add console.listen(inputListener) for console input handling
 - add script.keepalive(bKeepAlive) to keep instance from automatically being destroyed
 - add script.timeout(ms) for timeout override
 - add debug.skip() for CPU command skipping
 - add debug.showmemory(address) to show the memory window
 - add debug.showcommands(address) to show the commands window
+- add debug.resume()
 - add asm.encode(asm)
 - add asm.decode(opcode)
 - add mem.ramsize
@@ -22,13 +23,14 @@ Changes:
 
 Changes that will break compatibility with old scripts:
 
+- rename `mem.float`, `mem.double` to `mem.f32`, `mem.f64`
+- rename global `float`, `double` types IDs to `f32`, `f64`
 - move `gpr`, `ugpr`, `fpr`, `dfpr`, `cop0` interfaces into new `cpu` interface
 - move `gpr.pc` to `cpu.pc`
 - move `gpr.hi`/`ugpr.hi` to `cpu.hi`/`cpu.uhi`
 - move `gpr.lo`/`ugpr.lo` to `cpu.hi`/`cpu.ulo`
 - remove redundant `rom` interface because `mem` interface can access ROM
-- remove redundant `pc` argument from `events.onexec/onopcode/ongprvalue` callbacks since there is `gpr.pc`
-- change the `address` argument of `events.onread/onwrite` callbacks to more informative `CPUReadWriteEvent` object
+- change all `events.on*` callbacks to receive event objects
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 
 I am not sure what the situation is with `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`,
@@ -40,6 +42,8 @@ but I changed `cpu.cop0.cause` to include them both.
 ---------------------
 TODO:
 
+- debug.stepping
+- debug.breakhere no window option
 - script auto-run feature?
 - finish implementing new server/socket
 - finish implementing new events interface
@@ -49,7 +53,6 @@ TODO:
 - mem.saveaddress
 - debug.getsymbol?
 - debug.setsymbol?
-- debug.resume()
 
 - Duktape.modSearch/require()
 - formatting/cleanup printfs, comments etc
@@ -64,7 +67,6 @@ TODO:
 - pj64.resume()
 - pj64.savesetting(section, name, value)
 - pj64.loadsetting(section, name)
-
 
 - pj64.addmenu(null, caption, callback, menuKey)
 - pj64.delmenu()

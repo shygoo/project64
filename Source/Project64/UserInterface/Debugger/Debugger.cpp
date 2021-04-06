@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "DebuggerUI.h"
-//#include "ScriptHook.h"
 
 #include "CPULog.h"
 #include "DMALog.h"
@@ -448,6 +447,11 @@ CCPULog* CDebuggerUI::CPULog()
 CSymbolTable* CDebuggerUI::SymbolTable()
 {
     return m_SymbolTable;
+}
+
+SyncEvent& CDebuggerUI::StepEvent()
+{
+    return m_StepEvent;
 }
 
 // CDebugger implementation
