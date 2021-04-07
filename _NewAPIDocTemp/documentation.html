@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 06 2021 -->
+<!-- Generated Apr 07 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -155,7 +155,7 @@ div.tag.red {
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
 <li><a href="#console_log">console.log(message[, ...])</a></li>
-<li><a href="#console_log">console.log(message[, ...])</a></li>
+<li><a href="#console_print">console.print(message[, ...])</a></li>
 <li><a href="#console_clear">console.clear()</a></li>
 <li><a href="#console_listen">console.listen(inputListener)</a></li>
 </ul><div class="vtab"></div></li>
@@ -165,8 +165,10 @@ div.tag.red {
 <li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
 <li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
-<li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
-<li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
+<li><a href="#mem_getblock">mem.getblock(address, length)</a></li>
+<li><a href="#mem_setblock">mem.setblock(address, data[, length])</a></li>
+<li><a href="#mem_getstring">mem.getstring(address[, length])</a></li>
+<li><a href="#mem_setstring">mem.setstring(address, data[, length])</a></li>
 <li><a href="#mem_ramsize">mem.ramsize</a></li>
 <li><a href="#mem_romsize">mem.romsize</a></li>
 </ul><div class="vtab"></div></li>
@@ -177,6 +179,7 @@ div.tag.red {
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
+<li><a href="#events_onpifread">events.onpifread(callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
 <li><a href="#CPUExecEvent">CPUExecEvent</a></li>
@@ -254,6 +257,7 @@ div.tag.red {
 <li><a href="#number_hex">number.hex([numChars])</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
+<li><a href="#Miscellaneous">Miscellaneous</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
 </ul>
@@ -264,7 +268,7 @@ Console interface
 <div class="vtab"></div>
 <ul>
 <li><a href="#console_log">console.log(message[, ...])</a></li>
-<li><a href="#console_log">console.log(message[, ...])</a></li>
+<li><a href="#console_print">console.print(message[, ...])</a></li>
 <li><a href="#console_clear">console.clear()</a></li>
 <li><a href="#console_listen">console.listen(inputListener)</a></li>
 </ul>
@@ -276,9 +280,9 @@ Concatenates all provided arguments with spaces and prints the result to the con
 <pre class="ex">
 console.log("Hello", "world!");
 </pre>
-<!-- console.log -->
-<div class="prop"><span class="title" id="console_log">console.log(message[, ...])</span></div>
-<div class="tsproto">console.log(message: any, ...optionalParams): void</div>
+<!-- console.print -->
+<div class="prop"><span class="title" id="console_print">console.print(message[, ...])</span></div>
+<div class="tsproto">console.print(message: any, ...optionalParams): void</div>
 <div class="vtab"></div>
 Concatenates all provided arguments with spaces and prints the result to the console.
 <pre class="ex">
@@ -327,8 +331,10 @@ N64 memory interface
 <li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
 <li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
 <li><a href="#mem_typedef">mem.typedef(properties)</a></li>
-<li><a href="#mem_getblock">mem.getblock(address, size)</a></li>
-<li><a href="#mem_getstring">mem.getstring(address[, maxLength])</a></li>
+<li><a href="#mem_getblock">mem.getblock(address, length)</a></li>
+<li><a href="#mem_setblock">mem.setblock(address, data[, length])</a></li>
+<li><a href="#mem_getstring">mem.getstring(address[, length])</a></li>
+<li><a href="#mem_setstring">mem.setstring(address, data[, length])</a></li>
 <li><a href="#mem_ramsize">mem.ramsize</a></li>
 <li><a href="#mem_romsize">mem.romsize</a></li>
 </ul>
@@ -408,22 +414,40 @@ var playerAngle = new vec3f(0x8033B19C);
 var playerPos = new vec3f(0x8033B1AC);
 </pre>
 <!-- mem.getblock -->
-<div class="prop"><span class="title" id="mem_getblock">mem.getblock(address, size)</span></div>
-<div class="tsproto">mem.getblock(address: number, size: number): Buffer</div>
+<div class="prop"><span class="title" id="mem_getblock">mem.getblock(address, length)</span></div>
+<div class="tsproto">mem.getblock(address: number, length: number): Buffer</div>
 <div class="vtab"></div>
 Returns a block of data from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
 <pre class="ex">
 var ramDump = mem.getblock(0x80000000, mem.ramsize)
 fs.writeFile("ram-dump.bin", ramDump);
 </pre>
+<!-- mem.setblock -->
+<div class="prop"><span class="title" id="mem_setblock">mem.setblock(address, data[, length])</span></div>
+<div class="tsproto">mem.setblock(address: number, data: string | Buffer | TypedArray, length: number): Buffer</div>
+<div class="vtab"></div>
+Writes a block of data into memory. <div class="snip">data</div> may be one of the following types&#58;
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
+<a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
+<pre class="ex">
+var textures = fs.readFile("textures.bin");
+mem.setblock(0x80400000, textures);
+</pre>
 <!-- mem.getstring -->
-<div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, maxLength])</span></div>
-<div class="tsproto">mem.getblock(address: number, maxLength?: number): string</div>
+<div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, length])</span></div>
+<div class="tsproto">mem.getblock(address: number, length?: number): string</div>
 <div class="vtab"></div>
 Returns a zero-terminated ASCII string from memory.
 <pre class="ex">
 const romName = mem.getstring(0xB0000020, 0x14);
 </pre>
+<!-- mem.setstring -->
+<div class="prop"><span class="title" id="mem_setstring">mem.setstring(address, data[, length])</span></div>
+<div class="tsproto">mem.setstring(address: number, data: string | Buffer | TypedArray, length?: number): Buffer</div>
+<div class="vtab"></div>
+Writes a string into memory (alias of <a href="#mem_setblock">mem.setblock</a>).
 <!-- mem.ramsize -->
 <div class="prop"><span class="title" id="mem_ramsize">mem.ramsize</span></div>
 <div class="tsproto">mem.ramsize: number</div>
@@ -448,6 +472,7 @@ Emulation event hooking interface
 <li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
 <li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
 <li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
+<li><a href="#events_onpifread">events.onpifread(callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
 <li><a href="#CPUExecEvent">CPUExecEvent</a></li>
@@ -458,7 +483,7 @@ Emulation event hooking interface
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul>
 <!-- events.onexec -->
-<div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span></div>
+<div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
@@ -478,7 +503,7 @@ events.onexec(ADDR_ANY, function(e) {
 })
 </pre>
 <!-- events.onread -->
-<div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span></div>
+<div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <div class="snip">address</div>.
@@ -487,7 +512,7 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.onwrite -->
-<div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span></div>
+<div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
@@ -495,8 +520,16 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
+<pre class="ex">
+events.onwrite(PI_WR_LEN_REG, function(e) {
+    var romAddr = mem.u32[PI_CART_ADDR_REG] + 0xA0000000;
+    var ramAddr = mem.u32[PI_DRAM_ADDR_REG] + 0x80000000;
+    var length = e.value + 1;
+    console.log("Loaded " + romAddr.hex() + " -> " + ramAddr.hex() + " (Length: " + length.hex() + ")");
+});
+</pre>
 <!-- events.onopcode -->
-<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span></div>
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
@@ -514,7 +547,7 @@ events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function(e) {
 });
 </pre>
 <!-- events.onopcode -->
-<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span></div>
+<div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
@@ -523,7 +556,7 @@ Registers a callback that will be invoked at the beginning of a CPU step if the 
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
-<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span></div>
+<div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
@@ -539,6 +572,39 @@ const IS64_SIGNATURE = 0x49533634;
 events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
     // Break when any general purpose register contains 0x49533634
     debug.breakhere();
+});
+</pre>
+<!-- events.onpifread -->
+<div class="prop"><span class="title" id="events_onpifread">events.onpifread(callback)</span></div>
+<div class="tsproto">events.onpifread(callback: () => void): number</div>
+<div class="vtab"></div>
+Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
+Useful for monitoring or overriding controller input.
+<div class="vtab""></div>
+Returns a callback ID.
+<pre class="ex">
+// Log P1's inputs
+events.onpifread(function() {
+    if(mem.u32[PIF_RAM_START + 0x00] == 0xFF010401) {
+        console.log(mem.u32[PIF_RAM_START + 0x04].hex());
+    }
+});
+</pre>
+
+<pre class="ex">
+// Play an M64 TAS file
+var m64file = fs.readFile("sm64-1key.m64");
+var numSamples = m64file.readUInt32LE(0x018);
+var sampleIndex = 0;
+
+events.onpifread(function() {
+    for(var nController = 0; nController < 4; nController++) {
+        var cmdAddr = PIF_RAM_START + (nController * 8);
+        if(mem.u32[cmdAddr + 0x00] == 0xFF010401 && sampleIndex < numSamples) {
+            mem.u32[cmdAddr + 0x04] = m64file.readUInt32BE(0x400 + sampleIndex * 4);
+            sampleIndex++;
+        }
+    }
 });
 </pre>
 <!-- events.ondraw -->
@@ -629,19 +695,20 @@ Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class
 <div class="tsproto">new AddressRange(start: number, end: number)</div>
 <div class="vtab"></div>
 Creates an immutable object with <div class="snip">start</div> and <div class="snip">end</div> address properties.
-
-The following <div class="snip">AddressRange</div> objects are defined globally&#58;<br>
-<pre>
-<div class="snip">ADDR_ANY</div>              0x00000000 &#58; 0xFFFFFFFF Any address
-<div class="snip">ADDR_ANY_KUSEG</div>        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
-<div class="snip">ADDR_ANY_KSEG0</div>        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
-<div class="snip">ADDR_ANY_KSEG1</div>        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
-<div class="snip">ADDR_ANY_KSEG2</div>        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
-<div class="snip">ADDR_ANY_RDRAM</div>        0x80000000 &#58; 0x807FFFFF Cached RDRAM
-<div class="snip">ADDR_ANY_RDRAM_UNC</div>    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
-<div class="snip">ADDR_ANY_CART_ROM</div>     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
-<div class="snip">ADDR_ANY_CART_ROM_UNC</div> 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
-</pre>
+<div class="vtab"></div>
+The following <div class="snip">AddressRange</div> objects are defined globally&#58;
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">ADDR_ANY</div>              </td><td>0x00000000 &#58; 0xFFFFFFFF</td><td>Any address</td></tr>
+<tr><td><div class="snip">ADDR_ANY_KUSEG</div>        </td><td>0x00000000 &#58; 0x7FFFFFFF</td><td>MIPS user mode TLB mapped segment</td></tr>
+<tr><td><div class="snip">ADDR_ANY_KSEG0</div>        </td><td>0x80000000 &#58; 0x9FFFFFFF</td><td>MIPS cached unmapped segment</td></tr>
+<tr><td><div class="snip">ADDR_ANY_KSEG1</div>        </td><td>0xA0000000 &#58; 0xBFFFFFFF</td><td>MIPS uncached unmapped segment</td></tr>
+<tr><td><div class="snip">ADDR_ANY_KSEG2</div>        </td><td>0xC0000000 &#58; 0xFFFFFFFF</td><td>MIPS kernel mode TLB mapped segment</td></tr>
+<tr><td><div class="snip">ADDR_ANY_RDRAM</div>        </td><td>0x80000000 &#58; 0x807FFFFF</td><td>Cached RDRAM</td></tr>
+<tr><td><div class="snip">ADDR_ANY_RDRAM_UNC</div>    </td><td>0xA0000000 &#58; 0xA07FFFFF</td><td>Uncached RDRAM</td></tr>
+<tr><td><div class="snip">ADDR_ANY_CART_ROM</div>     </td><td>0x90000000 &#58; 0x95FFFFFF</td><td>Cached cartridge ROM</td></tr>
+<tr><td><div class="snip">ADDR_ANY_CART_ROM_UNC</div> </td><td>0xB0000000 &#58; 0xB5FFFFFF</td><td>Uncached cartridge ROM</td></tr>
+</table>
 
 </div>
 <!-- screen -->
@@ -951,7 +1018,8 @@ Writes <div class="snip">buffer</div> to the file referenced by file descriptor 
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
 <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
-<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.<br><br>
+<a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
+<div class="vtab"></div>
 <div class="snip">offset</div>&#58; optional position in the source buffer.<br>
 <div class="snip">length</div>&#58; optional maximum number of bytes to write.<br>
 <div class="snip">position</div>&#58; optional file position.
@@ -1087,6 +1155,7 @@ Setting this value to zero will allow tasks to run indefinitely.
 <li><a href="#number_hex">number.hex([numChars])</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
+<li><a href="#Miscellaneous">Miscellaneous</a></li>
 </ul>
 <!-- alert -->
 <div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
@@ -1108,130 +1177,149 @@ n.hex(4); // 007B
 <div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
 <div class="vtab"></div>
 Global type IDs.
-<pre>
-<div class="snip">u8</div>  Unsigned 8-bit integer
-<div class="snip">u16</div> Unsigned 16-bit integer
-<div class="snip">u32</div> Unsigned 32-bit integer
-<div class="snip">s8</div>  Signed 8-bit integer
-<div class="snip">s16</div> Signed 16-bit integer
-<div class="snip">s32</div> Signed 32-bit integer
-<div class="snip">f32</div> 32-bit single precision floating-point
-<div class="snip">f64</div> 64-bit double precision floating-point
-
-<div class="snip">u64</div> Unsigned 64-bit integer
-<div class="snip">s64</div> Signed 64-bit integer
-</pre>
-
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">u8</div>  </td><td>Unsigned 8-bit integer</td></tr>
+<tr><td><div class="snip">u16</div> </td><td>Unsigned 16-bit integer</td></tr>
+<tr><td><div class="snip">u32</div> </td><td>Unsigned 32-bit integer</td></tr>
+<tr><td><div class="snip">s8</div>  </td><td>Signed 8-bit integer</td></tr>
+<tr><td><div class="snip">s16</div> </td><td>Signed 16-bit integer</td></tr>
+<tr><td><div class="snip">s32</div> </td><td>Signed 32-bit integer</td></tr>
+<tr><td><div class="snip">f32</div> </td><td>32-bit single precision floating-point</td></tr>
+<tr><td><div class="snip">f64</div> </td><td>64-bit double precision floating-point</td></tr>
+<tr><td><div class="snip">u64</div> </td><td>Unsigned 64-bit integer</td></tr>
+<tr><td><div class="snip">s64</div> </td><td>Signed 64-bit integer</td></tr>
+</table>
+<div class="vtab"></div>
 Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <div class="snip">u64</div> and <div class="snip">s64</div>.
 <!-- Memory_mapped_register_addresses -->
 <div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
 <div class="vtab"></div>
-<pre>
-<div class="snip">RDRAM_CONFIG_REG</div>       0xA3F00000
-<div class="snip">RDRAM_DEVICE_TYPE_REG</div>  0xA3F00000
-<div class="snip">RDRAM_DEVICE_ID_REG</div>    0xA3F00004
-<div class="snip">RDRAM_DELAY_REG</div>        0xA3F00008
-<div class="snip">RDRAM_MODE_REG</div>         0xA3F0000C
-<div class="snip">RDRAM_REF_INTERVAL_REG</div> 0xA3F00010
-<div class="snip">RDRAM_REF_ROW_REG</div>      0xA3F00014
-<div class="snip">RDRAM_RAS_INTERVAL_REG</div> 0xA3F00018
-<div class="snip">RDRAM_MIN_INTERVAL_REG</div> 0xA3F0001C
-<div class="snip">RDRAM_ADDR_SELECT_REG</div>  0xA3F00020
-<div class="snip">RDRAM_DEVICE_MANUF_REG</div> 0xA3F00024
+<table>
+<tr><td><div class="snip">RDRAM_CONFIG_REG</div>       </td><td>0xA3F00000</td></tr>
+<tr><td><div class="snip">RDRAM_DEVICE_TYPE_REG</div>  </td><td>0xA3F00000</td></tr>
+<tr><td><div class="snip">RDRAM_DEVICE_ID_REG</div>    </td><td>0xA3F00004</td></tr>
+<tr><td><div class="snip">RDRAM_DELAY_REG</div>        </td><td>0xA3F00008</td></tr>
+<tr><td><div class="snip">RDRAM_MODE_REG</div>         </td><td>0xA3F0000C</td></tr>
+<tr><td><div class="snip">RDRAM_REF_INTERVAL_REG</div> </td><td>0xA3F00010</td></tr>
+<tr><td><div class="snip">RDRAM_REF_ROW_REG</div>      </td><td>0xA3F00014</td></tr>
+<tr><td><div class="snip">RDRAM_RAS_INTERVAL_REG</div> </td><td>0xA3F00018</td></tr>
+<tr><td><div class="snip">RDRAM_MIN_INTERVAL_REG</div> </td><td>0xA3F0001C</td></tr>
+<tr><td><div class="snip">RDRAM_ADDR_SELECT_REG</div>  </td><td>0xA3F00020</td></tr>
+<tr><td><div class="snip">RDRAM_DEVICE_MANUF_REG</div> </td><td>0xA3F00024</td></tr>
 
-<div class="snip">SP_MEM_ADDR_REG</div>        0xA4040000
-<div class="snip">SP_DRAM_ADDR_REG</div>       0xA4040004
-<div class="snip">SP_RD_LEN_REG</div>          0xA4040008
-<div class="snip">SP_WR_LEN_REG</div>          0xA404000C
-<div class="snip">SP_STATUS_REG</div>          0xA4040010
-<div class="snip">SP_DMA_FULL_REG</div>        0xA4040014
-<div class="snip">SP_DMA_BUSY_REG</div>        0xA4040018
-<div class="snip">SP_SEMAPHORE_REG</div>       0xA404001C
+<tr><td><div class="snip">SP_MEM_ADDR_REG</div>        </td><td>0xA4040000</td></tr>
+<tr><td><div class="snip">SP_DRAM_ADDR_REG</div>       </td><td>0xA4040004</td></tr>
+<tr><td><div class="snip">SP_RD_LEN_REG</div>          </td><td>0xA4040008</td></tr>
+<tr><td><div class="snip">SP_WR_LEN_REG</div>          </td><td>0xA404000C</td></tr>
+<tr><td><div class="snip">SP_STATUS_REG</div>          </td><td>0xA4040010</td></tr>
+<tr><td><div class="snip">SP_DMA_FULL_REG</div>        </td><td>0xA4040014</td></tr>
+<tr><td><div class="snip">SP_DMA_BUSY_REG</div>        </td><td>0xA4040018</td></tr>
+<tr><td><div class="snip">SP_SEMAPHORE_REG</div>       </td><td>0xA404001C</td></tr>
 
-<div class="snip">SP_PC_REG</div>              0xA4080000
-<div class="snip">SP_IBIST_REG</div>           0xA4080004
+<tr><td><div class="snip">SP_PC_REG</div>              </td><td>0xA4080000</td></tr>
+<tr><td><div class="snip">SP_IBIST_REG</div>           </td><td>0xA4080004</td></tr>
 
-<div class="snip">DPC_START_REG</div>          0xA4100000
-<div class="snip">DPC_END_REG</div>            0xA4100004
-<div class="snip">DPC_CURRENT_REG</div>        0xA4100008
-<div class="snip">DPC_STATUS_REG</div>         0xA410000C
-<div class="snip">DPC_CLOCK_REG</div>          0xA4100010
-<div class="snip">DPC_BUFBUSY_REG</div>        0xA4100014
-<div class="snip">DPC_PIPEBUSY_REG</div>       0xA4100018
-<div class="snip">DPC_TMEM_REG</div>           0xA410001C
+<tr><td><div class="snip">DPC_START_REG</div>          </td><td>0xA4100000</td></tr>
+<tr><td><div class="snip">DPC_END_REG</div>            </td><td>0xA4100004</td></tr>
+<tr><td><div class="snip">DPC_CURRENT_REG</div>        </td><td>0xA4100008</td></tr>
+<tr><td><div class="snip">DPC_STATUS_REG</div>         </td><td>0xA410000C</td></tr>
+<tr><td><div class="snip">DPC_CLOCK_REG</div>          </td><td>0xA4100010</td></tr>
+<tr><td><div class="snip">DPC_BUFBUSY_REG</div>        </td><td>0xA4100014</td></tr>
+<tr><td><div class="snip">DPC_PIPEBUSY_REG</div>       </td><td>0xA4100018</td></tr>
+<tr><td><div class="snip">DPC_TMEM_REG</div>           </td><td>0xA410001C</td></tr>
 
-<div class="snip">DPS_TBIST_REG</div>          0xA4200000
-<div class="snip">DPS_TEST_MODE_REG</div>      0xA4200004
-<div class="snip">DPS_BUFTEST_ADDR_REG</div>   0xA4200008
-<div class="snip">DPS_BUFTEST_DATA_REG</div>   0xA420000C
+<tr><td><div class="snip">DPS_TBIST_REG</div>          </td><td>0xA4200000</td></tr>
+<tr><td><div class="snip">DPS_TEST_MODE_REG</div>      </td><td>0xA4200004</td></tr>
+<tr><td><div class="snip">DPS_BUFTEST_ADDR_REG</div>   </td><td>0xA4200008</td></tr>
+<tr><td><div class="snip">DPS_BUFTEST_DATA_REG</div>   </td><td>0xA420000C</td></tr>
 
-<div class="snip">MI_INIT_MODE_REG</div>       0xA4300000
-<div class="snip">MI_MODE_REG</div>            0xA4300000
-<div class="snip">MI_VERSION_REG</div>         0xA4300004
-<div class="snip">MI_NOOP_REG</div>            0xA4300004
-<div class="snip">MI_INTR_REG</div>            0xA4300008
-<div class="snip">MI_INTR_MASK_REG</div>       0xA430000C
+<tr><td><div class="snip">MI_INIT_MODE_REG</div>       </td><td>0xA4300000</td></tr>
+<tr><td><div class="snip">MI_MODE_REG</div>            </td><td>0xA4300000</td></tr>
+<tr><td><div class="snip">MI_VERSION_REG</div>         </td><td>0xA4300004</td></tr>
+<tr><td><div class="snip">MI_NOOP_REG</div>            </td><td>0xA4300004</td></tr>
+<tr><td><div class="snip">MI_INTR_REG</div>            </td><td>0xA4300008</td></tr>
+<tr><td><div class="snip">MI_INTR_MASK_REG</div>       </td><td>0xA430000C</td></tr>
 
-<div class="snip">VI_STATUS_REG</div>          0xA4400000
-<div class="snip">VI_CONTROL_REG</div>         0xA4400000
-<div class="snip">VI_ORIGIN_REG</div>          0xA4400004
-<div class="snip">VI_DRAM_ADDR_REG</div>       0xA4400004
-<div class="snip">VI_WIDTH_REG</div>           0xA4400008
-<div class="snip">VI_H_WIDTH_REG</div>         0xA4400008
-<div class="snip">VI_INTR_REG</div>            0xA440000C
-<div class="snip">VI_V_INTR_REG</div>          0xA440000C
-<div class="snip">VI_CURRENT_REG</div>         0xA4400010
-<div class="snip">VI_V_CURRENT_LINE_REG</div>  0xA4400010
-<div class="snip">VI_BURST_REG</div>           0xA4400014
-<div class="snip">VI_TIMING_REG</div>          0xA4400014
-<div class="snip">VI_V_SYNC_REG</div>          0xA4400018
-<div class="snip">VI_H_SYNC_REG</div>          0xA440001C
-<div class="snip">VI_LEAP_REG</div>            0xA4400020
-<div class="snip">VI_H_SYNC_LEAP_REG</div>     0xA4400020
-<div class="snip">VI_H_START_REG</div>         0xA4400024
-<div class="snip">VI_H_VIDEO_REG</div>         0xA4400024
-<div class="snip">VI_V_START_REG</div>         0xA4400028
-<div class="snip">VI_V_VIDEO_REG</div>         0xA4400028
-<div class="snip">VI_V_BURST_REG</div>         0xA440002C
-<div class="snip">VI_X_SCALE_REG</div>         0xA4400030
-<div class="snip">VI_Y_SCALE_REG</div>         0xA4400034
+<tr><td><div class="snip">VI_STATUS_REG</div>          </td><td>0xA4400000</td></tr>
+<tr><td><div class="snip">VI_CONTROL_REG</div>         </td><td>0xA4400000</td></tr>
+<tr><td><div class="snip">VI_ORIGIN_REG</div>          </td><td>0xA4400004</td></tr>
+<tr><td><div class="snip">VI_DRAM_ADDR_REG</div>       </td><td>0xA4400004</td></tr>
+<tr><td><div class="snip">VI_WIDTH_REG</div>           </td><td>0xA4400008</td></tr>
+<tr><td><div class="snip">VI_H_WIDTH_REG</div>         </td><td>0xA4400008</td></tr>
+<tr><td><div class="snip">VI_INTR_REG</div>            </td><td>0xA440000C</td></tr>
+<tr><td><div class="snip">VI_V_INTR_REG</div>          </td><td>0xA440000C</td></tr>
+<tr><td><div class="snip">VI_CURRENT_REG</div>         </td><td>0xA4400010</td></tr>
+<tr><td><div class="snip">VI_V_CURRENT_LINE_REG</div>  </td><td>0xA4400010</td></tr>
+<tr><td><div class="snip">VI_BURST_REG</div>           </td><td>0xA4400014</td></tr>
+<tr><td><div class="snip">VI_TIMING_REG</div>          </td><td>0xA4400014</td></tr>
+<tr><td><div class="snip">VI_V_SYNC_REG</div>          </td><td>0xA4400018</td></tr>
+<tr><td><div class="snip">VI_H_SYNC_REG</div>          </td><td>0xA440001C</td></tr>
+<tr><td><div class="snip">VI_LEAP_REG</div>            </td><td>0xA4400020</td></tr>
+<tr><td><div class="snip">VI_H_SYNC_LEAP_REG</div>     </td><td>0xA4400020</td></tr>
+<tr><td><div class="snip">VI_H_START_REG</div>         </td><td>0xA4400024</td></tr>
+<tr><td><div class="snip">VI_H_VIDEO_REG</div>         </td><td>0xA4400024</td></tr>
+<tr><td><div class="snip">VI_V_START_REG</div>         </td><td>0xA4400028</td></tr>
+<tr><td><div class="snip">VI_V_VIDEO_REG</div>         </td><td>0xA4400028</td></tr>
+<tr><td><div class="snip">VI_V_BURST_REG</div>         </td><td>0xA440002C</td></tr>
+<tr><td><div class="snip">VI_X_SCALE_REG</div>         </td><td>0xA4400030</td></tr>
+<tr><td><div class="snip">VI_Y_SCALE_REG</div>         </td><td>0xA4400034</td></tr>
 
-<div class="snip">AI_DRAM_ADDR_REG</div>       0xA4500000
-<div class="snip">AI_LEN_REG</div>             0xA4500004
-<div class="snip">AI_CONTROL_REG</div>         0xA4500008
-<div class="snip">AI_STATUS_REG</div>          0xA450000C
-<div class="snip">AI_DACRATE_REG</div>         0xA4500010
-<div class="snip">AI_BITRATE_REG</div>         0xA4500014
+<tr><td><div class="snip">AI_DRAM_ADDR_REG</div>       </td><td>0xA4500000</td></tr>
+<tr><td><div class="snip">AI_LEN_REG</div>             </td><td>0xA4500004</td></tr>
+<tr><td><div class="snip">AI_CONTROL_REG</div>         </td><td>0xA4500008</td></tr>
+<tr><td><div class="snip">AI_STATUS_REG</div>          </td><td>0xA450000C</td></tr>
+<tr><td><div class="snip">AI_DACRATE_REG</div>         </td><td>0xA4500010</td></tr>
+<tr><td><div class="snip">AI_BITRATE_REG</div>         </td><td>0xA4500014</td></tr>
 
-<div class="snip">PI_DRAM_ADDR_REG</div>       0xA4600000
-<div class="snip">PI_CART_ADDR_REG</div>       0xA4600004
-<div class="snip">PI_RD_LEN_REG</div>          0xA4600008
-<div class="snip">PI_WR_LEN_REG</div>          0xA460000C
-<div class="snip">PI_STATUS_REG</div>          0xA4600010
-<div class="snip">PI_BSD_DOM1_LAT_REG</div>    0xA4600014
-<div class="snip">PI_BSD_DOM1_PWD_REG</div>    0xA4600018
-<div class="snip">PI_BSD_DOM1_PGS_REG</div>    0xA460001C
-<div class="snip">PI_BSD_DOM1_RLS_REG</div>    0xA4600020
-<div class="snip">PI_BSD_DOM2_LAT_REG</div>    0xA4600024
-<div class="snip">PI_BSD_DOM2_PWD_REG</div>    0xA4600028
-<div class="snip">PI_BSD_DOM2_PGS_REG</div>    0xA460002C
-<div class="snip">PI_BSD_DOM2_RLS_REG</div>    0xA4600030
+<tr><td><div class="snip">PI_DRAM_ADDR_REG</div>       </td><td>0xA4600000</td></tr>
+<tr><td><div class="snip">PI_CART_ADDR_REG</div>       </td><td>0xA4600004</td></tr>
+<tr><td><div class="snip">PI_RD_LEN_REG</div>          </td><td>0xA4600008</td></tr>
+<tr><td><div class="snip">PI_WR_LEN_REG</div>          </td><td>0xA460000C</td></tr>
+<tr><td><div class="snip">PI_STATUS_REG</div>          </td><td>0xA4600010</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM1_LAT_REG</div>    </td><td>0xA4600014</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM1_PWD_REG</div>    </td><td>0xA4600018</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM1_PGS_REG</div>    </td><td>0xA460001C</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM1_RLS_REG</div>    </td><td>0xA4600020</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM2_LAT_REG</div>    </td><td>0xA4600024</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM2_PWD_REG</div>    </td><td>0xA4600028</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM2_PGS_REG</div>    </td><td>0xA460002C</td></tr>
+<tr><td><div class="snip">PI_BSD_DOM2_RLS_REG</div>    </td><td>0xA4600030</td></tr>
 
-<div class="snip">RI_MODE_REG</div>            0xA4700000
-<div class="snip">RI_CONFIG_REG</div>          0xA4700004
-<div class="snip">RI_CURRENT_LOAD_REG</div>    0xA4700008
-<div class="snip">RI_SELECT_REG</div>          0xA470000C
-<div class="snip">RI_REFRESH_REG</div>         0xA4700010
-<div class="snip">RI_COUNT_REG</div>           0xA4700010
-<div class="snip">RI_LATENCY_REG</div>         0xA4700014
-<div class="snip">RI_RERROR_REG</div>          0xA4700018
-<div class="snip">RI_WERROR_REG</div>          0xA470001C
+<tr><td><div class="snip">RI_MODE_REG</div>            </td><td>0xA4700000</td></tr>
+<tr><td><div class="snip">RI_CONFIG_REG</div>          </td><td>0xA4700004</td></tr>
+<tr><td><div class="snip">RI_CURRENT_LOAD_REG</div>    </td><td>0xA4700008</td></tr>
+<tr><td><div class="snip">RI_SELECT_REG</div>          </td><td>0xA470000C</td></tr>
+<tr><td><div class="snip">RI_REFRESH_REG</div>         </td><td>0xA4700010</td></tr>
+<tr><td><div class="snip">RI_COUNT_REG</div>           </td><td>0xA4700010</td></tr>
+<tr><td><div class="snip">RI_LATENCY_REG</div>         </td><td>0xA4700014</td></tr>
+<tr><td><div class="snip">RI_RERROR_REG</div>          </td><td>0xA4700018</td></tr>
+<tr><td><div class="snip">RI_WERROR_REG</div>          </td><td>0xA470001C</td></tr>
 
-<div class="snip">SI_DRAM_ADDR_REG</div>       0xA4800000
-<div class="snip">SI_PIF_ADDR_RD64B_REG</div>  0xA4800004
-<div class="snip">SI_PIF_ADDR_WR64B_REG</div>  0xA4800010
-<div class="snip">SI_STATUS_REG</div>          0xA4800018
-</pre>
+<tr><td><div class="snip">SI_DRAM_ADDR_REG</div>       </td><td>0xA4800000</td></tr>
+<tr><td><div class="snip">SI_PIF_ADDR_RD64B_REG</div>  </td><td>0xA4800004</td></tr>
+<tr><td><div class="snip">SI_PIF_ADDR_WR64B_REG</div>  </td><td>0xA4800010</td></tr>
+<tr><td><div class="snip">SI_STATUS_REG</div>          </td><td>0xA4800018</td></tr>
+</table>
+<!-- Miscellaneous -->
+<div class="prop"><span class="title" id="Miscellaneous">Miscellaneous</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">PIF_ROM_START</div> </td><td>0xBFC00000</td></tr>
+<tr><td><div class="snip">PIF_RAM_START</div> </td><td>0xBFC007C0</td></tr>
+<tr><td><div class="snip">SP_DMEM_START</div> </td><td>0xA4000000</td></tr>
+<tr><td><div class="snip">SP_IMEM_START</div> </td><td>0xA4001000</td></tr>
+
+<tr><td><div class="snip">KUBASE</div>  </td><td>0x00000000</td></tr>
+<tr><td><div class="snip">K0BASE</div>  </td><td>0x80000000</td></tr>
+<tr><td><div class="snip">K1BASE</div>  </td><td>0xA0000000</td></tr>
+<tr><td><div class="snip">K2BASE</div>  </td><td>0xC0000000</td></tr>
+<tr><td><div class="snip">UT_VEC</div>  </td><td>0x80000000</td></tr>
+<tr><td><div class="snip">R_VEC</div>   </td><td>0xBFC00000</td></tr>
+<tr><td><div class="snip">XUT_VEC</div> </td><td>0x80000080</td></tr>
+<tr><td><div class="snip">ECC_VEC</div> </td><td>0x80000100</td></tr>
+<tr><td><div class="snip">E_VEC</div>   </td><td>0x80000180</td></tr>
+</table>
 
 </div>
 <!-- JavaScript environment -->

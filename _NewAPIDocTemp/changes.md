@@ -5,32 +5,36 @@ Changes:
 - use javascript "strict mode"
 - add default execution timeout of 500ms for instance startups/callback invocations
 - replace socket overlapped IO with worker threads (fix Windows XP incompatibility)
+- add global constants for addresses of exception vectors and memory mapped registers
 - remove API.js, make all API functions native
 - add better error throwing for all API functions
 - rewrite API documentation file
 - add remaining registers to `cop0` interface
-- add console.listen(inputListener) for console input handling
-- add script.keepalive(bKeepAlive) to keep instance from automatically being destroyed
-- add script.timeout(ms) for timeout override
-- add debug.skip() for CPU command skipping
-- add debug.showmemory(address) to show the memory window
-- add debug.showcommands(address) to show the commands window
+- add events.onpifread(callback)
+- add console.listen(inputListener)
+- add script.keepalive(bKeepAlive)
+- add script.timeout(ms)
+- add debug.skip()
+- add debug.showmemory(address)
+- add debug.showcommands(address)
 - add debug.resume()
-- add asm.encode(asm)
+- add asm.encode(command)
 - add asm.decode(opcode)
+- add mem.setblock(address, data[, length))
+- add mem.setstring(address, data[, length))
 - add mem.ramsize
 - add mem.romsize
 
 Changes that will break compatibility with old scripts:
 
 - rename `mem.float`, `mem.double` to `mem.f32`, `mem.f64`
-- rename global `float`, `double` types IDs to `f32`, `f64`
+- rename global `float`, `double` type IDs to `f32`, `f64`
 - move `gpr`, `ugpr`, `fpr`, `dfpr`, `cop0` interfaces into new `cpu` interface
 - move `gpr.pc` to `cpu.pc`
 - move `gpr.hi`/`ugpr.hi` to `cpu.hi`/`cpu.uhi`
 - move `gpr.lo`/`ugpr.lo` to `cpu.hi`/`cpu.ulo`
 - remove redundant `rom` interface because `mem` interface can access ROM
-- change all `events.on*` callbacks to receive event objects
+- change all `events.on*` callbacks to receive more informative event objects
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 
 I am not sure what the situation is with `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`,
@@ -49,8 +53,6 @@ TODO:
 - finish implementing new events interface
 - finish implementing new screen interface
 - full test suite
-- mem.setblock
-- mem.saveaddress
 - debug.getsymbol?
 - debug.setsymbol?
 
@@ -79,7 +81,16 @@ pj64.addmenu(toolsMenu, "Kill Mario", function(){
     mem.u16[0x8033B21E] = 0;
 });
 
+---------------------------
 
+events.onpifread(callback)
+
+
+
+events.onpifread(function(e) {
+    e.pifdata
+    e.address
+});
 
 ---------------------------
 

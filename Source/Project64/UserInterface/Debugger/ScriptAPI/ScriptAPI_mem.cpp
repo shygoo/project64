@@ -25,14 +25,16 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         { "s32", MEM_PROXY_FUNCTIONS(int32_t) },
         { "s16", MEM_PROXY_FUNCTIONS(int16_t) },
         { "s8",  MEM_PROXY_FUNCTIONS(int8_t) },
-        { "double", MEM_PROXY_FUNCTIONS(double) },
-        { "float", MEM_PROXY_FUNCTIONS(float) },
+        { "f64", MEM_PROXY_FUNCTIONS(double) },
+        { "f32", MEM_PROXY_FUNCTIONS(float) },
         { NULL, NULL }
     };
 
     const duk_function_list_entry funcs[] = {
         { "getblock",   js_mem_getblock, 2 },
+        { "setblock",   js_mem_setblock, DUK_VARARGS },
         { "getstring",  js_mem_getstring, DUK_VARARGS },
+        { "setstring",  js_mem_setblock, DUK_VARARGS },
         { "bindvar",    js_mem_bindvar, 4 },
         { "bindvars",   js_mem_bindvars, 2 },
         { "bindstruct", js_mem_bindstruct, 3 },
@@ -181,6 +183,65 @@ duk_ret_t ScriptAPI::js_mem_getstring(duk_context *ctx)
     duk_push_string(ctx, str);
     delete[] str;
     return 1;
+}
+
+duk_ret_t ScriptAPI::js_mem_setblock(duk_context *ctx) // address, data, maxLength
+{
+    CScriptInstance *inst = GetInstance(ctx);
+    CDebuggerUI *debugger = inst->Debugger();
+
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    if(nargs < 2 || nargs > 3 ||
+       !duk_is_number(ctx, 0) ||
+       (nargs == 3 && !duk_is_number(ctx, 2)))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+    
+    char* data;
+    duk_size_t dataSize, length;
+
+    uint32_t address = duk_get_uint(ctx, 0);
+
+    if (duk_is_buffer_data(ctx, 1))
+    {
+        data = (char*)duk_get_buffer_data(ctx, 1, &dataSize);
+    }
+    else if(duk_is_string(ctx, 1))
+    {
+        data = (char*)duk_get_lstring(ctx, 1, &dataSize);
+    }
+    else
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    if (nargs == 3)
+    {
+        duk_double_t l = duk_get_number(ctx, 2);
+
+        if (l < 0 || l > dataSize)
+        {
+            return DUK_RET_RANGE_ERROR;
+        }
+
+        length = (duk_size_t)l;
+    }
+    else
+    {
+        length = dataSize;
+    }
+
+    for (size_t i = 0; i < length; i++)
+    {
+        if (!debugger->DebugStore_VAddr(address + i, data[i]))
+        {
+            return ThrowMemoryError(ctx, address + i);
+        }
+    }
+
+    return 0;
 }
 
 duk_ret_t ScriptAPI::js_mem__boundget(duk_context *ctx)

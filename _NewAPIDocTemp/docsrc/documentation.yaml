@@ -11,9 +11,9 @@
           console.log("Hello", "world!");
           ```
   
-  - name: console.log
-    js:   console.log(message[, ...])
-    ts:   "console.log(message: any, ...optionalParams): void"
+  - name: console.print
+    js:   console.print(message[, ...])
+    ts:   "console.print(message: any, ...optionalParams): void"
     desc: |
           Concatenates all provided arguments with spaces and prints the result to the console.
           ```
@@ -136,8 +136,8 @@
           ```
 
   - name: mem.getblock
-    js:   mem.getblock(address, size)
-    ts:   "mem.getblock(address: number, size: number): Buffer"
+    js:   mem.getblock(address, length)
+    ts:   "mem.getblock(address: number, length: number): Buffer"
     desc: |
           Returns a block of data from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
           ```
@@ -145,14 +145,34 @@
           fs.writeFile("ram-dump.bin", ramDump);
           ```
 
+  - name: mem.setblock
+    js:   mem.setblock(address, data[, length])
+    ts:   "mem.setblock(address: number, data: string | Buffer | TypedArray, length: number): Buffer"
+    desc: |
+          Writes a block of data into memory. `data` may be one of the following types&#58;
+          [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer),
+          [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html),
+          [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
+          [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.
+          ```
+          var textures = fs.readFile("textures.bin");
+          mem.setblock(0x80400000, textures);
+          ```
+
   - name: mem.getstring
-    js:   mem.getstring(address[, maxLength])
-    ts:   "mem.getblock(address: number, maxLength?: number): string"
+    js:   mem.getstring(address[, length])
+    ts:   "mem.getblock(address: number, length?: number): string"
     desc: | 
           Returns a zero-terminated ASCII string from memory.
           ```
           const romName = mem.getstring(0xB0000020, 0x14);
           ```
+
+  - name: mem.setstring
+    js:   mem.setstring(address, data[, length])
+    ts:   "mem.setstring(address: number, data: string | Buffer | TypedArray, length?: number): Buffer"
+    desc: |
+          Writes a string into memory (alias of [mem.setblock](#mem_setblock)).
 
   - name: mem.ramsize
     js:   mem.ramsize
@@ -171,6 +191,7 @@
   - name: events.onexec
     js:   events.onexec(address, callback)
     ts:   "events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -192,6 +213,7 @@
   - name: events.onread
     js:   events.onread(address, callback)
     ts:   "events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -202,6 +224,7 @@
   - name: events.onwrite
     js:   events.onwrite(address, callback)
     ts:   "events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
@@ -220,6 +243,7 @@
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
     ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode ANDed with `mask`.
@@ -239,6 +263,7 @@
   - name: events.onopcode
     js:   events.onopcode(address, opcode, callback)
     ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode.
@@ -249,6 +274,7 @@
   - name: events.ongprvalue
     js:   events.ongprvalue(address, regFlags, value, callback)
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number"
+    tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
           the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only). `callback` receives the index of the first register that is
@@ -266,6 +292,39 @@
           });
           ```
 
+  - name: events.onpifread
+    js:   events.onpifread(callback)
+    ts:   "events.onpifread(callback: () => void): number"
+    desc: |
+          Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
+          Useful for monitoring or overriding controller input.
+          <div class="vtab""></div>
+          Returns a callback ID.
+          ```
+          // Log P1's inputs
+          events.onpifread(function() {
+              if(mem.u32[PIF_RAM_START + 0x00] == 0xFF010401) {
+                  console.log(mem.u32[PIF_RAM_START + 0x04].hex());
+              }
+          });
+          ```
+
+          ```
+          // Play an M64 TAS file
+          var m64file = fs.readFile("sm64-1key.m64");
+          var numSamples = m64file.readUInt32LE(0x018);
+          var sampleIndex = 0;
+          
+          events.onpifread(function() {
+              for(var nController = 0; nController < 4; nController++) {
+                  var cmdAddr = PIF_RAM_START + (nController * 8);
+                  if(mem.u32[cmdAddr + 0x00] == 0xFF010401 && sampleIndex < numSamples) {
+                      mem.u32[cmdAddr + 0x04] = m64file.readUInt32BE(0x400 + sampleIndex * 4);
+                      sampleIndex++;
+                  }
+              }
+          });
+          ```
   - name: events.ondraw
     js:   events.ondraw(callback)
     ts:   "events.ondraw(callback: () => void): number"
@@ -361,19 +420,20 @@
     ts:   "new AddressRange(start: number, end: number)"
     desc: |
           Creates an immutable object with `start` and `end` address properties.
-
-          The following `AddressRange` objects are defined globally&#58;<br>
-          <pre>
-          `ADDR_ANY`              0x00000000 &#58; 0xFFFFFFFF Any address
-          `ADDR_ANY_KUSEG`        0x00000000 &#58; 0x7FFFFFFF MIPS user mode TLB mapped segment
-          `ADDR_ANY_KSEG0`        0x80000000 &#58; 0x9FFFFFFF MIPS cached unmapped segment
-          `ADDR_ANY_KSEG1`        0xA0000000 &#58; 0xBFFFFFFF MIPS uncached unmapped segment
-          `ADDR_ANY_KSEG2`        0xC0000000 &#58; 0xFFFFFFFF MIPS kernel mode TLB mapped segment
-          `ADDR_ANY_RDRAM`        0x80000000 &#58; 0x807FFFFF Cached RDRAM
-          `ADDR_ANY_RDRAM_UNC`    0xA0000000 &#58; 0xA07FFFFF Uncached RDRAM
-          `ADDR_ANY_CART_ROM`     0x90000000 &#58; 0x95FFFFFF Cached cartridge ROM
-          `ADDR_ANY_CART_ROM_UNC` 0xB0000000 &#58; 0xB5FFFFFF Uncached cartridge ROM
-          </pre>
+          <div class="vtab"></div>
+          The following `AddressRange` objects are defined globally&#58;
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`ADDR_ANY`              </td><td>0x00000000 &#58; 0xFFFFFFFF</td><td>Any address</td></tr>
+          <tr><td>`ADDR_ANY_KUSEG`        </td><td>0x00000000 &#58; 0x7FFFFFFF</td><td>MIPS user mode TLB mapped segment</td></tr>
+          <tr><td>`ADDR_ANY_KSEG0`        </td><td>0x80000000 &#58; 0x9FFFFFFF</td><td>MIPS cached unmapped segment</td></tr>
+          <tr><td>`ADDR_ANY_KSEG1`        </td><td>0xA0000000 &#58; 0xBFFFFFFF</td><td>MIPS uncached unmapped segment</td></tr>
+          <tr><td>`ADDR_ANY_KSEG2`        </td><td>0xC0000000 &#58; 0xFFFFFFFF</td><td>MIPS kernel mode TLB mapped segment</td></tr>
+          <tr><td>`ADDR_ANY_RDRAM`        </td><td>0x80000000 &#58; 0x807FFFFF</td><td>Cached RDRAM</td></tr>
+          <tr><td>`ADDR_ANY_RDRAM_UNC`    </td><td>0xA0000000 &#58; 0xA07FFFFF</td><td>Uncached RDRAM</td></tr>
+          <tr><td>`ADDR_ANY_CART_ROM`     </td><td>0x90000000 &#58; 0x95FFFFFF</td><td>Cached cartridge ROM</td></tr>
+          <tr><td>`ADDR_ANY_CART_ROM_UNC` </td><td>0xB0000000 &#58; 0xB5FFFFFF</td><td>Uncached cartridge ROM</td></tr>
+          </table>
 
 # screen
 - name:    screen
@@ -607,7 +667,8 @@
           [ArrayBuffer](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer),
           [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html),
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
-          [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.<br><br>
+          [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.
+          <div class="vtab"></div>
           `offset`&#58; optional position in the source buffer.<br>
           `length`&#58; optional maximum number of bytes to write.<br>
           `position`&#58; optional file position.
@@ -763,146 +824,151 @@
     js:   Type IDs
     desc: |
           Global type IDs.
-          <pre>
-          `u8`  Unsigned 8-bit integer
-          `u16` Unsigned 16-bit integer
-          `u32` Unsigned 32-bit integer
-          `s8`  Signed 8-bit integer
-          `s16` Signed 16-bit integer
-          `s32` Signed 32-bit integer
-          `f32` 32-bit single precision floating-point
-          `f64` 64-bit double precision floating-point
-
-          `u64` Unsigned 64-bit integer
-          `s64` Signed 64-bit integer
-          </pre>
-
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`u8`  </td><td>Unsigned 8-bit integer</td></tr>
+          <tr><td>`u16` </td><td>Unsigned 16-bit integer</td></tr>
+          <tr><td>`u32` </td><td>Unsigned 32-bit integer</td></tr>
+          <tr><td>`s8`  </td><td>Signed 8-bit integer</td></tr>
+          <tr><td>`s16` </td><td>Signed 16-bit integer</td></tr>
+          <tr><td>`s32` </td><td>Signed 32-bit integer</td></tr>
+          <tr><td>`f32` </td><td>32-bit single precision floating-point</td></tr>
+          <tr><td>`f64` </td><td>64-bit double precision floating-point</td></tr>
+          <tr><td>`u64` </td><td>Unsigned 64-bit integer</td></tr>
+          <tr><td>`s64` </td><td>Signed 64-bit integer</td></tr>
+          </table>
+          <div class="vtab"></div>
           Note: The [mem.bind*](#mem_bindvar)/[mem.typedef](#mem_typedef) APIs do not currently support `u64` and `s64`.
 
   - name: Memory_mapped_register_addresses
     js:   Memory mapped register addresses
     desc: |
-          <pre>
-          `RDRAM_CONFIG_REG`       0xA3F00000
-          `RDRAM_DEVICE_TYPE_REG`  0xA3F00000
-          `RDRAM_DEVICE_ID_REG`    0xA3F00004
-          `RDRAM_DELAY_REG`        0xA3F00008
-          `RDRAM_MODE_REG`         0xA3F0000C
-          `RDRAM_REF_INTERVAL_REG` 0xA3F00010
-          `RDRAM_REF_ROW_REG`      0xA3F00014
-          `RDRAM_RAS_INTERVAL_REG` 0xA3F00018
-          `RDRAM_MIN_INTERVAL_REG` 0xA3F0001C
-          `RDRAM_ADDR_SELECT_REG`  0xA3F00020
-          `RDRAM_DEVICE_MANUF_REG` 0xA3F00024
+          <table>
+          <tr><td>`RDRAM_CONFIG_REG`       </td><td>0xA3F00000</td></tr>
+          <tr><td>`RDRAM_DEVICE_TYPE_REG`  </td><td>0xA3F00000</td></tr>
+          <tr><td>`RDRAM_DEVICE_ID_REG`    </td><td>0xA3F00004</td></tr>
+          <tr><td>`RDRAM_DELAY_REG`        </td><td>0xA3F00008</td></tr>
+          <tr><td>`RDRAM_MODE_REG`         </td><td>0xA3F0000C</td></tr>
+          <tr><td>`RDRAM_REF_INTERVAL_REG` </td><td>0xA3F00010</td></tr>
+          <tr><td>`RDRAM_REF_ROW_REG`      </td><td>0xA3F00014</td></tr>
+          <tr><td>`RDRAM_RAS_INTERVAL_REG` </td><td>0xA3F00018</td></tr>
+          <tr><td>`RDRAM_MIN_INTERVAL_REG` </td><td>0xA3F0001C</td></tr>
+          <tr><td>`RDRAM_ADDR_SELECT_REG`  </td><td>0xA3F00020</td></tr>
+          <tr><td>`RDRAM_DEVICE_MANUF_REG` </td><td>0xA3F00024</td></tr>
 
-          `SP_MEM_ADDR_REG`        0xA4040000
-          `SP_DRAM_ADDR_REG`       0xA4040004
-          `SP_RD_LEN_REG`          0xA4040008
-          `SP_WR_LEN_REG`          0xA404000C
-          `SP_STATUS_REG`          0xA4040010
-          `SP_DMA_FULL_REG`        0xA4040014
-          `SP_DMA_BUSY_REG`        0xA4040018
-          `SP_SEMAPHORE_REG`       0xA404001C
+          <tr><td>`SP_MEM_ADDR_REG`        </td><td>0xA4040000</td></tr>
+          <tr><td>`SP_DRAM_ADDR_REG`       </td><td>0xA4040004</td></tr>
+          <tr><td>`SP_RD_LEN_REG`          </td><td>0xA4040008</td></tr>
+          <tr><td>`SP_WR_LEN_REG`          </td><td>0xA404000C</td></tr>
+          <tr><td>`SP_STATUS_REG`          </td><td>0xA4040010</td></tr>
+          <tr><td>`SP_DMA_FULL_REG`        </td><td>0xA4040014</td></tr>
+          <tr><td>`SP_DMA_BUSY_REG`        </td><td>0xA4040018</td></tr>
+          <tr><td>`SP_SEMAPHORE_REG`       </td><td>0xA404001C</td></tr>
 
-          `SP_PC_REG`              0xA4080000
-          `SP_IBIST_REG`           0xA4080004
+          <tr><td>`SP_PC_REG`              </td><td>0xA4080000</td></tr>
+          <tr><td>`SP_IBIST_REG`           </td><td>0xA4080004</td></tr>
 
-          `DPC_START_REG`          0xA4100000
-          `DPC_END_REG`            0xA4100004
-          `DPC_CURRENT_REG`        0xA4100008
-          `DPC_STATUS_REG`         0xA410000C
-          `DPC_CLOCK_REG`          0xA4100010
-          `DPC_BUFBUSY_REG`        0xA4100014
-          `DPC_PIPEBUSY_REG`       0xA4100018
-          `DPC_TMEM_REG`           0xA410001C
+          <tr><td>`DPC_START_REG`          </td><td>0xA4100000</td></tr>
+          <tr><td>`DPC_END_REG`            </td><td>0xA4100004</td></tr>
+          <tr><td>`DPC_CURRENT_REG`        </td><td>0xA4100008</td></tr>
+          <tr><td>`DPC_STATUS_REG`         </td><td>0xA410000C</td></tr>
+          <tr><td>`DPC_CLOCK_REG`          </td><td>0xA4100010</td></tr>
+          <tr><td>`DPC_BUFBUSY_REG`        </td><td>0xA4100014</td></tr>
+          <tr><td>`DPC_PIPEBUSY_REG`       </td><td>0xA4100018</td></tr>
+          <tr><td>`DPC_TMEM_REG`           </td><td>0xA410001C</td></tr>
 
-          `DPS_TBIST_REG`          0xA4200000
-          `DPS_TEST_MODE_REG`      0xA4200004
-          `DPS_BUFTEST_ADDR_REG`   0xA4200008
-          `DPS_BUFTEST_DATA_REG`   0xA420000C
+          <tr><td>`DPS_TBIST_REG`          </td><td>0xA4200000</td></tr>
+          <tr><td>`DPS_TEST_MODE_REG`      </td><td>0xA4200004</td></tr>
+          <tr><td>`DPS_BUFTEST_ADDR_REG`   </td><td>0xA4200008</td></tr>
+          <tr><td>`DPS_BUFTEST_DATA_REG`   </td><td>0xA420000C</td></tr>
 
-          `MI_INIT_MODE_REG`       0xA4300000
-          `MI_MODE_REG`            0xA4300000
-          `MI_VERSION_REG`         0xA4300004
-          `MI_NOOP_REG`            0xA4300004
-          `MI_INTR_REG`            0xA4300008
-          `MI_INTR_MASK_REG`       0xA430000C
+          <tr><td>`MI_INIT_MODE_REG`       </td><td>0xA4300000</td></tr>
+          <tr><td>`MI_MODE_REG`            </td><td>0xA4300000</td></tr>
+          <tr><td>`MI_VERSION_REG`         </td><td>0xA4300004</td></tr>
+          <tr><td>`MI_NOOP_REG`            </td><td>0xA4300004</td></tr>
+          <tr><td>`MI_INTR_REG`            </td><td>0xA4300008</td></tr>
+          <tr><td>`MI_INTR_MASK_REG`       </td><td>0xA430000C</td></tr>
 
-          `VI_STATUS_REG`          0xA4400000
-          `VI_CONTROL_REG`         0xA4400000
-          `VI_ORIGIN_REG`          0xA4400004
-          `VI_DRAM_ADDR_REG`       0xA4400004
-          `VI_WIDTH_REG`           0xA4400008
-          `VI_H_WIDTH_REG`         0xA4400008
-          `VI_INTR_REG`            0xA440000C
-          `VI_V_INTR_REG`          0xA440000C
-          `VI_CURRENT_REG`         0xA4400010
-          `VI_V_CURRENT_LINE_REG`  0xA4400010
-          `VI_BURST_REG`           0xA4400014
-          `VI_TIMING_REG`          0xA4400014
-          `VI_V_SYNC_REG`          0xA4400018
-          `VI_H_SYNC_REG`          0xA440001C
-          `VI_LEAP_REG`            0xA4400020
-          `VI_H_SYNC_LEAP_REG`     0xA4400020
-          `VI_H_START_REG`         0xA4400024
-          `VI_H_VIDEO_REG`         0xA4400024
-          `VI_V_START_REG`         0xA4400028
-          `VI_V_VIDEO_REG`         0xA4400028
-          `VI_V_BURST_REG`         0xA440002C
-          `VI_X_SCALE_REG`         0xA4400030
-          `VI_Y_SCALE_REG`         0xA4400034
+          <tr><td>`VI_STATUS_REG`          </td><td>0xA4400000</td></tr>
+          <tr><td>`VI_CONTROL_REG`         </td><td>0xA4400000</td></tr>
+          <tr><td>`VI_ORIGIN_REG`          </td><td>0xA4400004</td></tr>
+          <tr><td>`VI_DRAM_ADDR_REG`       </td><td>0xA4400004</td></tr>
+          <tr><td>`VI_WIDTH_REG`           </td><td>0xA4400008</td></tr>
+          <tr><td>`VI_H_WIDTH_REG`         </td><td>0xA4400008</td></tr>
+          <tr><td>`VI_INTR_REG`            </td><td>0xA440000C</td></tr>
+          <tr><td>`VI_V_INTR_REG`          </td><td>0xA440000C</td></tr>
+          <tr><td>`VI_CURRENT_REG`         </td><td>0xA4400010</td></tr>
+          <tr><td>`VI_V_CURRENT_LINE_REG`  </td><td>0xA4400010</td></tr>
+          <tr><td>`VI_BURST_REG`           </td><td>0xA4400014</td></tr>
+          <tr><td>`VI_TIMING_REG`          </td><td>0xA4400014</td></tr>
+          <tr><td>`VI_V_SYNC_REG`          </td><td>0xA4400018</td></tr>
+          <tr><td>`VI_H_SYNC_REG`          </td><td>0xA440001C</td></tr>
+          <tr><td>`VI_LEAP_REG`            </td><td>0xA4400020</td></tr>
+          <tr><td>`VI_H_SYNC_LEAP_REG`     </td><td>0xA4400020</td></tr>
+          <tr><td>`VI_H_START_REG`         </td><td>0xA4400024</td></tr>
+          <tr><td>`VI_H_VIDEO_REG`         </td><td>0xA4400024</td></tr>
+          <tr><td>`VI_V_START_REG`         </td><td>0xA4400028</td></tr>
+          <tr><td>`VI_V_VIDEO_REG`         </td><td>0xA4400028</td></tr>
+          <tr><td>`VI_V_BURST_REG`         </td><td>0xA440002C</td></tr>
+          <tr><td>`VI_X_SCALE_REG`         </td><td>0xA4400030</td></tr>
+          <tr><td>`VI_Y_SCALE_REG`         </td><td>0xA4400034</td></tr>
 
-          `AI_DRAM_ADDR_REG`       0xA4500000
-          `AI_LEN_REG`             0xA4500004
-          `AI_CONTROL_REG`         0xA4500008
-          `AI_STATUS_REG`          0xA450000C
-          `AI_DACRATE_REG`         0xA4500010
-          `AI_BITRATE_REG`         0xA4500014
+          <tr><td>`AI_DRAM_ADDR_REG`       </td><td>0xA4500000</td></tr>
+          <tr><td>`AI_LEN_REG`             </td><td>0xA4500004</td></tr>
+          <tr><td>`AI_CONTROL_REG`         </td><td>0xA4500008</td></tr>
+          <tr><td>`AI_STATUS_REG`          </td><td>0xA450000C</td></tr>
+          <tr><td>`AI_DACRATE_REG`         </td><td>0xA4500010</td></tr>
+          <tr><td>`AI_BITRATE_REG`         </td><td>0xA4500014</td></tr>
 
-          `PI_DRAM_ADDR_REG`       0xA4600000
-          `PI_CART_ADDR_REG`       0xA4600004
-          `PI_RD_LEN_REG`          0xA4600008
-          `PI_WR_LEN_REG`          0xA460000C
-          `PI_STATUS_REG`          0xA4600010
-          `PI_BSD_DOM1_LAT_REG`    0xA4600014
-          `PI_BSD_DOM1_PWD_REG`    0xA4600018
-          `PI_BSD_DOM1_PGS_REG`    0xA460001C
-          `PI_BSD_DOM1_RLS_REG`    0xA4600020
-          `PI_BSD_DOM2_LAT_REG`    0xA4600024
-          `PI_BSD_DOM2_PWD_REG`    0xA4600028
-          `PI_BSD_DOM2_PGS_REG`    0xA460002C
-          `PI_BSD_DOM2_RLS_REG`    0xA4600030
+          <tr><td>`PI_DRAM_ADDR_REG`       </td><td>0xA4600000</td></tr>
+          <tr><td>`PI_CART_ADDR_REG`       </td><td>0xA4600004</td></tr>
+          <tr><td>`PI_RD_LEN_REG`          </td><td>0xA4600008</td></tr>
+          <tr><td>`PI_WR_LEN_REG`          </td><td>0xA460000C</td></tr>
+          <tr><td>`PI_STATUS_REG`          </td><td>0xA4600010</td></tr>
+          <tr><td>`PI_BSD_DOM1_LAT_REG`    </td><td>0xA4600014</td></tr>
+          <tr><td>`PI_BSD_DOM1_PWD_REG`    </td><td>0xA4600018</td></tr>
+          <tr><td>`PI_BSD_DOM1_PGS_REG`    </td><td>0xA460001C</td></tr>
+          <tr><td>`PI_BSD_DOM1_RLS_REG`    </td><td>0xA4600020</td></tr>
+          <tr><td>`PI_BSD_DOM2_LAT_REG`    </td><td>0xA4600024</td></tr>
+          <tr><td>`PI_BSD_DOM2_PWD_REG`    </td><td>0xA4600028</td></tr>
+          <tr><td>`PI_BSD_DOM2_PGS_REG`    </td><td>0xA460002C</td></tr>
+          <tr><td>`PI_BSD_DOM2_RLS_REG`    </td><td>0xA4600030</td></tr>
 
-          `RI_MODE_REG`            0xA4700000
-          `RI_CONFIG_REG`          0xA4700004
-          `RI_CURRENT_LOAD_REG`    0xA4700008
-          `RI_SELECT_REG`          0xA470000C
-          `RI_REFRESH_REG`         0xA4700010
-          `RI_COUNT_REG`           0xA4700010
-          `RI_LATENCY_REG`         0xA4700014
-          `RI_RERROR_REG`          0xA4700018
-          `RI_WERROR_REG`          0xA470001C
+          <tr><td>`RI_MODE_REG`            </td><td>0xA4700000</td></tr>
+          <tr><td>`RI_CONFIG_REG`          </td><td>0xA4700004</td></tr>
+          <tr><td>`RI_CURRENT_LOAD_REG`    </td><td>0xA4700008</td></tr>
+          <tr><td>`RI_SELECT_REG`          </td><td>0xA470000C</td></tr>
+          <tr><td>`RI_REFRESH_REG`         </td><td>0xA4700010</td></tr>
+          <tr><td>`RI_COUNT_REG`           </td><td>0xA4700010</td></tr>
+          <tr><td>`RI_LATENCY_REG`         </td><td>0xA4700014</td></tr>
+          <tr><td>`RI_RERROR_REG`          </td><td>0xA4700018</td></tr>
+          <tr><td>`RI_WERROR_REG`          </td><td>0xA470001C</td></tr>
 
-          `SI_DRAM_ADDR_REG`       0xA4800000
-          `SI_PIF_ADDR_RD64B_REG`  0xA4800004
-          `SI_PIF_ADDR_WR64B_REG`  0xA4800010
-          `SI_STATUS_REG`          0xA4800018
-          </pre>
+          <tr><td>`SI_DRAM_ADDR_REG`       </td><td>0xA4800000</td></tr>
+          <tr><td>`SI_PIF_ADDR_RD64B_REG`  </td><td>0xA4800004</td></tr>
+          <tr><td>`SI_PIF_ADDR_WR64B_REG`  </td><td>0xA4800010</td></tr>
+          <tr><td>`SI_STATUS_REG`          </td><td>0xA4800018</td></tr>
+          </table>
 
   - name: Miscellaneous
     js:   Miscellaneous
     desc: |
-          <pre>
-          `KUBASE`  0x00000000
-          `K0BASE`  0x80000000
-          `K1BASE`  0xA0000000
-          `K2BASE`  0xC0000000
-          `UT_VEC`  0x80000000
-          `R_VEC`   0xBFC00000
-          `XUT_VEC` 0x80000080
-          `ECC_VEC` 0x80000100
-          `E_VEC`   0x80000180
-          </pre>
+          <table>
+          <tr><td>`PIF_ROM_START` </td><td>0xBFC00000</td></tr>
+          <tr><td>`PIF_RAM_START` </td><td>0xBFC007C0</td></tr>
+          <tr><td>`SP_DMEM_START` </td><td>0xA4000000</td></tr>
+          <tr><td>`SP_IMEM_START` </td><td>0xA4001000</td></tr>
+
+          <tr><td>`KUBASE`  </td><td>0x00000000</td></tr>
+          <tr><td>`K0BASE`  </td><td>0x80000000</td></tr>
+          <tr><td>`K1BASE`  </td><td>0xA0000000</td></tr>
+          <tr><td>`K2BASE`  </td><td>0xC0000000</td></tr>
+          <tr><td>`UT_VEC`  </td><td>0x80000000</td></tr>
+          <tr><td>`R_VEC`   </td><td>0xBFC00000</td></tr>
+          <tr><td>`XUT_VEC` </td><td>0x80000080</td></tr>
+          <tr><td>`ECC_VEC` </td><td>0x80000100</td></tr>
+          <tr><td>`E_VEC`   </td><td>0x80000180</td></tr>
+          </table>
       
 - name: JavaScript environment
   desc: |

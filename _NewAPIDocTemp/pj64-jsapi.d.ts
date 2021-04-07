@@ -1,4 +1,5 @@
-declare interface Buffer {} // nodejs buffer defined in duktape
+// nodejs buffer defined in duktape
+declare interface Buffer {} 
 declare interface MemTypeConstructor {}
 
 declare class AddressRange {
@@ -7,22 +8,39 @@ declare class AddressRange {
     end: number;
 }
 
-class CPUReadWriteEvent {
+declare class CPUEvent {
+    pc: number;
+    callbackId: number;
+}
+
+declare class CPUExecEvent extends CPUEvent {}
+
+class CPUReadWriteEvent extends CPUEvent {
     address: number;
+    fpu: boolean;
+    reg: number;
+    type: number;
     value: number;
     valueHi: number;
-    type: number;
-    fpu: boolean;
+}
+
+declare class CPUOpcodeEvent extends CPUEvent {
+    opcode: number;
+}
+
+declare class CPURegValueEvent extends CPUEvent {
+    value: number;
     reg: number;
 }
 
-class ConsoleModule {
+declare class ConsoleModule {
     log(message, ...optionalParams): void;
-    print(...any): void;
+    print(message, ...optionalParams): void;
     clear(): void;
+    listen(inputListener: (input: string) => void): void;
 }
 
-class RegBase {
+declare class RegBase {
     0: number;
     1: number;
     2: number;
@@ -57,7 +75,7 @@ class RegBase {
     31: number
 }
 
-class GPRBase extends RegBase {
+declare class GPRBase extends RegBase {
     r0: number;
     at: number;
     v0: number;
@@ -94,7 +112,7 @@ class GPRBase extends RegBase {
     lo: number;
 }
 
-class FPRModule extends RegBase {
+declare class FPRModule extends RegBase {
     f0: number;
     f1: number;
     f2: number;
@@ -130,7 +148,7 @@ class FPRModule extends RegBase {
     f31: number;
 }
 
-class DFPRModule extends RegBase {
+declare class DFPRModule extends RegBase {
     f0: number;
     f2: number;
     f4: number;
@@ -149,67 +167,47 @@ class DFPRModule extends RegBase {
     f30: number;
 }
 
-class GPRModule extends GPRBase { pc: number; }
-class UGPRModule extends GPRBase {}
+declare class GPRModule extends GPRBase { pc: number; }
+declare class UGPRModule extends GPRBase {}
 
-class COP0Module {
+declare class COP0Module {
+    index: number;
+    random: number;
+    entrylo0: number;
+    entrylo1: number;
+    context: number;
+    pagemask: number;
+    wired: number;
+    badvaddr: number;
+    count: number;
+    entryhi: number;
+    compare: number;
+    status: number;
     cause: number;
+    epc: number;
+    config: number;
+    taglo: number;
+    taghi: number;
+    errorepc: number;
 }
 
-class EventsModule {
-    /**
-     * Registers a callback which will be invoked at the start of a CPU step when the program counter is at `address`.
-     * 
-     * **Parameters**
-     * 
-     * `address` may be either a plain virtual address or an object that contains `start` and `end` virtual address properties (e.g. `AddressRange`).
-     * 
-     * `callback` is a function that receives the program counter address.
-     * 
-     * **Return value**
-     * 
-     * Returns a callback ID. The callback ID may be passed to `events.remove` to unregister the callback.
-     * 
-    */
-
-    onexec(address: number | AddressRange, callback: (pc: number) => void): number;
-
-    /**
-     * Registers a callback which will be invoked at the start of a CPU step when the program counter is at `address`.
-     * 
-     * **Parameters**
-     * 
-     * `address` may be either a plain virtual address or an object that contains `start` and `end` virtual address properties (e.g. `AddressRange`).
-     * 
-     * `callback` is a function that receives the address that the CPU is going to read.
-     * 
-     * **Return value**
-     * 
-     * Returns a callback ID. The callback ID may be passed to `events.remove` to unregister the callback.
-     * 
-    */
+declare class EventsModule {
+    onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number;
     onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
     onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
-    onopcode(address: number | AddressRange, opcode: number, callback: (pc: number) => void): number;
-    onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (pc: number) => void): number;
-    ongprvalue(address: number | AddressRange, registers: number, value: number, callback: (pc: number, registerIndex: number) => void): number;
+    onopcode(address: number | AddressRange, opcode: number, callback: (e: CPUOpcodeEvent) => void): number;
+    onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number;
+    ongprvalue(address: number | AddressRange, registers: number, value: number, callback: (e: CPURegValueEvent) => void): number;
+    onpifread(callback: () => void): number;
     ondraw(callback: () => void): number;
-
-    /**
-     * Unregisters an `events` callback by its callback ID.
-     * 
-     * **Return value**
-     * 
-     * Returns `true` if the callback was successfully removed.
-     */
     remove(callbackId: number): boolean;
 }
 
-class DebugModule {
+declare class DebugModule {
     breakhere(): void;
 }
 
-class ASMModule {
+declare class ASMModule {
     gprname(registerIndex: number): void;
 }
 
@@ -233,7 +231,7 @@ declare class FSStats {
     isFile(): boolean;
 }
 
-class FSModule {
+declare class FSModule {
     Stats: class=FSStats;
     open(path: string, mode: string): number;
     close(number): void;
@@ -249,122 +247,88 @@ class FSModule {
     readdir(path: string): string[];
 }
 
-class MemModule {
-    u32: number[];
-    u16: number[];
-    u8:  number[];
-    s32: number[];
-    s16: number[];
-    s8:  number[];
-    f64: number[];
-    f32: number[];
-    getblock(address: number, size: number): Uint8Array;
+declare class MemModule {
+    u32: any;
+    u16: any;
+    u8:  any;
+    s32: any;
+    s16: any;
+    s8:  any;
+    f64: any;
+    f32: any;
+    ramsize: number;
+    romsize: number;
+    getblock(address: number, length: number): Uint8Array;
+    setblock(address: number, data: Buffer, length?: number): void;
     getstring(address: number, maxLength?: number): string;
+    setstring(address: number, data: Buffer, length?: number): void;
     bindvar(object: Object, address: number, name: string, type: number): void;
     bindvars(object: Object, vars: any[]) : Object
     bindstruct(object: Object, address: number, properties: Object): Object;
     typedef(properties: Object): MemTypeConstructor;
 }
 
-/** 0x00000000 : 0xFFFFFFFF Any address */
+declare class CPUModule {
+    pc: number;
+    hi: number;
+    lo: number;
+    gpr: GPRModule;
+    ugpr: GPRModule;
+    fpr: FPRModule;
+    dfpr: DFPRModule;
+    cop0: COP0Module;
+}
+
 declare const ADDR_ANY: AddressRange;
-/** 0x00000000 : 0x7FFFFFFF MIPS user mode TLB mapped segment */
 declare const ADDR_KUSEG: AddressRange;
-/** 0x80000000 : 0x9FFFFFFF MIPS cached unmapped segment */
 declare const ADDR_KSEG0: AddressRange;
-/** 0xA0000000 : 0xBFFFFFFF MIPS uncached unmapped segment */
 declare const ADDR_KSEG1: AddressRange;
-/** 0xC0000000 : 0xFFFFFFFF MIPS kernel mode TLB mapped segment */
 declare const ADDR_KSEG2: AddressRange;
-/** 0x80000000 : 0x807FFFFF Cached RDRAM */
 declare const ADDR_RDRAM: AddressRange;
-/** 0xA0000000 : 0xA07FFFFF Uncached RDRAM */
 declare const ADDR_RDRAM_UNC: AddressRange;
-/** 0x90000000 : 0x95FFFFFF Cached cartridge ROM */
 declare const ADDR_CART_ROM: AddressRange;
-/** 0xB0000000 : 0xB5FFFFFF Uncached cartridge ROM */
 declare const ADDR_CART_ROM_UNC: AddressRange;
 
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const u8: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const u16: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const u32: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const s8: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const s16: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const s32: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const f32: number;
-/** Type ID for `mem.typedef` and `mem.bind*` functions */
 declare const f64: number;
 
-/** Register flag for `events.ongprvalue` */
 declare const GPR_R0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_AT: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_V0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_V1: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_A0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_A1: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_A2: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_A3: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T1: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T2: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T3: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T4: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T5: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T6: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T7: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S1: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S2: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S3: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S4: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S5: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S6: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_S7: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T8: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_T9: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_K0: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_K1: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_GP: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_SP: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_FP: number;
-/** Register flag for `events.ongprvalue` */
 declare const GPR_RA: number;
 
 declare const RDRAM_CONFIG_REG       : 0xA3F00000;
@@ -478,11 +442,7 @@ declare const debug: DebugModule;
 declare const asm: ASMModule;
 declare const console: ConsoleModule;
 declare const fs: FSModule;
-declare const gpr: GPRModule;
-declare const ugpr: GPRModule;
-declare const fpr: FPRModule;
-declare const dfpr: DFPRModule;
-declare const cop0: COP0Module;
+declare const cpu: CPUModule;
 
 /** Shows a message box with an optional caption. The calling thread is blocked until the message box is dismissed. */
 declare function alert(message: string, caption?: string): number;

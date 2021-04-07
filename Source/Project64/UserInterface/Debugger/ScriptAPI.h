@@ -26,11 +26,12 @@ namespace ScriptAPI
     // ScriptAPI_events
     void Define_events(duk_context* ctx);
     duk_ret_t js_events_onexec(duk_context* ctx);
-    duk_ret_t js_events_onread(duk_context* ctx); // *
-    duk_ret_t js_events_onwrite(duk_context* ctx); // *
-    duk_ret_t js_events_onopcode(duk_context* ctx); // *
-    duk_ret_t js_events_ongprvalue(duk_context* ctx); // *
+    duk_ret_t js_events_onread(duk_context* ctx);
+    duk_ret_t js_events_onwrite(duk_context* ctx);
+    duk_ret_t js_events_onopcode(duk_context* ctx);
+    duk_ret_t js_events_ongprvalue(duk_context* ctx);
     duk_ret_t js_events_ondraw(duk_context* ctx); // *
+    duk_ret_t js_events_onpifread(duk_context* ctx); // *
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console
@@ -46,6 +47,7 @@ namespace ScriptAPI
     template <class T> duk_ret_t js_mem__set(duk_context* ctx);
     duk_ret_t js_mem_getblock(duk_context* ctx);
     duk_ret_t js_mem_getstring(duk_context* ctx);
+    duk_ret_t js_mem_setblock(duk_context* ctx);
     duk_ret_t js_mem_bindvar(duk_context* ctx);
     duk_ret_t js_mem__boundget(duk_context* ctx);
     duk_ret_t js_mem__boundset(duk_context* ctx);

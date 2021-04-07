@@ -688,6 +688,11 @@ void CDebuggerUI::FrameDrawn()
     ReleaseDC(hMainWnd, hdc);
 }
 
+void CDebuggerUI::PIFReadStarted(void)
+{
+    m_ScriptSystem->Invoke(JS_HOOK_PIFREAD, NULL);
+}
+
 void CDebuggerUI::WaitForStep(void)
 {
     g_Settings->SaveBool(Debugger_WaitingForStep, true);

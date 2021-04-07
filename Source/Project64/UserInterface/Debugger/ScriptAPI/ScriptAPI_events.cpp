@@ -30,6 +30,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "ongprvalue", js_events_ongprvalue, 4 },
         { "onopcode",   js_events_onopcode, DUK_VARARGS },
         { "ondraw",     js_events_ondraw, 1 },
+        { "onpifread",  js_events_onpifread, 1 },
         { "remove",     js_events_remove, 1 },
         { NULL, NULL, 0 }
     };
@@ -214,6 +215,20 @@ duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
     }
 
     return 0;
+}
+
+duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
+{
+    if (duk_get_top(ctx) != 1 ||
+        !duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL, NULL);
+    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_PIFREAD, cb);
+    duk_push_uint(ctx, callbackId);
+    return 1;
 }
 
 // onread

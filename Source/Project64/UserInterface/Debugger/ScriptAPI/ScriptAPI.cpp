@@ -182,15 +182,22 @@ void ScriptAPI::DefineGlobalConstants(duk_context *ctx)
         { "SI_PIF_ADDR_WR64B_REG", 0xA4800010 },
         { "SI_STATUS_REG", 0xA4800018 },
 
-        { "KUBASE",  0x00000000 },
-        { "K0BASE",  0x80000000 },
-        { "K1BASE",  0xA0000000 },
-        { "K2BASE",  0xC0000000 },
-        { "UT_VEC",  0x80000000 },
-        { "R_VEC",   0xBFC00000 },
+        { "PIF_ROM_START", 0xBFC00000 },
+        { "PIF_RAM_START", 0xBFC007C0 },
+
+        { "SP_DMEM_START", 0xA4000000 },
+        { "SP_IMEM_START", 0xA4001000 },
+
+        { "KUBASE", 0x00000000 },
+        { "K0BASE", 0x80000000 },
+        { "K1BASE", 0xA0000000 },
+        { "K2BASE", 0xC0000000 },
+
+        { "UT_VEC", 0x80000000 },
+        { "R_VEC", 0xBFC00000 },
         { "XUT_VEC", 0x80000080 },
         { "ECC_VEC", 0x80000100 },
-        { "E_VEC",   0x80000180 },
+        { "E_VEC", 0x80000180 },
 
         { NULL, 0 },
     };

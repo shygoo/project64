@@ -89,6 +89,7 @@ protected:
     void CPUStep(void);
     void CPUStepEnded(void);
     void FrameDrawn(void);
+    void PIFReadStarted(void);
 
 private:
     CDebuggerUI(const CDebuggerUI&);                // Disable copy constructor

@@ -30,4 +30,5 @@ __interface CDebugger
     virtual void CPUStepStarted(void) = 0;
     virtual void CPUStep(void) = 0;
     virtual void CPUStepEnded(void) = 0;
+    virtual void PIFReadStarted(void) = 0;
 };
