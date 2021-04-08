@@ -3,17 +3,22 @@
 
 #pragma warning(disable: 4702)
 
+#define MODULES_DIR "Scripts/modules"
+
 void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
 {
     duk_push_global_object(ctx);
-
     duk_push_pointer(ctx, inst);
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("INSTANCE"));
     duk_push_object(ctx); // callbackId => { hookId, callbackId, function }
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("APPCALLBACKS"));
     duk_push_object(ctx); // fd => { fp }
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("FILES"));
+    duk_pop(ctx);
 
+    duk_get_global_string(ctx, "Duktape");
+    duk_push_c_function(ctx, js_Duktape_modSearch, 4);
+    duk_put_prop_string(ctx, -2, "modSearch");
     duk_pop(ctx);
 
     Define_script(ctx);
@@ -285,6 +290,40 @@ duk_ret_t ScriptAPI::CallbackFinalizer(duk_context *ctx)
     }
     
     return 0;
+}
+
+duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
+{
+    // TODO: Let modules require() the built-in interfaces
+
+    if (!duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* id = duk_get_string(ctx, 0);
+
+    CFile file(stdstr_f(MODULES_DIR "/%s", id).c_str(), CFile::modeRead);
+
+    if (!file.IsOpen())
+    {
+        return 0;
+    }
+
+    uint32_t length = file.GetLength();
+
+    char* sourceCode = new char[length + 1];
+    sourceCode[length] = '\0';
+
+    if (file.Read(sourceCode, length) != length)
+    {
+        delete[] sourceCode;
+        return 0;
+    }
+
+    duk_push_string(ctx, sourceCode);
+    delete[] sourceCode;
+    return 1;
 }
 
 duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)

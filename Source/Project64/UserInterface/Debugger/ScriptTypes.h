@@ -1,4 +1,5 @@
 #include <3rdparty/duktape/duktape.h>
+#include <3rdparty/duktape/duk_module_duktape.h>
 #include <cstdint>
 #include <string>
 

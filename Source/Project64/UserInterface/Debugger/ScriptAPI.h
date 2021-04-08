@@ -21,6 +21,8 @@ namespace ScriptAPI
     bool RemoveCallback(duk_context* ctx, jscb_id_t callbackId);
     duk_ret_t CallbackFinalizer(duk_context* ctx);
 
+    duk_ret_t js_Duktape_modSearch(duk_context* ctx);
+
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
 
     // ScriptAPI_events
@@ -31,7 +33,7 @@ namespace ScriptAPI
     duk_ret_t js_events_onopcode(duk_context* ctx);
     duk_ret_t js_events_ongprvalue(duk_context* ctx);
     duk_ret_t js_events_ondraw(duk_context* ctx); // *
-    duk_ret_t js_events_onpifread(duk_context* ctx); // *
+    duk_ret_t js_events_onpifread(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console

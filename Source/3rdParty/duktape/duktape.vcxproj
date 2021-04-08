@@ -41,9 +41,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="duktape.h" />
+    <ClInclude Include="duk_module_duktape.h" />
     <ClInclude Include="duk_config.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="duktape.c" />
+    <ClCompile Include="duk_module_duktape.c" />
   </ItemGroup>
 </Project>

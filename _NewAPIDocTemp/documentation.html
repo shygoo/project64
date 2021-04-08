@@ -560,8 +560,7 @@ Returns a callback ID.
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
-the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div> (lower 32 bits only). <div class="snip">callback</div> receives the index of the first register that is
-equal to <div class="snip">value</div>.
+the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div> (lower 32 bits only).
 <div class="snip">callback</div> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.

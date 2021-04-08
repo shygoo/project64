@@ -444,11 +444,9 @@ declare const console: ConsoleModule;
 declare const fs: FSModule;
 declare const cpu: CPUModule;
 
-/** Shows a message box with an optional caption. The calling thread is blocked until the message box is dismissed. */
 declare function alert(message: string, caption?: string): number;
 
 interface Number {
-    /** Returns a hexadecimal string representation of the number. */
     hex(length?: number): string;
 }
 

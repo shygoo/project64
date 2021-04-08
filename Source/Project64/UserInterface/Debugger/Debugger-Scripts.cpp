@@ -417,9 +417,9 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 {
     int nIndex = m_ScriptList.GetSelectedIndex();
 
-    CPath SearchPath("Scripts", "*");
+    CPath searchPath("Scripts", "*");
 
-    if (!SearchPath.FindFirst(CPath::FIND_ATTRIBUTE_ALLFILES))
+    if (!searchPath.FindFirst(CPath::FIND_ATTRIBUTE_FILES))
     {
         return FALSE;
     }
@@ -431,7 +431,13 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
 
     do
     {
-        stdstr scriptFileName = SearchPath.GetNameExtension();
+        stdstr scriptFileName = searchPath.GetNameExtension();
+
+        if (searchPath.GetExtension() != "js")
+        {
+            continue;
+        }
+
         jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(scriptFileName.c_str());
         const wchar_t *statusIcon = L"";
     
@@ -451,7 +457,7 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
         m_ScriptList.AddItem(nItem, 0, statusIcon);
         m_ScriptList.SetItemText(nItem, 1, scriptFileName.ToUTF16().c_str());
         nItem++;
-    } while (SearchPath.FindNext());
+    } while (searchPath.FindNext());
 
     m_ScriptList.SetRedraw(true);
     m_ScriptList.Invalidate();

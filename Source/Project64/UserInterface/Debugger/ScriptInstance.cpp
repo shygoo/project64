@@ -58,6 +58,7 @@ bool CScriptInstance::Run(const char* path)
     }
 
     m_Ctx = duk_create_heap(NULL, NULL, NULL, this, NULL);
+    duk_module_duktape_init(m_Ctx);
 
     if(m_Ctx == NULL)
     {

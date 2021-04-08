@@ -277,8 +277,7 @@
     tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
-          the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only). `callback` receives the index of the first register that is
-          equal to `value`.
+          the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only).
           `callback` receives a [CPURegValueEvent](#CPURegValueEvent) object.
           <div class="vtab""></div>
           Returns a callback ID.
