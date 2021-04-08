@@ -91,6 +91,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_mem.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Number_hex.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_cpu.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_pj64.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_script.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Server.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptInstance.cpp" />

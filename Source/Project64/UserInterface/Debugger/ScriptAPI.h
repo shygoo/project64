@@ -134,6 +134,11 @@ namespace ScriptAPI
     duk_ret_t js_cop0_get(duk_context* ctx);
     duk_ret_t js_cop0_set(duk_context* ctx);
 
+    // ScriptAPI_pj64
+    void Define_pj64(duk_context* ctx);
+    duk_ret_t js_pj64_open(duk_context* ctx);
+    duk_ret_t js_pj64_close(duk_context* ctx);
+
     // ScriptAPI_screen
     //duk_ret_t js_screen(duk_context* ctx);
 

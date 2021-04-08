@@ -31,6 +31,7 @@ void ScriptAPI::InitEnvironment(duk_context *ctx, CScriptInstance* inst)
     Define_cpu(ctx);
     Define_debug(ctx);
     Define_alert(ctx);
+    Define_pj64(ctx);
 
     //Define_Server(ctx);
     Define_Number_prototype_hex(ctx);

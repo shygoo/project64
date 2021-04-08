@@ -12,7 +12,7 @@ Changes:
 - add remaining registers to `cop0` interface
 - add events.onpifread(callback)
 - add console.listen(inputListener)
-- add script.keepalive(bKeepAlive)
+- add script.keepalive(keepAlive)
 - add script.timeout(ms)
 - add debug.skip()
 - add debug.showmemory(address)
@@ -24,6 +24,9 @@ Changes:
 - add mem.setstring(address, data[, length))
 - add mem.ramsize
 - add mem.romsize
+- add pj64.open(romPath)
+- add pj64.close()
+- implement require()
 
 Changes that will break compatibility with old scripts:
 
@@ -50,17 +53,13 @@ TODO:
 - debug.breakhere no window option
 - script auto-run feature?
 - finish implementing new server/socket
-- finish implementing new events interface
 - finish implementing new screen interface
 - full test suite
 - debug.getsymbol?
 - debug.setsymbol?
 
-- Duktape.modSearch/require()
 - formatting/cleanup printfs, comments etc
 
-- pj64.openrom()
-- pj64.closerom()
 - pj64.savestate(path)
 - pj64.loadstate(path)
 - pj64.reset(softReset = true)
@@ -83,29 +82,7 @@ pj64.addmenu(toolsMenu, "Kill Mario", function(){
 
 ---------------------------
 
-events.onpifread(callback)
-
-
-
-events.onpifread(function(e) {
-    e.pifdata
-    e.address
-});
-
----------------------------
-
 backburner:
 
 buffer console.log()
 write input history to a file
-
-```
-events.onwrite(PI_WR_LEN_REG, function(val) {
-    var cartAddress = mem.u32[PI_CART_ADDR_REG];
-    var dramAddress = mem.u32[PI_DRAM_ADDR_REG];
-    //var length = e.value;
-    console.log(cartAddress.hex(), dramAddress.hex(), val.hex());
-
-    //console.log(JSON.stringify(e))
-});
-```
