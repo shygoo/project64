@@ -1,5 +1,8 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
+#include <Project64/UserInterface/DiscordRPC.h>
+
+static void CpuRunningChanged(void *data);
 
 void ScriptAPI::Define_pj64(duk_context* ctx)
 {
@@ -29,40 +32,55 @@ duk_ret_t ScriptAPI::js_pj64_open(duk_context* ctx)
 
     const char* romPath = duk_get_string(ctx, 0);
 
+    SyncEvent cpuRunningChangedEvent;
+    g_Settings->RegisterChangeCB(GameRunning_CPU_Running, &cpuRunningChangedEvent, CpuRunningChanged);
+
+    bool oldAutoStartSetting = g_Settings->LoadBool(Setting_AutoStart);
+    g_Settings->SaveBool(Setting_AutoStart, true);
+    bool bLoaded = false;
+
     stdstr ext = CPath(romPath).GetExtension();
     if ((_stricmp(ext.c_str(), "ndd") != 0) && (_stricmp(ext.c_str(), "d64") != 0))
     {
-        if (!g_BaseSystem->RunFileImage(romPath))
-        {
-            return DUK_RET_ERROR;
-        }
+        bLoaded = g_BaseSystem->RunFileImage(romPath);
     }
     else
     {
-        if (!g_BaseSystem->RunDiskImage(romPath))
-        {
-            return DUK_RET_ERROR;
-        }
+        bLoaded = g_BaseSystem->RunDiskImage(romPath);
     }
 
-    // TODO: Block until rom is actually loaded
+    if (bLoaded)
+    {
+        cpuRunningChangedEvent.IsTriggered(SyncEvent::INFINITE_TIMEOUT);
+        g_Settings->UnregisterChangeCB(GameRunning_CPU_Running, &cpuRunningChangedEvent, CpuRunningChanged);
+    }
 
-    return 0;
+    g_Settings->SaveBool(Setting_AutoStart, oldAutoStartSetting);
+    duk_push_boolean(ctx, true);
+    return 1;
 }
 
 duk_ret_t ScriptAPI::js_pj64_close(duk_context* ctx)
 {
     if (g_BaseSystem)
     {
-        g_BaseSystem->CloseCpu();
+        // TODO: this is buggy
+        g_BaseSystem->ExternalEvent(SysEvent_CloseCPU);
     }
-    //m_Gui->SaveWindowLoc();
-    //if (UISettingsLoadBool(Setting_EnableDiscordRPC))
-    //{
-    //    CDiscord::Update(false);
-    //}
 
-    // TODO: Block until rom is actually closed
+    if (UISettingsLoadBool(Setting_EnableDiscordRPC))
+    {
+        CDiscord::Update(false);
+    }
 
     return 0;
+}
+
+static void CpuRunningChanged(void *data)
+{
+    SyncEvent* cpuRunningChangedEvent = (SyncEvent*)data;
+    if (g_Settings->LoadBool(GameRunning_CPU_Running))
+    {
+        cpuRunningChangedEvent->Trigger();
+    }
 }

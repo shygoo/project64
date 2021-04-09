@@ -282,20 +282,20 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Server.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_alert.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
+    </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_cpu.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_alert.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_pj64.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
