@@ -462,7 +462,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         break;
     }
 
-    duk_put_prop_string(ctx, -3, "type");
+    duk_put_prop_string(ctx, -3, "valueType");
     duk_put_prop_string(ctx, -2, "value");
 
     if (bNeedUpper32)
@@ -580,7 +580,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         break;
     }
 
-    duk_put_prop_string(ctx, -3, "type");
+    duk_put_prop_string(ctx, -3, "valueType");
     duk_put_prop_string(ctx, -2, "value");
 
     if (bNeedUpper32)

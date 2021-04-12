@@ -331,6 +331,7 @@ duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
 duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 {
     CScriptInstance* inst = GetInstance(ctx);
+    CScriptSystem* sys = inst->System();
 
     duk_idx_t nargs = duk_get_top(ctx);
 
@@ -344,14 +345,19 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 
     struct
     {
-        bool bHidden = true;
+        bool bShowWindow = false;
+        bool bVerbose = false;
         const char* cwd = NULL;
     } options;
 
     if (duk_is_object(ctx, 1))
     {
         duk_get_prop_string(ctx, 1, "hidden");
-        options.bHidden = duk_get_boolean_default(ctx, -1, true);
+        options.bShowWindow = duk_get_boolean_default(ctx, -1, false);
+        duk_pop(ctx);
+
+        duk_get_prop_string(ctx, 1, "verbose");
+        options.bVerbose = duk_get_boolean_default(ctx, -1, false);
         duk_pop(ctx);
 
         duk_get_prop_string(ctx, 1, "cwd");
@@ -383,7 +389,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
     startupInfo.hStdOutput = hStdOut_w;
     startupInfo.hStdError = hStdErr_w;
 
-    if (options.bHidden)
+    if (!options.bShowWindow)
     {
         startupInfo.dwFlags |= STARTF_USESHOWWINDOW;
         startupInfo.wShowWindow = SW_HIDE;
@@ -409,6 +415,11 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
             {
                 resultStdOut += buffer[i];
             }
+
+            if (options.bVerbose)
+            {
+                sys->Print("%.*s", nBytesRead, buffer);
+            }
         }
 
         while (ReadFile(hStdErr_r, buffer, sizeof(buffer), &nBytesRead, NULL) && nBytesRead != 0)
@@ -421,12 +432,12 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 
         CloseHandle(hStdErr_r);
         CloseHandle(hStdOut_r);
+        CloseHandle(processInfo.hThread);
 
         WaitForSingleObject(processInfo.hProcess, INFINITE);
         GetExitCodeProcess(processInfo.hProcess, &resultExitCode);
 
         CloseHandle(processInfo.hProcess);
-        CloseHandle(processInfo.hThread);
     }
     else
     {

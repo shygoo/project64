@@ -1,6 +1,5 @@
 body {
-    margin: 50px auto 50px auto;
-    width: 840px;
+    margin: 0px;
     background: #EEE;
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
@@ -10,6 +9,7 @@ body {
 table {
     border-collapse: collapse;
     border-spacing: 0px;
+    font-size: inherit;
 }
 
 td {
@@ -24,7 +24,7 @@ thead {
 
 ul {
     color: #222;
-    padding-inline-start: 30px;
+    padding-inline-start: 20px;
 }
 
 hr {
@@ -35,7 +35,7 @@ hr {
 div.module {
     border-top: 1px solid #ECC;
     padding: 20px;
-    margin-top: 10px;
+    margin-bottom: 10px;
     background: #FFF;
 }
 
@@ -122,6 +122,32 @@ div.tag.blue {
 
 div.tag.red {
     background-color: #D77;
+}
+
+div.sidebar {
+    width: 440px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    overflow-y: auto;
+    background: #FFF;
+    border-right: 1px solid #ECC;
+}
+
+div.sidebar-content {
+    padding: 10px;
+}
+
+div.pagetitle {
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+}
+
+div.content {
+    margin-left: 440px;
+    padding: 10px;
 }
 
 @media (prefers-color-scheme: dark) {

@@ -1,13 +1,12 @@
 <!DOCTYPE html>
-<!-- Generated Apr 11 2021 -->
-<!-- Source: https://github.com/shygoo/pj64d-docs -->
+<!-- Generated Apr 12 2021 -->
+<!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 body {
-    margin: 50px auto 50px auto;
-    width: 840px;
+    margin: 0px;
     background: #EEE;
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
@@ -17,6 +16,7 @@ body {
 table {
     border-collapse: collapse;
     border-spacing: 0px;
+    font-size: inherit;
 }
 
 td {
@@ -31,7 +31,7 @@ thead {
 
 ul {
     color: #222;
-    padding-inline-start: 30px;
+    padding-inline-start: 20px;
 }
 
 hr {
@@ -42,7 +42,7 @@ hr {
 div.module {
     border-top: 1px solid #ECC;
     padding: 20px;
-    margin-top: 10px;
+    margin-bottom: 10px;
     background: #FFF;
 }
 
@@ -131,6 +131,32 @@ div.tag.red {
     background-color: #D77;
 }
 
+div.sidebar {
+    width: 440px;
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    overflow-y: auto;
+    background: #FFF;
+    border-right: 1px solid #ECC;
+}
+
+div.sidebar-content {
+    padding: 10px;
+}
+
+div.pagetitle {
+    font-size: 2em;
+    font-weight: bold;
+    text-align: center;
+}
+
+div.content {
+    margin-left: 440px;
+    padding: 10px;
+}
+
 @media (prefers-color-scheme: dark) {
     body { background: #222; color: #FFF; }
     div.module { background: #2a2a2a; border-top: 1px solid #744;}
@@ -150,6 +176,8 @@ div.tag.red {
 </style>
 </head>
 <body>
+<div class="sidebar">
+<div class="sidebar-content">
 <div class="modtitle">Project64 JavaScript API</div>
 <hr>
 <ul>
@@ -267,22 +295,19 @@ div.tag.red {
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
 </ul>
+</div>
+</div>
+<div class="content">
 <!-- console -->
 <div class="module">
 <div class="modtitle"><span class="title" id="console">console</span></div>
 Console interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#console_log">console.log(message[, ...])</a></li>
-<li><a href="#console_print">console.print(message[, ...])</a></li>
-<li><a href="#console_clear">console.clear()</a></li>
-<li><a href="#console_listen">console.listen(inputListener)</a></li>
-</ul>
 <!-- console.log -->
 <div class="prop"><span class="title" id="console_log">console.log(message[, ...])</span></div>
 <div class="tsproto">console.log(message: any, ...optionalParams): void</div>
 <div class="vtab"></div>
-Concatenates all provided arguments with spaces and prints the result to the console with a trailing newline.
+Prints all provided arguments to the console with a trailing newline.
 <pre class="ex">
 console.log("Hello", "world!");
 </pre>
@@ -290,7 +315,7 @@ console.log("Hello", "world!");
 <div class="prop"><span class="title" id="console_print">console.print(message[, ...])</span></div>
 <div class="tsproto">console.print(message: any, ...optionalParams): void</div>
 <div class="vtab"></div>
-Concatenates all provided arguments with spaces and prints the result to the console.
+Prints all provided arguments to the console.
 <pre class="ex">
 console.print("Hello ");
 console.print("world!\n");
@@ -331,15 +356,11 @@ console.listen(function(input) {
 <div class="modtitle"><span class="title" id="pj64">pj64</span></div>
 Project64 interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#pj64_open">pj64.open(romPath)</a></li>
-<li><a href="#pj64_close">pj64.close()</a></li>
-</ul>
 <!-- pj64.open -->
 <div class="prop"><span class="title" id="pj64_open">pj64.open(romPath)</span></div>
 <div class="tsproto">pj64.open(romPath: string): boolean</div>
 <div class="vtab"></div>
-Opens and starts playing a ROM. Returns <div class="snip">true</div> if the operation is successful.
+Opens and runs a ROM. Does not return until the ROM starts or the operation fails. <div class="vtab"></div> Returns <div class="snip">true</div> if the operation is successful.
 <!-- pj64.close -->
 <div class="prop"><span class="title" id="pj64_close">pj64.close()</span></div>
 <div class="tsproto">pj64.close(): void</div>
@@ -352,19 +373,6 @@ Closes the current ROM.
 <div class="modtitle"><span class="title" id="mem">mem</span></div>
 N64 memory interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
-<li><a href="#mem_bindvar">mem.bindvar(object, address, name, typeId)</a></li>
-<li><a href="#mem_bindvars">mem.bindvars(object, vars)</a></li>
-<li><a href="#mem_bindstruct">mem.bindstruct(object, address, properties)</a></li>
-<li><a href="#mem_typedef">mem.typedef(properties)</a></li>
-<li><a href="#mem_getblock">mem.getblock(address, length)</a></li>
-<li><a href="#mem_setblock">mem.setblock(address, data[, length])</a></li>
-<li><a href="#mem_getstring">mem.getstring(address[, length])</a></li>
-<li><a href="#mem_setstring">mem.setstring(address, data[, length])</a></li>
-<li><a href="#mem_ramsize">mem.ramsize</a></li>
-<li><a href="#mem_romsize">mem.romsize</a></li>
-</ul>
 <!-- mem._ -->
 <div class="prop"><span class="title" id="mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</span></div>
 <div class="vtab"></div>
@@ -492,23 +500,6 @@ The size of cartridge ROM in bytes. <div class="snip">0</div> if ROM is not init
 <div class="modtitle"><span class="title" id="events">events</span></div>
 Emulation event hooking interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#events_onexec">events.onexec(address, callback)</a></li>
-<li><a href="#events_onread">events.onread(address, callback)</a></li>
-<li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
-<li><a href="#events_onopcode">events.onopcode(address, opcode, mask, callback)</a></li>
-<li><a href="#events_onopcode">events.onopcode(address, opcode, callback)</a></li>
-<li><a href="#events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</a></li>
-<li><a href="#events_onpifread">events.onpifread(callback)</a></li>
-<li><a href="#events_ondraw">events.ondraw(callback)</a></li>
-<li><a href="#events_remove">events.remove(callbackId)</a></li>
-<li><a href="#CPUExecEvent">CPUExecEvent</a></li>
-<li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
-<li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
-<li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
-<li><a href="#GPR_flags">General purpose register flags</a></li>
-<li><a href="#AddressRange">new AddressRange(start, end)</a></li>
-</ul>
 <!-- events.onexec -->
 <div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number</div>
@@ -656,19 +647,19 @@ events.onexec(0x802CB1C0, function(e) {
 <div class="prop"><span class="title" id="CPUExecEvent">CPUExecEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 </table>
 <!-- CPUReadWriteEvent -->
 <div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
 <tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
 <tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
-<tr><td><div class="snip">e.type</div></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
+<tr><td><div class="snip">e.valueType</div></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
 <tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
 <tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if <div class="snip">e.type</div> is <div class="snip">u64</div>; otherwise <div class="snip">undefined</div>.</td></tr>
 </table>
@@ -691,16 +682,16 @@ events.onexec(0x802CB1C0, function(e) {
 <div class="prop"><span class="title" id="CPUOpcodeEvent">CPUOpcodeEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.opcode</div></td><td>The opcode.</td></tr>
 </table>
 <!-- CPURegValueEvent -->
 <div class="prop"><span class="title" id="CPURegValueEvent">CPURegValueEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
 <tr><td><div class="snip">e.value</div></td><td>The value.</td></tr>
 <tr><td><div class="snip">e.reg</div></td><td>Index of the register containing the value.</td></tr>
 </table>
@@ -742,9 +733,6 @@ The following <div class="snip">AddressRange</div> objects are defined globally&
 <div class="modtitle"><span class="title" id="screen">screen</span></div>
 Screen drawing interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#screen_print">screen.print(x, y, text)</a></li>
-</ul>
 <!-- screen.print -->
 <div class="prop"><span class="title" id="screen_print">screen.print(x, y, text)</span><div class="tag red">Unstable</div></div>
 <div class="tsproto">screen.print(x: number, y: number, text: string): void</div>
@@ -763,35 +751,6 @@ events.ondraw(function() {
 <div class="modtitle"><span class="title" id="cpu">cpu</span></div>
 CPU register interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#cpu_pc">cpu.pc</a></li>
-<li><a href="#cpu_hi">cpu.hi</a></li>
-<li><a href="#cpu_lo">cpu.lo</a></li>
-<li><a href="#cpu_uhi">cpu.uhi</a></li>
-<li><a href="#cpu_ulo">cpu.ulo</a></li>
-<li><a href="#cpu_gpr__">cpu.gpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#cpu_ugpr__">cpu.ugpr.r0|at|v0|v1..ra</a></li>
-<li><a href="#cpu_fpr__">cpu.fpr.f0..f31</a></li>
-<li><a href="#cpu_dfpr__">cpu.dfpr.f0..f30</a></li>
-<li><a href="#cpu_cop0_index">cpu.cop0.index</a></li>
-<li><a href="#cpu_cop0_random">cpu.cop0.random</a></li>
-<li><a href="#cpu_cop0_entrylo0">cpu.cop0.entrylo0</a></li>
-<li><a href="#cpu_cop0_entrylo1">cpu.cop0.entrylo1</a></li>
-<li><a href="#cpu_cop0_context">cpu.cop0.context</a></li>
-<li><a href="#cpu_cop0_pagemask">cpu.cop0.pagemask</a></li>
-<li><a href="#cpu_cop0_wired">cpu.cop0.wired</a></li>
-<li><a href="#cpu_cop0_badvaddr">cpu.cop0.badvaddr</a></li>
-<li><a href="#cpu_cop0_count">cpu.cop0.count</a></li>
-<li><a href="#cpu_cop0_entryhi">cpu.cop0.entryhi</a></li>
-<li><a href="#cpu_cop0_compare">cpu.cop0.compare</a></li>
-<li><a href="#cpu_cop0_status">cpu.cop0.status</a></li>
-<li><a href="#cpu_cop0_cause">cpu.cop0.cause</a></li>
-<li><a href="#cpu_cop0_epc">cpu.cop0.epc</a></li>
-<li><a href="#cpu_cop0_config">cpu.cop0.config</a></li>
-<li><a href="#cpu_cop0_taglo">cpu.cop0.taglo</a></li>
-<li><a href="#cpu_cop0_taghi">cpu.cop0.taghi</a></li>
-<li><a href="#cpu_cop0_errorepc">cpu.cop0.errorepc</a></li>
-</ul>
 <!-- cpu.pc -->
 <div class="prop"><span class="title" id="cpu_pc">cpu.pc</span></div>
 <div class="vtab"></div>
@@ -909,13 +868,6 @@ Variable representing the ErrorEPC register.
 <div class="modtitle"><span class="title" id="debug">debug</span></div>
 Debugger interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#debug_breakhere">debug.breakhere()</a></li>
-<li><a href="#debug_resume">debug.resume()</a></li>
-<li><a href="#debug_skip">debug.skip()</a></li>
-<li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
-<li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
-</ul>
 <!-- debug.breakhere -->
 <div class="prop"><span class="title" id="debug_breakhere">debug.breakhere()</span></div>
 <div class="tsproto">debug.breakhere(): void</div>
@@ -962,11 +914,6 @@ Shows the CPU commands window at <div class="snip">address</div>.
 <div class="modtitle"><span class="title" id="asm">asm</span></div>
 ASM utilities
 <div class="vtab"></div>
-<ul>
-<li><a href="#asm_encode">asm.encode(command[, address])</a></li>
-<li><a href="#asm_decode">asm.decode(opcode[, address])</a></li>
-<li><a href="#asm_gprname">asm.gprname(regIndex)</a></li>
-</ul>
 <!-- asm.encode -->
 <div class="prop"><span class="title" id="asm_encode">asm.encode(command[, address])</span></div>
 <div class="tsproto">asm.encode(command: string, address?: number): number</div>
@@ -1008,21 +955,6 @@ asm.gprname(4); // returns 'a0'
 <div class="modtitle"><span class="title" id="fs">fs</span></div>
 File system interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#fs_open">fs.open(path, mode)</a></li>
-<li><a href="#fs_close">fs.close(fd)</a></li>
-<li><a href="#fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</a></li>
-<li><a href="#fs_writeFile">fs.writeFile(path, buffer)</a></li>
-<li><a href="#fs_read">fs.read(fd, buffer, offset, length, position)</a></li>
-<li><a href="#fs_readFile">fs.readFile(path)</a></li>
-<li><a href="#fs_fstat">fs.fstat(fd)</a></li>
-<li><a href="#fs_stat">fs.stat(path)</a></li>
-<li><a href="#fs_unlink">fs.unlink(path)</a></li>
-<li><a href="#fs_mkdir">fs.mkdir(path)</a></li>
-<li><a href="#fs_rmdir">fs.rmdir(path)</a></li>
-<li><a href="#fs_readdir">fs.readdir(path)</a></li>
-<li><a href="#fs_Stats">fs.Stats</a></li>
-</ul>
 <!-- fs.open -->
 <div class="prop"><span class="title" id="fs_open">fs.open(path, mode)</span></div>
 <div class="tsproto">fs.open(path: string, mode: string): number</div>
@@ -1154,10 +1086,6 @@ Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> obj
 <div class="modtitle"><span class="title" id="script">script</span></div>
 Script instance configuration interface
 <div class="vtab"></div>
-<ul>
-<li><a href="#script_keepalive">script.keepalive(keepAlive)</a></li>
-<li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
-</ul>
 <!-- script.keepalive -->
 <div class="prop"><span class="title" id="script_keepalive">script.keepalive(keepAlive)</span></div>
 <div class="tsproto">script.keepalive(keepAlive: boolean): void</div>
@@ -1176,15 +1104,6 @@ Setting this value to zero will allow tasks to run indefinitely.
 <div class="module">
 <div class="modtitle"><span class="title" id="Global definitions">Global definitions</span></div>
 <div class="vtab"></div>
-<ul>
-<li><a href="#require">require(id)</a></li>
-<li><a href="#exec">exec(commandLine[, options])</a></li>
-<li><a href="#alert">alert(message[, caption])</a></li>
-<li><a href="#number_hex">number.hex([numChars])</a></li>
-<li><a href="#type_ids">Type IDs</a></li>
-<li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
-<li><a href="#Miscellaneous">Miscellaneous</a></li>
-</ul>
 <!-- require -->
 <div class="prop"><span class="title" id="require">require(id)</span></div>
 <div class="tsproto">require(id: string): Object</div>
@@ -1212,16 +1131,20 @@ mymodule.info(); // "This is my module"
 <div class="prop"><span class="title" id="exec">exec(commandLine[, options])</span></div>
 <div class="tsproto">exec(commandLine: string, options?: Object): string</div>
 <div class="vtab"></div>
-Executes a system command. Returns the output.
+Executes a system command. Does not return until the subprocess exits.
+<div class="vtab"></div>
+Returns the standard output of the subprocess as a string.
 <div class="vtab"></div>
 <div class="snip">options</div> may contain any of the following properties:
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">hidden</div></td><td>If <div class="snip">true</div>, the window of the subprocess is hidden. <div class="snip">true</div> by default.</td></tr>
-<tr><td><div class="snip">cwd</div></td><td>Current working directory of the subprocess.</td></tr>
+<tr><td><div class="snip">showWindow</div></td><td>If <div class="snip">true</div>, the window of the subprocess is visible. <div class="snip">false</div> by default.</td></tr>
+<tr><td><div class="snip">verbose</div></td><td>If <div class="snip">true</div>, the output of the subprocess is sent to the script manager console. <div class="snip">false</div> by default.</td></tr>
+<tr><td><div class="snip">cwd</div></td><td>Current working directory of the subprocess. By default this is the directory containing Project64.</td></tr>
 </table>
 <div class="vtab"></div>
-This function throws an error on failure. The error object will contain the following properties:
+This function throws an error if the operation fails or if the exit code of the subprocess is non-zero.
+The thrown error object will contain the following properties:
 <div class="vtab"></div>
 <table>
 <tr><td><div class="snip">status</div></td><td>The exit code of the subprocess.</td></tr>
@@ -1231,23 +1154,23 @@ This function throws an error on failure. The error object will contain the foll
 </table>
 <pre class="ex">
 try {
-    console.log(exec('dir'));
+    exec('dir', { verbose: true });
 } catch(e) {
-    console.log("exec() failed");
+    console.log("exec() failed with code", e.status);
     console.log(e.stderr);
 }
 </pre>
 <!-- alert -->
 <div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
-<div class="tsproto">alert(message: string, caption?: string): number</div>
+<div class="tsproto">alert(message: string, caption?: string): void</div>
 <div class="vtab"></div>
-Shows a message box over the main window. The calling thread is blocked until the message box is dismissed.
+Shows a message box over the main window. Does not return until the message box is dismissed.
 <!-- number.hex -->
 <div class="prop"><span class="title" id="number_hex">number.hex([numChars])</span></div>
 <div class="tsproto">number.hex(numChars?: number): string</div>
 <div class="vtab"></div>
 Returns a hexadecimal string representation of the number object.
-The returned string is prepended with zeroes until its character length meets <div class="snip">numChars</div> or 8 by default.
+The returned string is prepended with zeroes so that its character length is <div class="snip">numChars</div> or 8 by default.
 <pre class="ex">
 var n = 123;
 n.hex();  // 0000007B
@@ -1409,8 +1332,7 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 Project64's script system uses <a target="blank" href="https://duktape.org/">Duktape</a>. Duktape supports ECMAScript E5 and some features from ES2015+.<br>
 See <a target="blank" href="https://duktape.org/">https://duktape.org/</a> for more information.
 <div class="vtab"></div>
-<ul>
-</ul>
 
+</div>
 </div>
 </body>

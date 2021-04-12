@@ -57,9 +57,9 @@ mods.forEach(mod => {
         (mod.desc ? `${format(mod.desc)}\n` :
          mod.tagline ? `${format(mod.tagline)}\n`: '') +
         `<div class="vtab"></div>\n` +
-        `<ul>\n` +
-        `${propLinks}` +
-        `</ul>\n` +
+        //`<ul>\n` +
+        //`${propLinks}` +
+        //`</ul>\n` +
         `${propsContent}\n` +
         `</div>\n`
     );
@@ -71,7 +71,7 @@ content = content.trim();
 
 var html = (`<!DOCTYPE html>
 <!-- Generated ${(new Date()).toDateString().match(/.+? (.+?)$/)[1]} -->
-<!-- Source: https://github.com/shygoo/pj64d-docs -->
+<!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
@@ -80,12 +80,18 @@ ${cssSource}
 </style>
 </head>
 <body>
+<div class="sidebar">
+<div class="sidebar-content">
 <div class="modtitle">Project64 JavaScript API</div>
 <hr>
 <ul>
 ${modlinks}
 </ul>
+</div>
+</div>
+<div class="content">
 ${content}
+</div>
 </body>
 `);
 

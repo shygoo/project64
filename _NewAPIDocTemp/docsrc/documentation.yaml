@@ -6,7 +6,7 @@
     js:   console.log(message[, ...])
     ts:   "console.log(message: any, ...optionalParams): void"
     desc: |
-          Concatenates all provided arguments with spaces and prints the result to the console with a trailing newline.
+          Prints all provided arguments to the console with a trailing newline.
           ```
           console.log("Hello", "world!");
           ```
@@ -15,7 +15,7 @@
     js:   console.print(message[, ...])
     ts:   "console.print(message: any, ...optionalParams): void"
     desc: |
-          Concatenates all provided arguments with spaces and prints the result to the console.
+          Prints all provided arguments to the console.
           ```
           console.print("Hello ");
           console.print("world!\n");
@@ -58,7 +58,9 @@
   - name: pj64.open
     js:   pj64.open(romPath)
     ts:   "pj64.open(romPath: string): boolean"
-    desc: Opens and starts playing a ROM. Returns `true` if the operation is successful.
+    desc: Opens and runs a ROM. Does not return until the ROM starts or the operation fails.
+          <div class="vtab"></div>
+          Returns `true` if the operation is successful.
 
   - name: pj64.close
     js:   pj64.close()
@@ -363,20 +365,20 @@
     js:   CPUExecEvent
     desc: |
           <table>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           </table>
 
   - name: CPUReadWriteEvent
     js:   CPUReadWriteEvent
     desc: |
           <table>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
           <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
           <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
-          <tr><td>`e.type`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
+          <tr><td>`e.valueType`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
           <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
           <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.type` is `u64`; otherwise `undefined`.</td></tr>
           </table>
@@ -400,8 +402,8 @@
     js:   CPUOpcodeEvent
     desc: |
           <table>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.opcode`</td><td>The opcode.</td></tr>
           </table>
 
@@ -409,8 +411,8 @@
     js:   CPURegValueEvent
     desc: |
           <table>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.value`</td><td>The value.</td></tr>
           <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
           </table>
@@ -843,16 +845,20 @@
     js:   exec(commandLine[, options])
     ts:   "exec(commandLine: string, options?: Object): string"
     desc: |
-          Executes a system command. Returns the output.
+          Executes a system command. Does not return until the subprocess exits.
+          <div class="vtab"></div>
+          Returns the standard output of the subprocess as a string.
           <div class="vtab"></div>
           `options` may contain any of the following properties:
           <div class="vtab"></div>
           <table>
-          <tr><td>`hidden`</td><td>If `true`, the window of the subprocess is hidden. `true` by default.</td></tr>
-          <tr><td>`cwd`</td><td>Current working directory of the subprocess.</td></tr>
+          <tr><td>`showWindow`</td><td>If `true`, the window of the subprocess is visible. `false` by default.</td></tr>
+          <tr><td>`verbose`</td><td>If `true`, the output of the subprocess is sent to the script manager console. `false` by default.</td></tr>
+          <tr><td>`cwd`</td><td>Current working directory of the subprocess. By default this is the directory containing Project64.</td></tr>
           </table>
           <div class="vtab"></div>
-          This function throws an error on failure. The error object will contain the following properties:
+          This function throws an error if the operation fails or if the exit code of the subprocess is non-zero.
+          The thrown error object will contain the following properties:
           <div class="vtab"></div>
           <table>
           <tr><td>`status`</td><td>The exit code of the subprocess.</td></tr>
@@ -862,25 +868,25 @@
           </table>
           ```
           try {
-              console.log(exec('dir'));
+              exec('dir', { verbose: true });
           } catch(e) {
-              console.log("exec() failed");
+              console.log("exec() failed with code", e.status);
               console.log(e.stderr);
           }
           ```
 
   - name: alert
     js:   alert(message[, caption])
-    ts:   "alert(message: string, caption?: string): number"
+    ts:   "alert(message: string, caption?: string): void"
     desc: |
-          Shows a message box over the main window. The calling thread is blocked until the message box is dismissed.
+          Shows a message box over the main window. Does not return until the message box is dismissed.
 
   - name: number.hex
     js:   number.hex([numChars])
     ts:   "number.hex(numChars?: number): string"
     desc: |
           Returns a hexadecimal string representation of the number object.
-          The returned string is prepended with zeroes until its character length meets `numChars` or 8 by default.
+          The returned string is prepended with zeroes so that its character length is `numChars` or 8 by default.
           ```
           var n = 123;
           n.hex();  // 0000007B
