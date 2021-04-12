@@ -7,8 +7,10 @@ static void CpuRunningChanged(void *data);
 void ScriptAPI::Define_pj64(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "open",  js_pj64_open,  1 },
+        { "open", js_pj64_open, 1 },
         { "close", js_pj64_close, 0 },
+        //{ "savestate", js_pj64_savestate, 1 },
+        //{ "loadstate", js_pj64_loadstate, 1 }
         { NULL, NULL, 0 }
     };
 
@@ -56,7 +58,7 @@ duk_ret_t ScriptAPI::js_pj64_open(duk_context* ctx)
     }
 
     g_Settings->SaveBool(Setting_AutoStart, oldAutoStartSetting);
-    duk_push_boolean(ctx, true);
+    duk_push_boolean(ctx, bLoaded);
     return 1;
 }
 
@@ -75,6 +77,28 @@ duk_ret_t ScriptAPI::js_pj64_close(duk_context* ctx)
 
     return 0;
 }
+
+/*
+TODO: Can't implement these because CN64System::SaveState() doesn't allow arbitrary paths
+
+duk_ret_t ScriptAPI::js_pj64_savestate(duk_context* ctx)
+{
+    if (!duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* path = duk_get_string(ctx, 0);
+    g_Settings->SaveString(GameRunning_InstantSaveFile, path);
+    g_BaseSystem->ExternalEvent(SysEvent_SaveMachineState);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_pj64_loadstate(duk_context* ctx)
+{
+    return 0;
+}
+*/
 
 static void CpuRunningChanged(void *data)
 {

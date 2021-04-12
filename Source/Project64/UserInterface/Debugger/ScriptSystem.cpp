@@ -12,31 +12,28 @@ CScriptSystem::CScriptSystem(CDebuggerUI *debugger) :
     m_NextAppCallbackId(0),
     m_AppCallbackCount(0)
 {
-    m_Cmd.id = CMD_IDLE;
-    m_Cmd.hWakeEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    m_Cmd.hIdleEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+    m_hCmdEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
 }
 
 CScriptSystem::~CScriptSystem()
 {
-    SetCommand(CMD_SHUTDOWN);
+    PostCommand(CMD_SHUTDOWN);
     WaitForSingleObject(m_hThread, INFINITE);
     CloseHandle(m_hThread);
-    CloseHandle(m_Cmd.hWakeEvent);
-    CloseHandle(m_Cmd.hIdleEvent);
+    CloseHandle(m_hCmdEvent);
 }
 
 jsstatus_t CScriptSystem::GetStatus(const char* name)
 {
     CGuard guard(m_UIStateCS);
-    if (m_InstanceStatus.count(name) == 0)
+    if (m_UIInstanceStatus.count(name) == 0)
     {
         return JS_STATUS_STOPPED;
     }
     else
     {
-        return m_InstanceStatus[name];
+        return m_UIInstanceStatus[name];
     }
 }
 
@@ -45,11 +42,11 @@ void CScriptSystem::UpdateStatus(const char* name, jsstatus_t status)
     CGuard guard(m_UIStateCS);
     if (status == JS_STATUS_STOPPED)
     {
-        m_InstanceStatus.erase(name);
+        m_UIInstanceStatus.erase(name);
     }
     else
     {
-        m_InstanceStatus[name] = status;
+        m_UIInstanceStatus[name] = status;
     }
     m_Debugger->Debug_RefreshScriptsWindow();
 }
@@ -68,7 +65,7 @@ void CScriptSystem::Log(const char* format, ...)
     stdstr formattedMsg = FixStringReturns(str) + "\r\n";
     
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
-    m_Log += formattedMsg;
+    m_UILog += formattedMsg;
 
     delete[] str;
     va_end(args);
@@ -88,7 +85,7 @@ void CScriptSystem::Print(const char* format, ...)
     stdstr formattedMsg = FixStringReturns(str);
     
     m_Debugger->Debug_LogScriptsWindow(formattedMsg.c_str());
-    m_Log += formattedMsg;
+    m_UILog += formattedMsg;
 
     delete[] str;
     va_end(args);
@@ -97,59 +94,46 @@ void CScriptSystem::Print(const char* format, ...)
 void CScriptSystem::ClearLog()
 {
     CGuard guard(m_UIStateCS);
-    m_Log.clear();
+    m_UILog.clear();
     m_Debugger->Debug_ClearScriptsWindow();
 }
 
 stdstr CScriptSystem::GetLog()
 {
     CGuard guard(m_UIStateCS);
-    return stdstr(m_Log);
+    return stdstr(m_UILog);
 }
 
-bool CScriptSystem::StartScript(const char *name, const char *path)
+void CScriptSystem::StartScript(const char *name, const char *path)
 {
-    CGuard guard(m_CS);
-
-    if (m_Instances.count(name) != 0)
-    {
-        Log("[SCRIPTSYS]: error: START_SCRIPT aborted; '%s' is already instanced", name);
-        return false;
-    }
-
-    SetCommand(CMD_START_SCRIPT, name, path);
-    return true;
+    PostCommand(CMD_START_SCRIPT, name, path);
 }
 
-bool CScriptSystem::StopScript(const char *name)
+void CScriptSystem::StopScript(const char *name)
 {
-    CGuard guard(m_CS);
-    SetCommand(CMD_STOP_SCRIPT, name);
-    return true;
+    PostCommand(CMD_STOP_SCRIPT, name);
 }
 
-bool CScriptSystem::Input(const char *name, const char *code)
+void CScriptSystem::Input(const char *name, const char *code)
 {
-    CGuard guard(m_CS);
-    SetCommand(CMD_INPUT, name, code);
-    return true;
+    PostCommand(CMD_INPUT, name, code);
 }
 
 void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
 {
-    CGuard guard(m_CS);
+    CGuard guard(m_InstancesCS);
 
-    if(m_AppHooks.count(hookId) == 0 ||
-       m_AppHooks[hookId].size() == 0)
+    if (m_AppCallbackHooks.count(hookId) == 0 ||
+        m_AppCallbackHooks[hookId].size() == 0)
     {
         return;
     }
 
     bool bNeedSweep = false;
-    jscb_map_t& callbacks = m_AppHooks[hookId];
+    jscb_map_t& callbacks = m_AppCallbackHooks[hookId];
 
     jscb_map_t::iterator it;
-    for(it = callbacks.begin(); it != callbacks.end(); it++)
+    for (it = callbacks.begin(); it != callbacks.end(); it++)
     {
         JSCallback& cb = it->second;
         cb.instance->ConditionalInvokeCallback(cb, env);
@@ -157,39 +141,46 @@ void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
 
     if (bNeedSweep)
     {
-        SetCommand(CMD_SWEEP);
+        PostCommand(CMD_SWEEP);
     }
 }
 
 void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs, void *argsParam)
 {
-    CGuard guard(m_CS);
+    CGuard guard(m_InstancesCS);
 
     inst->RawCall(heapptr, fnPushArgs, argsParam);
 
     if(inst->GetRefCount() == 0)
     {
-        SetCommand(CMD_STOP_SCRIPT, inst->Name().c_str());
+        PostCommand(CMD_STOP_SCRIPT, inst->Name().c_str());
     }
 }
 
-void CScriptSystem::SetCommand(jssyscmd_id_t cmd, const char *paramA, const char *paramB)
+void CScriptSystem::PostCommand(jssyscmd_id_t id, stdstr paramA, stdstr paramB)
 {
-    CGuard guard(m_CS);
-
-    WaitForSingleObject(m_Cmd.hIdleEvent, INFINITE);
-    ResetEvent(m_Cmd.hIdleEvent);
-    m_Cmd.id = cmd;
-    if (paramA != NULL)
-    {
-        m_Cmd.paramA = paramA;
-    }
-    if (paramB != NULL)
-    {
-        m_Cmd.paramB = paramB;
-    }
-    SetEvent(m_Cmd.hWakeEvent);
+    CGuard guard(m_CmdQueueCS);
+    jssys_cmd_t cmd = { id, paramA, paramB, NULL, NULL };
+    m_CmdQueue.push_back(cmd);
+    SetEvent(m_hCmdEvent);
 }
+
+/*
+void CScriptSystem::PostCommandSync(jssyscmd_id_t id, void* paramC)
+{
+    HANDLE hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+    {
+        CGuard guard(m_CmdQueueCS);
+        jssys_cmd_t cmd = { id, "", "", paramC, hDoneEvent };
+        m_CmdQueue.push_back(cmd);
+        SetEvent(m_hCmdEvent);
+    }
+
+    WaitForSingleObject(hDoneEvent, INFINITE);
+    CloseHandle(hDoneEvent);
+}
+*/
 
 DWORD CScriptSystem::ThreadProc(void *_this)
 {
@@ -200,40 +191,59 @@ DWORD CScriptSystem::ThreadProc(void *_this)
 void CScriptSystem::ThreadProc()
 {
     bool bRunning = true;
+    std::vector<jssys_cmd_t> queue;
 
     while(bRunning)
     {
-        WaitForSingleObject(m_Cmd.hWakeEvent, INFINITE);
-        CGuard guard(m_CS);
+        WaitForSingleObject(m_hCmdEvent, INFINITE);
 
-        switch(m_Cmd.id)
         {
-        case CMD_START_SCRIPT:
-            OnStartScript(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
-            break;
-        case CMD_STOP_SCRIPT:
-            OnStopScript(m_Cmd.paramA.c_str());
-            break;
-        case CMD_INPUT:
-            OnInput(m_Cmd.paramA.c_str(), m_Cmd.paramB.c_str());
-            break;
-        case CMD_SWEEP:
-            OnSweep(true);
-            break;
-        case CMD_SHUTDOWN:
-            OnSweep(false);
-            bRunning = false;
-            break;
+            CGuard guard(m_CmdQueueCS);
+            queue = m_CmdQueue;
+            m_CmdQueue.clear();
         }
 
-        m_Cmd.id = CMD_IDLE;
-        ResetEvent(m_Cmd.hWakeEvent);
-        SetEvent(m_Cmd.hIdleEvent);
+        for (size_t i = 0; i < queue.size(); i++)
+        {
+            jssys_cmd_t& cmd = queue[i];
+
+            switch (cmd.id)
+            {
+            case CMD_START_SCRIPT:
+                OnStartScript(cmd.paramA.c_str(), cmd.paramB.c_str());
+                break;
+            case CMD_STOP_SCRIPT:
+                OnStopScript(cmd.paramA.c_str());
+                break;
+            case CMD_INPUT:
+                OnInput(cmd.paramA.c_str(), cmd.paramB.c_str());
+                break;
+            case CMD_SWEEP:
+                OnSweep(true);
+                break;
+            case CMD_SHUTDOWN:
+                OnSweep(false);
+                bRunning = false;
+                break;
+            }
+
+            if (cmd.hDoneEvent != NULL)
+            {
+                SetEvent(cmd.hDoneEvent);
+            }
+        }
     }
 }
 
 void CScriptSystem::OnStartScript(const char *name, const char *path)
 {
+    CGuard guard(m_InstancesCS);
+
+    if (m_Instances.count(name) != 0)
+    {
+        Log("[SCRIPTSYS]: error: START_SCRIPT aborted; '%s' is already instanced", name);
+    }
+
     CScriptInstance *inst = new CScriptInstance(this, name);
     
     UpdateStatus(name, JS_STATUS_STARTING);
@@ -252,15 +262,25 @@ void CScriptSystem::OnStartScript(const char *name, const char *path)
 
 void CScriptSystem::OnStopScript(const char *name)
 {
+    CGuard guard(m_InstancesCS);
+
+    if (m_Instances.count(name) == 0)
+    {
+        Log("[SCRIPTSYS]: error: STOP_SCRIPT aborted; instance '%s' does not exist", name);
+        return;
+    }
+
     UpdateStatus(name, JS_STATUS_STOPPED);
     RawRemoveInstance(name);
 }
 
 void CScriptSystem::OnInput(const char *name, const char *code)
 {
+    CGuard guard(m_InstancesCS);
+
     if(m_Instances.count(name) == 0)
     {
-        Log("[SCRIPTSYS]: error: input aborted; instance '%s' does not exist", name);
+        Log("[SCRIPTSYS]: error: INPUT aborted; instance '%s' does not exist", name);
         return;
     }
 
@@ -277,6 +297,8 @@ void CScriptSystem::OnInput(const char *name, const char *code)
 
 void CScriptSystem::OnSweep(bool bIfDone)
 {
+    CGuard guard(m_InstancesCS);
+
     jsinst_map_t::iterator it = m_Instances.begin();
     while(it != m_Instances.end())
     {
@@ -315,19 +337,19 @@ jscb_id_t CScriptSystem::RawAddCallback(jshook_id_t hookId, JSCallback& callback
     }
 
     callback.id = m_NextAppCallbackId;
-    m_AppHooks[hookId][m_NextAppCallbackId] = callback;
+    m_AppCallbackHooks[hookId][m_NextAppCallbackId] = callback;
     m_AppCallbackCount++;
     return m_NextAppCallbackId++;
 }
 
 bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
 {
-    if(m_AppHooks[hookId].count(callbackId) == 0)
+    if(m_AppCallbackHooks[hookId].count(callbackId) == 0)
     {
         return false;
     }
 
-    m_AppHooks[hookId].erase(callbackId);
+    m_AppCallbackHooks[hookId].erase(callbackId);
     m_AppCallbackCount--;
     return true;
 }

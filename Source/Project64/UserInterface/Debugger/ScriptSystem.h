@@ -13,33 +13,25 @@ class CScriptSystem
     typedef std::map<jscb_id_t, JSCallback> jscb_map_t;
     typedef std::map<jshook_id_t, jscb_map_t> jshook_map_t;
     typedef std::map<jsname_t, jsstatus_t> jsinst_status_map_t;
+    typedef std::vector<jssys_cmd_t> jssys_cmd_queue_t;
 
-    typedef struct
-    {
-        int type;
-        std::string message;
-    } jslogitem_t;
+    HANDLE              m_hThread;
 
-    CriticalSection m_CS;
-    CDebuggerUI    *m_Debugger;
-    HANDLE          m_hThread;
-    jshook_map_t    m_AppHooks;
-    jscb_id_t       m_NextAppCallbackId;
-    size_t          m_AppCallbackCount;
-    jsinst_map_t    m_Instances;
-    
-    struct
-    {
-        jssyscmd_id_t id;
-        std::string   paramA;
-        std::string   paramB;
-        HANDLE        hWakeEvent;
-        HANDLE        hIdleEvent;
-    } m_Cmd;
+    CriticalSection     m_CmdQueueCS;
+    jssys_cmd_queue_t   m_CmdQueue;
+    HANDLE              m_hCmdEvent;
 
-    CriticalSection m_UIStateCS;
-    jsinst_status_map_t m_InstanceStatus;
-    stdstr m_Log;
+    CriticalSection     m_InstancesCS;
+    jsinst_map_t        m_Instances;
+    jshook_map_t        m_AppCallbackHooks;
+    jscb_id_t           m_NextAppCallbackId;
+    size_t              m_AppCallbackCount;
+
+    CriticalSection     m_UIStateCS;
+    jsinst_status_map_t m_UIInstanceStatus;
+    stdstr              m_UILog;
+
+    CDebuggerUI*        m_Debugger;
 
 public:
     CScriptSystem(CDebuggerUI* debugger);
@@ -47,9 +39,9 @@ public:
 
     CDebuggerUI* Debugger();
 
-    bool StartScript(const char* name, const char* path);
-    bool StopScript(const char* name);
-    bool Input(const char* name, const char* code);
+    void StartScript(const char* name, const char* path);
+    void StopScript(const char* name);
+    void Input(const char* name, const char* code);
 
     jsstatus_t GetStatus(const char* name);
     void UpdateStatus(const char* name, jsstatus_t status);
@@ -65,7 +57,8 @@ public:
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);
     
 private:
-    void SetCommand(jssyscmd_id_t cmd, const char* paramA = NULL, const char* paramB = NULL);
+    void PostCommand(jssyscmd_id_t id, stdstr paramA = "", stdstr paramB = "");
+    //void PostCommandSync(jssyscmd_id_t id, void* paramC);
 
     static DWORD WINAPI ThreadProc(void* _this);
     void ThreadProc();

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 07 2021 -->
+<!-- Generated Apr 11 2021 -->
 <!-- Source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -159,6 +159,10 @@ div.tag.red {
 <li><a href="#console_clear">console.clear()</a></li>
 <li><a href="#console_listen">console.listen(inputListener)</a></li>
 </ul><div class="vtab"></div></li>
+<li><a href="#pj64">pj64</a>: Project64 interface<ul>
+<li><a href="#pj64_open">pj64.open(romPath)</a></li>
+<li><a href="#pj64_close">pj64.close()</a></li>
+</ul><div class="vtab"></div></li>
 <li><a href="#mem">mem</a>: N64 memory interface<ul>
 <li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
 <li><a href="#mem_bindvar">mem.bindvar(object, address, name, typeId)</a></li>
@@ -253,6 +257,8 @@ div.tag.red {
 <li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#Global definitions">Global definitions</a><ul>
+<li><a href="#require">require(id)</a></li>
+<li><a href="#exec">exec(commandLine[, options])</a></li>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
@@ -318,6 +324,27 @@ console.listen(function(input) {
     }
 });
 </pre>
+
+</div>
+<!-- pj64 -->
+<div class="module">
+<div class="modtitle"><span class="title" id="pj64">pj64</span></div>
+Project64 interface
+<div class="vtab"></div>
+<ul>
+<li><a href="#pj64_open">pj64.open(romPath)</a></li>
+<li><a href="#pj64_close">pj64.close()</a></li>
+</ul>
+<!-- pj64.open -->
+<div class="prop"><span class="title" id="pj64_open">pj64.open(romPath)</span></div>
+<div class="tsproto">pj64.open(romPath: string): boolean</div>
+<div class="vtab"></div>
+Opens and starts playing a ROM. Returns <div class="snip">true</div> if the operation is successful.
+<!-- pj64.close -->
+<div class="prop"><span class="title" id="pj64_close">pj64.close()</span></div>
+<div class="tsproto">pj64.close(): void</div>
+<div class="vtab"></div>
+Closes the current ROM.
 
 </div>
 <!-- mem -->
@@ -1150,12 +1177,66 @@ Setting this value to zero will allow tasks to run indefinitely.
 <div class="modtitle"><span class="title" id="Global definitions">Global definitions</span></div>
 <div class="vtab"></div>
 <ul>
+<li><a href="#require">require(id)</a></li>
+<li><a href="#exec">exec(commandLine[, options])</a></li>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
 <li><a href="#Miscellaneous">Miscellaneous</a></li>
 </ul>
+<!-- require -->
+<div class="prop"><span class="title" id="require">require(id)</span></div>
+<div class="tsproto">require(id: string): Object</div>
+<div class="vtab"></div>
+Returns a module object. <div class="snip">id</div> may be one of the following:
+<ul>
+<li>The name of a JavaScript file in the <div class="snip">Scripts/modules</div> directory.</i>
+<li>The path of a JavaScript file relative to the current module.</i>
+</ul>
+<pre class="ex">
+// Scripts/modules/mymodule.js
+module.exports = {
+   info: info
+};
+
+function info() {
+    console.log("This is my module");
+}
+</pre>
+<pre class="ex">
+const mymodule = require('mymodule.js');
+mymodule.info(); // "This is my module"
+</pre>
+<!-- exec -->
+<div class="prop"><span class="title" id="exec">exec(commandLine[, options])</span></div>
+<div class="tsproto">exec(commandLine: string, options?: Object): string</div>
+<div class="vtab"></div>
+Executes a system command. Returns the output.
+<div class="vtab"></div>
+<div class="snip">options</div> may contain any of the following properties:
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">hidden</div></td><td>If <div class="snip">true</div>, the window of the subprocess is hidden. <div class="snip">true</div> by default.</td></tr>
+<tr><td><div class="snip">cwd</div></td><td>Current working directory of the subprocess.</td></tr>
+</table>
+<div class="vtab"></div>
+This function throws an error on failure. The error object will contain the following properties:
+<div class="vtab"></div>
+<table>
+<tr><td><div class="snip">status</div></td><td>The exit code of the subprocess.</td></tr>
+<tr><td><div class="snip">stdout</div></td><td>The standard output of the subprocess.</td></tr>
+<tr><td><div class="snip">stderr</div></td><td>The standard error output of the subprocess.</td></tr>
+<tr><td><div class="snip">pid</div></td><td>The PID of the subprocess.</td></tr>
+</table>
+<pre class="ex">
+try {
+    console.log(exec('dir'));
+} catch(e) {
+    console.log("exec() failed");
+    console.log(e.stderr);
+}
+</pre>
 <!-- alert -->
 <div class="prop"><span class="title" id="alert">alert(message[, caption])</span></div>
 <div class="tsproto">alert(message: string, caption?: string): number</div>

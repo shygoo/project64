@@ -2,7 +2,7 @@
 #include <windows.h>
 #include "../ScriptAPI.h"
 
-void ScriptAPI::Define_console(duk_context *ctx)
+void ScriptAPI::Define_console(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
         { "print", js_console_print, DUK_VARARGS },
@@ -21,14 +21,14 @@ void ScriptAPI::Define_console(duk_context *ctx)
     duk_pop(ctx);
 }
 
-duk_ret_t ScriptAPI::js_console_print(duk_context *ctx)
+duk_ret_t ScriptAPI::js_console_print(duk_context* ctx)
 {
     const char* str = duk_safe_to_string(ctx, 0);
     GetInstance(ctx)->System()->Print("%s", str);
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_console_log(duk_context *ctx)
+duk_ret_t ScriptAPI::js_console_log(duk_context* ctx)
 {
     duk_idx_t nargs = duk_get_top(ctx);
 

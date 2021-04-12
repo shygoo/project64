@@ -25,7 +25,7 @@ struct JSCallback
     void            *heapptr;
     jscond_fn_t      Condition;
     jsargs_fn_t      PushArguments;
-    // assigned by scriptsys when this is added to the callback map
+    // assigned by scriptsys when this is added to a callback map
     jscb_id_t        id;
 
     struct {
@@ -87,5 +87,14 @@ typedef enum {
     CMD_STOP_SCRIPT,
     CMD_SWEEP,
     CMD_INPUT,
-    CMD_SHUTDOWN
+    CMD_SHUTDOWN,
+    CMD_INVOKE
 } jssyscmd_id_t;
+
+typedef struct {
+    jssyscmd_id_t id;
+    stdstr        paramA;
+    stdstr        paramB;
+    void*         paramC;
+    HANDLE        hDoneEvent;
+} jssys_cmd_t;

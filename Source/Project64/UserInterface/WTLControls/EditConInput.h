@@ -6,16 +6,10 @@ enum {
     CIN_SPECIALKEY
 };
 
-enum ci_key_t {
-    CI_KEY_UP,
-    CI_KEY_DOWN,
-    CI_KEY_ENTER
-};
-
 typedef struct
 {
-    NMHDR    nmh;
-    ci_key_t key;
+    NMHDR nmh;
+    int   vkey;
 } NMCISPECIALKEY;
 
 class CEditConInput : public CWindowImpl<CEditConInput, CEdit>
@@ -32,15 +26,9 @@ public:
         switch (wParam)
         {
         case VK_UP:
-            nmsk = { { m_hWnd, (UINT_PTR)GetDlgCtrlID(), CIN_SPECIALKEY }, CI_KEY_UP };
-            SendMessage(GetParent(), WM_NOTIFY, nmsk.nmh.idFrom, (LPARAM)&nmsk);
-            break;
         case VK_DOWN:
-            nmsk = { { m_hWnd, (UINT_PTR)GetDlgCtrlID(), CIN_SPECIALKEY }, CI_KEY_DOWN };
-            SendMessage(GetParent(), WM_NOTIFY, nmsk.nmh.idFrom, (LPARAM)&nmsk);
-            break;
         case VK_RETURN:
-            nmsk = { { m_hWnd, (UINT_PTR)GetDlgCtrlID(), CIN_SPECIALKEY }, CI_KEY_ENTER };
+            nmsk = { { m_hWnd, (UINT_PTR)GetDlgCtrlID(), CIN_SPECIALKEY }, (int)wParam };
             SendMessage(GetParent(), WM_NOTIFY, nmsk.nmh.idFrom, (LPARAM)&nmsk);
             break;
         }

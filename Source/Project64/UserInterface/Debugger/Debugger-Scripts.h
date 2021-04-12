@@ -18,6 +18,11 @@ private:
         WM_CONSOLE_CLEAR = WM_USER + 4
     };
 
+    enum {
+        CONFLUSH_TIMER_ID = 0,
+        CONFLUSH_TIMER_INTERVAL = 50
+    };
+
     CEditConInput m_ConInputEdit;
     CEditConOutput m_ConOutputEdit;
     CListViewCtrl m_ScriptList;
@@ -28,6 +33,8 @@ private:
     stdstr m_SelectedScriptName;
     std::vector<wchar_t*> m_InputHistory;
     size_t m_InputHistoryIndex;
+
+    stdstr m_ConOutputBuffer;
 
     HANDLE m_hQuitScriptDirWatchEvent;
     HANDLE m_hScriptDirWatchThread;
@@ -40,13 +47,14 @@ private:
     void RefreshStatus();
     void ConsoleCopy();
 
+    void SendInput(const char* name, const char* code);
+
 public:
     enum { IDD = IDD_Debugger_Scripts };
 
     CDebugScripts(CDebuggerUI * debugger);
     virtual ~CDebugScripts(void);
 
-    void EvaluateInSelectedInstance(const char* code);
     void ConsolePrint(const char* text);
     void ConsoleClear();
     void RefreshList();
@@ -62,6 +70,7 @@ public:
     LRESULT OnScriptListItemChanged(NMHDR* pNMHDR);
     LRESULT OnInputSpecialKey(NMHDR* pNMHDR);
     void OnExitSizeMove(void);
+    void OnTimer(UINT_PTR nIDEvent);
 
     LRESULT OnConsolePrint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
     LRESULT OnConsoleClear(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -77,6 +86,7 @@ public:
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, NM_CUSTOMDRAW, OnScriptListCustomDraw)
         NOTIFY_HANDLER_EX(IDC_SCRIPT_LIST, LVN_ITEMCHANGED, OnScriptListItemChanged)
         NOTIFY_HANDLER_EX(IDC_EVAL_EDIT, CIN_SPECIALKEY, OnInputSpecialKey)
+        MSG_WM_TIMER(OnTimer)
         MSG_WM_DESTROY(OnDestroy)
         MSG_WM_EXITSIZEMOVE(OnExitSizeMove);
         MESSAGE_HANDLER(WM_CONSOLE_PRINT, OnConsolePrint)

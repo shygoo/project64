@@ -22,6 +22,7 @@ namespace ScriptAPI
     duk_ret_t CallbackFinalizer(duk_context* ctx);
 
     duk_ret_t js_Duktape_modSearch(duk_context* ctx);
+    duk_ret_t js_exec(duk_context* ctx);
 
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
 
@@ -138,6 +139,8 @@ namespace ScriptAPI
     void Define_pj64(duk_context* ctx);
     duk_ret_t js_pj64_open(duk_context* ctx);
     duk_ret_t js_pj64_close(duk_context* ctx);
+    //duk_ret_t js_pj64_savestate(duk_context* ctx);
+    //duk_ret_t js_pj64_loadstate(duk_context* ctx);
 
     // ScriptAPI_screen
     //duk_ret_t js_screen(duk_context* ctx);

@@ -51,6 +51,20 @@
           });
           ```
 
+# pj64
+- name: pj64
+  tagline: Project64 interface
+  props:
+  - name: pj64.open
+    js:   pj64.open(romPath)
+    ts:   "pj64.open(romPath: string): boolean"
+    desc: Opens and starts playing a ROM. Returns `true` if the operation is successful.
+
+  - name: pj64.close
+    js:   pj64.close()
+    ts:   "pj64.close(): void"
+    desc: Closes the current ROM.
+
 # mem
 - name:    mem
   tagline: N64 memory interface
@@ -801,6 +815,60 @@
 # global definitions
 - name: Global definitions
   props:
+  - name: require
+    js:   require(id)
+    ts:   "require(id: string): Object"
+    desc: |
+          Returns a module object. `id` may be one of the following:
+          <ul>
+          <li>The name of a JavaScript file in the `Scripts/modules` directory.</i>
+          <li>The path of a JavaScript file relative to the current module.</i>
+          </ul>
+          ```
+          // Scripts/modules/mymodule.js
+          module.exports = {
+             info: info
+          };
+
+          function info() {
+              console.log("This is my module");
+          }
+          ```
+          ```
+          const mymodule = require('mymodule.js');
+          mymodule.info(); // "This is my module"
+          ```
+
+  - name: exec
+    js:   exec(commandLine[, options])
+    ts:   "exec(commandLine: string, options?: Object): string"
+    desc: |
+          Executes a system command. Returns the output.
+          <div class="vtab"></div>
+          `options` may contain any of the following properties:
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`hidden`</td><td>If `true`, the window of the subprocess is hidden. `true` by default.</td></tr>
+          <tr><td>`cwd`</td><td>Current working directory of the subprocess.</td></tr>
+          </table>
+          <div class="vtab"></div>
+          This function throws an error on failure. The error object will contain the following properties:
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`status`</td><td>The exit code of the subprocess.</td></tr>
+          <tr><td>`stdout`</td><td>The standard output of the subprocess.</td></tr>
+          <tr><td>`stderr`</td><td>The standard error output of the subprocess.</td></tr>
+          <tr><td>`pid`</td><td>The PID of the subprocess.</td></tr>
+          </table>
+          ```
+          try {
+              console.log(exec('dir'));
+          } catch(e) {
+              console.log("exec() failed");
+              console.log(e.stderr);
+          }
+          ```
+
   - name: alert
     js:   alert(message[, caption])
     ts:   "alert(message: string, caption?: string): number"

@@ -64,6 +64,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     LoadWindowPos();
     WindowCreated();
 
+    SetTimer(CONFLUSH_TIMER_ID, CONFLUSH_TIMER_INTERVAL, NULL);
+
     m_hQuitScriptDirWatchEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     m_hScriptDirWatchThread = CreateThread(NULL, 0, ScriptDirWatchProc, (void*)this, 0, NULL);
 
@@ -73,6 +75,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
 
 LRESULT CDebugScripts::OnDestroy(void)
 {
+    KillTimer(CONFLUSH_TIMER_ID);
+
     SetEvent(m_hQuitScriptDirWatchEvent);
     WaitForSingleObject(m_hScriptDirWatchThread, INFINITE);
     CloseHandle(m_hQuitScriptDirWatchEvent);
@@ -198,9 +202,9 @@ void CDebugScripts::ConsolePrint(const char* text)
 {
     if (m_hWnd != NULL)
     {
-        char* textCopy = _strdup(text); // OnConsolePrint will free this
+        // OnConsolePrint will free this
+        char* textCopy = _strdup(text);
         PostMessage(WM_CONSOLE_PRINT, (WPARAM)textCopy);
-        Sleep(5); // Prevent flooding
     }
 }
 
@@ -387,28 +391,14 @@ LRESULT CDebugScripts::OnScriptListItemChanged(NMHDR* pNMHDR)
 LRESULT CDebugScripts::OnConsolePrint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
     char *text = (char*)wParam;
-
-    SCROLLINFO scroll;
-    scroll.cbSize = sizeof(SCROLLINFO);
-    scroll.fMask = SIF_ALL;
-    m_ConOutputEdit.GetScrollInfo(SB_VERT, &scroll);
-
-    m_ConOutputEdit.SetRedraw(FALSE);
-    m_ConOutputEdit.AppendText(stdstr(text).ToUTF16().c_str());
-    m_ConOutputEdit.SetRedraw(TRUE);
-
-    if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
-    {
-        m_ConOutputEdit.ScrollCaret();
-    }
-
+    m_ConOutputBuffer += text;
     free(text);
-
     return FALSE;
 }
 
 LRESULT CDebugScripts::OnConsoleClear(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
+    m_ConOutputBuffer = "";
     m_ConOutputEdit.SetWindowText(L"");
     return FALSE;
 }
@@ -470,9 +460,9 @@ LRESULT CDebugScripts::OnRefreshList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*
     return FALSE;
 }
 
-void CDebugScripts::EvaluateInSelectedInstance(const char* code)
+void CDebugScripts::SendInput(const char* name, const char* code)
 {
-    m_Debugger->ScriptSystem()->Input(m_SelectedScriptName.c_str(), code);
+    m_Debugger->ScriptSystem()->Input(name, code);
 }
 
 void CDebugScripts::RunSelected()
@@ -515,7 +505,7 @@ LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
 {
     NMCISPECIALKEY* pnmsk = (NMCISPECIALKEY*)pNMHDR;
 
-    if (pnmsk->key == CI_KEY_UP)
+    if (pnmsk->vkey == VK_UP)
     {
         if (m_InputHistoryIndex > 0)
         {
@@ -528,7 +518,7 @@ LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
         return 0;
     }
 
-    if (pnmsk->key == CI_KEY_DOWN)
+    if (pnmsk->vkey == VK_DOWN)
     {
         size_t size = m_InputHistory.size();
 
@@ -552,7 +542,7 @@ LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
         return 0;
     }
 
-    if (pnmsk->key == CI_KEY_ENTER)
+    if (pnmsk->vkey == VK_RETURN)
     {
         size_t codeLength = m_ConInputEdit.GetWindowTextLength();
 
@@ -565,7 +555,7 @@ LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
         m_ConInputEdit.GetWindowText(code, codeLength + 1);
         m_ConInputEdit.SetWindowText(L"");
 
-        EvaluateInSelectedInstance(stdstr().FromUTF16(code).c_str());
+        SendInput(m_SelectedScriptName.c_str(), stdstr().FromUTF16(code).c_str());
 
         // If there is a duplicate entry move it to the bottom
         for (size_t i = 0; i < m_InputHistory.size(); i++)
@@ -587,4 +577,31 @@ LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)
     }
 
     return 0;
+}
+
+void CDebugScripts::OnTimer(UINT_PTR nIDEvent)
+{
+    if (nIDEvent == CONFLUSH_TIMER_ID)
+    {
+        if (m_ConOutputBuffer == "")
+        {
+            return;
+        }
+
+        SCROLLINFO scroll;
+        scroll.cbSize = sizeof(SCROLLINFO);
+        scroll.fMask = SIF_ALL;
+        m_ConOutputEdit.GetScrollInfo(SB_VERT, &scroll);
+        
+        m_ConOutputEdit.SetRedraw(FALSE);
+        m_ConOutputEdit.AppendText(m_ConOutputBuffer.ToUTF16().c_str());
+        m_ConOutputEdit.SetRedraw(TRUE);
+
+        if ((scroll.nPage + scroll.nPos) - 1 == (uint32_t)scroll.nMax)
+        {
+            m_ConOutputEdit.ScrollCaret();
+        }
+
+        m_ConOutputBuffer = "";
+    }
 }

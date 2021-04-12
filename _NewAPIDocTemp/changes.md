@@ -9,11 +9,12 @@ Changes:
 - remove API.js, make all API functions native
 - add better error throwing for all API functions
 - rewrite API documentation file
+- improve console.log's performance
 - add remaining registers to `cop0` interface
 - add events.onpifread(callback)
 - add console.listen(inputListener)
 - add script.keepalive(keepAlive)
-- add script.timeout(ms)
+- add script.timeout(milliseconds)
 - add debug.skip()
 - add debug.showmemory(address)
 - add debug.showcommands(address)
@@ -26,7 +27,8 @@ Changes:
 - add mem.romsize
 - add pj64.open(romPath)
 - add pj64.close()
-- implement require()
+- add exec(command)
+- add require(id)
 
 Changes that will break compatibility with old scripts:
 
@@ -55,10 +57,6 @@ TODO:
 - finish implementing new server/socket
 - finish implementing new screen interface
 - full test suite
-- debug.getsymbol?
-- debug.setsymbol?
-
-- formatting/cleanup printfs, comments etc
 
 - pj64.savestate(path)
 - pj64.loadstate(path)
@@ -66,11 +64,12 @@ TODO:
 - pj64.limitfps(limitFps = true)
 - pj64.pause()
 - pj64.resume()
-- pj64.savesetting(section, name, value)
-- pj64.loadsetting(section, name)
+
 
 - pj64.addmenu(null, caption, callback, menuKey)
 - pj64.delmenu()
+
+- formatting/cleanup printfs, comments etc
 
 -----------------------------
 
@@ -83,6 +82,8 @@ pj64.addmenu(toolsMenu, "Kill Mario", function(){
 ---------------------------
 
 backburner:
-
-buffer console.log()
-write input history to a file
+- write input history to a file
+- debug.getsymbol?
+- debug.setsymbol?
+- pj64.savesetting(section, name, value)
+- pj64.loadsetting(section, name)
