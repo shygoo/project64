@@ -229,8 +229,8 @@ span.js-word { color: #222; }
 <li><a href="#mem_setblock">mem.setblock(address, data[, length])</a></li>
 <li><a href="#mem_getstring">mem.getstring(address[, length])</a></li>
 <li><a href="#mem_setstring">mem.setstring(address, data[, length])</a></li>
-<li><a href="#mem_ramsize">mem.ramsize</a></li>
-<li><a href="#mem_romsize">mem.romsize</a></li>
+<li><a href="#mem_ramSize">mem.ramSize</a></li>
+<li><a href="#mem_romSize">mem.romSize</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#events">events</a>: Emulation event hooking interface<ul>
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
@@ -247,11 +247,19 @@ span.js-word { color: #222; }
 <li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
 <li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
+<li><a href="#DrawEvent">DrawEvent</a></li>
 <li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#screen">screen</a>: Screen drawing interface<ul>
-<li><a href="#screen_print">screen.print(x, y, text)</a></li>
+<li><a href="#DrawingContext">DrawingContext</a>: Screen drawing context<ul>
+<li><a href="#ctx_width">ctx.width</a></li>
+<li><a href="#ctx_height">ctx.height</a></li>
+<li><a href="#ctx_fillColor">ctx.fillColor</a></li>
+<li><a href="#ctx_color">ctx.color(r, g, b[, alpha])</a></li>
+<li><a href="#ctx_print">ctx.print(x, y, text)</a></li>
+<li><a href="#ctx_fillrect">ctx.fillrect(x, y, width, height)</a></li>
+<li><a href="#ctx_setdata">ctx.setdata(x, y, data, width, height)</a></li>
+<li><a href="#ctx_getdata">ctx.getdata(x, y, width, height)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#cpu">cpu</a>: CPU register interface<ul>
 <li><a href="#cpu_pc">cpu.pc</a></li>
@@ -298,9 +306,9 @@ span.js-word { color: #222; }
 <li><a href="#fs_open">fs.open(path, mode)</a></li>
 <li><a href="#fs_close">fs.close(fd)</a></li>
 <li><a href="#fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</a></li>
-<li><a href="#fs_writeFile">fs.writeFile(path, buffer)</a></li>
+<li><a href="#fs_writefile">fs.writefile(path, buffer)</a></li>
 <li><a href="#fs_read">fs.read(fd, buffer, offset, length, position)</a></li>
-<li><a href="#fs_readFile">fs.readFile(path)</a></li>
+<li><a href="#fs_readfile">fs.readfile(path)</a></li>
 <li><a href="#fs_fstat">fs.fstat(fd)</a></li>
 <li><a href="#fs_stat">fs.stat(path)</a></li>
 <li><a href="#fs_unlink">fs.unlink(path)</a></li>
@@ -441,7 +449,7 @@ See <a href="#type_ids">Type IDs</a> for more details.
 <div class="vtab"></div>
 Adds multiple memory-bound properties to <span class="snip">object</span>.
 <span class="snip">vars</span> must be an array in which each item is an array containing an address, name, and <a href="#type_ids">type ID</a> (in order) describing a variable.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns <span class="snip">object</span>.
 <pre class="ex">
 <span class="js-word">mem</span>.<span class="js-word">bindvars</span>(<span class="js-keyword">this</span>, [
@@ -459,9 +467,9 @@ Returns <span class="snip">object</span>.
 Adds multiple memory-bound properties to <span class="snip">object</span>.
 <span class="snip">properties</span> must be an object in which each key/value pair specifies the name and <a href="#type_ids">type ID</a> of a variable.
 The offset of a variable is determined by the sum of type sizes of the variables preceding it.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns <span class="snip">object</span>.
-<div class="vtab""></div>
+<div class="vtab"></div>
 <pre class="ex">
 <span class="js-keyword">var</span> <span class="js-word">playerPos</span> = <span class="js-word">mem</span>.<span class="js-word">bindstruct</span>({}, <span class="js-number">0x8033B1AC</span>, { <span class="js-word">x</span>: <span class="js-word">f32</span>, <span class="js-word">y</span>: <span class="js-word">f32</span>, <span class="js-word">z</span>: <span class="js-word">f32</span> });
 <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-word">playerPos</span>.<span class="js-word">x</span>, <span class="js-word">playerPos</span>.<span class="js-word">y</span>, <span class="js-word">playerPos</span>.<span class="js-word">z</span>);
@@ -482,8 +490,7 @@ Returns a constructor function that will create an object representing a structu
 <div class="vtab"></div>
 Returns a block of data from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
 <pre class="ex">
-<span class="js-keyword">var</span> <span class="js-word">ramDump</span> = <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-number">0x80000000</span>, <span class="js-word">mem</span>.<span class="js-word">ramsize</span>)
-<span class="js-word">fs</span>.<span class="js-word">writeFile</span>(<span class="js-string">"ram-dump.bin"</span>, <span class="js-word">ramDump</span>);
+<span class="js-word">fs</span>.<span class="js-word">writefile</span>(<span class="js-string">"ram_dump.bin"</span>,  <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-word">K0BASE</span>, <span class="js-word">mem</span>.<span class="js-word">ramSize</span>));
 </pre>
 <!-- mem.setblock -->
 <div class="prop"><span class="title" id="mem_setblock">mem.setblock(address, data[, length])</span></div>
@@ -495,8 +502,7 @@ Writes a block of data into memory. <span class="snip">data</span> may be one of
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
 <pre class="ex">
-<span class="js-keyword">var</span> <span class="js-word">textures</span> = <span class="js-word">fs</span>.<span class="js-word">readFile</span>(<span class="js-string">"textures.bin"</span>);
-<span class="js-word">mem</span>.<span class="js-word">setblock</span>(<span class="js-number">0x80400000</span>, <span class="js-word">textures</span>);
+<span class="js-word">mem</span>.<span class="js-word">setblock</span>(<span class="js-number">0x80400000</span>, <span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-string">"textures.bin"</span>));
 </pre>
 <!-- mem.getstring -->
 <div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, length])</span></div>
@@ -511,14 +517,14 @@ Returns a zero-terminated ASCII string from memory.
 <div class="tsproto">mem.setstring(address: number, data: string | Buffer | TypedArray, length?: number): Buffer</div>
 <div class="vtab"></div>
 Writes a string into memory (alias of <a href="#mem_setblock">mem.setblock</a>).
-<!-- mem.ramsize -->
-<div class="prop"><span class="title" id="mem_ramsize">mem.ramsize</span></div>
-<div class="tsproto">mem.ramsize: number</div>
+<!-- mem.ramSize -->
+<div class="prop"><span class="title" id="mem_ramSize">mem.ramSize</span></div>
+<div class="tsproto">mem.ramSize: number</div>
 <div class="vtab"></div>
 The size of RDRAM in bytes. <span class="snip">0</span> if RDRAM is not initialized.
-<!-- mem.romsize -->
-<div class="prop"><span class="title" id="mem_romsize">mem.romsize</span></div>
-<div class="tsproto">mem.romsize: number</div>
+<!-- mem.romSize -->
+<div class="prop"><span class="title" id="mem_romSize">mem.romSize</span></div>
+<div class="tsproto">mem.romSize: number</div>
 <div class="vtab"></div>
 The size of cartridge ROM in bytes. <span class="snip">0</span> if ROM is not initialized.
 
@@ -535,18 +541,18 @@ Emulation event hooking interface
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUExecEvent">CPUExecEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <pre class="ex">
 <span class="js-word">events</span>.<span class="js-word">onexec</span>(<span class="js-number">0x802CB1C0</span>, <span class="js-keyword">function</span>() {
     <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"func_802CB1C0 was called"</span>);
-})
+});
 </pre>
 <pre class="ex">
 <span class="js-comment">// Log every CPU step</span>
 <span class="js-word">events</span>.<span class="js-word">onexec</span>(<span class="js-word">ADDR_ANY</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
     <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">e</span>.<span class="js-word">pc</span>.<span class="js-word">hex</span>() + <span class="js-string">": "</span> + <span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">e</span>.<span class="js-word">pc</span>], <span class="js-word">e</span>.<span class="js-word">pc</span>));
-})
+});
 </pre>
 <!-- events.onread -->
 <div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
@@ -555,7 +561,7 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <!-- events.onwrite -->
 <div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
@@ -564,7 +570,7 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <pre class="ex">
 <span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-word">PI_WR_LEN_REG</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
@@ -581,7 +587,7 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
 <span class="snip">opcode</span> is equal to the current opcode ANDed with <span class="snip">mask</span>.
 <span class="snip">callback</span> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <pre class="ex">
 <span class="js-comment">// Log every JAL</span>
@@ -598,7 +604,7 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
 <span class="snip">opcode</span> is equal to the current opcode.
 <span class="snip">callback</span> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
 <div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
@@ -607,9 +613,9 @@ Returns a callback ID.
 Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and at least one of
 the general purpose registers specified by <span class="snip">regFlags</span> is equal to <span class="snip">value</span> (lower 32 bits only).
 <span class="snip">callback</span> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
-<div class="vtab""></div>
+<div class="vtab"></div>
 See <a href="#GPR_flags">General purpose register flags</a> for a list of valid flags. Multiple registers may be specified via bitwise OR.
 <pre class="ex">
 <span class="js-comment">// Break when any general purpose register contains 0x49533634</span>
@@ -625,7 +631,7 @@ See <a href="#GPR_flags">General purpose register flags</a> for a list of valid 
 Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
 <span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
 Useful for monitoring and overriding controller input.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a callback ID.
 <pre class="ex">
 <span class="js-comment">// Log P1's controller input</span>
@@ -638,7 +644,7 @@ Returns a callback ID.
 
 <pre class="ex">
 <span class="js-comment">// Play an M64 TAS file</span>
-<span class="js-keyword">var</span> <span class="js-word">m64file</span> = <span class="js-word">fs</span>.<span class="js-word">readFile</span>(<span class="js-string">"sm64-1key.m64"</span>);
+<span class="js-keyword">var</span> <span class="js-word">m64file</span> = <span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-string">"sm64-1key.m64"</span>);
 <span class="js-keyword">var</span> <span class="js-word">numSamples</span> = <span class="js-word">m64file</span>.<span class="js-word">readUInt32LE</span>(<span class="js-number">0x018</span>);
 <span class="js-keyword">var</span> <span class="js-word">sampleIndex</span> = <span class="js-number">0</span>;
 
@@ -654,11 +660,28 @@ Returns a callback ID.
 </pre>
 <!-- events.ondraw -->
 <div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
-<div class="tsproto">events.ondraw(callback: (e: EmuEvent) => void): number</div>
+<div class="tsproto">events.ondraw(callback: (e: DrawEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked immediately after Project64 requests a screen update from the graphics plugin.
-<div class="vtab""></div>
+Registers a callback that will be invoked when Project64 receives a screen update from the graphics plugin.
+<span class="snip">callback</span> receives a <a href="#DrawEvent">DrawEvent</a> object.
+<div class="vtab"></div>
 Returns a callback ID.
+<div class="vtab"></div>
+<a href="#DrawEvent">DrawEvent</a>'s <span class="snip">drawingContext</span> property is a <a href="#DrawingContext">DrawingContext</a> object
+whose methods can be used to draw over or sample the current frame.
+<pre class="ex">
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">drawStuff</span>(<span class="js-word">ctx</span>);
+});
+
+<span class="js-keyword">function</span> <span class="js-word">drawStuff</span>(<span class="js-word">ctx</span>) {
+    <span class="js-word">ctx</span>.<span class="js-word">print</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Hello world!"</span>);
+}
+</pre>
+<div class="vtab"></div>
+The event's <a href="#DrawingContext">DrawingContext</a> expires when <span class="snip">callback</span> returns.
+If a method or property of the <a href="#DrawingContext">DrawingContext</a> object is used after <span class="snip">callback</span> returns, an error is thrown.
 <!-- events.remove -->
 <div class="prop"><span class="title" id="events_remove">events.remove(callbackId)</span></div>
 <div class="tsproto">events.remove(callbackId: number): void</div>
@@ -707,8 +730,8 @@ Unregisters the callback specified by <span class="snip">callbackId</span>.
 <tr><td><span class="snip">s32</span></td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
 <tr><td><span class="snip">u32</span></td><td>LWU</td></tr>
 <tr><td><span class="snip">u64</span></td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
-<tr><td><span class="snip">float</span></td><td>LWC1, SWC1</td></tr>
-<tr><td><span class="snip">double</span></td><td>LDC1, SDC1</td></tr>
+<tr><td><span class="snip">f32</span></td><td>LWC1, SWC1</td></tr>
+<tr><td><span class="snip">f64</span></td><td>LDC1, SDC1</td></tr>
 </table>
 
 </table>
@@ -728,6 +751,13 @@ Unregisters the callback specified by <span class="snip">callbackId</span>.
 <tr><td><span class="snip">e.pc</span></td><td>Program counter address.</td></tr>
 <tr><td><span class="snip">e.value</span></td><td>The value.</td></tr>
 <tr><td><span class="snip">e.reg</span></td><td>Index of the register containing the value.</td></tr>
+</table>
+<!-- DrawEvent -->
+<div class="prop"><span class="title" id="DrawEvent">DrawEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><span class="snip">e.drawingContext</span></td><td><a href="#DrawingContext">DrawingContext</a> object.</td></tr>
 </table>
 <!-- GPR_flags -->
 <div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
@@ -762,22 +792,103 @@ The following <span class="snip">AddressRange</span> objects are defined globall
 </table>
 
 </div>
-<!-- screen -->
+<!-- DrawingContext -->
 <div class="module">
-<div class="modtitle"><span class="title" id="screen">screen</span></div>
-Screen drawing interface
+<div class="modtitle"><span class="title" id="DrawingContext">DrawingContext</span></div>
+Screen drawing context
 <div class="vtab"></div>
-<!-- screen.print -->
-<div class="prop"><span class="title" id="screen_print">screen.print(x, y, text)</span><div class="tag red">Unstable</div></div>
-<div class="tsproto">screen.print(x: number, y: number, text: string): void</div>
+<!-- ctx.width -->
+<div class="prop"><span class="title" id="ctx_width">ctx.width</span></div>
+<div class="tsproto">ctx.width: number</div>
+<div class="vtab"></div>
+Width of the screen. Read-only.
+<!-- ctx.height -->
+<div class="prop"><span class="title" id="ctx_height">ctx.height</span></div>
+<div class="tsproto">ctx.height: number</div>
+<div class="vtab"></div>
+Height of the screen. Read-only.
+<!-- ctx.fillColor -->
+<div class="prop"><span class="title" id="ctx_fillColor">ctx.fillColor</span></div>
+<div class="tsproto">ctx.fillColor: number</div>
+<div class="vtab"></div>
+The current RGBA32 fill color. Opaque white (<span class="snip">0xFFFFFFFF</span>) by default.
+<pre class="ex">
+<span class="js-comment">// Set fillColor to opaque green</span>
+<span class="js-word">ctx</span>.<span class="js-word">fillColor</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">0</span>, <span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">1</span>.<span class="js-number">0</span>);
+</pre>
+<!-- ctx.color -->
+<div class="prop"><span class="title" id="ctx_color">ctx.color(r, g, b[, alpha])</span></div>
+<div class="tsproto">ctx.color(r: number, g: number, b: number, alpha?: number)</div>
+<div class="vtab"></div>
+Utility function that returns an RGBA32 number representation of a color.
+The <span class="snip">r</span>, <span class="snip">g</span>, and <span class="snip">b</span> parameters each have a range of <span class="snip">0</span> to <span class="snip">255</span>. The optional <span class="snip">alpha</span> parameter has a range of <span class="snip">0.0</span> to <span class="snip">1.0</span>.
+If <span class="snip">alpha</span> is not used it will default to <span class="snip">1.0</span>.
+<pre class="ex">
+<span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">0</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); <span class="js-comment">// 0xFF00007F</span>
+<span class="js-keyword">const</span> <span class="js-word">clrYellow</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">255</span>, <span class="js-number">255</span>, <span class="js-number">0</span>); <span class="js-comment">// 0xFFFF00FF</span>
+</pre>
+<!-- ctx.print -->
+<div class="prop"><span class="title" id="ctx_print">ctx.print(x, y, text)</span><div class="tag red">Unstable</div></div>
+<div class="tsproto">ctx.print(x: number, y: number, text: string): void</div>
 <div class="vtab"></div>
 Prints text to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
-Should be called from an <a href="#events_ondraw">events.ondraw</a> callback.
 <pre class="ex">
-<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>() {
-    <span class="js-word">screen</span>.<span class="js-word">print</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">print</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
 });
 </pre>
+<!-- ctx.fillrect -->
+<div class="prop"><span class="title" id="ctx_fillrect">ctx.fillrect(x, y, width, height)</span></div>
+<div class="vtab"></div>
+Draws a rectangle to the screen.
+<!-- ctx.setdata -->
+<div class="prop"><span class="title" id="ctx_setdata">ctx.setdata(x, y, data, width, height)</span></div>
+<div class="tsproto">ctx.setdata(x: number, y: number, data: Buffer | UInt8Array, width: number, height: number)</div>
+<div class="vtab"></div>
+Draws a raw data image to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
+The <span class="snip">data</span> argument should be a Buffer or Uint8Array in which each 4 elements represent the red, green, blue, and alpha channels of a pixel.
+The byte length of <span class="snip">data</span> must be equal to <span class="snip">((width * height) * 4)</span>.
+<pre class="ex">
+<span class="js-keyword">function</span> <span class="js-word">RandomDataImage</span>(<span class="js-word">width</span>, <span class="js-word">height</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">numBytes</span> = ((<span class="js-word">width</span> * <span class="js-word">height</span>) * <span class="js-number">4</span>);
+    <span class="js-keyword">this</span>.<span class="js-word">width</span> = <span class="js-word">width</span>;
+    <span class="js-keyword">this</span>.<span class="js-word">height</span> = <span class="js-word">height</span>;
+    <span class="js-keyword">this</span>.<span class="js-word">data</span> = <span class="js-keyword">new</span> <span class="js-word">Uint8Array</span>(<span class="js-word">numBytes</span>);
+    <span class="js-keyword">for</span>(<span class="js-keyword">var</span> <span class="js-word">i</span> = <span class="js-number">0</span>; <span class="js-word">i</span> < <span class="js-word">numBytes</span>; <span class="js-word">i</span> += <span class="js-number">4</span>) {
+        <span class="js-keyword">this</span>.<span class="js-word">data</span>[<span class="js-word">i</span> + <span class="js-number">0</span>] = <span class="js-word">Math</span>.<span class="js-word">random</span>()*<span class="js-number">256</span>; <span class="js-comment">// R</span>
+        <span class="js-keyword">this</span>.<span class="js-word">data</span>[<span class="js-word">i</span> + <span class="js-number">1</span>] = <span class="js-word">Math</span>.<span class="js-word">random</span>()*<span class="js-number">256</span>; <span class="js-comment">// G</span>
+        <span class="js-keyword">this</span>.<span class="js-word">data</span>[<span class="js-word">i</span> + <span class="js-number">2</span>] = <span class="js-word">Math</span>.<span class="js-word">random</span>()*<span class="js-number">256</span>; <span class="js-comment">// B</span>
+        <span class="js-keyword">this</span>.<span class="js-word">data</span>[<span class="js-word">i</span> + <span class="js-number">3</span>] = <span class="js-number">0xFF</span>; <span class="js-comment">// A</span>
+    }
+}
+
+<span class="js-keyword">var</span> <span class="js-word">randSquare</span> = <span class="js-keyword">new</span> <span class="js-word">RandomDataImage</span>(<span class="js-number">32</span>, <span class="js-number">32</span>);
+
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">drawdata</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-word">randSquare</span>.<span class="js-word">data</span>, <span class="js-word">randSquare</span>.<span class="js-word">width</span>, <span class="js-word">randSquare</span>.<span class="js-word">height</span>);
+}
+</pre>
+<pre class="ex">
+<span class="js-keyword">function</span> <span class="js-word">FileDataImage</span>(<span class="js-word">path</span>, <span class="js-word">width</span>, <span class="js-word">height</span>) {
+    <span class="js-keyword">this</span>.<span class="js-word">data</span> = <span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-word">path</span>);
+    <span class="js-keyword">this</span>.<span class="js-word">width</span> = <span class="js-word">width</span>;
+    <span class="js-keyword">this</span>.<span class="js-word">height</span> = <span class="js-word">height</span>;
+}
+
+<span class="js-keyword">var</span> <span class="js-word">image</span> = <span class="js-keyword">new</span> <span class="js-word">FileDataImage</span>(<span class="js-string">"image_32x32.bin"</span>, <span class="js-number">32</span>, <span class="js-number">32</span>);
+
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">drawdata</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-word">image</span>.<span class="js-word">data</span>, <span class="js-word">image</span>.<span class="js-word">width</span>, <span class="js-word">image</span>.<span class="js-word">height</span>);
+}
+</pre>
+<!-- ctx.getdata -->
+<div class="prop"><span class="title" id="ctx_getdata">ctx.getdata(x, y, width, height)</span></div>
+<div class="tsproto">ctx.getdata(x: number, y: number, width: number, height: number): Buffer</div>
+<div class="vtab"></div>
+Returns a Buffer object representing a portion of the screen.
 
 </div>
 <!-- cpu -->
@@ -927,7 +1038,7 @@ Resumes emulation after a debug break.
 Skips the current CPU command. Useful for preventing or overriding an operation.
 <pre class="ex">
 <span class="js-comment">// Do not let the CPU write to 0x8033B21E</span>
-<span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-number">0x8033B21E</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+<span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-number">0x8033B21E</span>, <span class="js-keyword">function</span>() {
     <span class="js-word">debug</span>.<span class="js-word">skip</span>();
 });
 </pre>
@@ -995,7 +1106,7 @@ File system interface
 <div class="vtab"></div>
 Opens the file pointed to by <span class="snip">path</span> in the mode specified by <span class="snip">mode</span>.
 See <a target="blank" href="https://pubs.opengroup.org/onlinepubs/009604599/functions/fopen.html">fopen</a> for a list of valid modes.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns a file descriptor.
 <!-- fs.close -->
 <div class="prop"><span class="title" id="fs_close">fs.close(fd)</span></div>
@@ -1015,7 +1126,7 @@ Writes <span class="snip">buffer</span> to the file referenced by file descripto
 <span class="snip">offset</span>&#58; optional position in the source buffer.<br>
 <span class="snip">length</span>&#58; optional maximum number of bytes to write.<br>
 <span class="snip">position</span>&#58; optional file position.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns the number of bytes written.
 <pre class="ex">
 <span class="js-keyword">var</span> <span class="js-word">fd</span> = <span class="js-word">fs</span>.<span class="js-word">open</span>(<span class="js-string">"file.txt"</span>, <span class="js-string">"wb"</span>);
@@ -1023,13 +1134,13 @@ Returns the number of bytes written.
 <span class="js-word">fs</span>.<span class="js-word">write</span>(<span class="js-word">fd</span>, <span class="js-string">"world!\n"</span>);
 <span class="js-word">fs</span>.<span class="js-word">close</span>();
 </pre>
-<!-- fs.writeFile -->
-<div class="prop"><span class="title" id="fs_writeFile">fs.writeFile(path, buffer)</span></div>
-<div class="tsproto">fs.writeFile(path: string, buffer: string | Buffer | ArrayBuffer): void</div>
+<!-- fs.writefile -->
+<div class="prop"><span class="title" id="fs_writefile">fs.writefile(path, buffer)</span></div>
+<div class="tsproto">fs.writefile(path: string, buffer: string | Buffer | ArrayBuffer): void</div>
 <div class="vtab"></div>
 Writes <span class="snip">buffer</span> to the file specified by <span class="snip">path</span>. Uses mode "wb" internally.
 <pre class="ex">
-<span class="js-word">fs</span>.<span class="js-word">writeFile</span>(<span class="js-string">"ram_dump.bin"</span>, <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-word">K0BASE</span>, <span class="js-word">mem</span>.<span class="js-word">ramsize</span>));
+<span class="js-word">fs</span>.<span class="js-word">writefile</span>(<span class="js-string">"ram_dump.bin"</span>, <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-word">K0BASE</span>, <span class="js-word">mem</span>.<span class="js-word">ramSize</span>));
 </pre>
 <!-- fs.read -->
 <div class="prop"><span class="title" id="fs_read">fs.read(fd, buffer, offset, length, position)</span></div>
@@ -1043,11 +1154,11 @@ Reads data from the file referenced by <span class="snip">fd</span> into <span c
 <span class="snip">offset</span>&#58; position in the source buffer.<br>
 <span class="snip">length</span>&#58; number of bytes to read.<br>
 <span class="snip">position</span>&#58; file position.
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns the number of bytes read.
-<!-- fs.readFile -->
-<div class="prop"><span class="title" id="fs_readFile">fs.readFile(path)</span></div>
-<div class="tsproto">fs.readFile(path: string): Buffer</div>
+<!-- fs.readfile -->
+<div class="prop"><span class="title" id="fs_readfile">fs.readfile(path)</span></div>
+<div class="tsproto">fs.readfile(path: string): Buffer</div>
 <div class="vtab"></div>
 Returns a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object representing the data of the file specified by <span class="snip">path</span>.
 Uses mode "rb" internally.
@@ -1085,7 +1196,7 @@ Returns an array of file names from a directory.
 <div class="prop"><span class="title" id="fs_Stats">fs.Stats</span></div>
 <div class="vtab"></div>
 Object containing information about a file or directory. Generated by <a href="#fs_fstat">fs.fstat/fs.stat</a>.
-<div class="vtab""></div>
+<div class="vtab"></div>
 <table>
 <tr><td><span class="snip">stats.dev</span></td><td>ID of the device the file resides on</td></tr>
 <tr><td><span class="snip">stats.ino</span></td><td>inode number</td></tr>
@@ -1102,15 +1213,15 @@ Object containing information about a file or directory. Generated by <a href="#
 <tr><td><span class="snip">stats.mtime</span></td><td>JS Date object representing the last modification time</td></tr>
 <tr><td><span class="snip">stats.ctime</span></td><td>JS Date object representing the creation time</td></tr>
 </table>
-<div class="vtab""></div>
+<div class="vtab"></div>
 <b>stats.isDirectory()</b><br>
 <div class="tsproto">stats.isDirectory(): boolean</div>
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns <span class="snip">true</span> if the <span class="snip">fs.Stats</span> object describes a directory.
-<div class="vtab""></div>
+<div class="vtab"></div>
 <b>stats.isFile()</b><br>
 <div class="tsproto">stats.isFile(): boolean</div>
-<div class="vtab""></div>
+<div class="vtab"></div>
 Returns <span class="snip">true</span> if the <span class="snip">fs.Stats</span> object describes a regular file.
 
 </div>
@@ -1207,9 +1318,9 @@ The thrown error object will contain the following properties:
 <pre class="ex">
 <span class="js-keyword">try</span> {
     <span class="js-word">exec</span>(<span class="js-string">"dir"</span>, { <span class="js-word">verbose</span>: <span class="js-keyword">true</span> });
-} <span class="js-keyword">catch</span>(<span class="js-word">e</span>) {
-    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"exec() failed with code"</span>, <span class="js-word">e</span>.<span class="js-word">status</span>);
-    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">e</span>.<span class="js-word">stderr</span>);
+} <span class="js-keyword">catch</span>(<span class="js-word">err</span>) {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"exec() failed with code"</span>, <span class="js-word">err</span>.<span class="js-word">status</span>);
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">err</span>.<span class="js-word">stderr</span>);
 }
 </pre>
 <!-- alert -->
@@ -1380,7 +1491,7 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <!-- JavaScript environment -->
 <div class="module">
 <div class="modtitle"><span class="title" id="JavaScript environment">JavaScript environment</span></div>
-<div class="vtab""></div>
+<div class="vtab"></div>
 Project64's script system uses <a target="blank" href="https://duktape.org/">Duktape</a>. Duktape supports ECMAScript E5 and some features from ES2015+.<br>
 See <a target="blank" href="https://duktape.org/">https://duktape.org/</a> for more information.
 <div class="vtab"></div>

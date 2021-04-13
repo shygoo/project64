@@ -56,11 +56,11 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
     }
 
-    duk_push_string(ctx, "ramsize");
+    duk_push_string(ctx, "ramSize");
     duk_push_c_function(ctx, js_mem__get_ramsize, 0);
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_SET_ENUMERABLE);
 
-    duk_push_string(ctx, "romsize");
+    duk_push_string(ctx, "romSize");
     duk_push_c_function(ctx, js_mem__get_romsize, 0);
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_SET_ENUMERABLE);
 

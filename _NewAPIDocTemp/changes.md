@@ -23,8 +23,8 @@ Changes:
 - add asm.decode(opcode)
 - add mem.setblock(address, data[, length))
 - add mem.setstring(address, data[, length))
-- add mem.ramsize
-- add mem.romsize
+- add mem.ramSize
+- add mem.romSize
 - add pj64.open(romPath)
 - add pj64.close()
 - add exec(command)
@@ -32,6 +32,9 @@ Changes:
 
 Changes that will break compatibility with old scripts:
 
+- change all `events.on*` callbacks to receive more informative event objects
+- rename `fs.writeFile` to `fs.writefile`
+- rename `fs.readFile` to `fs.readfile`
 - rename `mem.float`, `mem.double` to `mem.f32`, `mem.f64`
 - rename global `float`, `double` type IDs to `f32`, `f64`
 - move `gpr`, `ugpr`, `fpr`, `dfpr`, `cop0` interfaces into new `cpu` interface
@@ -39,7 +42,6 @@ Changes that will break compatibility with old scripts:
 - move `gpr.hi`/`ugpr.hi` to `cpu.hi`/`cpu.uhi`
 - move `gpr.lo`/`ugpr.lo` to `cpu.hi`/`cpu.ulo`
 - remove redundant `rom` interface because `mem` interface can access ROM
-- change all `events.on*` callbacks to receive more informative event objects
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 
 I am not sure what the situation is with `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`,

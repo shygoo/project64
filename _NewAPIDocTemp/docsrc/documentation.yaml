@@ -112,7 +112,7 @@
     desc: |
           Adds multiple memory-bound properties to `object`.
           `vars` must be an array in which each item is an array containing an address, name, and [type ID](#type_ids) (in order) describing a variable.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns `object`.
           ```
           mem.bindvars(this, [
@@ -131,9 +131,9 @@
           Adds multiple memory-bound properties to `object`.
           `properties` must be an object in which each key/value pair specifies the name and [type ID](#type_ids) of a variable.
           The offset of a variable is determined by the sum of type sizes of the variables preceding it.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns `object`.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           ```
           var playerPos = mem.bindstruct({}, 0x8033B1AC, { x: f32, y: f32, z: f32 });
           console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
@@ -156,8 +156,7 @@
     desc: |
           Returns a block of data from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
           ```
-          var ramDump = mem.getblock(0x80000000, mem.ramsize)
-          fs.writeFile("ram-dump.bin", ramDump);
+          fs.writefile("ram_dump.bin",  mem.getblock(K0BASE, mem.ramSize));
           ```
 
   - name: mem.setblock
@@ -170,8 +169,7 @@
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
           [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.
           ```
-          var textures = fs.readFile("textures.bin");
-          mem.setblock(0x80400000, textures);
+          mem.setblock(0x80400000, fs.readfile("textures.bin"));
           ```
 
   - name: mem.getstring
@@ -189,14 +187,14 @@
     desc: |
           Writes a string into memory (alias of [mem.setblock](#mem_setblock)).
 
-  - name: mem.ramsize
-    js:   mem.ramsize
-    ts:   "mem.ramsize: number"
+  - name: mem.ramSize
+    js:   mem.ramSize
+    ts:   "mem.ramSize: number"
     desc: The size of RDRAM in bytes. `0` if RDRAM is not initialized.
 
-  - name: mem.romsize
-    js:   mem.romsize
-    ts:   "mem.romsize: number"
+  - name: mem.romSize
+    js:   mem.romSize
+    ts:   "mem.romSize: number"
     desc: The size of cartridge ROM in bytes. `0` if ROM is not initialized.
 
 # events
@@ -211,18 +209,18 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
           `callback` receives a [CPUExecEvent](#CPUExecEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
           ```
           events.onexec(0x802CB1C0, function() {
               console.log("func_802CB1C0 was called");
-          })
+          });
           ```
           ```
           // Log every CPU step
           events.onexec(ADDR_ANY, function(e) {
               console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
-          })
+          });
           ```
 
   - name: events.onread
@@ -233,7 +231,7 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
           `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
 
   - name: events.onwrite
@@ -244,7 +242,7 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to `address`.
           `address` may be a single address or an object containing `start` and `end` address properties (e.g. [AddressRange](#AddressRange)).
           `callback` receives a [CPUReadWriteEvent](#CPUReadWriteEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
           ```
           events.onwrite(PI_WR_LEN_REG, function(e) {
@@ -263,7 +261,7 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode ANDed with `mask`.
           `callback` receives a [CPUOpcodeEvent](#CPUOpcodeEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
           ```
           // Log every JAL
@@ -282,7 +280,7 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
           `opcode` is equal to the current opcode.
           `callback` receives a [CPUOpcodeEvent](#CPUOpcodeEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
 
   - name: events.ongprvalue
@@ -293,9 +291,9 @@
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
           the general purpose registers specified by `regFlags` is equal to `value` (lower 32 bits only).
           `callback` receives a [CPURegValueEvent](#CPURegValueEvent) object.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           See [General purpose register flags](#GPR_flags) for a list of valid flags. Multiple registers may be specified via bitwise OR.
           ```
           // Break when any general purpose register contains 0x49533634
@@ -312,7 +310,7 @@
           Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
           `callback` receives an [EmuEvent](#EmuEvent) object.
           Useful for monitoring and overriding controller input.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a callback ID.
           ```
           // Log P1's controller input
@@ -325,7 +323,7 @@
 
           ```
           // Play an M64 TAS file
-          var m64file = fs.readFile("sm64-1key.m64");
+          var m64file = fs.readfile("sm64-1key.m64");
           var numSamples = m64file.readUInt32LE(0x018);
           var sampleIndex = 0;
           
@@ -341,11 +339,28 @@
           ```
   - name: events.ondraw
     js:   events.ondraw(callback)
-    ts:   "events.ondraw(callback: (e: EmuEvent) => void): number"
+    ts:   "events.ondraw(callback: (e: DrawEvent) => void): number"
     desc: |
-          Registers a callback that will be invoked immediately after Project64 requests a screen update from the graphics plugin.
-          <div class="vtab""></div>
+          Registers a callback that will be invoked when Project64 receives a screen update from the graphics plugin.
+          `callback` receives a [DrawEvent](#DrawEvent) object.
+          <div class="vtab"></div>
           Returns a callback ID.
+          <div class="vtab"></div>
+          [DrawEvent](#DrawEvent)'s `drawingContext` property is a [DrawingContext](#DrawingContext) object
+          whose methods can be used to draw over or sample the current frame.
+          ```
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              drawStuff(ctx);
+          });
+
+          function drawStuff(ctx) {
+              ctx.print(20, 20, "Hello world!");
+          }
+          ```
+          <div class="vtab"></div>
+          The event's [DrawingContext](#DrawingContext) expires when `callback` returns.
+          If a method or property of the [DrawingContext](#DrawingContext) object is used after `callback` returns, an error is thrown.
 
   - name: events.remove
     js:   events.remove(callbackId)
@@ -398,8 +413,8 @@
           <tr><td>`s32`</td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
           <tr><td>`u32`</td><td>LWU</td></tr>
           <tr><td>`u64`</td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
-          <tr><td>`float`</td><td>LWC1, SWC1</td></tr>
-          <tr><td>`double`</td><td>LDC1, SDC1</td></tr>
+          <tr><td>`f32`</td><td>LWC1, SWC1</td></tr>
+          <tr><td>`f64`</td><td>LDC1, SDC1</td></tr>
           </table>
           
           </table>
@@ -421,6 +436,14 @@
           <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.value`</td><td>The value.</td></tr>
           <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
+          </table>
+
+  - name: DrawEvent
+    js:   DrawEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.drawingContext`</td><td>[DrawingContext](#DrawingContext) object.</td></tr>
           </table>
 
   - name: GPR_flags
@@ -457,21 +480,106 @@
           </table>
 
 # screen
-- name:    screen
-  tagline: Screen drawing interface
+- name:    DrawingContext
+  tagline: Screen drawing context
   props:
-  - name: screen.print
-    js:   screen.print(x, y, text)
-    ts:   "screen.print(x: number, y: number, text: string): void"
+  - name: ctx.width
+    js:   ctx.width
+    ts:   "ctx.width: number"
+    desc: Width of the screen. Read-only.
+
+  - name: ctx.height
+    js:   ctx.height
+    ts:   "ctx.height: number"
+    desc: Height of the screen. Read-only.
+
+  - name: ctx.fillColor
+    js:   ctx.fillColor
+    ts:   "ctx.fillColor: number"
+    desc: |
+          The current RGBA32 fill color. Opaque white (`0xFFFFFFFF`) by default.
+          ```
+          // Set fillColor to opaque green
+          ctx.fillColor = ctx.color(0, 255, 0, 1.0);
+          ```
+
+  - name: ctx.color
+    js:   ctx.color(r, g, b[, alpha])
+    ts:   "ctx.color(r: number, g: number, b: number, alpha?: number)"
+    desc: |
+          Utility function that returns an RGBA32 number representation of a color.
+          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`.
+          If `alpha` is not used it will default to `1.0`.
+          ```
+          const clrTranslucentRed = ctx.color(255, 0, 0, 0.5); // 0xFF00007F
+          const clrYellow = ctx.color(255, 255, 0); // 0xFFFF00FF
+          ```
+
+  - name: ctx.print
+    js:   ctx.print(x, y, text)
+    ts:   "ctx.print(x: number, y: number, text: string): void"
     tags: [[Unstable, red]]
     desc: |
           Prints text to the screen at the provided `x` and `y` coordinates.
-          Should be called from an [events.ondraw](#events_ondraw) callback.
           ```
-          events.ondraw(function() {
-              screen.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
           });
           ```
+
+  - name: ctx.fillrect
+    js:   ctx.fillrect(x, y, width, height)
+    desc: Draws a rectangle to the screen.
+
+  - name: ctx.getdata
+    js:   ctx.getdata(x, y, width, height)
+    ts:   "ctx.getdata(x: number, y: number, width: number, height: number): Buffer"
+    desc: Returns a Buffer object representing a portion of the screen.
+  
+  - name: ctx.setdata
+    js:   ctx.setdata(x, y, data, width, height)
+    ts:   "ctx.setdata(x: number, y: number, data: Buffer | UInt8Array, width: number, height: number)"
+    desc: |
+          Draws a raw data image to the screen at the provided `x` and `y` coordinates.
+          The `data` argument should be a Buffer or Uint8Array in which each 4 elements represent the red, green, blue, and alpha channels of a pixel.
+          The byte length of `data` must be equal to `((width * height) * 4)`.
+          ```
+          function RandomDataImage(width, height) {
+              var numBytes = ((width * height) * 4);
+              this.width = width;
+              this.height = height;
+              this.data = new Uint8Array(numBytes);
+              for(var i = 0; i < numBytes; i += 4) {
+                  this.data[i + 0] = Math.random()*256; // R
+                  this.data[i + 1] = Math.random()*256; // G
+                  this.data[i + 2] = Math.random()*256; // B
+                  this.data[i + 3] = 0xFF; // A
+              }
+          }
+
+          var randSquare = new RandomDataImage(32, 32);
+
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.drawdata(20, 20, randSquare.data, randSquare.width, randSquare.height);
+          }
+          ```
+          ```
+          function FileDataImage(path, width, height) {
+              this.data = fs.readfile(path);
+              this.width = width;
+              this.height = height;
+          }
+
+          var image = new FileDataImage("image_32x32.bin", 32, 32);
+
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.drawdata(20, 20, image.data, image.width, image.height);
+          }
+          ```
+
 # cpu
 - name:    cpu
   tagline: CPU register interface
@@ -604,7 +712,7 @@
           Skips the current CPU command. Useful for preventing or overriding an operation.
           ```
           // Do not let the CPU write to 0x8033B21E
-          events.onwrite(0x8033B21E, function(e) {
+          events.onwrite(0x8033B21E, function() {
               debug.skip();
           });
           ```
@@ -672,7 +780,7 @@
     desc: |
           Opens the file pointed to by `path` in the mode specified by `mode`.
           See [fopen](https://pubs.opengroup.org/onlinepubs/009604599/functions/fopen.html) for a list of valid modes.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns a file descriptor.
 
   - name: fs.close
@@ -693,7 +801,7 @@
           `offset`&#58; optional position in the source buffer.<br>
           `length`&#58; optional maximum number of bytes to write.<br>
           `position`&#58; optional file position.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns the number of bytes written.
           ```
           var fd = fs.open("file.txt", "wb");
@@ -702,13 +810,13 @@
           fs.close();
           ```
 
-  - name: fs.writeFile
-    js:   fs.writeFile(path, buffer)
-    ts:   "fs.writeFile(path: string, buffer: string | Buffer | ArrayBuffer): void"
+  - name: fs.writefile
+    js:   fs.writefile(path, buffer)
+    ts:   "fs.writefile(path: string, buffer: string | Buffer | ArrayBuffer): void"
     desc: |
           Writes `buffer` to the file specified by `path`. Uses mode "wb" internally.
           ```
-          fs.writeFile("ram_dump.bin", mem.getblock(K0BASE, mem.ramsize));
+          fs.writefile("ram_dump.bin", mem.getblock(K0BASE, mem.ramSize));
           ```
 
   - name: fs.read
@@ -723,12 +831,12 @@
           `offset`&#58; position in the source buffer.<br>
           `length`&#58; number of bytes to read.<br>
           `position`&#58; file position.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns the number of bytes read.
 
-  - name: fs.readFile
-    js:   fs.readFile(path)
-    ts:   "fs.readFile(path: string): Buffer"
+  - name: fs.readfile
+    js:   fs.readfile(path)
+    ts:   "fs.readfile(path: string): Buffer"
     desc: |
           Returns a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object representing the data of the file specified by `path`.
           Uses mode "rb" internally.
@@ -773,7 +881,7 @@
     js:   fs.Stats
     desc: |
           Object containing information about a file or directory. Generated by [fs.fstat/fs.stat](#fs_fstat).
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           <table>
           <tr><td>`stats.dev`</td><td>ID of the device the file resides on</td></tr>
           <tr><td>`stats.ino`</td><td>inode number</td></tr>
@@ -790,15 +898,15 @@
           <tr><td>`stats.mtime`</td><td>JS Date object representing the last modification time</td></tr>
           <tr><td>`stats.ctime`</td><td>JS Date object representing the creation time</td></tr>
           </table>
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           <b>stats.isDirectory()</b><br>
           <div class="tsproto">stats.isDirectory(): boolean</div>
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns `true` if the `fs.Stats` object describes a directory.
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           <b>stats.isFile()</b><br>
           <div class="tsproto">stats.isFile(): boolean</div>
-          <div class="vtab""></div>
+          <div class="vtab"></div>
           Returns `true` if the `fs.Stats` object describes a regular file.
 
 # script
@@ -893,9 +1001,9 @@
           ```
           try {
               exec("dir", { verbose: true });
-          } catch(e) {
-              console.log("exec() failed with code", e.status);
-              console.log(e.stderr);
+          } catch(err) {
+              console.log("exec() failed with code", err.status);
+              console.log(err.stderr);
           }
           ```
 
@@ -1069,7 +1177,7 @@
       
 - name: JavaScript environment
   desc: |
-        <div class="vtab""></div>
+        <div class="vtab"></div>
         Project64's script system uses [Duktape](https://duktape.org/). Duktape supports ECMAScript E5 and some features from ES2015+.<br>
         See [https://duktape.org/](https://duktape.org/) for more information.
 

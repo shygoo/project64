@@ -14,9 +14,9 @@ void ScriptAPI::Define_fs(duk_context *ctx)
         { "open",      js_fs_open,      2 },
         { "close",     js_fs_close,     1 },
         { "write",     js_fs_write,     DUK_VARARGS },
-        { "writeFile", js_fs_writeFile, 2 },
+        { "writefile", js_fs_writefile, 2 },
         { "read",      js_fs_read,      DUK_VARARGS },
-        { "readFile",  js_fs_readFile,  1 },
+        { "readfile",  js_fs_readfile,  1 },
         { "fstat",     js_fs_fstat,     1 },
         { "stat",      js_fs_stat,      1 },
         { "unlink",    js_fs_unlink,    1 },
@@ -162,7 +162,7 @@ duk_ret_t ScriptAPI::js_fs_write(duk_context *ctx)
     return ReadWriteImpl(ctx, FS_WRITE);
 }
 
-duk_ret_t ScriptAPI::js_fs_writeFile(duk_context *ctx)
+duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
 {
     if(duk_get_top(ctx) != 2)
     {
@@ -210,7 +210,7 @@ duk_ret_t ScriptAPI::js_fs_read(duk_context *ctx)
     return ReadWriteImpl(ctx, FS_READ);
 }
 
-duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
+duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 {
     if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
     {
