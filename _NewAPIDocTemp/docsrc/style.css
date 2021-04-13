@@ -44,6 +44,11 @@ div.modtitle {
     font-weight: bold;
 }
 
+div.pagetitle {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
 span.title:target {
     background: #DFD;
 }
@@ -71,28 +76,12 @@ div.desc {
     padding: 5px;
 }
 
-div.snip {
+span.snip {
     display: inline-block;
     background: #EEE;
     font-family: monospace;
     padding-left: 2px;
     padding-right: 2px;
-}
-
-pre.ex {
-    margin-top: 10px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 0.9em;
-    background: #EEE;
-}
-
-pre.ex::before {
-    content: "Example";
-    float: right;
-    opacity: 0.5;
-    font-size: 0.9em;
-    font-family: "Open Sans", sans-serif;
 }
 
 div.vtab {
@@ -132,17 +121,10 @@ div.sidebar {
     bottom: 0px;
     overflow-y: auto;
     background: #FFF;
-    border-right: 1px solid #ECC;
 }
 
 div.sidebar-content {
     padding: 10px;
-}
-
-div.pagetitle {
-    font-size: 2em;
-    font-weight: bold;
-    text-align: center;
 }
 
 div.content {
@@ -150,19 +132,65 @@ div.content {
     padding: 10px;
 }
 
+*::-webkit-scrollbar {
+    background: #FFF;
+    border: 1px solid #FFF;
+    width: 1.2em;
+    padding: 2px;
+    margin: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #DDD;
+    border: 2px solid #FFF;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #CCC;
+}
+
+pre.ex {
+    margin-top: 10px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: #EEE;
+    color: #666;
+    white-space: pre-wrap;
+}
+
+span.js-keyword { color: #22F; }
+span.js-string { color: #880; }
+span.js-number { color: #722; }
+span.js-comment { color: #272; }
+span.js-word { color: #222; }
+
+/*
 @media (prefers-color-scheme: dark) {
     body { background: #222; color: #FFF; }
-    div.module { background: #2a2a2a; border-top: 1px solid #744;}
-    pre.ex { background: #222; }
+    div.module { background: #2A2A2A; border-top: 1px solid #744;}
+    pre.ex { background: #222; color: #AAA; }
     div.prop { border-top: 1px solid #222; }
-    div.snip { background: #222; }
+    span.snip { background: #222; }
     a { color: #8d8; }
     a:hover { color: #7c7; }
-    span.title:target { background: #552; }
+    span.title:target { background: #252; }
     ul { color: #FFF; }
     hr { border-top: 1px solid #744; }
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
     td { border: 1px solid #444; }
     thead { background: #444; }
+    div.sidebar { background: #2A2A2A; }
+    
+    *::-webkit-scrollbar { background: #2A2A2A; border-color: #2A2A2A; }
+    *::-webkit-scrollbar-thumb { background: #444; border-color: #2A2A2A; }
+    *::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    span.js-keyword { color: #67F; }
+    span.js-string { color: #FFA; }
+    span.js-number { color: #FAA; }
+    span.js-comment { color: #7A7; }
+    span.js-word { color: #FFF; }
 }
+*/

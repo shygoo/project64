@@ -51,8 +51,6 @@ void ScriptAPI::Define_fs(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 {
-    CScriptInstance* inst = GetInstance(ctx);
-
     if(duk_get_top(ctx) != 2 ||
        !duk_is_string(ctx, 0) ||
        !duk_is_string(ctx, 1))
@@ -125,8 +123,6 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    CScriptInstance* inst = GetInstance(ctx);
-
     int fd = duk_get_int(ctx, 0);
     int rc = -1;
 
@@ -147,7 +143,8 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         duk_del_prop_index(ctx, -3, fd);
 
         duk_pop_n(ctx, 2);
-        rc = 0;
+        duk_push_number(ctx, rc);
+        return 1;
     }
     else
     {
@@ -240,7 +237,7 @@ duk_ret_t ScriptAPI::js_fs_readFile(duk_context *ctx)
     void *data = duk_push_fixed_buffer(ctx, stats.st_size);
     duk_push_buffer_object(ctx, -1, 0, stats.st_size, DUK_BUFOBJ_NODEJS_BUFFER);
 
-    if(fread(data, 1, stats.st_size, fp) != stats.st_size)
+    if(fread(data, 1, stats.st_size, fp) != (size_t)stats.st_size)
     {
         duk_pop(ctx);
         fclose(fp);

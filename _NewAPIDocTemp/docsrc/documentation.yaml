@@ -74,7 +74,7 @@
   - name: mem._
     js:   mem.u8|u16|u32|s8|s16|s32|f32|f64
     desc: |
-          Arrays for reading and writing virtual memory. Virtual addresses are used as indices.
+          Arrays for reading and writing memory. Virtual addresses are used as indices.
           ```
           // Read some data from ROM and RAM
           var firstWordInROM = mem.u32[0xB0000000];
@@ -136,7 +136,6 @@
           <div class="vtab""></div>
           ```
           var playerPos = mem.bindstruct({}, 0x8033B1AC, { x: f32, y: f32, z: f32 });
-
           console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
           ```
 
@@ -206,7 +205,7 @@
   props:
   - name: events.onexec
     js:   events.onexec(address, callback)
-    ts:   "events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number"
+    ts:   "events.onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address`.
@@ -258,7 +257,7 @@
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, mask, callback)
-    ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number"
+    ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
@@ -267,18 +266,17 @@
           <div class="vtab""></div>
           Returns a callback ID.
           ```
+          // Log every JAL
           const JAL = asm.encode("jal 0");
           const ANY_TARGET = 0xFC000000; // Mask off target field
-
           events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function(e) {
-              // Log every JAL
               console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
           });
           ```
 
   - name: events.onopcode
     js:   events.onopcode(address, opcode, callback)
-    ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number"
+    ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: (e: CPUOpcodeEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
@@ -289,7 +287,7 @@
 
   - name: events.ongprvalue
     js:   events.ongprvalue(address, regFlags, value, callback)
-    ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number"
+    ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (e: CPURegValueEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
     desc: |
           Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and at least one of
@@ -300,23 +298,24 @@
           <div class="vtab""></div>
           See [General purpose register flags](#GPR_flags) for a list of valid flags. Multiple registers may be specified via bitwise OR.
           ```
+          // Break when any general purpose register contains 0x49533634
           const IS64_SIGNATURE = 0x49533634;
           events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
-              // Break when any general purpose register contains 0x49533634
               debug.breakhere();
           });
           ```
 
   - name: events.onpifread
     js:   events.onpifread(callback)
-    ts:   "events.onpifread(callback: () => void): number"
+    ts:   "events.onpifread(callback: (e: EmuEvent) => void): number"
     desc: |
           Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
-          Useful for monitoring or overriding controller input.
+          `callback` receives an [EmuEvent](#EmuEvent) object.
+          Useful for monitoring and overriding controller input.
           <div class="vtab""></div>
           Returns a callback ID.
           ```
-          // Log P1's inputs
+          // Log P1's controller input
           events.onpifread(function() {
               if(mem.u32[PIF_RAM_START + 0x00] == 0xFF010401) {
                   console.log(mem.u32[PIF_RAM_START + 0x04].hex());
@@ -342,7 +341,7 @@
           ```
   - name: events.ondraw
     js:   events.ondraw(callback)
-    ts:   "events.ondraw(callback: () => void): number"
+    ts:   "events.ondraw(callback: (e: EmuEvent) => void): number"
     desc: |
           Registers a callback that will be invoked immediately after Project64 requests a screen update from the graphics plugin.
           <div class="vtab""></div>
@@ -354,12 +353,19 @@
     desc: |
           Unregisters the callback specified by `callbackId`.
           ```
+          // This callback will only be invoked once
           events.onexec(0x802CB1C0, function(e) {
-              // This is only invoked once
               console.log("func_802CB1C0 was called");
               events.remove(e.callbackId);
           });
           ```
+
+  - name: EmuEvent
+    js:   EmuEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          </table>
 
   - name: CPUExecEvent
     js:   CPUExecEvent
@@ -577,9 +583,9 @@
     desc: |
           Pauses emulation and shows the CPU commands window. Useful for creating conditional breakpoints.
           ```
-          events.onexec(0x802CB1C0, function() {
-              if(gpr.a0 == 21) {
-                  console.log("21 passed to func_802CB1C0, breaking...");
+          // Break if the CPU tries to write 5 to 0x80339EA8
+          events.onwrite(0x80339EA8, function(e) {
+              if(e.value == 5) {
                   debug.breakhere();
               }
           });
@@ -653,7 +659,7 @@
     desc: |
           Returns the name of the general purpose register specified by `regIndex`.
           ```
-          asm.gprname(4); // returns 'a0'
+          asm.gprname(4); // Returns "a0"
           ```
 
 # fs
@@ -691,8 +697,8 @@
           Returns the number of bytes written.
           ```
           var fd = fs.open("file.txt", "wb");
-          fs.write(fd, "hello\n");
-          fs.write(fd, "world\n");
+          fs.write(fd, "Hello ");
+          fs.write(fd, "world!\n");
           fs.close();
           ```
 
@@ -702,8 +708,7 @@
     desc: |
           Writes `buffer` to the file specified by `path`. Uses mode "wb" internally.
           ```
-          var ramdump = mem.getblock(0x80000000, 0x00400000);
-          fs.writeFile("ramdump.bin", ramdump);
+          fs.writeFile("ram_dump.bin", mem.getblock(K0BASE, mem.ramsize));
           ```
 
   - name: fs.read
@@ -821,24 +826,43 @@
     js:   require(id)
     ts:   "require(id: string): Object"
     desc: |
-          Returns a module object. `id` may be one of the following:
+          Loads a module script and returns its `module.exports` object. `id` may be one of the following:
           <ul>
           <li>The name of a JavaScript file in the `Scripts/modules` directory.</i>
-          <li>The path of a JavaScript file relative to the current module.</i>
+          <li>If `id` begins with `./` or `../`, the path of a JavaScript file relative to the parent module's location.</i>
           </ul>
+          <div class="vtab"></div>
+          The below example demonstrates one way module and submodule loading can be implemented.
           ```
-          // Scripts/modules/mymodule.js
-          module.exports = {
-             info: info
-          };
+          /* Scripts/example.js */
 
-          function info() {
-              console.log("This is my module");
+          const mymodule = require('mymodule/lib.js'); // Loads Scripts/modules/mymodule/lib.js
+          mymodule.init(); // Prints "Loaded mymodule", "Loaded mymodule's submodule"
+          ```
+          ```
+          /* Scripts/modules/mymodule/mymodule.js */
+
+          const submodule = require('./submodule.js'); // Loads Scripts/modules/mymodule/submodule.js
+
+          function init() {
+              console.log("Loaded mymodule");
+              submodule.init(); // Prints "Loaded mymodule's submodule"
           }
+        
+          module.exports = {
+              init: init
+          };
           ```
           ```
-          const mymodule = require('mymodule.js');
-          mymodule.info(); // "This is my module"
+          /* Scripts/modules/mymodule/submodule.js */
+
+          function init() {
+              console.log("Loaded mymodule's submodule");
+          }
+
+          module.exports = {
+              init: init
+          };
           ```
 
   - name: exec
@@ -868,7 +892,7 @@
           </table>
           ```
           try {
-              exec('dir', { verbose: true });
+              exec("dir", { verbose: true });
           } catch(e) {
               console.log("exec() failed with code", e.status);
               console.log(e.stderr);

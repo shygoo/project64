@@ -10,6 +10,7 @@ static bool CbCond_WriteAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* env);
 static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* env);
 
+static duk_idx_t CbArgs_EmuEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* env);
@@ -225,7 +226,7 @@ duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL, NULL);
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL, CbArgs_EmuEventObject);
     jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_PIFREAD, cb);
     duk_push_uint(ctx, callbackId);
     return 1;
@@ -306,6 +307,16 @@ static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* _env)
     }
 
     return false;
+}
+
+duk_idx_t CbArgs_EmuEventObject(duk_context* ctx, void* /*_env*/)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    duk_push_object(ctx);
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+    duk_freeze(ctx, -1);
+    return 1;
 }
 
 // onexec -> { pc, callbackId }
@@ -505,7 +516,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     duk_put_prop_string(ctx, -2, "fpu");
 
     bool bNeedUpper32 = false;
-    uint64_t value64;
+    uint64_t value64 = 0;
 
     switch (env->opInfo.m_OpCode.op)
     {
@@ -562,7 +573,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         uint64_t mask = ~(((uint64_t)-1) >> shift);
         debugger->DebugLoad_VAddr(address & ~7, value64);
         value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
-        duk_push_number(ctx, value64 & 0xFFFFFFFF);
+        duk_push_number(ctx, (duk_double_t)(value64 & 0xFFFFFFFF));
         duk_push_int(ctx, ScriptAPI::U64);
         }
     case R4300i_SDR:
@@ -571,7 +582,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         uint64_t mask = ~(((uint64_t)-1) << shift);
         debugger->DebugLoad_VAddr(address & ~7, value64);
         value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
-        duk_push_number(ctx, value64 & 0xFFFFFFFF);
+        duk_push_number(ctx, (duk_double_t)(value64 & 0xFFFFFFFF));
         duk_push_int(ctx, ScriptAPI::U64);
     }
     default:
@@ -585,7 +596,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 
     if (bNeedUpper32)
     {
-        duk_push_number(ctx, value64 >> 32);
+        duk_push_number(ctx, (duk_double_t)(value64 >> 32));
         duk_put_prop_string(ctx, -2, "valueHi");
     }
 

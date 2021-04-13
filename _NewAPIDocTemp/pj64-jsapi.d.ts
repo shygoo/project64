@@ -8,9 +8,12 @@ declare class AddressRange {
     end: number;
 }
 
-declare class CPUEvent {
-    pc: number;
+declare class EmuEvent {
     callbackId: number;
+}
+
+declare class CPUEvent extends EmuEvent {
+    pc: number;
 }
 
 declare class CPUExecEvent extends CPUEvent {}

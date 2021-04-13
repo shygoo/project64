@@ -1,13 +1,68 @@
 const yaml = require('yaml');
 const fs = require('fs');
 
-function format(text)
+function docfmt(text)
 {
     return text.trim()
-               .replace(/```([\w\W]+?)```/g, `<pre class="ex">$1</pre>`)
-               .replace(/`(.+?)`/g, `<div class="snip">$1</div>`)
+               .replace(/```([\w\W]+?)```/g, jsfmt)
+               .replace(/`(.+?)`/g, `<span class="snip">$1</span>`)
                .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, `<a target="blank" href=\"$2\">$1</a>`)
                .replace(/\[(.+?)\]\((.+?)\)/g, `<a href=\"$2\">$1</a>`);
+}
+
+function jsfmt(text)
+{
+    const jsKeyWords = [
+        'const', 'var', 'new', 'switch', 'case', 'break', 'default',
+        'if', 'else', 'try', 'catch', 'for', 'while', 'true', 'false',
+        'null', 'undefined', 'function', 'this', 'return'
+    ];
+
+    text = text.replace(/```([\w\W]+?)```/, '$1');
+
+    var formatted = "";
+
+    for(var i = 0; i < text.length;)
+    {
+        var anchor = i;
+        if(/[a-zA-Z]/.test(text[i])) { // word
+            i++;
+            while(i < text.length && /[a-zA-Z_\d]/.test(text[i])) i++;
+            var word = text.slice(anchor, i);
+            formatted += jsKeyWords.indexOf(word) >= 0 ? `<span class="js-keyword">${word}</span>` : `<span class="js-word">${word}</span>`;
+        }
+        else if(text[i] == '"' || text[i] == "'") { // str literal
+            var q = text[i]
+            // don't need \ for now
+            i++;
+            while(text[i] != q) i++;
+            i++;
+            formatted += `<span class="js-string">${text.slice(anchor, i)}</span>`;
+        }
+        else if(text[i] == '/' && text[i+1] == '/') { // line comment
+            i += 2;
+            while(i < text.length && text[i] != '\n') i++;
+            formatted += `<span class="js-comment">${text.slice(anchor, i)}</span>`
+        }
+        
+        else if(text[i] == '/' && text[i+1] == '*') { // block comment
+            i += 2;
+            while(i < text.length && !(text[i] == '*' && text[i+1] == '/')) i++;
+            i += 2;
+            formatted += `<span class="js-comment">${text.slice(anchor, i)}</span>`
+        }
+        else if(/[\d]/.test(text[i])) { // number
+            i++;
+            while(i < text.length && /[a-zA-Z_\d]/.test(text[i])) i++;
+            formatted += `<span class="js-number">${text.slice(anchor, i)}</span>`;
+        }
+        else //whitespace, operators etc.
+        {
+            formatted += text[i++];
+        }
+    }
+
+    return `<pre class="ex">${formatted}</pre>`;
 }
 
 function idfmt(text)
@@ -44,7 +99,7 @@ mods.forEach(mod => {
             (prop.js2 ? `<div><span class="title2">${prop.js2}</span></div>`: '') +
             (prop.ts ? `<div class="tsproto">${prop.ts}</div>\n` : '') +
             `<div class="vtab"></div>\n` +
-            format(prop.desc) + `\n`
+            docfmt(prop.desc) + `\n`
         );
     });
 
@@ -54,8 +109,8 @@ mods.forEach(mod => {
         `<!-- ${mod.name} -->\n` +
         `<div class="module">\n` +
         `<div class="modtitle"><span class="title" id="${idfmt(mod.name)}">${mod.name}</span></div>\n` +
-        (mod.desc ? `${format(mod.desc)}\n` :
-         mod.tagline ? `${format(mod.tagline)}\n`: '') +
+        (mod.desc ? `${docfmt(mod.desc)}\n` :
+         mod.tagline ? `${docfmt(mod.tagline)}\n`: '') +
         `<div class="vtab"></div>\n` +
         //`<ul>\n` +
         //`${propLinks}` +
@@ -82,7 +137,7 @@ ${cssSource}
 <body>
 <div class="sidebar">
 <div class="sidebar-content">
-<div class="modtitle">Project64 JavaScript API</div>
+<div class="pagetitle">Project64 JavaScript API</div>
 <hr>
 <ul>
 ${modlinks}

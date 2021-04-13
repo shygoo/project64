@@ -25,8 +25,6 @@ void ScriptAPI::Define_pj64(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_pj64_open(duk_context* ctx)
 {
-    CScriptInstance* inst = GetInstance(ctx);
-
     if (duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
@@ -62,7 +60,7 @@ duk_ret_t ScriptAPI::js_pj64_open(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_pj64_close(duk_context* ctx)
+duk_ret_t ScriptAPI::js_pj64_close(duk_context* /*ctx*/)
 {
     if (g_BaseSystem)
     {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Generated Apr 12 2021 -->
+<!-- Generated Apr 13 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
 <title>Project64 JavaScript API</title>
@@ -51,6 +51,11 @@ div.modtitle {
     font-weight: bold;
 }
 
+div.pagetitle {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
 span.title:target {
     background: #DFD;
 }
@@ -78,28 +83,12 @@ div.desc {
     padding: 5px;
 }
 
-div.snip {
+span.snip {
     display: inline-block;
     background: #EEE;
     font-family: monospace;
     padding-left: 2px;
     padding-right: 2px;
-}
-
-pre.ex {
-    margin-top: 10px;
-    padding: 10px;
-    font-family: monospace;
-    font-size: 0.9em;
-    background: #EEE;
-}
-
-pre.ex::before {
-    content: "Example";
-    float: right;
-    opacity: 0.5;
-    font-size: 0.9em;
-    font-family: "Open Sans", sans-serif;
 }
 
 div.vtab {
@@ -139,17 +128,10 @@ div.sidebar {
     bottom: 0px;
     overflow-y: auto;
     background: #FFF;
-    border-right: 1px solid #ECC;
 }
 
 div.sidebar-content {
     padding: 10px;
-}
-
-div.pagetitle {
-    font-size: 2em;
-    font-weight: bold;
-    text-align: center;
 }
 
 div.content {
@@ -157,28 +139,74 @@ div.content {
     padding: 10px;
 }
 
+*::-webkit-scrollbar {
+    background: #FFF;
+    border: 1px solid #FFF;
+    width: 1.2em;
+    padding: 2px;
+    margin: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #DDD;
+    border: 2px solid #FFF;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #CCC;
+}
+
+pre.ex {
+    margin-top: 10px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.9em;
+    background: #EEE;
+    color: #666;
+    white-space: pre-wrap;
+}
+
+span.js-keyword { color: #22F; }
+span.js-string { color: #880; }
+span.js-number { color: #722; }
+span.js-comment { color: #272; }
+span.js-word { color: #222; }
+
+/*
 @media (prefers-color-scheme: dark) {
     body { background: #222; color: #FFF; }
-    div.module { background: #2a2a2a; border-top: 1px solid #744;}
-    pre.ex { background: #222; }
+    div.module { background: #2A2A2A; border-top: 1px solid #744;}
+    pre.ex { background: #222; color: #AAA; }
     div.prop { border-top: 1px solid #222; }
-    div.snip { background: #222; }
+    span.snip { background: #222; }
     a { color: #8d8; }
     a:hover { color: #7c7; }
-    span.title:target { background: #552; }
+    span.title:target { background: #252; }
     ul { color: #FFF; }
     hr { border-top: 1px solid #744; }
     div.tag.blue { background: #247; }
     div.tag.red { background: #722; }
     td { border: 1px solid #444; }
     thead { background: #444; }
+    div.sidebar { background: #2A2A2A; }
+    
+    *::-webkit-scrollbar { background: #2A2A2A; border-color: #2A2A2A; }
+    *::-webkit-scrollbar-thumb { background: #444; border-color: #2A2A2A; }
+    *::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    span.js-keyword { color: #67F; }
+    span.js-string { color: #FFA; }
+    span.js-number { color: #FAA; }
+    span.js-comment { color: #7A7; }
+    span.js-word { color: #FFF; }
 }
+*/
 </style>
 </head>
 <body>
 <div class="sidebar">
 <div class="sidebar-content">
-<div class="modtitle">Project64 JavaScript API</div>
+<div class="pagetitle">Project64 JavaScript API</div>
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -214,6 +242,7 @@ div.content {
 <li><a href="#events_onpifread">events.onpifread(callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
+<li><a href="#EmuEvent">EmuEvent</a></li>
 <li><a href="#CPUExecEvent">CPUExecEvent</a></li>
 <li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
@@ -309,7 +338,7 @@ Console interface
 <div class="vtab"></div>
 Prints all provided arguments to the console with a trailing newline.
 <pre class="ex">
-console.log("Hello", "world!");
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Hello"</span>, <span class="js-string">"world!"</span>);
 </pre>
 <!-- console.print -->
 <div class="prop"><span class="title" id="console_print">console.print(message[, ...])</span></div>
@@ -317,8 +346,8 @@ console.log("Hello", "world!");
 <div class="vtab"></div>
 Prints all provided arguments to the console.
 <pre class="ex">
-console.print("Hello ");
-console.print("world!\n");
+<span class="js-word">console</span>.<span class="js-word">print</span>(<span class="js-string">"Hello "</span>);
+<span class="js-word">console</span>.<span class="js-word">print</span>(<span class="js-string">"world!\n"</span>);
 </pre>
 <!-- console.clear -->
 <div class="prop"><span class="title" id="console_clear">console.clear()</span></div>
@@ -329,23 +358,23 @@ Clears the console.
 <div class="prop"><span class="title" id="console_listen">console.listen(inputListener)</span></div>
 <div class="tsproto">console.listen(inputListener: (input: string) => void): void</div>
 <div class="vtab"></div>
-Overrides the default input behavior; console input will be passed to <div class="snip">inputListener</div> instead of being evaluated as JS code.
+Overrides the default input behavior; console input will be passed to <span class="snip">inputListener</span> instead of being evaluated as JS code.
 <div class="vtab"></div>
-The listener may be unset by calling <div class="snip">console.listen(undefined)</div>.
+The listener may be unset by calling <span class="snip">console.listen(undefined)</span>.
 <pre class="ex">
-console.listen(function(input) {
-    var args = input.split(' ');
-    var command = args.shift();
-    switch(command) {
-    case "ping":
-        console.log("pong (args were:", args.join(', '), ")");
-        return;
-    case "end":
-        console.log("done");
-        console.listen(undefined);
-        return;
-    default:
-        console.log("unknown command '" + command + "'");
+<span class="js-word">console</span>.<span class="js-word">listen</span>(<span class="js-keyword">function</span>(<span class="js-word">input</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">args</span> = <span class="js-word">input</span>.<span class="js-word">split</span>(<span class="js-string">' '</span>);
+    <span class="js-keyword">var</span> <span class="js-word">command</span> = <span class="js-word">args</span>.<span class="js-word">shift</span>();
+    <span class="js-keyword">switch</span>(<span class="js-word">command</span>) {
+    <span class="js-keyword">case</span> <span class="js-string">"ping"</span>:
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"pong (args were:"</span>, <span class="js-word">args</span>.<span class="js-word">join</span>(<span class="js-string">', '</span>), <span class="js-string">")"</span>);
+        <span class="js-keyword">return</span>;
+    <span class="js-keyword">case</span> <span class="js-string">"end"</span>:
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"done"</span>);
+        <span class="js-word">console</span>.<span class="js-word">listen</span>(<span class="js-keyword">undefined</span>);
+        <span class="js-keyword">return</span>;
+    <span class="js-keyword">default</span>:
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"unknown command '"</span> + <span class="js-word">command</span> + <span class="js-string">"'"</span>);
     }
 });
 </pre>
@@ -360,7 +389,7 @@ Project64 interface
 <div class="prop"><span class="title" id="pj64_open">pj64.open(romPath)</span></div>
 <div class="tsproto">pj64.open(romPath: string): boolean</div>
 <div class="vtab"></div>
-Opens and runs a ROM. Does not return until the ROM starts or the operation fails. <div class="vtab"></div> Returns <div class="snip">true</div> if the operation is successful.
+Opens and runs a ROM. Does not return until the ROM starts or the operation fails. <div class="vtab"></div> Returns <span class="snip">true</span> if the operation is successful.
 <!-- pj64.close -->
 <div class="prop"><span class="title" id="pj64_close">pj64.close()</span></div>
 <div class="tsproto">pj64.close(): void</div>
@@ -376,67 +405,66 @@ N64 memory interface
 <!-- mem._ -->
 <div class="prop"><span class="title" id="mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</span></div>
 <div class="vtab"></div>
-Arrays for reading and writing virtual memory. Virtual addresses are used as indices.
+Arrays for reading and writing memory. Virtual addresses are used as indices.
 <pre class="ex">
-// Read some data from ROM and RAM
-var firstWordInROM = mem.u32[0xB0000000];
-var firstWordInRAM = mem.u32[0x80000000];
+<span class="js-comment">// Read some data from ROM and RAM</span>
+<span class="js-keyword">var</span> <span class="js-word">firstWordInROM</span> = <span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-number">0xB0000000</span>];
+<span class="js-keyword">var</span> <span class="js-word">firstWordInRAM</span> = <span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-number">0x80000000</span>];
 </pre>
 <pre class="ex">
-// Move player to 0,0,0 (SM64 US)
-const pPlayerX = 0x8033B1AC;
-const pPlayerY = 0x8033B1B0;
-const pPlayerZ = 0x8033B1B4;
+<span class="js-comment">// Move player to 0,0,0 (SM64 US)</span>
+<span class="js-keyword">const</span> <span class="js-word">pPlayerX</span> = <span class="js-number">0x8033B1AC</span>;
+<span class="js-keyword">const</span> <span class="js-word">pPlayerY</span> = <span class="js-number">0x8033B1B0</span>;
+<span class="js-keyword">const</span> <span class="js-word">pPlayerZ</span> = <span class="js-number">0x8033B1B4</span>;
 
-mem.f32[pPlayerX] = 0;
-mem.f32[pPlayerY] = 0;
-mem.f32[pPlayerZ] = 0;
+<span class="js-word">mem</span>.<span class="js-word">f32</span>[<span class="js-word">pPlayerX</span>] = <span class="js-number">0</span>;
+<span class="js-word">mem</span>.<span class="js-word">f32</span>[<span class="js-word">pPlayerY</span>] = <span class="js-number">0</span>;
+<span class="js-word">mem</span>.<span class="js-word">f32</span>[<span class="js-word">pPlayerZ</span>] = <span class="js-number">0</span>;
 </pre>
 <!-- mem.bindvar -->
 <div class="prop"><span class="title" id="mem_bindvar">mem.bindvar(object, address, name, typeId)</span></div>
 <div class="tsproto">mem.bindvar(object: Object, address: number, name: string, typeId: number): void</div>
 <div class="vtab"></div>
-Adds a memory-bound property to <div class="snip">object</div>.
-Valid types are <div class="snip">u8</div>, <div class="snip">u16</div>, <div class="snip">u32</div>, <div class="snip">s8</div>, <div class="snip">s16</div>, <div class="snip">s32</div>, <div class="snip">f32</div>, <div class="snip">f64</div>.
+Adds a memory-bound property to <span class="snip">object</span>.
+Valid types are <span class="snip">u8</span>, <span class="snip">u16</span>, <span class="snip">u32</span>, <span class="snip">s8</span>, <span class="snip">s16</span>, <span class="snip">s32</span>, <span class="snip">f32</span>, <span class="snip">f64</span>.
 See <a href="#type_ids">Type IDs</a> for more details.
 <pre class="ex">
-mem.bindvar(this, 0x8033B1AC, 'playerX', f32);
-mem.bindvar(this, 0x8033B1B0, 'playerY', f32);
-mem.bindvar(this, 0x8033B1B4, 'playerZ', f32);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1AC</span>, <span class="js-string">'playerX'</span>, <span class="js-word">f32</span>);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1B0</span>, <span class="js-string">'playerY'</span>, <span class="js-word">f32</span>);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1B4</span>, <span class="js-string">'playerZ'</span>, <span class="js-word">f32</span>);
 
-console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-keyword">this</span>.<span class="js-word">playerX</span>, <span class="js-keyword">this</span>.<span class="js-word">playerY</span>, <span class="js-keyword">this</span>.<span class="js-word">playerZ</span>);
 </pre>
 <!-- mem.bindvars -->
 <div class="prop"><span class="title" id="mem_bindvars">mem.bindvars(object, vars)</span></div>
 <div class="tsproto">mem.bindvars(object: Object, vars: any[]): Object</div>
 <div class="vtab"></div>
-Adds multiple memory-bound properties to <div class="snip">object</div>.
-<div class="snip">vars</div> must be an array in which each item is an array containing an address, name, and <a href="#type_ids">type ID</a> (in order) describing a variable.
+Adds multiple memory-bound properties to <span class="snip">object</span>.
+<span class="snip">vars</span> must be an array in which each item is an array containing an address, name, and <a href="#type_ids">type ID</a> (in order) describing a variable.
 <div class="vtab""></div>
-Returns <div class="snip">object</div>.
+Returns <span class="snip">object</span>.
 <pre class="ex">
-mem.bindvars(this, [
-    [ 0x8033B1AC, 'playerX', f32 ],
-    [ 0x8033B1B0, 'playerY', f32 ],
-    [ 0x8033B1B4, 'playerZ', f32 ]
+<span class="js-word">mem</span>.<span class="js-word">bindvars</span>(<span class="js-keyword">this</span>, [
+    [ <span class="js-number">0x8033B1AC</span>, <span class="js-string">'playerX'</span>, <span class="js-word">f32</span> ],
+    [ <span class="js-number">0x8033B1B0</span>, <span class="js-string">'playerY'</span>, <span class="js-word">f32</span> ],
+    [ <span class="js-number">0x8033B1B4</span>, <span class="js-string">'playerZ'</span>, <span class="js-word">f32</span> ]
 ]);
 
-console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-keyword">this</span>.<span class="js-word">playerX</span>, <span class="js-keyword">this</span>.<span class="js-word">playerY</span>, <span class="js-keyword">this</span>.<span class="js-word">playerZ</span>);
 </pre>
 <!-- mem.bindstruct -->
 <div class="prop"><span class="title" id="mem_bindstruct">mem.bindstruct(object, address, properties)</span></div>
 <div class="tsproto">mem.bindstruct(object: Object, address: number, properties: Object): Object</div>
 <div class="vtab"></div>
-Adds multiple memory-bound properties to <div class="snip">object</div>.
-<div class="snip">properties</div> must be an object in which each key/value pair specifies the name and <a href="#type_ids">type ID</a> of a variable.
+Adds multiple memory-bound properties to <span class="snip">object</span>.
+<span class="snip">properties</span> must be an object in which each key/value pair specifies the name and <a href="#type_ids">type ID</a> of a variable.
 The offset of a variable is determined by the sum of type sizes of the variables preceding it.
 <div class="vtab""></div>
-Returns <div class="snip">object</div>.
+Returns <span class="snip">object</span>.
 <div class="vtab""></div>
 <pre class="ex">
-var playerPos = mem.bindstruct({}, 0x8033B1AC, { x: f32, y: f32, z: f32 });
-
-console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
+<span class="js-keyword">var</span> <span class="js-word">playerPos</span> = <span class="js-word">mem</span>.<span class="js-word">bindstruct</span>({}, <span class="js-number">0x8033B1AC</span>, { <span class="js-word">x</span>: <span class="js-word">f32</span>, <span class="js-word">y</span>: <span class="js-word">f32</span>, <span class="js-word">z</span>: <span class="js-word">f32</span> });
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-word">playerPos</span>.<span class="js-word">x</span>, <span class="js-word">playerPos</span>.<span class="js-word">y</span>, <span class="js-word">playerPos</span>.<span class="js-word">z</span>);
 </pre>
 <!-- mem.typedef -->
 <div class="prop"><span class="title" id="mem_typedef">mem.typedef(properties)</span></div>
@@ -444,9 +472,9 @@ console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
 <div class="vtab"></div>
 Returns a constructor function that will create an object representing a structure in memory, given its address.
 <pre class="ex">
-const vec3f = mem.typedef({ x: f32, y: f32, z: f32 });
-var playerAngle = new vec3f(0x8033B19C);
-var playerPos = new vec3f(0x8033B1AC);
+<span class="js-keyword">const</span> <span class="js-word">vec3f</span> = <span class="js-word">mem</span>.<span class="js-word">typedef</span>({ <span class="js-word">x</span>: <span class="js-word">f32</span>, <span class="js-word">y</span>: <span class="js-word">f32</span>, <span class="js-word">z</span>: <span class="js-word">f32</span> });
+<span class="js-keyword">var</span> <span class="js-word">playerAngle</span> = <span class="js-keyword">new</span> <span class="js-word">vec3f</span>(<span class="js-number">0x8033B19C</span>);
+<span class="js-keyword">var</span> <span class="js-word">playerPos</span> = <span class="js-keyword">new</span> <span class="js-word">vec3f</span>(<span class="js-number">0x8033B1AC</span>);
 </pre>
 <!-- mem.getblock -->
 <div class="prop"><span class="title" id="mem_getblock">mem.getblock(address, length)</span></div>
@@ -454,21 +482,21 @@ var playerPos = new vec3f(0x8033B1AC);
 <div class="vtab"></div>
 Returns a block of data from memory as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
 <pre class="ex">
-var ramDump = mem.getblock(0x80000000, mem.ramsize)
-fs.writeFile("ram-dump.bin", ramDump);
+<span class="js-keyword">var</span> <span class="js-word">ramDump</span> = <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-number">0x80000000</span>, <span class="js-word">mem</span>.<span class="js-word">ramsize</span>)
+<span class="js-word">fs</span>.<span class="js-word">writeFile</span>(<span class="js-string">"ram-dump.bin"</span>, <span class="js-word">ramDump</span>);
 </pre>
 <!-- mem.setblock -->
 <div class="prop"><span class="title" id="mem_setblock">mem.setblock(address, data[, length])</span></div>
 <div class="tsproto">mem.setblock(address: number, data: string | Buffer | TypedArray, length: number): Buffer</div>
 <div class="vtab"></div>
-Writes a block of data into memory. <div class="snip">data</div> may be one of the following types&#58;
+Writes a block of data into memory. <span class="snip">data</span> may be one of the following types&#58;
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
 <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
 <pre class="ex">
-var textures = fs.readFile("textures.bin");
-mem.setblock(0x80400000, textures);
+<span class="js-keyword">var</span> <span class="js-word">textures</span> = <span class="js-word">fs</span>.<span class="js-word">readFile</span>(<span class="js-string">"textures.bin"</span>);
+<span class="js-word">mem</span>.<span class="js-word">setblock</span>(<span class="js-number">0x80400000</span>, <span class="js-word">textures</span>);
 </pre>
 <!-- mem.getstring -->
 <div class="prop"><span class="title" id="mem_getstring">mem.getstring(address[, length])</span></div>
@@ -476,7 +504,7 @@ mem.setblock(0x80400000, textures);
 <div class="vtab"></div>
 Returns a zero-terminated ASCII string from memory.
 <pre class="ex">
-const romName = mem.getstring(0xB0000020, 0x14);
+<span class="js-keyword">const</span> <span class="js-word">romName</span> = <span class="js-word">mem</span>.<span class="js-word">getstring</span>(<span class="js-number">0xB0000020</span>, <span class="js-number">0x14</span>);
 </pre>
 <!-- mem.setstring -->
 <div class="prop"><span class="title" id="mem_setstring">mem.setstring(address, data[, length])</span></div>
@@ -487,12 +515,12 @@ Writes a string into memory (alias of <a href="#mem_setblock">mem.setblock</a>).
 <div class="prop"><span class="title" id="mem_ramsize">mem.ramsize</span></div>
 <div class="tsproto">mem.ramsize: number</div>
 <div class="vtab"></div>
-The size of RDRAM in bytes. <div class="snip">0</div> if RDRAM is not initialized.
+The size of RDRAM in bytes. <span class="snip">0</span> if RDRAM is not initialized.
 <!-- mem.romsize -->
 <div class="prop"><span class="title" id="mem_romsize">mem.romsize</span></div>
 <div class="tsproto">mem.romsize: number</div>
 <div class="vtab"></div>
-The size of cartridge ROM in bytes. <div class="snip">0</div> if ROM is not initialized.
+The size of cartridge ROM in bytes. <span class="snip">0</span> if ROM is not initialized.
 
 </div>
 <!-- events -->
@@ -502,131 +530,131 @@ Emulation event hooking interface
 <div class="vtab"></div>
 <!-- events.onexec -->
 <div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.onexec(address: number | AddressRange, callback: (CPUExecEvent) => void): number</div>
+<div class="tsproto">events.onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div>.
-<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives a <a href="#CPUExecEvent">CPUExecEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
+<span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<span class="snip">callback</span> receives a <a href="#CPUExecEvent">CPUExecEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
-events.onexec(0x802CB1C0, function() {
-    console.log("func_802CB1C0 was called");
+<span class="js-word">events</span>.<span class="js-word">onexec</span>(<span class="js-number">0x802CB1C0</span>, <span class="js-keyword">function</span>() {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"func_802CB1C0 was called"</span>);
 })
 </pre>
 <pre class="ex">
-// Log every CPU step
-events.onexec(ADDR_ANY, function(e) {
-    console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
+<span class="js-comment">// Log every CPU step</span>
+<span class="js-word">events</span>.<span class="js-word">onexec</span>(<span class="js-word">ADDR_ANY</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">e</span>.<span class="js-word">pc</span>.<span class="js-word">hex</span>() + <span class="js-string">": "</span> + <span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">e</span>.<span class="js-word">pc</span>], <span class="js-word">e</span>.<span class="js-word">pc</span>));
 })
 </pre>
 <!-- events.onread -->
 <div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <div class="snip">address</div>.
-<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <span class="snip">address</span>.
+<span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.onwrite -->
 <div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <div class="snip">address</div>.
-<div class="snip">address</div> may be a single address or an object containing <div class="snip">start</div> and <div class="snip">end</div> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
-<div class="snip">callback</div> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <span class="snip">address</span>.
+<span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
+<span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
-events.onwrite(PI_WR_LEN_REG, function(e) {
-    var romAddr = mem.u32[PI_CART_ADDR_REG] + 0xA0000000;
-    var ramAddr = mem.u32[PI_DRAM_ADDR_REG] + 0x80000000;
-    var length = e.value + 1;
-    console.log("Loaded " + romAddr.hex() + " -> " + ramAddr.hex() + " (Length: " + length.hex() + ")");
+<span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-word">PI_WR_LEN_REG</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">romAddr</span> = <span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">PI_CART_ADDR_REG</span>] + <span class="js-number">0xA0000000</span>;
+    <span class="js-keyword">var</span> <span class="js-word">ramAddr</span> = <span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">PI_DRAM_ADDR_REG</span>] + <span class="js-number">0x80000000</span>;
+    <span class="js-keyword">var</span> <span class="js-word">length</span> = <span class="js-word">e</span>.<span class="js-word">value</span> + <span class="js-number">1</span>;
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Loaded "</span> + <span class="js-word">romAddr</span>.<span class="js-word">hex</span>() + <span class="js-string">" -> "</span> + <span class="js-word">ramAddr</span>.<span class="js-word">hex</span>() + <span class="js-string">" (Length: "</span> + <span class="js-word">length</span>.<span class="js-word">hex</span>() + <span class="js-string">")"</span>);
 });
 </pre>
 <!-- events.onopcode -->
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (CPUOpcodeEvent) => void): number</div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
-<div class="snip">opcode</div> is equal to the current opcode ANDed with <div class="snip">mask</div>.
-<div class="snip">callback</div> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
+<span class="snip">opcode</span> is equal to the current opcode ANDed with <span class="snip">mask</span>.
+<span class="snip">callback</span> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
-const JAL = asm.encode("jal 0");
-const ANY_TARGET = 0xFC000000; // Mask off target field
-
-events.onopcode(ADDR_ANY, JAL, ANY_TARGET, function(e) {
-    // Log every JAL
-    console.log(e.pc.hex() + ": " + asm.decode(mem.u32[e.pc], e.pc));
+<span class="js-comment">// Log every JAL</span>
+<span class="js-keyword">const</span> <span class="js-word">JAL</span> = <span class="js-word">asm</span>.<span class="js-word">encode</span>(<span class="js-string">"jal 0"</span>);
+<span class="js-keyword">const</span> <span class="js-word">ANY_TARGET</span> = <span class="js-number">0xFC000000</span>; <span class="js-comment">// Mask off target field</span>
+<span class="js-word">events</span>.<span class="js-word">onopcode</span>(<span class="js-word">ADDR_ANY</span>, <span class="js-word">JAL</span>, <span class="js-word">ANY_TARGET</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">e</span>.<span class="js-word">pc</span>.<span class="js-word">hex</span>() + <span class="js-string">": "</span> + <span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">e</span>.<span class="js-word">pc</span>], <span class="js-word">e</span>.<span class="js-word">pc</span>));
 });
 </pre>
 <!-- events.onopcode -->
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: (CPUOpcodeEvent) => void): number</div>
+<div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, callback: (e: CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and
-<div class="snip">opcode</div> is equal to the current opcode.
-<div class="snip">callback</div> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
+<span class="snip">opcode</span> is equal to the current opcode.
+<span class="snip">callback</span> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <!-- events.ongprvalue -->
 <div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
-<div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (regIndex: number) => void): number</div>
+<div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (e: CPURegValueEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <div class="snip">address</div> and at least one of
-the general purpose registers specified by <div class="snip">regFlags</div> is equal to <div class="snip">value</div> (lower 32 bits only).
-<div class="snip">callback</div> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
+Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and at least one of
+the general purpose registers specified by <span class="snip">regFlags</span> is equal to <span class="snip">value</span> (lower 32 bits only).
+<span class="snip">callback</span> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
 <div class="vtab""></div>
 Returns a callback ID.
 <div class="vtab""></div>
 See <a href="#GPR_flags">General purpose register flags</a> for a list of valid flags. Multiple registers may be specified via bitwise OR.
 <pre class="ex">
-const IS64_SIGNATURE = 0x49533634;
-events.ongprvalue(ADDR_ANY, GPR_ANY, IS64_SIGNATURE, function() {
-    // Break when any general purpose register contains 0x49533634
-    debug.breakhere();
+<span class="js-comment">// Break when any general purpose register contains 0x49533634</span>
+<span class="js-keyword">const</span> <span class="js-word">IS64_SIGNATURE</span> = <span class="js-number">0x49533634</span>;
+<span class="js-word">events</span>.<span class="js-word">ongprvalue</span>(<span class="js-word">ADDR_ANY</span>, <span class="js-word">GPR_ANY</span>, <span class="js-word">IS64_SIGNATURE</span>, <span class="js-keyword">function</span>() {
+    <span class="js-word">debug</span>.<span class="js-word">breakhere</span>();
 });
 </pre>
 <!-- events.onpifread -->
 <div class="prop"><span class="title" id="events_onpifread">events.onpifread(callback)</span></div>
-<div class="tsproto">events.onpifread(callback: () => void): number</div>
+<div class="tsproto">events.onpifread(callback: (e: EmuEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
-Useful for monitoring or overriding controller input.
+<span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
+Useful for monitoring and overriding controller input.
 <div class="vtab""></div>
 Returns a callback ID.
 <pre class="ex">
-// Log P1's inputs
-events.onpifread(function() {
-    if(mem.u32[PIF_RAM_START + 0x00] == 0xFF010401) {
-        console.log(mem.u32[PIF_RAM_START + 0x04].hex());
+<span class="js-comment">// Log P1's controller input</span>
+<span class="js-word">events</span>.<span class="js-word">onpifread</span>(<span class="js-keyword">function</span>() {
+    <span class="js-keyword">if</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">PIF_RAM_START</span> + <span class="js-number">0x00</span>] == <span class="js-number">0xFF010401</span>) {
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">PIF_RAM_START</span> + <span class="js-number">0x04</span>].<span class="js-word">hex</span>());
     }
 });
 </pre>
 
 <pre class="ex">
-// Play an M64 TAS file
-var m64file = fs.readFile("sm64-1key.m64");
-var numSamples = m64file.readUInt32LE(0x018);
-var sampleIndex = 0;
+<span class="js-comment">// Play an M64 TAS file</span>
+<span class="js-keyword">var</span> <span class="js-word">m64file</span> = <span class="js-word">fs</span>.<span class="js-word">readFile</span>(<span class="js-string">"sm64-1key.m64"</span>);
+<span class="js-keyword">var</span> <span class="js-word">numSamples</span> = <span class="js-word">m64file</span>.<span class="js-word">readUInt32LE</span>(<span class="js-number">0x018</span>);
+<span class="js-keyword">var</span> <span class="js-word">sampleIndex</span> = <span class="js-number">0</span>;
 
-events.onpifread(function() {
-    for(var nController = 0; nController < 4; nController++) {
-        var cmdAddr = PIF_RAM_START + (nController * 8);
-        if(mem.u32[cmdAddr + 0x00] == 0xFF010401 && sampleIndex < numSamples) {
-            mem.u32[cmdAddr + 0x04] = m64file.readUInt32BE(0x400 + sampleIndex * 4);
-            sampleIndex++;
+<span class="js-word">events</span>.<span class="js-word">onpifread</span>(<span class="js-keyword">function</span>() {
+    <span class="js-keyword">for</span>(<span class="js-keyword">var</span> <span class="js-word">nController</span> = <span class="js-number">0</span>; <span class="js-word">nController</span> < <span class="js-number">4</span>; <span class="js-word">nController</span>++) {
+        <span class="js-keyword">var</span> <span class="js-word">cmdAddr</span> = <span class="js-word">PIF_RAM_START</span> + (<span class="js-word">nController</span> * <span class="js-number">8</span>);
+        <span class="js-keyword">if</span>(<span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">cmdAddr</span> + <span class="js-number">0x00</span>] == <span class="js-number">0xFF010401</span> && <span class="js-word">sampleIndex</span> < <span class="js-word">numSamples</span>) {
+            <span class="js-word">mem</span>.<span class="js-word">u32</span>[<span class="js-word">cmdAddr</span> + <span class="js-number">0x04</span>] = <span class="js-word">m64file</span>.<span class="js-word">readUInt32BE</span>(<span class="js-number">0x400</span> + <span class="js-word">sampleIndex</span> * <span class="js-number">4</span>);
+            <span class="js-word">sampleIndex</span>++;
         }
     }
 });
 </pre>
 <!-- events.ondraw -->
 <div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
-<div class="tsproto">events.ondraw(callback: () => void): number</div>
+<div class="tsproto">events.ondraw(callback: (e: EmuEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that will be invoked immediately after Project64 requests a screen update from the graphics plugin.
 <div class="vtab""></div>
@@ -635,46 +663,52 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_remove">events.remove(callbackId)</span></div>
 <div class="tsproto">events.remove(callbackId: number): void</div>
 <div class="vtab"></div>
-Unregisters the callback specified by <div class="snip">callbackId</div>.
+Unregisters the callback specified by <span class="snip">callbackId</span>.
 <pre class="ex">
-events.onexec(0x802CB1C0, function(e) {
-    // This is only invoked once
-    console.log("func_802CB1C0 was called");
-    events.remove(e.callbackId);
+<span class="js-comment">// This callback will only be invoked once</span>
+<span class="js-word">events</span>.<span class="js-word">onexec</span>(<span class="js-number">0x802CB1C0</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"func_802CB1C0 was called"</span>);
+    <span class="js-word">events</span>.<span class="js-word">remove</span>(<span class="js-word">e</span>.<span class="js-word">callbackId</span>);
 });
 </pre>
+<!-- EmuEvent -->
+<div class="prop"><span class="title" id="EmuEvent">EmuEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+</table>
 <!-- CPUExecEvent -->
 <div class="prop"><span class="title" id="CPUExecEvent">CPUExecEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><span class="snip">e.pc</span></td><td>Program counter address.</td></tr>
 </table>
 <!-- CPUReadWriteEvent -->
 <div class="prop"><span class="title" id="CPUReadWriteEvent">CPUReadWriteEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
-<tr><td><div class="snip">e.address</div></td><td>Address that the CPU is going to read/write.</td></tr>
-<tr><td><div class="snip">e.fpu</div></td><td><div class="snip">true</div> if the source/destination register is on the floating point unit.</td></tr>
-<tr><td><div class="snip">e.reg</div></td><td>Index of the source/destination register.</td></tr>
-<tr><td><div class="snip">e.valueType</div></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
-<tr><td><div class="snip">e.value</div></td><td>Value that the CPU is going to read/write.</td></tr>
-<tr><td><div class="snip">e.valueHi</div></td><td>Upper 32 bits of the value if <div class="snip">e.type</div> is <div class="snip">u64</div>; otherwise <div class="snip">undefined</div>.</td></tr>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><span class="snip">e.pc</span></td><td>Program counter address.</td></tr>
+<tr><td><span class="snip">e.address</span></td><td>Address that the CPU is going to read/write.</td></tr>
+<tr><td><span class="snip">e.fpu</span></td><td><span class="snip">true</span> if the source/destination register is on the floating point unit.</td></tr>
+<tr><td><span class="snip">e.reg</span></td><td>Index of the source/destination register.</td></tr>
+<tr><td><span class="snip">e.valueType</span></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
+<tr><td><span class="snip">e.value</span></td><td>Value that the CPU is going to read/write.</td></tr>
+<tr><td><span class="snip">e.valueHi</span></td><td>Upper 32 bits of the value if <span class="snip">e.type</span> is <span class="snip">u64</span>; otherwise <span class="snip">undefined</span>.</td></tr>
 </table>
 <div class="vtab"></div>
 <table>
 <thead><tr><td><b>e.type</b></td><td><b>Opcode(s)</b></td></tr></thead>
-<tr><td><div class="snip">s8</div></td><td>LB, SB</td></tr>
-<tr><td><div class="snip">u8</div></td><td>LBU</td></tr>
-<tr><td><div class="snip">s16</div></td><td>LH, SH</td></tr>
-<tr><td><div class="snip">u16</div></td><td>LHU</td></tr>
-<tr><td><div class="snip">s32</div></td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
-<tr><td><div class="snip">u32</div></td><td>LWU</td></tr>
-<tr><td><div class="snip">u64</div></td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
-<tr><td><div class="snip">float</div></td><td>LWC1, SWC1</td></tr>
-<tr><td><div class="snip">double</div></td><td>LDC1, SDC1</td></tr>
+<tr><td><span class="snip">s8</span></td><td>LB, SB</td></tr>
+<tr><td><span class="snip">u8</span></td><td>LBU</td></tr>
+<tr><td><span class="snip">s16</span></td><td>LH, SH</td></tr>
+<tr><td><span class="snip">u16</span></td><td>LHU</td></tr>
+<tr><td><span class="snip">s32</span></td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
+<tr><td><span class="snip">u32</span></td><td>LWU</td></tr>
+<tr><td><span class="snip">u64</span></td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
+<tr><td><span class="snip">float</span></td><td>LWC1, SWC1</td></tr>
+<tr><td><span class="snip">double</span></td><td>LDC1, SDC1</td></tr>
 </table>
 
 </table>
@@ -682,49 +716,49 @@ events.onexec(0x802CB1C0, function(e) {
 <div class="prop"><span class="title" id="CPUOpcodeEvent">CPUOpcodeEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
-<tr><td><div class="snip">e.opcode</div></td><td>The opcode.</td></tr>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><span class="snip">e.pc</span></td><td>Program counter address.</td></tr>
+<tr><td><span class="snip">e.opcode</span></td><td>The opcode.</td></tr>
 </table>
 <!-- CPURegValueEvent -->
 <div class="prop"><span class="title" id="CPURegValueEvent">CPURegValueEvent</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">e.callbackId</div></td><td>ID of the callback associated with this event.</td></tr>
-<tr><td><div class="snip">e.pc</div></td><td>Program counter address.</td></tr>
-<tr><td><div class="snip">e.value</div></td><td>The value.</td></tr>
-<tr><td><div class="snip">e.reg</div></td><td>Index of the register containing the value.</td></tr>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with this event.</td></tr>
+<tr><td><span class="snip">e.pc</span></td><td>Program counter address.</td></tr>
+<tr><td><span class="snip">e.value</span></td><td>The value.</td></tr>
+<tr><td><span class="snip">e.reg</span></td><td>Index of the register containing the value.</td></tr>
 </table>
 <!-- GPR_flags -->
 <div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
 <div class="vtab"></div>
-Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <div class="snip">regFlags</div> parameter.
+Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <span class="snip">regFlags</span> parameter.
 <pre>
-<div class="snip">GPR_ANY</div>
+<span class="snip">GPR_ANY</span>
 
-<div class="snip">GPR_R0</div> <div class="snip">GPR_AT</div> <div class="snip">GPR_V0</div> <div class="snip">GPR_V1</div> <div class="snip">GPR_A0</div> <div class="snip">GPR_A1</div> <div class="snip">GPR_A2</div> <div class="snip">GPR_A3</div>
-<div class="snip">GPR_T0</div> <div class="snip">GPR_T1</div> <div class="snip">GPR_T2</div> <div class="snip">GPR_T3</div> <div class="snip">GPR_T4</div> <div class="snip">GPR_T5</div> <div class="snip">GPR_T6</div> <div class="snip">GPR_T7</div>
-<div class="snip">GPR_S0</div> <div class="snip">GPR_S1</div> <div class="snip">GPR_S2</div> <div class="snip">GPR_S3</div> <div class="snip">GPR_S4</div> <div class="snip">GPR_S5</div> <div class="snip">GPR_S6</div> <div class="snip">GPR_S7</div>
-<div class="snip">GPR_T8</div> <div class="snip">GPR_T9</div> <div class="snip">GPR_K0</div> <div class="snip">GPR_K1</div> <div class="snip">GPR_GP</div> <div class="snip">GPR_SP</div> <div class="snip">GPR_FP</div> <div class="snip">GPR_RA</div>
+<span class="snip">GPR_R0</span> <span class="snip">GPR_AT</span> <span class="snip">GPR_V0</span> <span class="snip">GPR_V1</span> <span class="snip">GPR_A0</span> <span class="snip">GPR_A1</span> <span class="snip">GPR_A2</span> <span class="snip">GPR_A3</span>
+<span class="snip">GPR_T0</span> <span class="snip">GPR_T1</span> <span class="snip">GPR_T2</span> <span class="snip">GPR_T3</span> <span class="snip">GPR_T4</span> <span class="snip">GPR_T5</span> <span class="snip">GPR_T6</span> <span class="snip">GPR_T7</span>
+<span class="snip">GPR_S0</span> <span class="snip">GPR_S1</span> <span class="snip">GPR_S2</span> <span class="snip">GPR_S3</span> <span class="snip">GPR_S4</span> <span class="snip">GPR_S5</span> <span class="snip">GPR_S6</span> <span class="snip">GPR_S7</span>
+<span class="snip">GPR_T8</span> <span class="snip">GPR_T9</span> <span class="snip">GPR_K0</span> <span class="snip">GPR_K1</span> <span class="snip">GPR_GP</span> <span class="snip">GPR_SP</span> <span class="snip">GPR_FP</span> <span class="snip">GPR_RA</span>
 </pre>
 <!-- AddressRange -->
 <div class="prop"><span class="title" id="AddressRange">new AddressRange(start, end)</span></div>
 <div class="tsproto">new AddressRange(start: number, end: number)</div>
 <div class="vtab"></div>
-Creates an immutable object with <div class="snip">start</div> and <div class="snip">end</div> address properties.
+Creates an immutable object with <span class="snip">start</span> and <span class="snip">end</span> address properties.
 <div class="vtab"></div>
-The following <div class="snip">AddressRange</div> objects are defined globally&#58;
+The following <span class="snip">AddressRange</span> objects are defined globally&#58;
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">ADDR_ANY</div>              </td><td>0x00000000 &#58; 0xFFFFFFFF</td><td>Any address</td></tr>
-<tr><td><div class="snip">ADDR_ANY_KUSEG</div>        </td><td>0x00000000 &#58; 0x7FFFFFFF</td><td>MIPS user mode TLB mapped segment</td></tr>
-<tr><td><div class="snip">ADDR_ANY_KSEG0</div>        </td><td>0x80000000 &#58; 0x9FFFFFFF</td><td>MIPS cached unmapped segment</td></tr>
-<tr><td><div class="snip">ADDR_ANY_KSEG1</div>        </td><td>0xA0000000 &#58; 0xBFFFFFFF</td><td>MIPS uncached unmapped segment</td></tr>
-<tr><td><div class="snip">ADDR_ANY_KSEG2</div>        </td><td>0xC0000000 &#58; 0xFFFFFFFF</td><td>MIPS kernel mode TLB mapped segment</td></tr>
-<tr><td><div class="snip">ADDR_ANY_RDRAM</div>        </td><td>0x80000000 &#58; 0x807FFFFF</td><td>Cached RDRAM</td></tr>
-<tr><td><div class="snip">ADDR_ANY_RDRAM_UNC</div>    </td><td>0xA0000000 &#58; 0xA07FFFFF</td><td>Uncached RDRAM</td></tr>
-<tr><td><div class="snip">ADDR_ANY_CART_ROM</div>     </td><td>0x90000000 &#58; 0x95FFFFFF</td><td>Cached cartridge ROM</td></tr>
-<tr><td><div class="snip">ADDR_ANY_CART_ROM_UNC</div> </td><td>0xB0000000 &#58; 0xB5FFFFFF</td><td>Uncached cartridge ROM</td></tr>
+<tr><td><span class="snip">ADDR_ANY</span>              </td><td>0x00000000 &#58; 0xFFFFFFFF</td><td>Any address</td></tr>
+<tr><td><span class="snip">ADDR_ANY_KUSEG</span>        </td><td>0x00000000 &#58; 0x7FFFFFFF</td><td>MIPS user mode TLB mapped segment</td></tr>
+<tr><td><span class="snip">ADDR_ANY_KSEG0</span>        </td><td>0x80000000 &#58; 0x9FFFFFFF</td><td>MIPS cached unmapped segment</td></tr>
+<tr><td><span class="snip">ADDR_ANY_KSEG1</span>        </td><td>0xA0000000 &#58; 0xBFFFFFFF</td><td>MIPS uncached unmapped segment</td></tr>
+<tr><td><span class="snip">ADDR_ANY_KSEG2</span>        </td><td>0xC0000000 &#58; 0xFFFFFFFF</td><td>MIPS kernel mode TLB mapped segment</td></tr>
+<tr><td><span class="snip">ADDR_ANY_RDRAM</span>        </td><td>0x80000000 &#58; 0x807FFFFF</td><td>Cached RDRAM</td></tr>
+<tr><td><span class="snip">ADDR_ANY_RDRAM_UNC</span>    </td><td>0xA0000000 &#58; 0xA07FFFFF</td><td>Uncached RDRAM</td></tr>
+<tr><td><span class="snip">ADDR_ANY_CART_ROM</span>     </td><td>0x90000000 &#58; 0x95FFFFFF</td><td>Cached cartridge ROM</td></tr>
+<tr><td><span class="snip">ADDR_ANY_CART_ROM_UNC</span> </td><td>0xB0000000 &#58; 0xB5FFFFFF</td><td>Uncached cartridge ROM</td></tr>
 </table>
 
 </div>
@@ -737,11 +771,11 @@ Screen drawing interface
 <div class="prop"><span class="title" id="screen_print">screen.print(x, y, text)</span><div class="tag red">Unstable</div></div>
 <div class="tsproto">screen.print(x: number, y: number, text: string): void</div>
 <div class="vtab"></div>
-Prints text to the screen at the provided <div class="snip">x</div> and <div class="snip">y</div> coordinates.
+Prints text to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
 Should be called from an <a href="#events_ondraw">events.ondraw</a> callback.
 <pre class="ex">
-events.ondraw(function() {
-    screen.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>() {
+    <span class="js-word">screen</span>.<span class="js-word">print</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
 });
 </pre>
 
@@ -874,10 +908,10 @@ Debugger interface
 <div class="vtab"></div>
 Pauses emulation and shows the CPU commands window. Useful for creating conditional breakpoints.
 <pre class="ex">
-events.onexec(0x802CB1C0, function() {
-    if(gpr.a0 == 21) {
-        console.log("21 passed to func_802CB1C0, breaking...");
-        debug.breakhere();
+<span class="js-comment">// Break if the CPU tries to write 5 to 0x80339EA8</span>
+<span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-number">0x80339EA8</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">if</span>(<span class="js-word">e</span>.<span class="js-word">value</span> == <span class="js-number">5</span>) {
+        <span class="js-word">debug</span>.<span class="js-word">breakhere</span>();
     }
 });
 </pre>
@@ -892,21 +926,21 @@ Resumes emulation after a debug break.
 <div class="vtab"></div>
 Skips the current CPU command. Useful for preventing or overriding an operation.
 <pre class="ex">
-// Do not let the CPU write to 0x8033B21E
-events.onwrite(0x8033B21E, function(e) {
-    debug.skip();
+<span class="js-comment">// Do not let the CPU write to 0x8033B21E</span>
+<span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-number">0x8033B21E</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-word">debug</span>.<span class="js-word">skip</span>();
 });
 </pre>
 <!-- debug.showmemory -->
 <div class="prop"><span class="title" id="debug_showmemory">debug.showmemory(address)</span></div>
 <div class="tsproto">debug.showmemory(address: number): void</div>
 <div class="vtab"></div>
-Shows the memory window at <div class="snip">address</div>.
+Shows the memory window at <span class="snip">address</span>.
 <!-- debug.showcommands -->
 <div class="prop"><span class="title" id="debug_showcommands">debug.showcommands(address)</span></div>
 <div class="tsproto">debug.showcommands(address: number): void</div>
 <div class="vtab"></div>
-Shows the CPU commands window at <div class="snip">address</div>.
+Shows the CPU commands window at <span class="snip">address</span>.
 
 </div>
 <!-- asm -->
@@ -918,35 +952,35 @@ ASM utilities
 <div class="prop"><span class="title" id="asm_encode">asm.encode(command[, address])</span></div>
 <div class="tsproto">asm.encode(command: string, address?: number): number</div>
 <div class="vtab"></div>
-Encodes a single MIPS R4300i opcode. <div class="snip">address</div> is an optional parameter that may be used to hint the address of the instruction for branch offset calculation.
+Encodes a single MIPS R4300i opcode. <span class="snip">address</span> is an optional parameter that may be used to hint the address of the instruction for branch offset calculation.
 <div class="vtab"></div>
 Returns the opcode as a number.
 <pre class="ex">
-asm.encode("nop");                      // 0x00000000
-asm.encode("addiu sp, sp, -24");        // 0x27BDFFE8
-asm.encode("b 0x80400000", 0x803FFF00); // 0x1000003F
-asm.encode("b 0x80400000", 0x80400100); // 0x1000FFBF
+<span class="js-word">asm</span>.<span class="js-word">encode</span>(<span class="js-string">"nop"</span>);                      <span class="js-comment">// 0x00000000</span>
+<span class="js-word">asm</span>.<span class="js-word">encode</span>(<span class="js-string">"addiu sp, sp, -24"</span>);        <span class="js-comment">// 0x27BDFFE8</span>
+<span class="js-word">asm</span>.<span class="js-word">encode</span>(<span class="js-string">"b 0x80400000"</span>, <span class="js-number">0x803FFF00</span>); <span class="js-comment">// 0x1000003F</span>
+<span class="js-word">asm</span>.<span class="js-word">encode</span>(<span class="js-string">"b 0x80400000"</span>, <span class="js-number">0x80400100</span>); <span class="js-comment">// 0x1000FFBF</span>
 </pre>
 <!-- asm.decode -->
 <div class="prop"><span class="title" id="asm_decode">asm.decode(opcode[, address])</span></div>
 <div class="tsproto">asm.decode(opcode: number, address?: number)</div>
 <div class="vtab"></div>
-Decodes a single MIPS R4300i opcode. <div class="snip">address</div> is an optional parameter that may be used to hint the address of the instruction for branch address calculation.
+Decodes a single MIPS R4300i opcode. <span class="snip">address</span> is an optional parameter that may be used to hint the address of the instruction for branch address calculation.
 <div class="vtab"></div>
 Returns a line of assembly code as a string.
 <pre class="ex">
-asm.decode(0x00000000);             // "NOP"
-asm.decode(0x27BDFFE8);             // "ADDIU SP, SP, -0x18"
-asm.decode(0x1000003F, 0x803FFF00); // "B 0x80400000"
-asm.decode(0x1000FFBF, 0x80400100); // "B 0x80400000"
+<span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-number">0x00000000</span>);             <span class="js-comment">// "NOP"</span>
+<span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-number">0x27BDFFE8</span>);             <span class="js-comment">// "ADDIU SP, SP, -0x18"</span>
+<span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-number">0x1000003F</span>, <span class="js-number">0x803FFF00</span>); <span class="js-comment">// "B 0x80400000"</span>
+<span class="js-word">asm</span>.<span class="js-word">decode</span>(<span class="js-number">0x1000FFBF</span>, <span class="js-number">0x80400100</span>); <span class="js-comment">// "B 0x80400000"</span>
 </pre>
 <!-- asm.gprname -->
 <div class="prop"><span class="title" id="asm_gprname">asm.gprname(regIndex)</span></div>
 <div class="tsproto">asm.gprname(regIndex: number): string</div>
 <div class="vtab"></div>
-Returns the name of the general purpose register specified by <div class="snip">regIndex</div>.
+Returns the name of the general purpose register specified by <span class="snip">regIndex</span>.
 <pre class="ex">
-asm.gprname(4); // returns 'a0'
+<span class="js-word">asm</span>.<span class="js-word">gprname</span>(<span class="js-number">4</span>); <span class="js-comment">// Returns "a0"</span>
 </pre>
 
 </div>
@@ -959,7 +993,7 @@ File system interface
 <div class="prop"><span class="title" id="fs_open">fs.open(path, mode)</span></div>
 <div class="tsproto">fs.open(path: string, mode: string): number</div>
 <div class="vtab"></div>
-Opens the file pointed to by <div class="snip">path</div> in the mode specified by <div class="snip">mode</div>.
+Opens the file pointed to by <span class="snip">path</span> in the mode specified by <span class="snip">mode</span>.
 See <a target="blank" href="https://pubs.opengroup.org/onlinepubs/009604599/functions/fopen.html">fopen</a> for a list of valid modes.
 <div class="vtab""></div>
 Returns a file descriptor.
@@ -967,82 +1001,81 @@ Returns a file descriptor.
 <div class="prop"><span class="title" id="fs_close">fs.close(fd)</span></div>
 <div class="tsproto">fs.close(fd): void</div>
 <div class="vtab"></div>
-Closes the file referenced by <div class="snip">fd</div>.
+Closes the file referenced by <span class="snip">fd</span>.
 <!-- fs.write -->
 <div class="prop"><span class="title" id="fs_write">fs.write(fd, buffer[, offset[, length[, position]]])</span></div>
 <div class="tsproto">fs.write(fd: number, buffer: string | Buffer | ArrayBuffer, offset?: number, length?: number, position?: number): number</div>
 <div class="vtab"></div>
-Writes <div class="snip">buffer</div> to the file referenced by file descriptor <div class="snip">fd</div>. <div class="snip">buffer</div> may be one of the following types&#58;
+Writes <span class="snip">buffer</span> to the file referenced by file descriptor <span class="snip">fd</span>. <span class="snip">buffer</span> may be one of the following types&#58;
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
 <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
 <div class="vtab"></div>
-<div class="snip">offset</div>&#58; optional position in the source buffer.<br>
-<div class="snip">length</div>&#58; optional maximum number of bytes to write.<br>
-<div class="snip">position</div>&#58; optional file position.
+<span class="snip">offset</span>&#58; optional position in the source buffer.<br>
+<span class="snip">length</span>&#58; optional maximum number of bytes to write.<br>
+<span class="snip">position</span>&#58; optional file position.
 <div class="vtab""></div>
 Returns the number of bytes written.
 <pre class="ex">
-var fd = fs.open("file.txt", "wb");
-fs.write(fd, "hello\n");
-fs.write(fd, "world\n");
-fs.close();
+<span class="js-keyword">var</span> <span class="js-word">fd</span> = <span class="js-word">fs</span>.<span class="js-word">open</span>(<span class="js-string">"file.txt"</span>, <span class="js-string">"wb"</span>);
+<span class="js-word">fs</span>.<span class="js-word">write</span>(<span class="js-word">fd</span>, <span class="js-string">"Hello "</span>);
+<span class="js-word">fs</span>.<span class="js-word">write</span>(<span class="js-word">fd</span>, <span class="js-string">"world!\n"</span>);
+<span class="js-word">fs</span>.<span class="js-word">close</span>();
 </pre>
 <!-- fs.writeFile -->
 <div class="prop"><span class="title" id="fs_writeFile">fs.writeFile(path, buffer)</span></div>
 <div class="tsproto">fs.writeFile(path: string, buffer: string | Buffer | ArrayBuffer): void</div>
 <div class="vtab"></div>
-Writes <div class="snip">buffer</div> to the file specified by <div class="snip">path</div>. Uses mode "wb" internally.
+Writes <span class="snip">buffer</span> to the file specified by <span class="snip">path</span>. Uses mode "wb" internally.
 <pre class="ex">
-var ramdump = mem.getblock(0x80000000, 0x00400000);
-fs.writeFile("ramdump.bin", ramdump);
+<span class="js-word">fs</span>.<span class="js-word">writeFile</span>(<span class="js-string">"ram_dump.bin"</span>, <span class="js-word">mem</span>.<span class="js-word">getblock</span>(<span class="js-word">K0BASE</span>, <span class="js-word">mem</span>.<span class="js-word">ramsize</span>));
 </pre>
 <!-- fs.read -->
 <div class="prop"><span class="title" id="fs_read">fs.read(fd, buffer, offset, length, position)</span></div>
 <div class="tsproto">fs.read(fd: number, buffer: Buffer | ArrayBuffer, offset: number, length: number, position: number) : number</div>
 <div class="vtab"></div>
-Reads data from the file referenced by <div class="snip">fd</div> into <div class="snip">buffer</div>. <div class="snip">buffer</div> may be one of the following types&#58;
+Reads data from the file referenced by <span class="snip">fd</span> into <span class="snip">buffer</span>. <span class="snip">buffer</span> may be one of the following types&#58;
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ArrayBuffer">ArrayBuffer</a>,
 <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>.<br><br>
-<div class="snip">offset</div>&#58; position in the source buffer.<br>
-<div class="snip">length</div>&#58; number of bytes to read.<br>
-<div class="snip">position</div>&#58; file position.
+<span class="snip">offset</span>&#58; position in the source buffer.<br>
+<span class="snip">length</span>&#58; number of bytes to read.<br>
+<span class="snip">position</span>&#58; file position.
 <div class="vtab""></div>
 Returns the number of bytes read.
 <!-- fs.readFile -->
 <div class="prop"><span class="title" id="fs_readFile">fs.readFile(path)</span></div>
 <div class="tsproto">fs.readFile(path: string): Buffer</div>
 <div class="vtab"></div>
-Returns a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object representing the data of the file specified by <div class="snip">path</div>.
+Returns a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object representing the data of the file specified by <span class="snip">path</span>.
 Uses mode "rb" internally.
 <!-- fs.fstat -->
 <div class="prop"><span class="title" id="fs_fstat">fs.fstat(fd)</span></div>
 <div class="tsproto">fs.fstat(fd: number): fs.Stats</div>
 <div class="vtab"></div>
-Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file referenced by <div class="snip">fd</div>.
+Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file referenced by <span class="snip">fd</span>.
 <!-- fs.stat -->
 <div class="prop"><span class="title" id="fs_stat">fs.stat(path)</span></div>
 <div class="tsproto">fs.stat(path: string): fs.Stats</div>
 <div class="vtab"></div>
-Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file specified by <div class="snip">path</div>.
+Returns an <a href="#fs_Stats">fs.Stats</a> object containing information about the file specified by <span class="snip">path</span>.
 <!-- fs.unlink -->
 <div class="prop"><span class="title" id="fs_unlink">fs.unlink(path)</span></div>
 <div class="tsproto">fs.unlink(path: string): boolean</div>
 <div class="vtab"></div>
-Deletes the file specified by <div class="snip">path</div>. Returns <div class="snip">true</div> if the operation is successful.
+Deletes the file specified by <span class="snip">path</span>. Returns <span class="snip">true</span> if the operation is successful.
 <!-- fs.mkdir -->
 <div class="prop"><span class="title" id="fs_mkdir">fs.mkdir(path)</span></div>
 <div class="tsproto">fs.mkdir(path: string): boolean</div>
 <div class="vtab"></div>
-Creates a directory. Returns <div class="snip">true</div> if the operation is successful.
+Creates a directory. Returns <span class="snip">true</span> if the operation is successful.
 <!-- fs.rmdir -->
 <div class="prop"><span class="title" id="fs_rmdir">fs.rmdir(path)</span></div>
 <div class="tsproto">fs.rmdir(path: string): boolean</div>
 <div class="vtab"></div>
-Deletes a directory. The directory must be empty. Returns <div class="snip">true</div> if the operation is successful.
+Deletes a directory. The directory must be empty. Returns <span class="snip">true</span> if the operation is successful.
 <!-- fs.readdir -->
 <div class="prop"><span class="title" id="fs_readdir">fs.readdir(path)</span></div>
 <div class="tsproto">fs.readdir(path: string): string[]</div>
@@ -1054,31 +1087,31 @@ Returns an array of file names from a directory.
 Object containing information about a file or directory. Generated by <a href="#fs_fstat">fs.fstat/fs.stat</a>.
 <div class="vtab""></div>
 <table>
-<tr><td><div class="snip">stats.dev</div></td><td>ID of the device the file resides on</td></tr>
-<tr><td><div class="snip">stats.ino</div></td><td>inode number</td></tr>
-<tr><td><div class="snip">stats.mode</div></td><td>File permissions</td></tr>
-<tr><td><div class="snip">stats.nlink</div></td><td>Number of links to the file</td></tr>
-<tr><td><div class="snip">stats.uid</div></td><td>User ID</td></tr>
-<tr><td><div class="snip">stats.gid</div></td><td>Group ID</td></tr>
-<tr><td><div class="snip">stats.rdev</div></td><td>Device ID (if file is character or block special)</td></tr>
-<tr><td><div class="snip">stats.size</div></td><td>Size of the file in bytes</td></tr>
-<tr><td><div class="snip">stats.atimeMs</div></td><td>Last access timestamp in milliseconds</td></tr>
-<tr><td><div class="snip">stats.mtimeMs</div></td><td>Last modification timestamp in milliseconds</td></tr>
-<tr><td><div class="snip">stats.ctimeMs</div></td><td>Creation timestamp in milliseconds</td></tr>
-<tr><td><div class="snip">stats.atime</div></td><td>JS Date object representing the last access time</td></tr>
-<tr><td><div class="snip">stats.mtime</div></td><td>JS Date object representing the last modification time</td></tr>
-<tr><td><div class="snip">stats.ctime</div></td><td>JS Date object representing the creation time</td></tr>
+<tr><td><span class="snip">stats.dev</span></td><td>ID of the device the file resides on</td></tr>
+<tr><td><span class="snip">stats.ino</span></td><td>inode number</td></tr>
+<tr><td><span class="snip">stats.mode</span></td><td>File permissions</td></tr>
+<tr><td><span class="snip">stats.nlink</span></td><td>Number of links to the file</td></tr>
+<tr><td><span class="snip">stats.uid</span></td><td>User ID</td></tr>
+<tr><td><span class="snip">stats.gid</span></td><td>Group ID</td></tr>
+<tr><td><span class="snip">stats.rdev</span></td><td>Device ID (if file is character or block special)</td></tr>
+<tr><td><span class="snip">stats.size</span></td><td>Size of the file in bytes</td></tr>
+<tr><td><span class="snip">stats.atimeMs</span></td><td>Last access timestamp in milliseconds</td></tr>
+<tr><td><span class="snip">stats.mtimeMs</span></td><td>Last modification timestamp in milliseconds</td></tr>
+<tr><td><span class="snip">stats.ctimeMs</span></td><td>Creation timestamp in milliseconds</td></tr>
+<tr><td><span class="snip">stats.atime</span></td><td>JS Date object representing the last access time</td></tr>
+<tr><td><span class="snip">stats.mtime</span></td><td>JS Date object representing the last modification time</td></tr>
+<tr><td><span class="snip">stats.ctime</span></td><td>JS Date object representing the creation time</td></tr>
 </table>
 <div class="vtab""></div>
 <b>stats.isDirectory()</b><br>
 <div class="tsproto">stats.isDirectory(): boolean</div>
 <div class="vtab""></div>
-Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> object describes a directory.
+Returns <span class="snip">true</span> if the <span class="snip">fs.Stats</span> object describes a directory.
 <div class="vtab""></div>
 <b>stats.isFile()</b><br>
 <div class="tsproto">stats.isFile(): boolean</div>
 <div class="vtab""></div>
-Returns <div class="snip">true</div> if the <div class="snip">fs.Stats</div> object describes a regular file.
+Returns <span class="snip">true</span> if the <span class="snip">fs.Stats</span> object describes a regular file.
 
 </div>
 <!-- script -->
@@ -1108,24 +1141,43 @@ Setting this value to zero will allow tasks to run indefinitely.
 <div class="prop"><span class="title" id="require">require(id)</span></div>
 <div class="tsproto">require(id: string): Object</div>
 <div class="vtab"></div>
-Returns a module object. <div class="snip">id</div> may be one of the following:
+Loads a module script and returns its <span class="snip">module.exports</span> object. <span class="snip">id</span> may be one of the following:
 <ul>
-<li>The name of a JavaScript file in the <div class="snip">Scripts/modules</div> directory.</i>
-<li>The path of a JavaScript file relative to the current module.</i>
+<li>The name of a JavaScript file in the <span class="snip">Scripts/modules</span> directory.</i>
+<li>If <span class="snip">id</span> begins with <span class="snip">./</span> or <span class="snip">../</span>, the path of a JavaScript file relative to the parent module's location.</i>
 </ul>
+<div class="vtab"></div>
+The below example demonstrates one way module and submodule loading can be implemented.
 <pre class="ex">
-// Scripts/modules/mymodule.js
-module.exports = {
-   info: info
-};
+<span class="js-comment">/* Scripts/example.js */</span>
 
-function info() {
-    console.log("This is my module");
-}
+<span class="js-keyword">const</span> <span class="js-word">mymodule</span> = <span class="js-word">require</span>(<span class="js-string">'mymodule/lib.js'</span>); <span class="js-comment">// Loads Scripts/modules/mymodule/lib.js</span>
+<span class="js-word">mymodule</span>.<span class="js-word">init</span>(); <span class="js-comment">// Prints "Loaded mymodule", "Loaded mymodule's submodule"</span>
 </pre>
 <pre class="ex">
-const mymodule = require('mymodule.js');
-mymodule.info(); // "This is my module"
+<span class="js-comment">/* Scripts/modules/mymodule/mymodule.js */</span>
+
+<span class="js-keyword">const</span> <span class="js-word">submodule</span> = <span class="js-word">require</span>(<span class="js-string">'./submodule.js'</span>); <span class="js-comment">// Loads Scripts/modules/mymodule/submodule.js</span>
+
+<span class="js-keyword">function</span> <span class="js-word">init</span>() {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Loaded mymodule"</span>);
+    <span class="js-word">submodule</span>.<span class="js-word">init</span>(); <span class="js-comment">// Prints "Loaded mymodule's submodule"</span>
+}
+
+<span class="js-word">module</span>.<span class="js-word">exports</span> = {
+    <span class="js-word">init</span>: <span class="js-word">init</span>
+};
+</pre>
+<pre class="ex">
+<span class="js-comment">/* Scripts/modules/mymodule/submodule.js */</span>
+
+<span class="js-keyword">function</span> <span class="js-word">init</span>() {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Loaded mymodule's submodule"</span>);
+}
+
+<span class="js-word">module</span>.<span class="js-word">exports</span> = {
+    <span class="js-word">init</span>: <span class="js-word">init</span>
+};
 </pre>
 <!-- exec -->
 <div class="prop"><span class="title" id="exec">exec(commandLine[, options])</span></div>
@@ -1135,29 +1187,29 @@ Executes a system command. Does not return until the subprocess exits.
 <div class="vtab"></div>
 Returns the standard output of the subprocess as a string.
 <div class="vtab"></div>
-<div class="snip">options</div> may contain any of the following properties:
+<span class="snip">options</span> may contain any of the following properties:
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">showWindow</div></td><td>If <div class="snip">true</div>, the window of the subprocess is visible. <div class="snip">false</div> by default.</td></tr>
-<tr><td><div class="snip">verbose</div></td><td>If <div class="snip">true</div>, the output of the subprocess is sent to the script manager console. <div class="snip">false</div> by default.</td></tr>
-<tr><td><div class="snip">cwd</div></td><td>Current working directory of the subprocess. By default this is the directory containing Project64.</td></tr>
+<tr><td><span class="snip">showWindow</span></td><td>If <span class="snip">true</span>, the window of the subprocess is visible. <span class="snip">false</span> by default.</td></tr>
+<tr><td><span class="snip">verbose</span></td><td>If <span class="snip">true</span>, the output of the subprocess is sent to the script manager console. <span class="snip">false</span> by default.</td></tr>
+<tr><td><span class="snip">cwd</span></td><td>Current working directory of the subprocess. By default this is the directory containing Project64.</td></tr>
 </table>
 <div class="vtab"></div>
 This function throws an error if the operation fails or if the exit code of the subprocess is non-zero.
 The thrown error object will contain the following properties:
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">status</div></td><td>The exit code of the subprocess.</td></tr>
-<tr><td><div class="snip">stdout</div></td><td>The standard output of the subprocess.</td></tr>
-<tr><td><div class="snip">stderr</div></td><td>The standard error output of the subprocess.</td></tr>
-<tr><td><div class="snip">pid</div></td><td>The PID of the subprocess.</td></tr>
+<tr><td><span class="snip">status</span></td><td>The exit code of the subprocess.</td></tr>
+<tr><td><span class="snip">stdout</span></td><td>The standard output of the subprocess.</td></tr>
+<tr><td><span class="snip">stderr</span></td><td>The standard error output of the subprocess.</td></tr>
+<tr><td><span class="snip">pid</span></td><td>The PID of the subprocess.</td></tr>
 </table>
 <pre class="ex">
-try {
-    exec('dir', { verbose: true });
-} catch(e) {
-    console.log("exec() failed with code", e.status);
-    console.log(e.stderr);
+<span class="js-keyword">try</span> {
+    <span class="js-word">exec</span>(<span class="js-string">"dir"</span>, { <span class="js-word">verbose</span>: <span class="js-keyword">true</span> });
+} <span class="js-keyword">catch</span>(<span class="js-word">e</span>) {
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"exec() failed with code"</span>, <span class="js-word">e</span>.<span class="js-word">status</span>);
+    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">e</span>.<span class="js-word">stderr</span>);
 }
 </pre>
 <!-- alert -->
@@ -1170,11 +1222,11 @@ Shows a message box over the main window. Does not return until the message box 
 <div class="tsproto">number.hex(numChars?: number): string</div>
 <div class="vtab"></div>
 Returns a hexadecimal string representation of the number object.
-The returned string is prepended with zeroes so that its character length is <div class="snip">numChars</div> or 8 by default.
+The returned string is prepended with zeroes so that its character length is <span class="snip">numChars</span> or 8 by default.
 <pre class="ex">
-var n = 123;
-n.hex();  // 0000007B
-n.hex(4); // 007B
+<span class="js-keyword">var</span> <span class="js-word">n</span> = <span class="js-number">123</span>;
+<span class="js-word">n</span>.<span class="js-word">hex</span>();  <span class="js-comment">// 0000007B</span>
+<span class="js-word">n</span>.<span class="js-word">hex</span>(<span class="js-number">4</span>); <span class="js-comment">// 007B</span>
 </pre>
 <!-- type_ids -->
 <div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
@@ -1182,146 +1234,146 @@ n.hex(4); // 007B
 Global type IDs.
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">u8</div>  </td><td>Unsigned 8-bit integer</td></tr>
-<tr><td><div class="snip">u16</div> </td><td>Unsigned 16-bit integer</td></tr>
-<tr><td><div class="snip">u32</div> </td><td>Unsigned 32-bit integer</td></tr>
-<tr><td><div class="snip">s8</div>  </td><td>Signed 8-bit integer</td></tr>
-<tr><td><div class="snip">s16</div> </td><td>Signed 16-bit integer</td></tr>
-<tr><td><div class="snip">s32</div> </td><td>Signed 32-bit integer</td></tr>
-<tr><td><div class="snip">f32</div> </td><td>32-bit single precision floating-point</td></tr>
-<tr><td><div class="snip">f64</div> </td><td>64-bit double precision floating-point</td></tr>
-<tr><td><div class="snip">u64</div> </td><td>Unsigned 64-bit integer</td></tr>
-<tr><td><div class="snip">s64</div> </td><td>Signed 64-bit integer</td></tr>
+<tr><td><span class="snip">u8</span>  </td><td>Unsigned 8-bit integer</td></tr>
+<tr><td><span class="snip">u16</span> </td><td>Unsigned 16-bit integer</td></tr>
+<tr><td><span class="snip">u32</span> </td><td>Unsigned 32-bit integer</td></tr>
+<tr><td><span class="snip">s8</span>  </td><td>Signed 8-bit integer</td></tr>
+<tr><td><span class="snip">s16</span> </td><td>Signed 16-bit integer</td></tr>
+<tr><td><span class="snip">s32</span> </td><td>Signed 32-bit integer</td></tr>
+<tr><td><span class="snip">f32</span> </td><td>32-bit single precision floating-point</td></tr>
+<tr><td><span class="snip">f64</span> </td><td>64-bit double precision floating-point</td></tr>
+<tr><td><span class="snip">u64</span> </td><td>Unsigned 64-bit integer</td></tr>
+<tr><td><span class="snip">s64</span> </td><td>Signed 64-bit integer</td></tr>
 </table>
 <div class="vtab"></div>
-Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <div class="snip">u64</div> and <div class="snip">s64</div>.
+Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <span class="snip">u64</span> and <span class="snip">s64</span>.
 <!-- Memory_mapped_register_addresses -->
 <div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">RDRAM_CONFIG_REG</div>       </td><td>0xA3F00000</td></tr>
-<tr><td><div class="snip">RDRAM_DEVICE_TYPE_REG</div>  </td><td>0xA3F00000</td></tr>
-<tr><td><div class="snip">RDRAM_DEVICE_ID_REG</div>    </td><td>0xA3F00004</td></tr>
-<tr><td><div class="snip">RDRAM_DELAY_REG</div>        </td><td>0xA3F00008</td></tr>
-<tr><td><div class="snip">RDRAM_MODE_REG</div>         </td><td>0xA3F0000C</td></tr>
-<tr><td><div class="snip">RDRAM_REF_INTERVAL_REG</div> </td><td>0xA3F00010</td></tr>
-<tr><td><div class="snip">RDRAM_REF_ROW_REG</div>      </td><td>0xA3F00014</td></tr>
-<tr><td><div class="snip">RDRAM_RAS_INTERVAL_REG</div> </td><td>0xA3F00018</td></tr>
-<tr><td><div class="snip">RDRAM_MIN_INTERVAL_REG</div> </td><td>0xA3F0001C</td></tr>
-<tr><td><div class="snip">RDRAM_ADDR_SELECT_REG</div>  </td><td>0xA3F00020</td></tr>
-<tr><td><div class="snip">RDRAM_DEVICE_MANUF_REG</div> </td><td>0xA3F00024</td></tr>
+<tr><td><span class="snip">RDRAM_CONFIG_REG</span>       </td><td>0xA3F00000</td></tr>
+<tr><td><span class="snip">RDRAM_DEVICE_TYPE_REG</span>  </td><td>0xA3F00000</td></tr>
+<tr><td><span class="snip">RDRAM_DEVICE_ID_REG</span>    </td><td>0xA3F00004</td></tr>
+<tr><td><span class="snip">RDRAM_DELAY_REG</span>        </td><td>0xA3F00008</td></tr>
+<tr><td><span class="snip">RDRAM_MODE_REG</span>         </td><td>0xA3F0000C</td></tr>
+<tr><td><span class="snip">RDRAM_REF_INTERVAL_REG</span> </td><td>0xA3F00010</td></tr>
+<tr><td><span class="snip">RDRAM_REF_ROW_REG</span>      </td><td>0xA3F00014</td></tr>
+<tr><td><span class="snip">RDRAM_RAS_INTERVAL_REG</span> </td><td>0xA3F00018</td></tr>
+<tr><td><span class="snip">RDRAM_MIN_INTERVAL_REG</span> </td><td>0xA3F0001C</td></tr>
+<tr><td><span class="snip">RDRAM_ADDR_SELECT_REG</span>  </td><td>0xA3F00020</td></tr>
+<tr><td><span class="snip">RDRAM_DEVICE_MANUF_REG</span> </td><td>0xA3F00024</td></tr>
 
-<tr><td><div class="snip">SP_MEM_ADDR_REG</div>        </td><td>0xA4040000</td></tr>
-<tr><td><div class="snip">SP_DRAM_ADDR_REG</div>       </td><td>0xA4040004</td></tr>
-<tr><td><div class="snip">SP_RD_LEN_REG</div>          </td><td>0xA4040008</td></tr>
-<tr><td><div class="snip">SP_WR_LEN_REG</div>          </td><td>0xA404000C</td></tr>
-<tr><td><div class="snip">SP_STATUS_REG</div>          </td><td>0xA4040010</td></tr>
-<tr><td><div class="snip">SP_DMA_FULL_REG</div>        </td><td>0xA4040014</td></tr>
-<tr><td><div class="snip">SP_DMA_BUSY_REG</div>        </td><td>0xA4040018</td></tr>
-<tr><td><div class="snip">SP_SEMAPHORE_REG</div>       </td><td>0xA404001C</td></tr>
+<tr><td><span class="snip">SP_MEM_ADDR_REG</span>        </td><td>0xA4040000</td></tr>
+<tr><td><span class="snip">SP_DRAM_ADDR_REG</span>       </td><td>0xA4040004</td></tr>
+<tr><td><span class="snip">SP_RD_LEN_REG</span>          </td><td>0xA4040008</td></tr>
+<tr><td><span class="snip">SP_WR_LEN_REG</span>          </td><td>0xA404000C</td></tr>
+<tr><td><span class="snip">SP_STATUS_REG</span>          </td><td>0xA4040010</td></tr>
+<tr><td><span class="snip">SP_DMA_FULL_REG</span>        </td><td>0xA4040014</td></tr>
+<tr><td><span class="snip">SP_DMA_BUSY_REG</span>        </td><td>0xA4040018</td></tr>
+<tr><td><span class="snip">SP_SEMAPHORE_REG</span>       </td><td>0xA404001C</td></tr>
 
-<tr><td><div class="snip">SP_PC_REG</div>              </td><td>0xA4080000</td></tr>
-<tr><td><div class="snip">SP_IBIST_REG</div>           </td><td>0xA4080004</td></tr>
+<tr><td><span class="snip">SP_PC_REG</span>              </td><td>0xA4080000</td></tr>
+<tr><td><span class="snip">SP_IBIST_REG</span>           </td><td>0xA4080004</td></tr>
 
-<tr><td><div class="snip">DPC_START_REG</div>          </td><td>0xA4100000</td></tr>
-<tr><td><div class="snip">DPC_END_REG</div>            </td><td>0xA4100004</td></tr>
-<tr><td><div class="snip">DPC_CURRENT_REG</div>        </td><td>0xA4100008</td></tr>
-<tr><td><div class="snip">DPC_STATUS_REG</div>         </td><td>0xA410000C</td></tr>
-<tr><td><div class="snip">DPC_CLOCK_REG</div>          </td><td>0xA4100010</td></tr>
-<tr><td><div class="snip">DPC_BUFBUSY_REG</div>        </td><td>0xA4100014</td></tr>
-<tr><td><div class="snip">DPC_PIPEBUSY_REG</div>       </td><td>0xA4100018</td></tr>
-<tr><td><div class="snip">DPC_TMEM_REG</div>           </td><td>0xA410001C</td></tr>
+<tr><td><span class="snip">DPC_START_REG</span>          </td><td>0xA4100000</td></tr>
+<tr><td><span class="snip">DPC_END_REG</span>            </td><td>0xA4100004</td></tr>
+<tr><td><span class="snip">DPC_CURRENT_REG</span>        </td><td>0xA4100008</td></tr>
+<tr><td><span class="snip">DPC_STATUS_REG</span>         </td><td>0xA410000C</td></tr>
+<tr><td><span class="snip">DPC_CLOCK_REG</span>          </td><td>0xA4100010</td></tr>
+<tr><td><span class="snip">DPC_BUFBUSY_REG</span>        </td><td>0xA4100014</td></tr>
+<tr><td><span class="snip">DPC_PIPEBUSY_REG</span>       </td><td>0xA4100018</td></tr>
+<tr><td><span class="snip">DPC_TMEM_REG</span>           </td><td>0xA410001C</td></tr>
 
-<tr><td><div class="snip">DPS_TBIST_REG</div>          </td><td>0xA4200000</td></tr>
-<tr><td><div class="snip">DPS_TEST_MODE_REG</div>      </td><td>0xA4200004</td></tr>
-<tr><td><div class="snip">DPS_BUFTEST_ADDR_REG</div>   </td><td>0xA4200008</td></tr>
-<tr><td><div class="snip">DPS_BUFTEST_DATA_REG</div>   </td><td>0xA420000C</td></tr>
+<tr><td><span class="snip">DPS_TBIST_REG</span>          </td><td>0xA4200000</td></tr>
+<tr><td><span class="snip">DPS_TEST_MODE_REG</span>      </td><td>0xA4200004</td></tr>
+<tr><td><span class="snip">DPS_BUFTEST_ADDR_REG</span>   </td><td>0xA4200008</td></tr>
+<tr><td><span class="snip">DPS_BUFTEST_DATA_REG</span>   </td><td>0xA420000C</td></tr>
 
-<tr><td><div class="snip">MI_INIT_MODE_REG</div>       </td><td>0xA4300000</td></tr>
-<tr><td><div class="snip">MI_MODE_REG</div>            </td><td>0xA4300000</td></tr>
-<tr><td><div class="snip">MI_VERSION_REG</div>         </td><td>0xA4300004</td></tr>
-<tr><td><div class="snip">MI_NOOP_REG</div>            </td><td>0xA4300004</td></tr>
-<tr><td><div class="snip">MI_INTR_REG</div>            </td><td>0xA4300008</td></tr>
-<tr><td><div class="snip">MI_INTR_MASK_REG</div>       </td><td>0xA430000C</td></tr>
+<tr><td><span class="snip">MI_INIT_MODE_REG</span>       </td><td>0xA4300000</td></tr>
+<tr><td><span class="snip">MI_MODE_REG</span>            </td><td>0xA4300000</td></tr>
+<tr><td><span class="snip">MI_VERSION_REG</span>         </td><td>0xA4300004</td></tr>
+<tr><td><span class="snip">MI_NOOP_REG</span>            </td><td>0xA4300004</td></tr>
+<tr><td><span class="snip">MI_INTR_REG</span>            </td><td>0xA4300008</td></tr>
+<tr><td><span class="snip">MI_INTR_MASK_REG</span>       </td><td>0xA430000C</td></tr>
 
-<tr><td><div class="snip">VI_STATUS_REG</div>          </td><td>0xA4400000</td></tr>
-<tr><td><div class="snip">VI_CONTROL_REG</div>         </td><td>0xA4400000</td></tr>
-<tr><td><div class="snip">VI_ORIGIN_REG</div>          </td><td>0xA4400004</td></tr>
-<tr><td><div class="snip">VI_DRAM_ADDR_REG</div>       </td><td>0xA4400004</td></tr>
-<tr><td><div class="snip">VI_WIDTH_REG</div>           </td><td>0xA4400008</td></tr>
-<tr><td><div class="snip">VI_H_WIDTH_REG</div>         </td><td>0xA4400008</td></tr>
-<tr><td><div class="snip">VI_INTR_REG</div>            </td><td>0xA440000C</td></tr>
-<tr><td><div class="snip">VI_V_INTR_REG</div>          </td><td>0xA440000C</td></tr>
-<tr><td><div class="snip">VI_CURRENT_REG</div>         </td><td>0xA4400010</td></tr>
-<tr><td><div class="snip">VI_V_CURRENT_LINE_REG</div>  </td><td>0xA4400010</td></tr>
-<tr><td><div class="snip">VI_BURST_REG</div>           </td><td>0xA4400014</td></tr>
-<tr><td><div class="snip">VI_TIMING_REG</div>          </td><td>0xA4400014</td></tr>
-<tr><td><div class="snip">VI_V_SYNC_REG</div>          </td><td>0xA4400018</td></tr>
-<tr><td><div class="snip">VI_H_SYNC_REG</div>          </td><td>0xA440001C</td></tr>
-<tr><td><div class="snip">VI_LEAP_REG</div>            </td><td>0xA4400020</td></tr>
-<tr><td><div class="snip">VI_H_SYNC_LEAP_REG</div>     </td><td>0xA4400020</td></tr>
-<tr><td><div class="snip">VI_H_START_REG</div>         </td><td>0xA4400024</td></tr>
-<tr><td><div class="snip">VI_H_VIDEO_REG</div>         </td><td>0xA4400024</td></tr>
-<tr><td><div class="snip">VI_V_START_REG</div>         </td><td>0xA4400028</td></tr>
-<tr><td><div class="snip">VI_V_VIDEO_REG</div>         </td><td>0xA4400028</td></tr>
-<tr><td><div class="snip">VI_V_BURST_REG</div>         </td><td>0xA440002C</td></tr>
-<tr><td><div class="snip">VI_X_SCALE_REG</div>         </td><td>0xA4400030</td></tr>
-<tr><td><div class="snip">VI_Y_SCALE_REG</div>         </td><td>0xA4400034</td></tr>
+<tr><td><span class="snip">VI_STATUS_REG</span>          </td><td>0xA4400000</td></tr>
+<tr><td><span class="snip">VI_CONTROL_REG</span>         </td><td>0xA4400000</td></tr>
+<tr><td><span class="snip">VI_ORIGIN_REG</span>          </td><td>0xA4400004</td></tr>
+<tr><td><span class="snip">VI_DRAM_ADDR_REG</span>       </td><td>0xA4400004</td></tr>
+<tr><td><span class="snip">VI_WIDTH_REG</span>           </td><td>0xA4400008</td></tr>
+<tr><td><span class="snip">VI_H_WIDTH_REG</span>         </td><td>0xA4400008</td></tr>
+<tr><td><span class="snip">VI_INTR_REG</span>            </td><td>0xA440000C</td></tr>
+<tr><td><span class="snip">VI_V_INTR_REG</span>          </td><td>0xA440000C</td></tr>
+<tr><td><span class="snip">VI_CURRENT_REG</span>         </td><td>0xA4400010</td></tr>
+<tr><td><span class="snip">VI_V_CURRENT_LINE_REG</span>  </td><td>0xA4400010</td></tr>
+<tr><td><span class="snip">VI_BURST_REG</span>           </td><td>0xA4400014</td></tr>
+<tr><td><span class="snip">VI_TIMING_REG</span>          </td><td>0xA4400014</td></tr>
+<tr><td><span class="snip">VI_V_SYNC_REG</span>          </td><td>0xA4400018</td></tr>
+<tr><td><span class="snip">VI_H_SYNC_REG</span>          </td><td>0xA440001C</td></tr>
+<tr><td><span class="snip">VI_LEAP_REG</span>            </td><td>0xA4400020</td></tr>
+<tr><td><span class="snip">VI_H_SYNC_LEAP_REG</span>     </td><td>0xA4400020</td></tr>
+<tr><td><span class="snip">VI_H_START_REG</span>         </td><td>0xA4400024</td></tr>
+<tr><td><span class="snip">VI_H_VIDEO_REG</span>         </td><td>0xA4400024</td></tr>
+<tr><td><span class="snip">VI_V_START_REG</span>         </td><td>0xA4400028</td></tr>
+<tr><td><span class="snip">VI_V_VIDEO_REG</span>         </td><td>0xA4400028</td></tr>
+<tr><td><span class="snip">VI_V_BURST_REG</span>         </td><td>0xA440002C</td></tr>
+<tr><td><span class="snip">VI_X_SCALE_REG</span>         </td><td>0xA4400030</td></tr>
+<tr><td><span class="snip">VI_Y_SCALE_REG</span>         </td><td>0xA4400034</td></tr>
 
-<tr><td><div class="snip">AI_DRAM_ADDR_REG</div>       </td><td>0xA4500000</td></tr>
-<tr><td><div class="snip">AI_LEN_REG</div>             </td><td>0xA4500004</td></tr>
-<tr><td><div class="snip">AI_CONTROL_REG</div>         </td><td>0xA4500008</td></tr>
-<tr><td><div class="snip">AI_STATUS_REG</div>          </td><td>0xA450000C</td></tr>
-<tr><td><div class="snip">AI_DACRATE_REG</div>         </td><td>0xA4500010</td></tr>
-<tr><td><div class="snip">AI_BITRATE_REG</div>         </td><td>0xA4500014</td></tr>
+<tr><td><span class="snip">AI_DRAM_ADDR_REG</span>       </td><td>0xA4500000</td></tr>
+<tr><td><span class="snip">AI_LEN_REG</span>             </td><td>0xA4500004</td></tr>
+<tr><td><span class="snip">AI_CONTROL_REG</span>         </td><td>0xA4500008</td></tr>
+<tr><td><span class="snip">AI_STATUS_REG</span>          </td><td>0xA450000C</td></tr>
+<tr><td><span class="snip">AI_DACRATE_REG</span>         </td><td>0xA4500010</td></tr>
+<tr><td><span class="snip">AI_BITRATE_REG</span>         </td><td>0xA4500014</td></tr>
 
-<tr><td><div class="snip">PI_DRAM_ADDR_REG</div>       </td><td>0xA4600000</td></tr>
-<tr><td><div class="snip">PI_CART_ADDR_REG</div>       </td><td>0xA4600004</td></tr>
-<tr><td><div class="snip">PI_RD_LEN_REG</div>          </td><td>0xA4600008</td></tr>
-<tr><td><div class="snip">PI_WR_LEN_REG</div>          </td><td>0xA460000C</td></tr>
-<tr><td><div class="snip">PI_STATUS_REG</div>          </td><td>0xA4600010</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM1_LAT_REG</div>    </td><td>0xA4600014</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM1_PWD_REG</div>    </td><td>0xA4600018</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM1_PGS_REG</div>    </td><td>0xA460001C</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM1_RLS_REG</div>    </td><td>0xA4600020</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM2_LAT_REG</div>    </td><td>0xA4600024</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM2_PWD_REG</div>    </td><td>0xA4600028</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM2_PGS_REG</div>    </td><td>0xA460002C</td></tr>
-<tr><td><div class="snip">PI_BSD_DOM2_RLS_REG</div>    </td><td>0xA4600030</td></tr>
+<tr><td><span class="snip">PI_DRAM_ADDR_REG</span>       </td><td>0xA4600000</td></tr>
+<tr><td><span class="snip">PI_CART_ADDR_REG</span>       </td><td>0xA4600004</td></tr>
+<tr><td><span class="snip">PI_RD_LEN_REG</span>          </td><td>0xA4600008</td></tr>
+<tr><td><span class="snip">PI_WR_LEN_REG</span>          </td><td>0xA460000C</td></tr>
+<tr><td><span class="snip">PI_STATUS_REG</span>          </td><td>0xA4600010</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM1_LAT_REG</span>    </td><td>0xA4600014</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM1_PWD_REG</span>    </td><td>0xA4600018</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM1_PGS_REG</span>    </td><td>0xA460001C</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM1_RLS_REG</span>    </td><td>0xA4600020</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM2_LAT_REG</span>    </td><td>0xA4600024</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM2_PWD_REG</span>    </td><td>0xA4600028</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM2_PGS_REG</span>    </td><td>0xA460002C</td></tr>
+<tr><td><span class="snip">PI_BSD_DOM2_RLS_REG</span>    </td><td>0xA4600030</td></tr>
 
-<tr><td><div class="snip">RI_MODE_REG</div>            </td><td>0xA4700000</td></tr>
-<tr><td><div class="snip">RI_CONFIG_REG</div>          </td><td>0xA4700004</td></tr>
-<tr><td><div class="snip">RI_CURRENT_LOAD_REG</div>    </td><td>0xA4700008</td></tr>
-<tr><td><div class="snip">RI_SELECT_REG</div>          </td><td>0xA470000C</td></tr>
-<tr><td><div class="snip">RI_REFRESH_REG</div>         </td><td>0xA4700010</td></tr>
-<tr><td><div class="snip">RI_COUNT_REG</div>           </td><td>0xA4700010</td></tr>
-<tr><td><div class="snip">RI_LATENCY_REG</div>         </td><td>0xA4700014</td></tr>
-<tr><td><div class="snip">RI_RERROR_REG</div>          </td><td>0xA4700018</td></tr>
-<tr><td><div class="snip">RI_WERROR_REG</div>          </td><td>0xA470001C</td></tr>
+<tr><td><span class="snip">RI_MODE_REG</span>            </td><td>0xA4700000</td></tr>
+<tr><td><span class="snip">RI_CONFIG_REG</span>          </td><td>0xA4700004</td></tr>
+<tr><td><span class="snip">RI_CURRENT_LOAD_REG</span>    </td><td>0xA4700008</td></tr>
+<tr><td><span class="snip">RI_SELECT_REG</span>          </td><td>0xA470000C</td></tr>
+<tr><td><span class="snip">RI_REFRESH_REG</span>         </td><td>0xA4700010</td></tr>
+<tr><td><span class="snip">RI_COUNT_REG</span>           </td><td>0xA4700010</td></tr>
+<tr><td><span class="snip">RI_LATENCY_REG</span>         </td><td>0xA4700014</td></tr>
+<tr><td><span class="snip">RI_RERROR_REG</span>          </td><td>0xA4700018</td></tr>
+<tr><td><span class="snip">RI_WERROR_REG</span>          </td><td>0xA470001C</td></tr>
 
-<tr><td><div class="snip">SI_DRAM_ADDR_REG</div>       </td><td>0xA4800000</td></tr>
-<tr><td><div class="snip">SI_PIF_ADDR_RD64B_REG</div>  </td><td>0xA4800004</td></tr>
-<tr><td><div class="snip">SI_PIF_ADDR_WR64B_REG</div>  </td><td>0xA4800010</td></tr>
-<tr><td><div class="snip">SI_STATUS_REG</div>          </td><td>0xA4800018</td></tr>
+<tr><td><span class="snip">SI_DRAM_ADDR_REG</span>       </td><td>0xA4800000</td></tr>
+<tr><td><span class="snip">SI_PIF_ADDR_RD64B_REG</span>  </td><td>0xA4800004</td></tr>
+<tr><td><span class="snip">SI_PIF_ADDR_WR64B_REG</span>  </td><td>0xA4800010</td></tr>
+<tr><td><span class="snip">SI_STATUS_REG</span>          </td><td>0xA4800018</td></tr>
 </table>
 <!-- Miscellaneous -->
 <div class="prop"><span class="title" id="Miscellaneous">Miscellaneous</span></div>
 <div class="vtab"></div>
 <table>
-<tr><td><div class="snip">PIF_ROM_START</div> </td><td>0xBFC00000</td></tr>
-<tr><td><div class="snip">PIF_RAM_START</div> </td><td>0xBFC007C0</td></tr>
-<tr><td><div class="snip">SP_DMEM_START</div> </td><td>0xA4000000</td></tr>
-<tr><td><div class="snip">SP_IMEM_START</div> </td><td>0xA4001000</td></tr>
+<tr><td><span class="snip">PIF_ROM_START</span> </td><td>0xBFC00000</td></tr>
+<tr><td><span class="snip">PIF_RAM_START</span> </td><td>0xBFC007C0</td></tr>
+<tr><td><span class="snip">SP_DMEM_START</span> </td><td>0xA4000000</td></tr>
+<tr><td><span class="snip">SP_IMEM_START</span> </td><td>0xA4001000</td></tr>
 
-<tr><td><div class="snip">KUBASE</div>  </td><td>0x00000000</td></tr>
-<tr><td><div class="snip">K0BASE</div>  </td><td>0x80000000</td></tr>
-<tr><td><div class="snip">K1BASE</div>  </td><td>0xA0000000</td></tr>
-<tr><td><div class="snip">K2BASE</div>  </td><td>0xC0000000</td></tr>
-<tr><td><div class="snip">UT_VEC</div>  </td><td>0x80000000</td></tr>
-<tr><td><div class="snip">R_VEC</div>   </td><td>0xBFC00000</td></tr>
-<tr><td><div class="snip">XUT_VEC</div> </td><td>0x80000080</td></tr>
-<tr><td><div class="snip">ECC_VEC</div> </td><td>0x80000100</td></tr>
-<tr><td><div class="snip">E_VEC</div>   </td><td>0x80000180</td></tr>
+<tr><td><span class="snip">KUBASE</span>  </td><td>0x00000000</td></tr>
+<tr><td><span class="snip">K0BASE</span>  </td><td>0x80000000</td></tr>
+<tr><td><span class="snip">K1BASE</span>  </td><td>0xA0000000</td></tr>
+<tr><td><span class="snip">K2BASE</span>  </td><td>0xC0000000</td></tr>
+<tr><td><span class="snip">UT_VEC</span>  </td><td>0x80000000</td></tr>
+<tr><td><span class="snip">R_VEC</span>   </td><td>0xBFC00000</td></tr>
+<tr><td><span class="snip">XUT_VEC</span> </td><td>0x80000080</td></tr>
+<tr><td><span class="snip">ECC_VEC</span> </td><td>0x80000100</td></tr>
+<tr><td><span class="snip">E_VEC</span>   </td><td>0x80000180</td></tr>
 </table>
 
 </div>

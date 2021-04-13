@@ -97,7 +97,7 @@ duk_ret_t ScriptAPI::js_cpu_set(duk_context* ctx)
         return ThrowRegAssignmentTypeError(ctx);
     }
 
-    *pReg = duk_get_number(ctx, 2);
+    *pReg = duk_get_uint(ctx, 2);
     return 0;
 }
 
@@ -154,21 +154,14 @@ duk_ret_t ScriptAPI::js_cop0_get(duk_context* ctx)
     }
 
     const char* name = duk_get_string(ctx, 1);
-    uint32_t* reg = COP0RegPtr(name);
-
-    // TODO: Remove this if cause/fakecause ever get consolidated
+    
     if (strcmp(name, "cause") == 0)
     {
         duk_push_uint(ctx, g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER);
-        uint32_t value = duk_get_uint(ctx, 2);
-        g_Reg->FAKE_CAUSE_REGISTER = value;
-        g_Reg->CAUSE_REGISTER = value;
+        return 1;
     }
 
-    if (strcmp(name, "cause") == 0)
-    {
-        g_Reg->CheckInterrupts();
-    }
+    uint32_t* reg = COP0RegPtr(name);
 
     if (reg == NULL)
     {
@@ -192,21 +185,22 @@ duk_ret_t ScriptAPI::js_cop0_set(duk_context* ctx)
     }
 
     const char* name = duk_get_string(ctx, 1);
-    uint32_t* reg = COP0RegPtr(name);
-
+    
     if (!duk_is_number(ctx, 2))
     {
         return ThrowRegAssignmentTypeError(ctx);
     }
 
-    // TODO: Remove this if cause/fakecause ever get consolidated
     if (strcmp(name, "cause") == 0)
     {
         uint32_t value = duk_get_uint(ctx, 2);
         g_Reg->FAKE_CAUSE_REGISTER = value;
         g_Reg->CAUSE_REGISTER = value;
+        g_Reg->CheckInterrupts();
         return 0;
     }
+
+    uint32_t* reg = COP0RegPtr(name);
 
     if (reg == NULL)
     {
@@ -309,11 +303,11 @@ static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
 
     if (bDouble)
     {
-        duk_push_number(ctx, (duk_double_t)*g_Reg->m_FPR_S[regIndex]);
+        duk_push_number(ctx, (duk_double_t)*g_Reg->m_FPR_D[regIndex & 0x1E]);
     }
     else
     {
-        duk_push_number(ctx, (duk_double_t)*g_Reg->m_FPR_D[regIndex & 0x1E]);
+        duk_push_number(ctx, (duk_double_t)*g_Reg->m_FPR_S[regIndex]);
     }
 
     return 1;
@@ -352,11 +346,11 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
 
     if (bDouble)
     {
-        *g_Reg->m_FPR_S[regIndex] = (float)value;
+        *g_Reg->m_FPR_D[regIndex & 0x1E] = value;
     }
     else
     {
-        *g_Reg->m_FPR_D[regIndex & 0x1E] = value;
+        *g_Reg->m_FPR_S[regIndex] = (float)value;
     }
 
     return 0;
@@ -425,7 +419,6 @@ static uint32_t* COP0RegPtr(const char *regName)
         { "entryhi", &g_Reg->ENTRYHI_REGISTER },
         { "compare", &g_Reg->COMPARE_REGISTER },
         { "status", &g_Reg->STATUS_REGISTER },
-        // TODO: Uncomment if cause/fakecause ever get consolidated
         //{ "cause", &g_Reg->CAUSE_REGISTER },
         { "epc", &g_Reg->EPC_REGISTER },
         { "config", &g_Reg->CONFIG_REGISTER },
