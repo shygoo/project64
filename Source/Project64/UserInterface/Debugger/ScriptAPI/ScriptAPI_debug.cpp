@@ -2,7 +2,6 @@
 #include "../ScriptAPI.h"
 #include <Project64-core/Settings/DebugSettings.h>
 
-
 void ScriptAPI::Define_debug(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {

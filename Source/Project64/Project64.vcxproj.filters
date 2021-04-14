@@ -294,6 +294,9 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_DrawingContext.cpp">
+      <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
+    </ClCompile>
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_pj64.cpp">
       <Filter>Source Files\User Interface Source\Debugger Source\ScriptAPI</Filter>
     </ClCompile>

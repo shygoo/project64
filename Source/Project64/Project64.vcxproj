@@ -86,6 +86,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_asm.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_console.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_DrawingContext.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_events.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_fs.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_mem.cpp" />

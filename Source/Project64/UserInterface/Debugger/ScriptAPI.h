@@ -33,7 +33,7 @@ namespace ScriptAPI
     duk_ret_t js_events_onwrite(duk_context* ctx);
     duk_ret_t js_events_onopcode(duk_context* ctx);
     duk_ret_t js_events_ongprvalue(duk_context* ctx);
-    duk_ret_t js_events_ondraw(duk_context* ctx); // *
+    duk_ret_t js_events_ondraw(duk_context* ctx);
     duk_ret_t js_events_onpifread(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
@@ -124,16 +124,16 @@ namespace ScriptAPI
     void Define_cpu(duk_context* ctx);
     duk_ret_t js_cpu_get(duk_context* ctx);
     duk_ret_t js_cpu_set(duk_context* ctx);
-    duk_ret_t js_gpr_get(duk_context* ctx);
-    duk_ret_t js_gpr_set(duk_context* ctx);
-    duk_ret_t js_ugpr_get(duk_context* ctx);
-    duk_ret_t js_ugpr_set(duk_context* ctx);
-    duk_ret_t js_fpr_get(duk_context* ctx);
-    duk_ret_t js_fpr_set(duk_context* ctx);
-    duk_ret_t js_dfpr_get(duk_context* ctx);
-    duk_ret_t js_dfpr_set(duk_context* ctx);
-    duk_ret_t js_cop0_get(duk_context* ctx);
-    duk_ret_t js_cop0_set(duk_context* ctx);
+    duk_ret_t js_cpu_gpr_get(duk_context* ctx);
+    duk_ret_t js_cpu_gpr_set(duk_context* ctx);
+    duk_ret_t js_cpu_ugpr_get(duk_context* ctx);
+    duk_ret_t js_cpu_ugpr_set(duk_context* ctx);
+    duk_ret_t js_cpu_fpr_get(duk_context* ctx);
+    duk_ret_t js_cpu_fpr_set(duk_context* ctx);
+    duk_ret_t js_cpu_dfpr_get(duk_context* ctx);
+    duk_ret_t js_cpu_dfpr_set(duk_context* ctx);
+    duk_ret_t js_cpu_cop0_get(duk_context* ctx);
+    duk_ret_t js_cpu_cop0_set(duk_context* ctx);
 
     // ScriptAPI_pj64
     void Define_pj64(duk_context* ctx);
@@ -142,8 +142,18 @@ namespace ScriptAPI
     //duk_ret_t js_pj64_savestate(duk_context* ctx);
     //duk_ret_t js_pj64_loadstate(duk_context* ctx);
 
-    // ScriptAPI_screen
-    //duk_ret_t js_screen(duk_context* ctx);
+    // ScriptAPI_DrawingContext
+    void Define_DrawingContext(duk_context* ctx);
+    duk_ret_t js_DrawingContext__constructor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_width(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_height(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_fillColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_fillColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext_color(duk_context* ctx);
+    duk_ret_t js_DrawingContext_print(duk_context* ctx);
+    duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
+    duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
+    duk_ret_t js_DrawingContext_getdata(duk_context* ctx);
 
     enum {
         R0, AT, V0, V1, A0, A1, A2, A3,

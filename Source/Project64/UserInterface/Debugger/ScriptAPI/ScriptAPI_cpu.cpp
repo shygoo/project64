@@ -30,11 +30,11 @@ void ScriptAPI::Define_cpu(duk_context* ctx)
         const char *key;
         const duk_function_list_entry functions[3];
     } proxies[] = {
-        { "gpr", REG_PROXY_FUNCTIONS(js_gpr_get, js_gpr_set) },
-        { "ugpr", REG_PROXY_FUNCTIONS(js_ugpr_get, js_ugpr_set) },
-        { "fpr", REG_PROXY_FUNCTIONS(js_fpr_get, js_fpr_set) },
-        { "dfpr", REG_PROXY_FUNCTIONS(js_dfpr_get, js_dfpr_set) },
-        { "cop0", REG_PROXY_FUNCTIONS(js_cop0_get, js_cop0_set) },
+        { "gpr", REG_PROXY_FUNCTIONS(js_cpu_gpr_get, js_cpu_gpr_set) },
+        { "ugpr", REG_PROXY_FUNCTIONS(js_cpu_ugpr_get, js_cpu_ugpr_set) },
+        { "fpr", REG_PROXY_FUNCTIONS(js_cpu_fpr_get, js_cpu_fpr_set) },
+        { "dfpr", REG_PROXY_FUNCTIONS(js_cpu_dfpr_get, js_cpu_dfpr_set) },
+        { "cop0", REG_PROXY_FUNCTIONS(js_cpu_cop0_get, js_cpu_cop0_set) },
         { NULL, NULL }
     };
 
@@ -101,47 +101,47 @@ duk_ret_t ScriptAPI::js_cpu_set(duk_context* ctx)
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_gpr_get(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_gpr_get(duk_context* ctx)
 {
     return GPRGetImpl(ctx, false);
 }
 
-duk_ret_t ScriptAPI::js_gpr_set(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_gpr_set(duk_context* ctx)
 {
     return GPRSetImpl(ctx, false);
 }
 
-duk_ret_t ScriptAPI::js_ugpr_get(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_ugpr_get(duk_context* ctx)
 {
     return GPRGetImpl(ctx, true);
 }
 
-duk_ret_t ScriptAPI::js_ugpr_set(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_ugpr_set(duk_context* ctx)
 {
     return GPRSetImpl(ctx, true);
 }
 
-duk_ret_t ScriptAPI::js_fpr_get(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_fpr_get(duk_context* ctx)
 {
     return FPRGetImpl(ctx, false);
 }
 
-duk_ret_t ScriptAPI::js_fpr_set(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_fpr_set(duk_context* ctx)
 {
     return FPRSetImpl(ctx, false);
 }
 
-duk_ret_t ScriptAPI::js_dfpr_get(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_dfpr_get(duk_context* ctx)
 {
     return FPRGetImpl(ctx, true);
 }
 
-duk_ret_t ScriptAPI::js_dfpr_set(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_dfpr_set(duk_context* ctx)
 {
     return FPRSetImpl(ctx, true);
 }
 
-duk_ret_t ScriptAPI::js_cop0_get(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_cop0_get(duk_context* ctx)
 {
     if (g_Reg == NULL)
     {
@@ -172,7 +172,7 @@ duk_ret_t ScriptAPI::js_cop0_get(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_cop0_set(duk_context* ctx)
+duk_ret_t ScriptAPI::js_cpu_cop0_set(duk_context* ctx)
 {
     if (g_Reg == NULL)
     {

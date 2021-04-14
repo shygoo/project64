@@ -14,7 +14,8 @@ typedef std::string jsname_t;
 
 struct JSCallback;
 typedef duk_idx_t (*jsargs_fn_t)(duk_context *ctx, void *param);
-typedef bool (*jscond_fn_t)(JSCallback* cb, void *param);
+typedef bool (*jscond_fn_t)(JSCallback* cb, void* param);
+typedef void (*jsfn_t)(duk_context* ctx, void *param);
 
 typedef size_t jscb_id_t;
 #define JS_INVALID_CALLBACK ((jscb_id_t)(-1))
@@ -25,6 +26,7 @@ struct JSCallback
     void            *heapptr;
     jscond_fn_t      Condition;
     jsargs_fn_t      PushArguments;
+    jsfn_t           Finish;
     // assigned by scriptsys when this is added to a callback map
     jscb_id_t        id;
 
@@ -36,11 +38,13 @@ struct JSCallback
         };
     } params;
 
-    JSCallback(CScriptInstance* inst, void* heapptr, jscond_fn_t fnCondition, jsargs_fn_t fnPushArgs) :
+    JSCallback(CScriptInstance* inst, void* heapptr, jscond_fn_t fnCondition = NULL,
+               jsargs_fn_t fnPushArgs = NULL, jsfn_t fnFinish = NULL) :
         instance(inst),
         heapptr(heapptr),
         Condition(fnCondition),
         PushArguments(fnPushArgs),
+        Finish(fnFinish),
         id(JS_INVALID_CALLBACK)
     {
         params = {};
@@ -51,6 +55,7 @@ struct JSCallback
         heapptr(NULL),
         Condition(NULL),
         PushArguments(NULL),
+        Finish(NULL),
         id(JS_INVALID_CALLBACK)
     {
         params = {};
@@ -63,6 +68,11 @@ typedef struct {
     // below fields are set by the condition function
     int       outAffectedRegIndex;
 } jshook_env_cpustep_t;
+
+typedef struct {
+    HDC hdc; // todo change to pointer to raw image data
+    void* jsDrawingContext;
+} jshook_env_gfxupdate_t;
 
 enum {
     JS_EXEC_TIMEOUT = 500

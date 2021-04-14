@@ -16,6 +16,9 @@ static duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* env);
+
+static void CbFinish_KillDrawingContext(duk_context* ctx, void* env);
 
 static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd);
 
@@ -53,8 +56,7 @@ duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
     }
 
     uint32_t addrStart, addrEnd;
-    if(duk_get_top(ctx) != 2 ||
-       !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+    if(!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
        !duk_is_function(ctx, 1))
     {
         return ThrowInvalidArgsError(ctx);
@@ -79,8 +81,7 @@ duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx)
     }
 
     uint32_t addrStart, addrEnd;
-    if (duk_get_top(ctx) != 2 ||
-        !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
         !duk_is_function(ctx, 1))
     {
         return ThrowInvalidArgsError(ctx);
@@ -105,8 +106,7 @@ duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx)
     }
 
     uint32_t addrStart, addrEnd;
-    if (duk_get_top(ctx) != 2 ||
-        !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
         !duk_is_function(ctx, 1))
     {
         return ThrowInvalidArgsError(ctx);
@@ -172,8 +172,7 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
     }
 
     uint32_t addrStart, addrEnd;
-    if (duk_get_top(ctx) != 4 ||
-        !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
         !duk_is_number(ctx, 1) ||
         !duk_is_number(ctx, 2) ||
         !duk_is_function(ctx, 3))
@@ -194,8 +193,19 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_events_ondraw(duk_context* /*ctx*/)
+duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
 {
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL,
+        CbArgs_DrawEventObject, CbFinish_KillDrawingContext);
+
+    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_GFXUPDATE, cb);
+
+    duk_push_uint(ctx, callbackId);
     return 0;
 }
 
@@ -206,12 +216,11 @@ duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    jscb_id_t callbackId = (jscb_id_t)duk_get_uint(ctx, -1);
-    duk_pop(ctx);
+    jscb_id_t callbackId = (jscb_id_t)duk_get_uint(ctx, 0);
 
     if (!RemoveCallback(ctx, callbackId))
     {
-        duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid callback ID");
+        duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR, "invalid callback ID");
         return duk_throw(ctx);
     }
 
@@ -220,8 +229,7 @@ duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
 {
-    if (duk_get_top(ctx) != 1 ||
-        !duk_is_function(ctx, 0))
+    if (!duk_is_function(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -319,7 +327,6 @@ duk_idx_t CbArgs_EmuEventObject(duk_context* ctx, void* /*_env*/)
     return 1;
 }
 
-// onexec -> { pc, callbackId }
 duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
@@ -333,7 +340,6 @@ duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* _env)
     return 1;
 }
 
-// onread -> { pc, callbackId, address, fpu, reg, type, value, [valueHi] }
 duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
@@ -486,7 +492,6 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
     return 1;
 }
 
-// onwrite -> { pc, callbackId, address, fpu, reg, type, value, [valueHi] }
 duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
@@ -605,7 +610,6 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     return 1;
 }
 
-// onopcode -> { pc, callbackId }
 duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
@@ -621,7 +625,6 @@ duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* _env)
     return 1;
 }
 
-// ongprvalue -> { pc, callbackId, value, reg }
 duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* _env)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
@@ -637,6 +640,41 @@ duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* _env)
     duk_put_prop_string(ctx, -2, "reg");
     duk_freeze(ctx, -1);
     return 1;
+}
+
+duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
+
+    duk_push_object(ctx);
+
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+
+    duk_get_global_string(ctx, "DrawingContext");
+    duk_push_pointer(ctx, env->hdc); // TODO
+    duk_new(ctx, 1);
+
+    duk_dup(ctx, -1);
+    duk_put_global_string(ctx, DUK_HIDDEN_SYMBOL("curDrawingContext"));
+    env->jsDrawingContext = duk_get_heapptr(ctx, -1);
+
+    duk_put_prop_string(ctx, -2, "drawingContext");
+
+    duk_freeze(ctx, -1);
+
+    return 1;
+}
+
+void CbFinish_KillDrawingContext(duk_context* ctx, void* _env)
+{
+    // set DrawingContext object's hdc to NULL
+    jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
+    duk_push_heapptr(ctx, env->jsDrawingContext);
+    duk_push_pointer(ctx, NULL);
+    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("ptr")); // TODO: this won't be hdc later
+    duk_pop(ctx);
 }
 
 bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd)

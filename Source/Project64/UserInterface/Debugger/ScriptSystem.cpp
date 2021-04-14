@@ -137,6 +137,11 @@ void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
     {
         JSCallback& cb = it->second;
         cb.instance->ConditionalInvokeCallback(cb, env);
+
+        if (cb.instance->GetRefCount() == 0)
+        {
+            bNeedSweep = true;
+        }
     }
 
     if (bNeedSweep)

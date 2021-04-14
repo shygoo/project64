@@ -682,8 +682,10 @@ void CDebuggerUI::FrameDrawn()
     SetTextColor(hdc, RGB(255, 255, 255));
     SetBkColor(hdc, RGB(0, 0, 0));
 
-    //m_ScriptSystem->SetScreenDC(hdc);
-    //m_ScriptSystem->HookFrameDrawn()->InvokeAll();
+    jshook_env_gfxupdate_t env;
+    env.hdc = hdc;
+    env.jsDrawingContext = NULL;
+    m_ScriptSystem->Invoke(JS_HOOK_GFXUPDATE, &env);
 
     ReleaseDC(hMainWnd, hdc);
 }

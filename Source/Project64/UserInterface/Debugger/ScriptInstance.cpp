@@ -154,7 +154,14 @@ void CScriptInstance::ConditionalInvokeCallback(JSCallback& cb, void* _hookEnv)
     }
 
     m_CurExecCallbackId = cb.id;
+
     RawCall(cb.heapptr, cb.PushArguments, _hookEnv);
+
+    if (cb.Finish != NULL)
+    {
+        cb.Finish(m_Ctx, _hookEnv);
+    }
+    
     m_CurExecCallbackId = JS_INVALID_CALLBACK;
 }
 
