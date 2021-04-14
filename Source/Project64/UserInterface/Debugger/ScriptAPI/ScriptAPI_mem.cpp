@@ -119,69 +119,78 @@ duk_ret_t ScriptAPI::js_mem_getblock(duk_context *ctx)
     uint8_t *data = (uint8_t*)duk_push_fixed_buffer(ctx, length);
     duk_push_buffer_object(ctx, -1, 0, length, DUK_BUFOBJ_NODEJS_BUFFER);
 
-    if (addr >= 0x80000000 && (addr + length) <= 0xC0000000)
+    uint32_t paddr;
+    uint8_t* memsrc = nullptr;
+    uint32_t offsetStart;
+
+    if (addr < 0x80000000 || addr >= 0xC0000000)
     {
-        uint32_t physAddr = addr & 0x1FFFFFFF;
-        uint8_t* memsrc = nullptr;
-        uint32_t offsetStart;
-
-        if (g_MMU && physAddr >= 0x00000000 && (physAddr + length) <= g_MMU->RdramSize())
-        {
-            memsrc = g_MMU->Rdram();
-            offsetStart = physAddr;
-        }
-        else if (g_Rom && physAddr >= 0x10000000 &&
-                 ((physAddr - 0x10000000) + length) <= g_Rom->GetRomSize())
-        {
-            memsrc = g_Rom->GetRomAddress();
-            offsetStart = physAddr - 0x10000000;
-        }
-
-        if (memsrc != nullptr)
-        {
-            uint32_t offsetEnd = offsetStart + length;
-            uint32_t alignedOffsetStart = (offsetStart + 15) & ~15;
-            uint32_t alignedOffsetEnd = offsetEnd & ~15;
-            uint32_t prefixLen = alignedOffsetStart - offsetStart;
-            uint32_t middleLen = alignedOffsetEnd - alignedOffsetStart;
-            uint32_t suffixLen = offsetEnd - alignedOffsetEnd;
-
-            uint32_t* middleDst = (uint32_t*)&data[0 + prefixLen];
-            uint32_t* middleDstEnd = (uint32_t*)&data[0 + prefixLen + middleLen];
-            uint32_t* middleSrc = (uint32_t*)&memsrc[alignedOffsetStart];
-
-            for (size_t i = 0; i < prefixLen; i++)
-            {
-                data[i] = memsrc[(offsetStart + i) ^ 3];
-            }
-
-            while (middleDst < middleDstEnd)
-            {
-                *middleDst++ = _byteswap_ulong(*middleSrc++);
-                *middleDst++ = _byteswap_ulong(*middleSrc++);
-                *middleDst++ = _byteswap_ulong(*middleSrc++);
-                *middleDst++ = _byteswap_ulong(*middleSrc++);
-            }
-
-            for (size_t i = 0; i < suffixLen; i++)
-            {
-                data[(length - suffixLen) + i] = memsrc[(alignedOffsetEnd + i) ^ 3];
-            }
-
-            return 1;
-        }
-    }
-
-    for(size_t i = 0; i < length; i++)
-    {
-        uint8_t byte;
-        if(inst->Debugger()->DebugLoad_VAddr<uint8_t>(addr + i, byte))
-        {
-            data[i] = byte;
-        }
-        else
+        if (!g_MMU || !g_MMU->TranslateVaddr(addr, paddr))
         {
             return ThrowMemoryError(ctx, addr);
+        }
+    }
+    else
+    {
+        paddr = addr & 0x1FFFFFFF;
+    }
+
+    if (g_MMU && paddr >= 0x00000000 && (paddr + length) <= g_MMU->RdramSize())
+    {
+        memsrc = g_MMU->Rdram();
+        offsetStart = paddr;
+    }
+    else if (g_Rom && paddr >= 0x10000000 &&
+             ((paddr - 0x10000000) + length) <= g_Rom->GetRomSize())
+    {
+        memsrc = g_Rom->GetRomAddress();
+        offsetStart = paddr - 0x10000000;
+    }
+
+    if (memsrc != nullptr)
+    {
+        uint32_t offsetEnd = offsetStart + length;
+        uint32_t alignedOffsetStart = (offsetStart + 15) & ~15;
+        uint32_t alignedOffsetEnd = offsetEnd & ~15;
+        uint32_t prefixLen = alignedOffsetStart - offsetStart;
+        uint32_t middleLen = alignedOffsetEnd - alignedOffsetStart;
+        uint32_t suffixLen = offsetEnd - alignedOffsetEnd;
+
+        uint32_t* middleDst = (uint32_t*)&data[0 + prefixLen];
+        uint32_t* middleDstEnd = (uint32_t*)&data[0 + prefixLen + middleLen];
+        uint32_t* middleSrc = (uint32_t*)&memsrc[alignedOffsetStart];
+
+        for (size_t i = 0; i < prefixLen; i++)
+        {
+            data[i] = memsrc[(offsetStart + i) ^ 3];
+        }
+
+        while (middleDst < middleDstEnd)
+        {
+            *middleDst++ = _byteswap_ulong(*middleSrc++);
+            *middleDst++ = _byteswap_ulong(*middleSrc++);
+            *middleDst++ = _byteswap_ulong(*middleSrc++);
+            *middleDst++ = _byteswap_ulong(*middleSrc++);
+        }
+
+        for (size_t i = 0; i < suffixLen; i++)
+        {
+            data[(length - suffixLen) + i] = memsrc[(alignedOffsetEnd + i) ^ 3];
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < length; i++)
+        {
+            uint8_t byte;
+            if (inst->Debugger()->DebugLoad_VAddr<uint8_t>(addr + i, byte))
+            {
+                data[i] = byte;
+            }
+            else
+            {
+                return ThrowMemoryError(ctx, addr + i);
+            }
         }
     }
 
