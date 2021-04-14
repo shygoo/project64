@@ -36,7 +36,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "ondraw",     js_events_ondraw, 1 },
         { "onpifread",  js_events_onpifread, 1 },
         { "remove",     js_events_remove, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);
@@ -200,7 +200,7 @@ duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL,
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr,
         CbArgs_DrawEventObject, CbFinish_KillDrawingContext);
 
     jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_GFXUPDATE, cb);
@@ -234,7 +234,7 @@ duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), NULL, CbArgs_EmuEventObject);
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr, CbArgs_EmuEventObject);
     jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_PIFREAD, cb);
     duk_push_uint(ctx, callbackId);
     return 1;
@@ -360,7 +360,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         { "callbackId", (duk_double_t)inst->CallbackId() },
         { "address", (duk_double_t)address },
         { "reg", (duk_double_t)rt },
-        { NULL, 0 }
+        { nullptr, 0 }
     };
 
     duk_put_number_list(ctx, -1, numbers);
@@ -512,7 +512,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         { "callbackId", (duk_double_t)inst->CallbackId() },
         { "address", (duk_double_t)address },
         { "reg", (duk_double_t)rt },
-        { NULL, 0 }
+        { nullptr, 0 }
     };
 
     duk_put_number_list(ctx, -1, numbers);
@@ -669,10 +669,10 @@ duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
 
 void CbFinish_KillDrawingContext(duk_context* ctx, void* _env)
 {
-    // set DrawingContext object's hdc to NULL
+    // set DrawingContext object's hdc to nullptr
     jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
     duk_push_heapptr(ctx, env->jsDrawingContext);
-    duk_push_pointer(ctx, NULL);
+    duk_push_pointer(ctx, nullptr);
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("ptr")); // TODO: this won't be hdc later
     duk_pop(ctx);
 }

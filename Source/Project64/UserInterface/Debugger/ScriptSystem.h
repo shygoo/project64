@@ -50,7 +50,7 @@ public:
     void ClearLog();
     stdstr GetLog();
 
-    void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = NULL, void *param = NULL);
+    void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = nullptr, void *param = nullptr);
 
     void Invoke(jshook_id_t hookId, void* env);
     jscb_id_t RawAddCallback(jshook_id_t hookId, JSCallback& callback);

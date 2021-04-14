@@ -24,7 +24,7 @@ void ScriptAPI::Define_DrawingContext(duk_context* ctx)
         { "fillrect", js_DrawingContext_fillrect, 4 },
         { "setdata", js_DrawingContext_setdata, 5 },
         { "getdata", js_DrawingContext_getdata, 4 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);
@@ -98,7 +98,7 @@ duk_ret_t ScriptAPI::js_DrawingContext_color(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)
 {
     void* ptr = GetPtr(ctx);
-    if (ptr == NULL)
+    if (ptr == nullptr)
     {
         ThrowContextExpiredError(ctx);
     }
@@ -111,7 +111,7 @@ duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
 {
     void* ptr = GetPtr(ctx);
-    if (ptr == NULL)
+    if (ptr == nullptr)
     {
         return ThrowContextExpiredError(ctx);
     }
@@ -148,7 +148,7 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext_setdata(duk_context* ctx)
 {
     void* ptr = GetPtr(ctx);
-    if (ptr == NULL)
+    if (ptr == nullptr)
     {
         ThrowContextExpiredError(ctx);
     }
@@ -159,7 +159,7 @@ duk_ret_t ScriptAPI::js_DrawingContext_setdata(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext_getdata(duk_context* ctx)
 {
     void* ptr = GetPtr(ctx);
-    if (ptr == NULL)
+    if (ptr == nullptr)
     {
         ThrowContextExpiredError(ctx);
     }

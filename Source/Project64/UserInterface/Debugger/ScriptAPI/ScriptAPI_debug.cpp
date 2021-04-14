@@ -10,7 +10,7 @@ void ScriptAPI::Define_debug(duk_context* ctx)
         { "resume", js_debug_resume, 0 },
         { "showmemory", js_debug_showmemory, 1 },
         { "showcommands", js_debug_showcommands, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);

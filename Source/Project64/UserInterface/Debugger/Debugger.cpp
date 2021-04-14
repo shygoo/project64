@@ -684,7 +684,7 @@ void CDebuggerUI::FrameDrawn()
 
     jshook_env_gfxupdate_t env;
     env.hdc = hdc;
-    env.jsDrawingContext = NULL;
+    env.jsDrawingContext = nullptr;
     m_ScriptSystem->Invoke(JS_HOOK_GFXUPDATE, &env);
 
     ReleaseDC(hMainWnd, hdc);
@@ -692,7 +692,7 @@ void CDebuggerUI::FrameDrawn()
 
 void CDebuggerUI::PIFReadStarted(void)
 {
-    m_ScriptSystem->Invoke(JS_HOOK_PIFREAD, NULL);
+    m_ScriptSystem->Invoke(JS_HOOK_PIFREAD, nullptr);
 }
 
 void CDebuggerUI::WaitForStep(void)

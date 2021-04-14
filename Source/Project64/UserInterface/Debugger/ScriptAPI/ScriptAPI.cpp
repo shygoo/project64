@@ -209,7 +209,7 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
         { "ECC_VEC", 0x80000100 },
         { "E_VEC", 0x80000180 },
 
-        { NULL, 0 },
+        { nullptr, 0 },
     };
 
     duk_push_global_object(ctx);
@@ -348,7 +348,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
     {
         bool bShowWindow = false;
         bool bVerbose = false;
-        const char* cwd = NULL;
+        const char* cwd = nullptr;
     } options;
 
     if (duk_is_object(ctx, 1))
@@ -362,7 +362,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
         duk_pop(ctx);
 
         duk_get_prop_string(ctx, 1, "cwd");
-        options.cwd = duk_get_string_default(ctx, -1, NULL);
+        options.cwd = duk_get_string_default(ctx, -1, nullptr);
         duk_pop(ctx);
     }
 
@@ -373,7 +373,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
     SECURITY_ATTRIBUTES secAttr;
     secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
     secAttr.bInheritHandle = TRUE;
-    secAttr.lpSecurityDescriptor = NULL;
+    secAttr.lpSecurityDescriptor = nullptr;
 
     HANDLE hStdIn_r, hStdIn_w;
     HANDLE hStdOut_r, hStdOut_w;
@@ -398,8 +398,8 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 
     PROCESS_INFORMATION processInfo;
 
-    BOOL bSuccess = CreateProcessA(NULL, (LPSTR)stdstr_f("cmd /c %s", command).c_str(), NULL, NULL, TRUE,
-        0, NULL, options.cwd, &startupInfo, &processInfo);
+    BOOL bSuccess = CreateProcessA(nullptr, (LPSTR)stdstr_f("cmd /c %s", command).c_str(), nullptr, nullptr, TRUE,
+        0, nullptr, options.cwd, &startupInfo, &processInfo);
 
     if (bSuccess)
     {
@@ -410,7 +410,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 
         char buffer[1024];
         DWORD nBytesRead;
-        while (ReadFile(hStdOut_r, buffer, sizeof(buffer), &nBytesRead, NULL) && nBytesRead != 0)
+        while (ReadFile(hStdOut_r, buffer, sizeof(buffer), &nBytesRead, nullptr) && nBytesRead != 0)
         {
             for (size_t i = 0; i < nBytesRead; i++)
             {
@@ -423,7 +423,7 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
             }
         }
 
-        while (ReadFile(hStdErr_r, buffer, sizeof(buffer), &nBytesRead, NULL) && nBytesRead != 0)
+        while (ReadFile(hStdErr_r, buffer, sizeof(buffer), &nBytesRead, nullptr) && nBytesRead != 0)
         {
             for (size_t i = 0; i < nBytesRead; i++)
             {

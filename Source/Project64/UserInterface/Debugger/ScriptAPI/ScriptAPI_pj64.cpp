@@ -11,7 +11,7 @@ void ScriptAPI::Define_pj64(duk_context* ctx)
         { "close", js_pj64_close, 0 },
         //{ "savestate", js_pj64_savestate, 1 },
         //{ "loadstate", js_pj64_loadstate, 1 }
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);

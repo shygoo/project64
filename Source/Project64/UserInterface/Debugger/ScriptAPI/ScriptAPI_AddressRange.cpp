@@ -25,12 +25,12 @@ void ScriptAPI::Define_AddressRange(duk_context* ctx)
         { "ADDR_ANY_RDRAM_UNC",    0xA0000000, 0xA07FFFFF },
         { "ADDR_ANY_CART_ROM",     0x90000000, 0x95FFFFFF },
         { "ADDR_ANY_CART_ROM_UNC", 0xB0000000, 0xB5FFFFFF },
-        { NULL, 0, 0 }
+        { nullptr, 0, 0 }
     };
 
     duk_push_global_object(ctx);
     duk_push_c_function(ctx, js_AddressRange__constructor, 2);
-    for(int i = 0; ranges[i].key != NULL; i++)
+    for(int i = 0; ranges[i].key != nullptr; i++)
     {
         duk_push_string(ctx, ranges[i].key);
         duk_dup(ctx, -2);

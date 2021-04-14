@@ -24,13 +24,13 @@ void ScriptAPI::Define_fs(duk_context *ctx)
         { "rmdir",     js_fs_rmdir,     1 },
         { "readdir",   js_fs_readdir,   1 },
         { "Stats", js_fs_Stats__constructor, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     const duk_function_list_entry Stats_funcs[] = {
         { "isFile",      js_fs_Stats_isFile,      0 },
         { "isDirectory", js_fs_Stats_isDirectory, 0 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);
@@ -70,10 +70,10 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
         "r+", "rb+", "r+b",
         "w+", "wb+", "w+b",
         "a+", "ab+", "a+b",
-        NULL
+        nullptr
     };
 
-    for (int i = 0; validModes[i] != NULL; i++)
+    for (int i = 0; validModes[i] != nullptr; i++)
     {
         if (strcmp(mode, validModes[i]) == 0)
         {
@@ -90,7 +90,7 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 
     FILE *fp = fopen(path, mode);
 
-    if(fp == NULL)
+    if(fp == nullptr)
     {
         duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: '%s')", path, mode);
         return duk_throw(ctx);
@@ -189,7 +189,7 @@ duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
 
     FILE* fp = fopen(path, "wb");
 
-    if(fp == NULL)
+    if(fp == nullptr)
     {
         duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: 'wb')", path);
         return duk_throw(ctx);
@@ -221,7 +221,7 @@ duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 
     FILE* fp = fopen(path, "rb");
 
-    if(fp == NULL)
+    if(fp == nullptr)
     {
         duk_push_error_object(ctx, DUK_ERR_ERROR, "could not open '%s' (mode: 'rb')", path);
         return duk_throw(ctx);
@@ -302,7 +302,7 @@ duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
     }
 
     const char *path = duk_get_string(ctx, 0);
-    duk_push_boolean(ctx, CreateDirectoryA(path, NULL) != 0);
+    duk_push_boolean(ctx, CreateDirectoryA(path, nullptr) != 0);
     return 1;
 }
 
@@ -404,7 +404,7 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
         { "atimeMs", (double)stats.st_atime * 1000 },
         { "mtimeMs", (double)stats.st_mtime * 1000 },
         { "ctimeMs", (double)stats.st_ctime * 1000 },
-        { NULL, 0 }
+        { nullptr, 0 }
     };
 
     struct { const char *key; time_t time; } dates[3] = {

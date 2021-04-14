@@ -9,7 +9,7 @@ void ScriptAPI::Define_asm(duk_context *ctx)
         { "gprname", js_asm_gprname, 1 },
         { "encode", js_asm_encode, DUK_VARARGS },
         { "decode", js_asm_decode, DUK_VARARGS },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);
@@ -95,7 +95,7 @@ duk_ret_t ScriptAPI::js_asm_decode(duk_context* ctx)
 
     char* code = (char*)R4300iOpcodeName(opcode, address);
     char* ptab = strchr(code, '\t');
-    if (ptab != NULL)
+    if (ptab != nullptr)
     {
         *ptab = ' ';
     }

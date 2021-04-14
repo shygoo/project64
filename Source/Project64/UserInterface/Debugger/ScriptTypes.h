@@ -38,8 +38,8 @@ struct JSCallback
         };
     } params;
 
-    JSCallback(CScriptInstance* inst, void* heapptr, jscond_fn_t fnCondition = NULL,
-               jsargs_fn_t fnPushArgs = NULL, jsfn_t fnFinish = NULL) :
+    JSCallback(CScriptInstance* inst, void* heapptr, jscond_fn_t fnCondition = nullptr,
+               jsargs_fn_t fnPushArgs = nullptr, jsfn_t fnFinish = nullptr) :
         instance(inst),
         heapptr(heapptr),
         Condition(fnCondition),
@@ -51,11 +51,11 @@ struct JSCallback
     }
 
     JSCallback() :
-        instance(NULL),
-        heapptr(NULL),
-        Condition(NULL),
-        PushArguments(NULL),
-        Finish(NULL),
+        instance(nullptr),
+        heapptr(nullptr),
+        Condition(nullptr),
+        PushArguments(nullptr),
+        Finish(nullptr),
         id(JS_INVALID_CALLBACK)
     {
         params = {};

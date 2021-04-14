@@ -16,11 +16,11 @@ extern "C" {
 CScriptInstance::CScriptInstance(CScriptSystem* sys, const char* name) :
     m_System(sys),
     m_Name(name),
-    m_Ctx(NULL),
+    m_Ctx(nullptr),
     m_RefCount(0),
     m_ExecTimeout(JS_EXEC_TIMEOUT),
     m_ExecStartTime(0),
-    m_SourceCode(NULL),
+    m_SourceCode(nullptr),
     m_CurExecCallbackId(JS_INVALID_CALLBACK)
 {
 }
@@ -52,15 +52,15 @@ jscb_id_t CScriptInstance::CallbackId()
 
 bool CScriptInstance::Run(const char* path)
 {
-    if(m_Ctx != NULL)
+    if(m_Ctx != nullptr)
     {
         return false;
     }
 
-    m_Ctx = duk_create_heap(NULL, NULL, NULL, this, NULL);
+    m_Ctx = duk_create_heap(nullptr, nullptr, nullptr, this, nullptr);
     duk_module_duktape_init(m_Ctx);
 
-    if(m_Ctx == NULL)
+    if(m_Ctx == nullptr)
     {
         goto error_cleanup;
     }
@@ -148,7 +148,7 @@ void CScriptInstance::RawCall(void *heapptr, jsargs_fn_t fnPushArgs, void *param
 
 void CScriptInstance::ConditionalInvokeCallback(JSCallback& cb, void* _hookEnv)
 {
-    if (cb.Condition != NULL && !cb.Condition(&cb, _hookEnv))
+    if (cb.Condition != nullptr && !cb.Condition(&cb, _hookEnv))
     {
         return;
     }
@@ -157,7 +157,7 @@ void CScriptInstance::ConditionalInvokeCallback(JSCallback& cb, void* _hookEnv)
 
     RawCall(cb.heapptr, cb.PushArguments, _hookEnv);
 
-    if (cb.Finish != NULL)
+    if (cb.Finish != nullptr)
     {
         cb.Finish(m_Ctx, _hookEnv);
     }
@@ -167,7 +167,7 @@ void CScriptInstance::ConditionalInvokeCallback(JSCallback& cb, void* _hookEnv)
 
 void CScriptInstance::SyncCall(void *heapptr, jsargs_fn_t fnPushArgs, void* /*param*/)
 {
-    m_System->SyncCall(this, heapptr, fnPushArgs, NULL);
+    m_System->SyncCall(this, heapptr, fnPushArgs, nullptr);
 }
 
 void CScriptInstance::RawInput(const char* code)
@@ -241,15 +241,15 @@ uint64_t CScriptInstance::Timestamp()
 
 void CScriptInstance::Cleanup()
 {
-    if(m_Ctx != NULL)
+    if(m_Ctx != nullptr)
     {
         duk_destroy_heap(m_Ctx);
-        m_Ctx = NULL;
+        m_Ctx = nullptr;
     }
-    if(m_SourceCode != NULL)
+    if(m_SourceCode != nullptr)
     {
         delete[] m_SourceCode;
-        m_SourceCode = NULL;
+        m_SourceCode = nullptr;
     }
     if(m_SourceFile.is_open())
     {

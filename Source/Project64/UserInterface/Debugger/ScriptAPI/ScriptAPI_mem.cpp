@@ -12,7 +12,7 @@ void ScriptAPI::Define_mem(duk_context *ctx)
     #define MEM_PROXY_FUNCTIONS(T) { \
         { "get", js_mem__get<T>, 2 }, \
         { "set", js_mem__set<T>, 3 }, \
-        { NULL, NULL, 0 } \
+        { nullptr, nullptr, 0 } \
     }
 
     const struct {
@@ -27,7 +27,7 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         { "s8",  MEM_PROXY_FUNCTIONS(int8_t) },
         { "f64", MEM_PROXY_FUNCTIONS(double) },
         { "f32", MEM_PROXY_FUNCTIONS(float) },
-        { NULL, NULL }
+        { nullptr, nullptr }
     };
 
     const duk_function_list_entry funcs[] = {
@@ -39,14 +39,14 @@ void ScriptAPI::Define_mem(duk_context *ctx)
         { "bindvars",   js_mem_bindvars, 2 },
         { "bindstruct", js_mem_bindstruct, 3 },
         { "typedef",    js_mem_typedef, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);
     duk_push_string(ctx, "mem");
     duk_push_object(ctx);
 
-    for(int i = 0; proxies[i].key != NULL; i++)
+    for(int i = 0; proxies[i].key != nullptr; i++)
     {
         duk_push_string(ctx, proxies[i].key);
         duk_push_object(ctx);

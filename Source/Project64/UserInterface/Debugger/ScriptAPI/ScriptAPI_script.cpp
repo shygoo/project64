@@ -6,7 +6,7 @@ void ScriptAPI::Define_script(duk_context *ctx)
     const duk_function_list_entry funcs[] = {
         { "timeout",   js_script_timeout,   1 },
         { "keepalive", js_script_keepalive, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);

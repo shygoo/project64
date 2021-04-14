@@ -9,7 +9,7 @@ void ScriptAPI::Define_console(duk_context* ctx)
         { "log", js_console_log, DUK_VARARGS },
         { "clear", js_console_clear, 0 },
         { "listen", js_console_listen, 1 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_push_global_object(ctx);

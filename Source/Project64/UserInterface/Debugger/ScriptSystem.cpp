@@ -12,8 +12,8 @@ CScriptSystem::CScriptSystem(CDebuggerUI *debugger) :
     m_NextAppCallbackId(0),
     m_AppCallbackCount(0)
 {
-    m_hCmdEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    m_hThread = CreateThread(NULL, 0, ThreadProc, this, 0, NULL);
+    m_hCmdEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    m_hThread = CreateThread(nullptr, 0, ThreadProc, this, 0, nullptr);
 }
 
 CScriptSystem::~CScriptSystem()
@@ -58,7 +58,7 @@ void CScriptSystem::Log(const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    int size = vsnprintf(NULL, 0, format, args) + 1;
+    int size = vsnprintf(nullptr, 0, format, args) + 1;
     char* str = new char[size];
     vsnprintf(str, size, format, args);
 
@@ -78,7 +78,7 @@ void CScriptSystem::Print(const char* format, ...)
     va_list args;
     va_start(args, format);
 
-    int size = vsnprintf(NULL, 0, format, args) + 1;
+    int size = vsnprintf(nullptr, 0, format, args) + 1;
     char* str = new char[size];
     vsnprintf(str, size, format, args);
     
@@ -165,7 +165,7 @@ void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t f
 void CScriptSystem::PostCommand(jssyscmd_id_t id, stdstr paramA, stdstr paramB)
 {
     CGuard guard(m_CmdQueueCS);
-    jssys_cmd_t cmd = { id, paramA, paramB, NULL, NULL };
+    jssys_cmd_t cmd = { id, paramA, paramB, nullptr, nullptr };
     m_CmdQueue.push_back(cmd);
     SetEvent(m_hCmdEvent);
 }
@@ -173,7 +173,7 @@ void CScriptSystem::PostCommand(jssyscmd_id_t id, stdstr paramA, stdstr paramB)
 /*
 void CScriptSystem::PostCommandSync(jssyscmd_id_t id, void* paramC)
 {
-    HANDLE hDoneEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+    HANDLE hDoneEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
 
     {
         CGuard guard(m_CmdQueueCS);
@@ -232,7 +232,7 @@ void CScriptSystem::ThreadProc()
                 break;
             }
 
-            if (cmd.hDoneEvent != NULL)
+            if (cmd.hDoneEvent != nullptr)
             {
                 SetEvent(cmd.hDoneEvent);
             }

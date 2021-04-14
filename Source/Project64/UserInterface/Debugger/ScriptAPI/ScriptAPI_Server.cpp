@@ -11,7 +11,7 @@ void ScriptAPI::Define_Server(duk_context *ctx)
     duk_function_list_entry funcs[] = {
         { "address", js_Server_address, 0 },
         { "on", js_Server_on, 2 },
-        { NULL, NULL, 0 }
+        { nullptr, nullptr, 0 }
     };
 
     duk_put_function_list(ctx, -1, funcs);
@@ -76,9 +76,9 @@ duk_ret_t ScriptAPI::js_Server_on(duk_context *ctx)
 
     bool bEventIdValid = false;
     const char *eventId = duk_get_string(ctx, -2);
-    const char *validEventIds[] = { "connection", "close", "error", NULL };
+    const char *validEventIds[] = { "connection", "close", "error", nullptr };
 
-    for(size_t i = 0; validEventIds[i] != NULL; i++)
+    for(size_t i = 0; validEventIds[i] != nullptr; i++)
     {
         if(strcmp(validEventIds[i], eventId) == 0)
         {

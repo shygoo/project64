@@ -23,7 +23,7 @@ void ScriptAPI::Define_cpu(duk_context* ctx)
     #define REG_PROXY_FUNCTIONS(getter, setter) { \
         { "get", getter, 2 }, \
         { "set", setter, 3 }, \
-        { NULL, NULL, 0 } \
+        { nullptr, nullptr, 0 } \
     }
 
     const struct {
@@ -35,7 +35,7 @@ void ScriptAPI::Define_cpu(duk_context* ctx)
         { "fpr", REG_PROXY_FUNCTIONS(js_cpu_fpr_get, js_cpu_fpr_set) },
         { "dfpr", REG_PROXY_FUNCTIONS(js_cpu_dfpr_get, js_cpu_dfpr_set) },
         { "cop0", REG_PROXY_FUNCTIONS(js_cpu_cop0_get, js_cpu_cop0_set) },
-        { NULL, NULL }
+        { nullptr, nullptr }
     };
 
     const duk_function_list_entry cpufuncs[] = REG_PROXY_FUNCTIONS(js_cpu_get, js_cpu_set);
@@ -43,7 +43,7 @@ void ScriptAPI::Define_cpu(duk_context* ctx)
     duk_push_global_object(ctx);
     duk_push_object(ctx);
 
-    for (size_t i = 0; proxies[i].key != NULL; i++)
+    for (size_t i = 0; proxies[i].key != nullptr; i++)
     {
         duk_push_string(ctx, proxies[i].key);
         duk_push_object(ctx);
@@ -65,7 +65,7 @@ void ScriptAPI::Define_cpu(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_cpu_get(duk_context* ctx)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -73,7 +73,7 @@ duk_ret_t ScriptAPI::js_cpu_get(duk_context* ctx)
     const char* key = duk_get_string(ctx, 1);
     uint32_t* pReg = CPURegPtr(key);
 
-    if (pReg == NULL)
+    if (pReg == nullptr)
     {
         duk_get_prop_string(ctx, 0, key);
         return 1;
@@ -85,14 +85,14 @@ duk_ret_t ScriptAPI::js_cpu_get(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_cpu_set(duk_context* ctx)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
 
     uint32_t* pReg = CPURegPtr(duk_get_string(ctx, 1));
 
-    if (!duk_is_number(ctx, 2) || pReg == NULL)
+    if (!duk_is_number(ctx, 2) || pReg == nullptr)
     {
         return ThrowRegAssignmentTypeError(ctx);
     }
@@ -143,7 +143,7 @@ duk_ret_t ScriptAPI::js_cpu_dfpr_set(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_cpu_cop0_get(duk_context* ctx)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -163,7 +163,7 @@ duk_ret_t ScriptAPI::js_cpu_cop0_get(duk_context* ctx)
 
     uint32_t* reg = COP0RegPtr(name);
 
-    if (reg == NULL)
+    if (reg == nullptr)
     {
         return ThrowRegInvalidError(ctx);
     }
@@ -174,7 +174,7 @@ duk_ret_t ScriptAPI::js_cpu_cop0_get(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_cpu_cop0_set(duk_context* ctx)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -202,7 +202,7 @@ duk_ret_t ScriptAPI::js_cpu_cop0_set(duk_context* ctx)
 
     uint32_t* reg = COP0RegPtr(name);
 
-    if (reg == NULL)
+    if (reg == nullptr)
     {
         return ThrowRegInvalidError(ctx);
     }
@@ -215,7 +215,7 @@ static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper)
 {
     int regIndex = -1;
 
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -242,7 +242,7 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
 {
     int regIndex = -1;
 
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -281,7 +281,7 @@ static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
 {
     int regIndex = -1;
 
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -317,7 +317,7 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
 {
     int regIndex = -1;
 
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
         return ThrowRegContextUnavailableError(ctx);
     }
@@ -398,9 +398,9 @@ static int FPRIndex(const char* regName)
 
 static uint32_t* COP0RegPtr(const char *regName)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
     struct {
@@ -425,10 +425,10 @@ static uint32_t* COP0RegPtr(const char *regName)
         { "taglo", &g_Reg->TAGLO_REGISTER },
         { "taghi", &g_Reg->TAGHI_REGISTER },
         { "errorepc", &g_Reg->ERROREPC_REGISTER },
-        { NULL, NULL }
+        { nullptr, nullptr }
     };
     
-    for (int i = 0; names[i].name != NULL; i++)
+    for (int i = 0; names[i].name != nullptr; i++)
     {
         if (strcmp(regName, names[i].name) == 0)
         {
@@ -436,14 +436,14 @@ static uint32_t* COP0RegPtr(const char *regName)
         }
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static uint32_t* CPURegPtr(const char* key)
 {
-    if (g_Reg == NULL)
+    if (g_Reg == nullptr)
     {
-        return NULL;
+        return nullptr;
     }
 
     if (strcmp(key, "pc") == 0)
@@ -467,7 +467,7 @@ static uint32_t* CPURegPtr(const char* key)
         return &g_Reg->m_LO.UW[1];
     }
 
-    return NULL;
+    return nullptr;
 }
 
 static duk_ret_t ThrowRegInvalidError(duk_context* ctx)

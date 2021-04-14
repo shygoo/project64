@@ -4,11 +4,11 @@
 CDebugScripts::CDebugScripts(CDebuggerUI* debugger) :
     CDebugDialog<CDebugScripts>(debugger),
     CToolTipDialog<CDebugScripts>(),
-    m_hQuitScriptDirWatchEvent(NULL),
-    m_hScriptDirWatchThread(NULL),
+    m_hQuitScriptDirWatchEvent(nullptr),
+    m_hScriptDirWatchThread(nullptr),
     m_InputHistoryIndex(0),
-    m_MonoFont(NULL),
-    m_MonoBoldFont(NULL)
+    m_MonoFont(nullptr),
+    m_MonoBoldFont(nullptr)
 {
 }
 
@@ -64,10 +64,10 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     LoadWindowPos();
     WindowCreated();
 
-    SetTimer(CONFLUSH_TIMER_ID, CONFLUSH_TIMER_INTERVAL, NULL);
+    SetTimer(CONFLUSH_TIMER_ID, CONFLUSH_TIMER_INTERVAL, nullptr);
 
-    m_hQuitScriptDirWatchEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    m_hScriptDirWatchThread = CreateThread(NULL, 0, ScriptDirWatchProc, (void*)this, 0, NULL);
+    m_hQuitScriptDirWatchEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+    m_hScriptDirWatchThread = CreateThread(nullptr, 0, ScriptDirWatchProc, (void*)this, 0, nullptr);
 
     m_ConOutputEdit.SetWindowText(m_Debugger->ScriptSystem()->GetLog().ToUTF16().c_str());
     return 0;
@@ -175,14 +175,14 @@ void CDebugScripts::ConsoleCopy()
 
     HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, nChars * sizeof(wchar_t));
 
-    if (hMem == NULL)
+    if (hMem == nullptr)
     {
         return;
     }
 
     wchar_t* memBuf = (wchar_t*)GlobalLock(hMem);
 
-    if (memBuf == NULL)
+    if (memBuf == nullptr)
     {
         GlobalUnlock(hMem);
         GlobalFree(hMem);
