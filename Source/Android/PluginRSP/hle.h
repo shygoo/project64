@@ -5,7 +5,7 @@
 // GNU/GPLv2 licensed: https://gnu.org/licenses/gpl-2.0.html
 
 #pragma once
-#include <Common/stdtypes.h>
+#include <stdint.h>
 #include "Rsp.h"
 #include "ucodes.h"
 
@@ -95,9 +95,9 @@ public:
     void hle_execute(void);
 
 private:
-    CHle(void);                     // Disable default constructor
-    CHle(const CHle&);              // Disable copy constructor
-    CHle& operator=(const CHle&);   // Disable assignment
+    CHle(void);
+    CHle(const CHle&);
+    CHle& operator=(const CHle&);
 
     bool is_task(void);
     bool try_fast_audio_dispatching(void);

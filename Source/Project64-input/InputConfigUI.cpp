@@ -4,7 +4,7 @@
 #include "wtl-BitmapPicture.h"
 #include "wtl-ScanButton.h"
 #include "OptionsUI.h"
-#include <Common/stdtypes.h>
+#include <stdint.h>
 #include <Common/StdString.h>
 #include "resource.h"
 
@@ -384,7 +384,7 @@ CInputConfigUI::CInputConfigUI() :
     m_pgController2(2),
     m_pgController3(3)
 {
-    m_psh.pszCaption = L"Configure Input";
+    m_psh.pszCaption = L"Configure input";
     AddPage(&m_pgController0.m_psp);
     AddPage(&m_pgController1.m_psp);
     AddPage(&m_pgController2.m_psp);

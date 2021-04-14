@@ -24,7 +24,7 @@ public:
     typedef void (*LP7ZNOTIFICATION)(const char * Status, void * CBInfo);
 
     inline int           NumFiles(void)      const { return m_db ? m_db->db.NumFiles : 0; }
-    inline CSzFileItem * FileItem(int index) const { return m_db ? &m_db->db.Files[index] : NULL; }
+    inline CSzFileItem * FileItem(int index) const { return m_db ? &m_db->db.Files[index] : nullptr; }
     inline int           FileSize(void)      const { return m_FileSize; }
     inline bool          OpenSuccess(void)    const { return m_Opened; }
 
@@ -35,33 +35,27 @@ public:
     void SetNotificationCallback(LP7ZNOTIFICATION NotfyFnc, void * CBInfo);
 
 private:
-    C7zip(void);					// Disable default constructor
-    C7zip(const C7zip&);			// Disable copy constructor
-    C7zip& operator=(const C7zip&);	// Disable assignment
+    C7zip(void);
+    C7zip(const C7zip&);
+    C7zip& operator=(const C7zip&);
 
-    /*typedef struct _CFileInStream
-    {
-    ISzInStream InStream;
-    FILE *File;
-    } CFileInStream;
-    */
-    CSzArEx          * m_db;
-    CFileInStream      m_archiveStream;
-    CLookToRead        m_archiveLookStream;
-    ISzAlloc           m_allocImp;
-    ISzAlloc           m_allocTempImp;
-    int                m_FileSize;
-    char               m_FileName[260];
-    int                m_CurrentFile;
-    bool               m_Opened;
+    CSzArEx * m_db;
+    CFileInStream m_archiveStream;
+    CLookToRead m_archiveLookStream;
+    ISzAlloc m_allocImp;
+    ISzAlloc m_allocTempImp;
+    int m_FileSize;
+    char m_FileName[260];
+    int m_CurrentFile;
+    bool m_Opened;
 
-    //Used for extraction
-    UInt32 m_blockIndex; // it can have any value before first call (if outBuffer = 0)
-    Byte * m_outBuffer; // it must be 0 before first call for each new archive.
-    size_t m_outBufferSize;  // it can have any value before first call (if outBuffer = 0)
+    // Used for extraction
+    UInt32 m_blockIndex; // It can have any value before first call (if outBuffer = 0)
+    Byte * m_outBuffer; // It must be 0 before first call for each new archive
+    size_t m_outBufferSize;  // It can have any value before first call (if outBuffer = 0)
 
     static void * AllocAllocImp(void *p, size_t size);
-    static void AllocFreeImp(void *p, void *address); /* address can be 0 */
+    static void AllocFreeImp(void *p, void *address); // Address can be 0
 
     static SRes SzFileReadImp(void *object, void *buffer, size_t *processedSize);
     static SRes SzFileSeekImp(void *p, Int64 *pos, ESzSeek origin);
@@ -71,5 +65,5 @@ private:
     static void NotfyCallbackDefault(const char * /*Status*/, void * /*CBInfo*/) { }
 
     LP7ZNOTIFICATION m_NotfyCallback;
-    void *           m_NotfyCallbackInfo;
+    void * m_NotfyCallbackInfo;
 };

@@ -4,9 +4,9 @@
 #include <Project64-core/N64System/Mips/PifRam.h>
 #include <Project64-core/N64System/SystemGlobals.h>
 #include <Project64-core/Plugins/ControllerPlugin.h>
-#include <Project64-core/N64System/Mips/RegisterClass.h>
+#include <Project64-core/N64System/Mips/Register.h>
 #include <Project64-core/N64System/Mips/MemoryVirtualMem.h>
-#include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/N64System/N64System.h>
 #include <Project64-core/N64System/Mips/Transferpak.h>
 #include <Project64-core/N64System/Mips/Rumblepak.h>
 #include <Project64-core/N64System/Mips/Mempak.h>
@@ -119,7 +119,7 @@ void CPifRam::PifRamRead()
     }
     if (g_Plugins->Control()->ReadController)
     {
-        g_Plugins->Control()->ReadController(-1, NULL);
+        g_Plugins->Control()->ReadController(-1, nullptr);
     }
 }
 
@@ -241,7 +241,7 @@ void CPifRam::PifRamWrite()
     m_PifRam[0x3F] = 0;
     if (g_Plugins->Control()->ControllerCommand)
     {
-        g_Plugins->Control()->ControllerCommand(-1, NULL);
+        g_Plugins->Control()->ControllerCommand(-1, nullptr);
     }
 }
 

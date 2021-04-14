@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Common/IniFileClass.h>
+#include <Common/IniFile.h>
 #include <Project64-core/Settings/SettingType/SettingsType-Base.h>
 
 class CSettingTypeRomDatabase :
@@ -63,9 +63,9 @@ protected:
     static CIniFile * m_AudioIniFile;
 
 private:
-    CSettingTypeRomDatabase();                                          // Disable default constructor
-    CSettingTypeRomDatabase(const CSettingTypeRomDatabase&);            // Disable copy constructor
-    CSettingTypeRomDatabase& operator=(const CSettingTypeRomDatabase&); // Disable assignment
+    CSettingTypeRomDatabase();
+    CSettingTypeRomDatabase(const CSettingTypeRomDatabase&);
+    CSettingTypeRomDatabase& operator=(const CSettingTypeRomDatabase&);
 
 	bool Load(uint32_t & Value) const;
 };

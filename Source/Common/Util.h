@@ -1,5 +1,5 @@
 #pragma once
-#include "stdtypes.h"
+#include <stdint.h>
 
 class pjutil
 {
@@ -13,7 +13,7 @@ public:
     static bool TerminatedExistingExe();
 
 private:
-    pjutil(void);                       // Disable default constructor
-    pjutil(const pjutil&);              // Disable copy constructor
-    pjutil& operator=(const pjutil&);   // Disable assignment
+    pjutil(void);
+    pjutil(const pjutil&);
+    pjutil& operator=(const pjutil&);
 };

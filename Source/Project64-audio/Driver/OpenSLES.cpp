@@ -7,6 +7,7 @@
 // Copyright(C) 2003 JttL
 // Copyright(C) 2002 Hacktarux
 // GNU/GPLv2 licensed: https://gnu.org/licenses/gpl-2.0.html
+
 #include "OpenSLES.h"
 #include <Project64-audio/trace.h>
 #include <Project64-audio/SettingsID.h>
@@ -27,77 +28,81 @@ typedef struct threadLock_
 } threadLock;
 #endif
 
-/* Default start-time size of primary buffer (in equivalent output samples).
-This is the buffer where audio is loaded after it's extracted from n64's memory. */
+// Default start-time size of primary buffer (in equivalent output samples)
+// This is the buffer where audio is loaded after it's extracted from N64's memory
+
 enum { PRIMARY_BUFFER_SIZE = 16384 };
 
-/* Size of a single secondary buffer, in output samples. This is the requested size of OpenSLES's
-hardware buffer, this should be a power of two. */
+// Size of a single secondary buffer, in output samples. This is the requested size of OpenSLES's
+// hardware buffer, this should be a power of two.
+
 enum { SECONDARY_BUFFER_SIZE = 1024 };
 
-/* This is the requested number of OpenSLES's hardware buffers */
+// This is the requested number of OpenSLES's hardware buffers
+
 enum { SECONDARY_BUFFER_NBR = 2 };
 
-/* This sets default frequency what is used if rom doesn't want to change it.
-Probably only game that needs this is Zelda: Ocarina Of Time Master Quest
-*NOTICE* We should try to find out why Demos' frequencies are always wrong
-They tend to rely on a default frequency, apparently, never the same one ;) */
+// This sets default frequency what is used if ROM doesn't want to change it.
+// Probably only game that needs this is Zelda: Ocarina Of Time Master Quest
+// TODO: We should try to find out why Demos' frequencies are always wrong
+// They tend to rely on a default frequency, but apparently never the same one ;)
+
 enum { DEFAULT_FREQUENCY = 33600 };
 
-/* number of bytes per sample */
+// Number of bytes per sample
 enum
 {
     N64_SAMPLE_BYTES = 4,
     SLES_SAMPLE_BYTES = 4,
 };
 
-/* Pointer to the primary audio buffer */
-uint8_t * g_primaryBuffer = NULL;
+// Pointer to the primary audio buffer
+uint8_t * g_primaryBuffer = nullptr;
 
-/* Size of the primary buffer */
+// Size of the primary buffer
 uint32_t g_primaryBufferBytes = 0;
 
-/* Pointer to secondary buffers */
-uint8_t ** g_secondaryBuffers = NULL;
+// Pointer to secondary buffers
+uint8_t ** g_secondaryBuffers = nullptr;
 
-/* Size of a single secondary buffer */
+// Size of a single secondary buffer
 uint32_t g_secondaryBufferBytes = 0;
 
-/* Position in the primary buffer where next audio chunk should be placed */
+// Position in the primary buffer where next audio chunk should be placed
 uint32_t g_primaryBufferPos = 0;
 
-/* Index of the next secondary buffer available */
+// Index of the next secondary buffer available
 uint32_t g_secondaryBufferIndex = 0;
 
-/* Audio frequency, this is usually obtained from the game, but for compatibility we set default value */
+// Audio frequency, this is usually obtained from the game, but for compatibility we set default value
 uint32_t g_GameFreq = DEFAULT_FREQUENCY;
 
-/* SpeedFactor is used to increase/decrease game playback speed */
+// SpeedFactor is used to increase/decrease game playback speed
 uint32_t g_speed_factor = 100;
 
-/* Output Audio frequency */
+// Output audio frequency
 int g_OutputFreq = 44100;
 
-/* Indicate that the audio plugin failed to initialize, so the emulator can keep running without sound */
+// Indicate that the audio plugin failed to initialize, so the emulator can keep running without sound
 bool g_critical_failure = false;
 
 #ifdef ANDROID
-/* Thread Lock */
+// Thread Lock
 threadLock g_lock;
 
-/* Engine interfaces */
-SLObjectItf g_engineObject = NULL;
-SLEngineItf g_engineEngine = NULL;
+// Engine interfaces
+SLObjectItf g_engineObject = nullptr;
+SLEngineItf g_engineEngine = nullptr;
 
-/* Output mix interfaces */
-SLObjectItf g_outputMixObject = NULL;
+// Output mix interfaces
+SLObjectItf g_outputMixObject = nullptr;
 
-/* Player interfaces */
-SLObjectItf g_playerObject = NULL;
-SLPlayItf g_playerPlay = NULL;
+// Player interfaces
+SLObjectItf g_playerObject = nullptr;
+SLPlayItf g_playerPlay = nullptr;
 
-/* Buffer queue interfaces */
-SLAndroidSimpleBufferQueueItf g_bufferQueue = NULL;
+// Buffer queue interfaces
+SLAndroidSimpleBufferQueueItf g_bufferQueue = nullptr;
 #endif
 
 static bool CreatePrimaryBuffer(void)
@@ -109,9 +114,9 @@ static bool CreatePrimaryBuffer(void)
 
     g_primaryBuffer = new uint8_t[primaryBytes];
 
-    if (g_primaryBuffer == NULL)
+    if (g_primaryBuffer == nullptr)
     {
-        WriteTrace(TraceAudioInitShutdown, TraceError, "g_primaryBuffer == NULL");
+        WriteTrace(TraceAudioInitShutdown, TraceError, "g_primaryBuffer == nullptr");
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Done (res: false)");
         return false;
     }
@@ -128,35 +133,35 @@ static void CloseAudio(void)
     g_primaryBufferPos = 0;
     g_secondaryBufferIndex = 0;
 
-    /* Delete Primary buffer */
-    if (g_primaryBuffer != NULL)
+    // Delete primary buffer
+    if (g_primaryBuffer != nullptr)
     {
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Delete g_primaryBuffer (%p)", g_primaryBuffer);
         g_primaryBufferBytes = 0;
         delete[] g_primaryBuffer;
-        g_primaryBuffer = NULL;
+        g_primaryBuffer = nullptr;
     }
 
-    /* Delete Secondary buffers */
-    if (g_secondaryBuffers != NULL)
+    // Delete secondary buffers
+    if (g_secondaryBuffers != nullptr)
     {
         for (uint32_t i = 0; i < SECONDARY_BUFFER_NBR; i++)
         {
-            if (g_secondaryBuffers[i] != NULL)
+            if (g_secondaryBuffers[i] != nullptr)
             {
                 WriteTrace(TraceAudioInitShutdown, TraceDebug, "Delete g_secondaryBuffers[%d] (%p)", i, g_secondaryBuffers[i]);
                 delete[] g_secondaryBuffers[i];
-                g_secondaryBuffers[i] = NULL;
+                g_secondaryBuffers[i] = nullptr;
             }
         }
         g_secondaryBufferBytes = 0;
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Delete g_secondaryBuffers (%p)", g_secondaryBuffers);
         delete[] g_secondaryBuffers;
-        g_secondaryBuffers = NULL;
+        g_secondaryBuffers = nullptr;
     }
 #ifdef ANDROID
-    /* Destroy buffer queue audio player object, and invalidate all associated interfaces */
-    if (g_playerObject != NULL)
+    // Destroy buffer queue audio player object, and invalidate all associated interfaces
+    if (g_playerObject != nullptr)
     {
         SLuint32 state = SL_PLAYSTATE_PLAYING;
         (*g_playerPlay)->SetPlayState(g_playerPlay, SL_PLAYSTATE_STOPPED);
@@ -167,27 +172,27 @@ static void CloseAudio(void)
         }
 
         (*g_playerObject)->Destroy(g_playerObject);
-        g_playerObject = NULL;
-        g_playerPlay = NULL;
-        g_bufferQueue = NULL;
+        g_playerObject = nullptr;
+        g_playerPlay = nullptr;
+        g_bufferQueue = nullptr;
     }
 
-    /* Destroy output mix object, and invalidate all associated interfaces */
-    if (g_outputMixObject != NULL)
+    // Destroy output mix object, and invalidate all associated interfaces
+    if (g_outputMixObject != nullptr)
     {
         (*g_outputMixObject)->Destroy(g_outputMixObject);
-        g_outputMixObject = NULL;
+        g_outputMixObject = nullptr;
     }
 
-    /* Destroy engine object, and invalidate all associated interfaces */
-    if (g_engineObject != NULL)
+    // Destroy engine object, and invalidate all associated interfaces
+    if (g_engineObject != nullptr)
     {
         (*g_engineObject)->Destroy(g_engineObject);
-        g_engineObject = NULL;
-        g_engineEngine = NULL;
+        g_engineObject = nullptr;
+        g_engineEngine = nullptr;
     }
 
-    /* Destroy thread Locks */
+    // Destroy thread Locks
     pthread_cond_signal(&(g_lock.cond));
     pthread_mutex_unlock(&(g_lock.mutex));
     pthread_cond_destroy(&(g_lock.cond));
@@ -204,22 +209,22 @@ static bool CreateSecondaryBuffers(void)
 
     WriteTrace(TraceAudioInitShutdown, TraceDebug, "Allocating memory for %d secondary audio buffers: %i bytes.", SECONDARY_BUFFER_NBR, secondaryBytes);
 
-    /* Allocate number of secondary buffers */
+    // Allocate number of secondary buffers
     g_secondaryBuffers = new uint8_t *[SECONDARY_BUFFER_NBR];
 
-    if (g_secondaryBuffers == NULL)
+    if (g_secondaryBuffers == nullptr)
     {
-        WriteTrace(TraceAudioInitShutdown, TraceError, "g_secondaryBuffers == NULL");
+        WriteTrace(TraceAudioInitShutdown, TraceError, "g_secondaryBuffers == nullptr");
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Done (res: false)");
         return false;
     }
 
-    /* Allocate size of each secondary buffers */
+    // Allocate size of each secondary buffers
     for (uint32_t i = 0; i < SECONDARY_BUFFER_NBR; i++)
     {
         g_secondaryBuffers[i] = new uint8_t[secondaryBytes];
 
-        if (g_secondaryBuffers[i] == NULL)
+        if (g_secondaryBuffers[i] == nullptr)
         {
             status = false;
             break;
@@ -243,10 +248,10 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
     spx_uint32_t in_len, out_len;
     if (Resample == RESAMPLER_SPEEX)
     {
-        if (spx_state == NULL)
+        if (spx_state == nullptr)
         {
             spx_state = speex_resampler_init(2, oldsamplerate, newsamplerate, ResampleQuality, &error);
-            if (spx_state == NULL)
+            if (spx_state == nullptr)
             {
                 memset(output, 0, output_needed);
                 return 0;
@@ -259,7 +264,7 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
         if ((error = speex_resampler_process_interleaved_int(spx_state, (const spx_int16_t *)input, &in_len, (spx_int16_t *)output, &out_len)))
         {
             memset(output, 0, output_needed);
-            return input_avail;  // number of bytes consumed
+            return input_avail;  // Number of bytes consumed
         }
         return in_len * 4;
     }
@@ -267,9 +272,9 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
 #ifdef USE_SRC
     if (Resample == RESAMPLER_SRC)
     {
-        // the high quality resampler needs more input than the samplerate ratio would indicate to work properly
+        // The high quality resampler needs more input than the sample rate ratio would indicate to work properly
         if (input_avail > output_needed * 3 / 2)
-            input_avail = output_needed * 3 / 2; // just to avoid too much short-float-short conversion time
+            input_avail = output_needed * 3 / 2; // Just to avoid too much short-float-short conversion time
         if (_src_len < input_avail * 2 && input_avail > 0)
         {
             if (_src) free(_src);
@@ -284,10 +289,10 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
         }
         memset(_src, 0, _src_len);
         memset(_dest, 0, _dest_len);
-        if (src_state == NULL)
+        if (src_state == nullptr)
         {
             src_state = src_new(ResampleQuality, 2, &error);
-            if (src_state == NULL)
+            if (src_state == nullptr)
             {
                 memset(output, 0, output_needed);
                 return 0;
@@ -303,7 +308,7 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
         if ((error = src_process(src_state, &src_data)))
         {
             memset(output, 0, output_needed);
-            return input_avail;  // number of bytes consumed
+            return input_avail;  // Number of bytes consumed
         }
         src_float_to_short_array(_dest, (short *)output, output_needed / 2);
         return src_data.input_frames_used * 4;
@@ -327,7 +332,7 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
             }
             else criteria += const2;
         }
-        return j * 4; //number of bytes consumed
+        return j * 4; // Number of bytes consumed
     }
     // newsamplerate < oldsamplerate, this only happens when speed_factor > 1
     for (i = 0; i < output_needed / 4; i++)
@@ -335,10 +340,10 @@ static int resample(unsigned char *input, int /*input_avail*/, int oldsamplerate
         j = i * oldsamplerate / newsamplerate;
         pdest[i] = psrc[j];
     }
-    return j * 4; //number of bytes consumed
+    return j * 4; // Number of bytes consumed
 }
 
-/* This callback handler is called every time a buffer finishes playing */
+// This callback handler is called every time a buffer finishes playing
 #ifdef ANDROID
 void queueCallback(SLAndroidSimpleBufferQueueItf caller, void *context)
 {
@@ -365,21 +370,21 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         return;
     }
 
-    if (g_GameFreq == freq && g_primaryBuffer != NULL)
+    if (g_GameFreq == freq && g_primaryBuffer != nullptr)
     {
-        WriteTrace(TraceAudioInitShutdown, TraceInfo, "we are already using this frequency, so ignore it (freq: %d)", freq);
+        WriteTrace(TraceAudioInitShutdown, TraceInfo, "We are already using this frequency, so ignore it (freq: %d)", freq);
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Done");
         return;
     }
 
     if (g_critical_failure)
     {
-        WriteTrace(TraceAudioInitShutdown, TraceInfo, "had a critical failure in setting up plugin, so ignore init");
+        WriteTrace(TraceAudioInitShutdown, TraceInfo, "Critical failure in setting up plugin, ignoring init...");
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Done");
         return;
     }
 
-    /* This is important for the sync */
+    // This is important for the sync
     g_GameFreq = freq;
 
 #ifdef ANDROID
@@ -408,10 +413,10 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
 
     WriteTrace(TraceAudioInitShutdown, TraceInfo, "Requesting frequency: %iHz.", g_OutputFreq);
 
-    /* Close everything because InitializeAudio can be called more than once */
+    // Close everything because InitializeAudio can be called more than once
     CloseAudio();
 
-    /* Create primary buffer */
+    // Create primary buffer
     if (!CreatePrimaryBuffer())
     {
         WriteTrace(TraceAudioInitShutdown, TraceError, "CreatePrimaryBuffer failed");
@@ -421,7 +426,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         return;
     }
 
-    /* Create secondary buffers */
+    // Create secondary buffers
     if (!CreateSecondaryBuffers())
     {
         WriteTrace(TraceAudioInitShutdown, TraceError, "CreateSecondaryBuffers failed");
@@ -432,8 +437,8 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
     }
 
 #ifdef ANDROID
-    /* Create thread Locks to ensure synchronization between callback and processing code */
-    if (pthread_mutex_init(&(g_lock.mutex), (pthread_mutexattr_t*)NULL) != 0)
+    // Create thread Locks to ensure synchronization between callback and processing code
+    if (pthread_mutex_init(&(g_lock.mutex), (pthread_mutexattr_t*)nullptr) != 0)
     {
         WriteTrace(TraceAudioInitShutdown, TraceError, "pthread_mutex_init failed");
         CloseAudio();
@@ -441,7 +446,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         WriteTrace(TraceAudioInitShutdown, TraceDebug, "Done");
         return;
     }
-    if (pthread_cond_init(&(g_lock.cond), (pthread_condattr_t*)NULL) != 0)
+    if (pthread_cond_init(&(g_lock.cond), (pthread_condattr_t*)nullptr) != 0)
     {
         WriteTrace(TraceAudioInitShutdown, TraceError, "pthread_cond_init failed");
         CloseAudio();
@@ -453,8 +458,8 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
     g_lock.value = g_lock.limit = SECONDARY_BUFFER_NBR;
     pthread_mutex_unlock(&(g_lock.mutex));
 
-    /* Engine object */
-    SLresult result = slCreateEngine(&g_engineObject, 0, NULL, 0, NULL, NULL);
+    // Engine object
+    SLresult result = slCreateEngine(&g_engineObject, 0, nullptr, 0, nullptr, nullptr);
     if (result != SL_RESULT_SUCCESS)
     {
         WriteTrace(TraceAudioInitShutdown, TraceError, "slCreateEngine failed (result: %d)", result);
@@ -480,8 +485,8 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
 
     if (result == SL_RESULT_SUCCESS)
     {
-        /* Output mix object */
-        result = (*g_engineEngine)->CreateOutputMix(g_engineEngine, &g_outputMixObject, 0, NULL, NULL);
+        // Output mix object
+        result = (*g_engineEngine)->CreateOutputMix(g_engineEngine, &g_outputMixObject, 0, nullptr, nullptr);
         if (result != SL_RESULT_SUCCESS)
         {
             WriteTrace(TraceAudioInitShutdown, TraceError, "slCreateEngine->CreateOutputMix failed (result: %d)", result);
@@ -506,11 +511,11 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
 
         SLDataSource audioSrc = { &loc_bufq, &format_pcm };
 
-        /* Configure audio sink */
+        // Configure audio sink
         SLDataLocator_OutputMix loc_outmix = { SL_DATALOCATOR_OUTPUTMIX, g_outputMixObject };
-        SLDataSink audioSnk = { &loc_outmix, NULL };
+        SLDataSink audioSnk = { &loc_outmix, nullptr };
 
-        /* Create audio player */
+        // Create audio player
         const SLInterfaceID ids1[] = { SL_IID_ANDROIDSIMPLEBUFFERQUEUE };
         const SLboolean req1[] = { SL_BOOLEAN_TRUE };
         result = (*g_engineEngine)->CreateAudioPlayer(g_engineEngine, &(g_playerObject), &audioSrc, &audioSnk, 1, ids1, req1);
@@ -520,7 +525,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         }
     }
 
-    /* Realize the player */
+    // Realize the player
     if (result == SL_RESULT_SUCCESS)
     {
         result = (*g_playerObject)->Realize(g_playerObject, SL_BOOLEAN_FALSE);
@@ -530,7 +535,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         }
     }
 
-    /* Get the play interface */
+    // Get the play interface
     if (result == SL_RESULT_SUCCESS)
     {
         result = (*g_playerObject)->GetInterface(g_playerObject, SL_IID_PLAY, &(g_playerPlay));
@@ -540,7 +545,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         }
     }
 
-    /* Get the buffer queue interface */
+    // Get the buffer queue interface
     if (result == SL_RESULT_SUCCESS)
     {
         result = (*g_playerObject)->GetInterface(g_playerObject, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &(g_bufferQueue));
@@ -550,7 +555,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         }
     }
 
-    /* register callback on the buffer queue */
+    // Register callback on the buffer queue
     if (result == SL_RESULT_SUCCESS)
     {
         result = (*g_bufferQueue)->RegisterCallback(g_bufferQueue, queueCallback, &g_lock);
@@ -560,7 +565,7 @@ void OpenSLESDriver::AI_SetFrequency(uint32_t freq, uint32_t BufferSize)
         }
     }
 
-    /* set the player's state to playing */
+    // Set the player's state to playing
     if (result == SL_RESULT_SUCCESS)
     {
         result = (*g_playerPlay)->SetPlayState(g_playerPlay, SL_PLAYSTATE_PLAYING);
@@ -600,11 +605,11 @@ void OpenSLESDriver::AI_LenChanged(uint8_t *start, uint32_t length)
 
         for (i = 0; i < length; i += 4)
         {
-            /* Left channel */
+            // Left channel
             g_primaryBuffer[g_primaryBufferPos + i] = start[i + 2];
             g_primaryBuffer[g_primaryBufferPos + i + 1] = start[i + 3];
 
-            /* Right channel */
+            // Right channel
             g_primaryBuffer[g_primaryBufferPos + i + 2] = start[i];
             g_primaryBuffer[g_primaryBufferPos + i + 3] = start[i + 1];
         }
@@ -628,7 +633,7 @@ void OpenSLESDriver::AI_LenChanged(uint8_t *start, uint32_t length)
 #ifdef ANDROID
         pthread_mutex_lock(&(g_lock.mutex));
 
-        /* Wait for the next callback if no more output buffers available */
+        // Wait for the next callback if no more output buffers available
         while (g_lock.value == 0)
         {
             pthread_cond_wait(&(g_lock.cond), &(g_lock.mutex));
@@ -640,7 +645,7 @@ void OpenSLESDriver::AI_LenChanged(uint8_t *start, uint32_t length)
 #endif
         WriteTrace(TraceAudioInterface, TraceDebug, "Finished with lock");
 
-        // TODO: don't resample if speed_factor = 100 and newsamplerate ~= oldsamplerate
+        // TODO: Don't resample if speed_factor = 100 and newsamplerate ~= oldsamplerate
         int input_used = resample(g_primaryBuffer, g_primaryBufferPos, oldsamplerate, g_secondaryBuffers[g_secondaryBufferIndex], g_secondaryBufferBytes, newsamplerate);
 
 #ifdef ANDROID

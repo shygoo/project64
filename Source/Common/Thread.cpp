@@ -1,5 +1,6 @@
-#include "stdafx.h"
 #include "Thread.h"
+#include "Trace.h"
+#include "TraceModulesCommon.h"
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -10,8 +11,8 @@
 
 CThread::CThread(CTHREAD_START_ROUTINE lpStartAddress) :
     m_StartAddress(lpStartAddress),
-    m_lpThreadParameter(NULL),
-    m_thread(NULL),
+    m_lpThreadParameter(nullptr),
+    m_thread(nullptr),
 #ifndef _WIN32
     m_running(false),
 #endif
@@ -43,13 +44,13 @@ bool CThread::Start(void * lpThreadParameter)
     WriteTrace(TraceThread, TraceDebug, "Start");
     m_lpThreadParameter = lpThreadParameter;
 #ifdef _WIN32
-    m_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadWrapper, this, 0, (LPDWORD)&m_threadID);
+    m_thread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ThreadWrapper, this, 0, (LPDWORD)&m_threadID);
 #else
     pthread_t * thread_id = new pthread_t;
 
     m_thread = (void*)thread_id;
 
-    int res = pthread_create(thread_id, NULL, (void *(*)(void *))ThreadWrapper, this);
+    int res = pthread_create(thread_id, nullptr, (void *(*)(void *))ThreadWrapper, this);
 #endif
     WriteTrace(TraceThread, TraceDebug, "Done");
     return true;
@@ -63,7 +64,7 @@ void * CThread::ThreadWrapper (CThread * _this)
     _this->m_running = true;
     WriteTrace(TraceThread, TraceDebug, "Thread is running");
 #endif
-    void * res = NULL;
+    void * res = nullptr;
     try
     {
 #if defined(__i386__) || defined(_M_IX86) || defined(__arm__) || defined(_M_ARM)
@@ -86,7 +87,7 @@ void * CThread::ThreadWrapper (CThread * _this)
     pthread_t * thread_id = (pthread_t *)_this->m_thread;
     delete thread_id;
 #endif
-    _this->m_thread = NULL;
+    _this->m_thread = nullptr;
     WriteTrace(TraceThread, TraceDebug, "Done");
     return res;
 }
@@ -94,7 +95,7 @@ void * CThread::ThreadWrapper (CThread * _this)
 bool CThread::isRunning(void) const
 {
     WriteTrace(TraceThread, TraceDebug, "Start");
-    if (m_thread == NULL)
+    if (m_thread == nullptr)
     {
         WriteTrace(TraceThread, TraceDebug, "Done (res: false), m_thread is null");
         return false;

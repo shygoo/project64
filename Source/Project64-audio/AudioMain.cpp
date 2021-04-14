@@ -7,6 +7,7 @@
 // Copyright(C) 2003 JttL
 // Copyright(C) 2002 Hacktarux
 // GNU/GPLv2 licensed: https://gnu.org/licenses/gpl-2.0.html
+
 #include <Common/Util.h>
 #ifdef _WIN32
 #include <Project64-audio/Driver/DirectSound.h>
@@ -30,7 +31,7 @@ void SetTimerResolution ( void );
 #define ENDIAN_SWAP_BYTE    (~0 & 0x7 & 3)
 #define BES(address)    ((address) ^ ENDIAN_SWAP_BYTE)
 
-/* Read header for type definition */
+// Read header for type definition
 AUDIO_INFO g_AudioInfo;
 
 bool g_PluginInit = false;
@@ -38,9 +39,9 @@ bool g_romopen = false;
 uint32_t g_Dacrate = 0, hack = 0;
 
 #ifdef _WIN32
-DirectSoundDriver * g_SoundDriver = NULL;
+DirectSoundDriver * g_SoundDriver = nullptr;
 #else
-OpenSLESDriver * g_SoundDriver = NULL;
+OpenSLESDriver * g_SoundDriver = nullptr;
 #endif
 
 void PluginInit(void)
@@ -60,7 +61,7 @@ EXPORT void CALL PluginLoaded(void)
 {
     PluginInit();
     WriteTrace(TraceAudioInterface, TraceDebug, "Called");
-    if (g_settings != NULL)
+    if (g_settings != nullptr)
     {
         g_settings->SetSyncViaAudioEnabled(true);
     }
@@ -71,7 +72,7 @@ EXPORT void CALL AiDacrateChanged(int SystemType)
     WriteTrace(TraceAudioInterface, TraceDebug, "Start (SystemType: %d)", SystemType);
     if (!g_PluginInit)
     {
-        WriteTrace(TraceAudioInterface, TraceNotice, "Plugin has not been initilized");
+        WriteTrace(TraceAudioInterface, TraceNotice, "Plugin has not been initialized");
         WriteTrace(TraceAudioInterface, TraceDebug, "Done");
         return;
     }
@@ -97,7 +98,7 @@ EXPORT void CALL AiDacrateChanged(int SystemType)
 
         if (Frequency < 8000)
         {
-            WriteTrace(TraceAudioDriver, TraceDebug, "Not Audio Data!");
+            WriteTrace(TraceAudioDriver, TraceDebug, "Not audio data!");
             return;
         }
 
@@ -138,7 +139,7 @@ EXPORT uint32_t CALL AiReadLength(void)
 {
     WriteTrace(TraceAudioInterface, TraceDebug, "Start");
     uint32_t len = 0;
-    if (g_SoundDriver != NULL)
+    if (g_SoundDriver != nullptr)
     {
         *g_AudioInfo.AI_LEN_REG = g_SoundDriver->AI_ReadLength();
         len = *g_AudioInfo.AI_LEN_REG;
@@ -156,7 +157,7 @@ EXPORT void CALL AiUpdate(int32_t Wait)
     }
     else
     {
-        pjutil::Sleep(1); // TODO:  Fixme -- Ai Update appears to be problematic
+        pjutil::Sleep(1); // TODO:  Fix this: Ai update appears to be problematic
     }
     WriteTrace(TraceAudioInterface, TraceDebug, "Done");
 }
@@ -164,11 +165,11 @@ EXPORT void CALL AiUpdate(int32_t Wait)
 EXPORT void CALL CloseDLL(void)
 {
     WriteTrace(TraceAudioInterface, TraceDebug, "Called");
-    if (g_SoundDriver != NULL)
+    if (g_SoundDriver != nullptr)
     {
         g_SoundDriver->AI_Shutdown();
         delete g_SoundDriver;
-        g_SoundDriver = NULL;
+        g_SoundDriver = nullptr;
     }
     CleanupAudioSettings();
     StopTrace();
@@ -200,9 +201,9 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO * PluginInfo)
     PluginInfo->Version = 0x0101;
     PluginInfo->Type = PLUGIN_TYPE_AUDIO;
 #ifdef _DEBUG
-    sprintf(PluginInfo->Name, "Project64 Audio Plugin (Debug): %s", VER_FILE_VERSION_STR);
+    sprintf(PluginInfo->Name, "Project64 audio plugin (Debug): %s", VER_FILE_VERSION_STR);
 #else
-    sprintf(PluginInfo->Name, "Project64 Audio Plugin: %s", VER_FILE_VERSION_STR);
+    sprintf(PluginInfo->Name, "Project64 audio plugin: %s", VER_FILE_VERSION_STR);
 #endif
     PluginInfo->MemoryBswaped = true;
     PluginInfo->NormalMemory = false;
@@ -211,7 +212,7 @@ EXPORT void CALL GetDllInfo(PLUGIN_INFO * PluginInfo)
 EXPORT int32_t CALL InitiateAudio(AUDIO_INFO Audio_Info)
 {
     WriteTrace(TraceAudioInterface, TraceDebug, "Start");
-    if (g_SoundDriver != NULL)
+    if (g_SoundDriver != nullptr)
     {
         g_SoundDriver->AI_Shutdown();
         delete g_SoundDriver;
@@ -279,7 +280,7 @@ extern "C" void UseUnregisteredSetting(int /*SettingID*/)
 void SetTimerResolution(void)
 {
     HMODULE hMod = GetModuleHandle(L"ntdll.dll");
-    if (hMod != NULL)
+    if (hMod != nullptr)
     {
         typedef LONG(NTAPI* tNtSetTimerResolution)(IN ULONG DesiredResolution, IN BOOLEAN SetResolution, OUT PULONG CurrentResolution);
         tNtSetTimerResolution NtSetTimerResolution = (tNtSetTimerResolution)GetProcAddress(hMod, "NtSetTimerResolution");

@@ -3,6 +3,7 @@
 // Copyright(C) 2001-2021 Project64
 // Copyright(C) 2000-2015 Azimer
 // GNU/GPLv2 licensed: https://gnu.org/licenses/gpl-2.0.html
+
 #include "SoundBase.h"
 #include <Common/Util.h>
 #include <Project64-audio/AudioSettings.h>
@@ -12,8 +13,8 @@
 
 SoundDriverBase::SoundDriverBase() :
     m_MaxBufferSize(MAX_SIZE),
-    m_AI_DMAPrimaryBuffer(NULL),
-    m_AI_DMASecondaryBuffer(NULL),
+    m_AI_DMAPrimaryBuffer(nullptr),
+    m_AI_DMASecondaryBuffer(nullptr),
     m_AI_DMAPrimaryBytes(0),
     m_AI_DMASecondaryBytes(0),
     m_CurrentReadLoc(0),
@@ -51,7 +52,7 @@ void SoundDriverBase::AI_LenChanged(uint8_t *start, uint32_t length)
     CGuard guard(m_CS);
     BufferAudio();
 
-    if (m_AI_DMASecondaryBuffer != NULL)
+    if (m_AI_DMASecondaryBuffer != nullptr)
     {
         WriteTrace(TraceAudioDriver, TraceDebug, "Discarding previous secondary buffer");
     }
@@ -60,7 +61,7 @@ void SoundDriverBase::AI_LenChanged(uint8_t *start, uint32_t length)
     if (m_AI_DMAPrimaryBytes == 0)
     {
         m_AI_DMAPrimaryBuffer = m_AI_DMASecondaryBuffer;
-        m_AI_DMASecondaryBuffer = NULL;
+        m_AI_DMASecondaryBuffer = nullptr;
         m_AI_DMAPrimaryBytes = m_AI_DMASecondaryBytes;
         m_AI_DMASecondaryBytes = 0;
     }
@@ -78,7 +79,7 @@ void SoundDriverBase::AI_Startup()
 {
     WriteTrace(TraceAudioDriver, TraceDebug, "Start");
     m_AI_DMAPrimaryBytes = m_AI_DMASecondaryBytes = 0;
-    m_AI_DMAPrimaryBuffer = m_AI_DMASecondaryBuffer = NULL;
+    m_AI_DMAPrimaryBuffer = m_AI_DMASecondaryBuffer = nullptr;
     m_MaxBufferSize = MAX_SIZE;
     m_CurrentReadLoc = m_CurrentWriteLoc = m_BufferRemaining = 0;
     if (Initialize())
@@ -107,7 +108,7 @@ uint32_t SoundDriverBase::AI_ReadLength()
 void SoundDriverBase::LoadAiBuffer(uint8_t *start, uint32_t length)
 {
     static uint8_t nullBuff[MAX_SIZE];
-    uint8_t *ptrStart = start != NULL ? start : nullBuff;
+    uint8_t *ptrStart = start != nullptr ? start : nullBuff;
     uint32_t writePtr = 0, bytesToMove = length;
 
     if (bytesToMove > m_MaxBufferSize)
@@ -164,9 +165,9 @@ void SoundDriverBase::BufferAudio()
         m_AI_DMAPrimaryBytes -= 4;
         if (m_AI_DMAPrimaryBytes == 0)
         {
-            WriteTrace(TraceAudioDriver, TraceVerbose, "Emptied Primary Buffer");
+            WriteTrace(TraceAudioDriver, TraceVerbose, "Emptied primary buffer");
             m_AI_DMAPrimaryBytes = m_AI_DMASecondaryBytes; m_AI_DMAPrimaryBuffer = m_AI_DMASecondaryBuffer; // Switch
-            m_AI_DMASecondaryBytes = 0; m_AI_DMASecondaryBuffer = NULL;
+            m_AI_DMASecondaryBytes = 0; m_AI_DMASecondaryBuffer = nullptr;
             *g_AudioInfo.AI_STATUS_REG = AI_STATUS_DMA_BUSY;
             *g_AudioInfo.AI_STATUS_REG &= ~AI_STATUS_FIFO_FULL;
             *g_AudioInfo.MI_INTR_REG |= MI_INTR_AI;

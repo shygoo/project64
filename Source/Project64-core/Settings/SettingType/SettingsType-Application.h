@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Common/IniFileClass.h>
+#include <Common/IniFile.h>
 #include <Project64-core/Settings/SettingType/SettingsType-Base.h>
 
 class CSettingTypeApplication :
@@ -59,6 +59,6 @@ protected:
     virtual const char * SectionName(void) const;
 
 private:
-    CSettingTypeApplication(const CSettingTypeApplication&);				// Disable copy constructor
-    CSettingTypeApplication& operator=(const CSettingTypeApplication&);		// Disable assignment
+    CSettingTypeApplication(const CSettingTypeApplication&);
+    CSettingTypeApplication& operator=(const CSettingTypeApplication&);
 };

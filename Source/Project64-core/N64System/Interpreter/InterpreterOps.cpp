@@ -1,10 +1,10 @@
 #include "stdafx.h"
 #include <Project64-core/N64System/Interpreter/InterpreterOps.h>
 #include <Project64-core/N64System/SystemGlobals.h>
-#include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/N64System/N64System.h>
 #include <Project64-core/N64System/Mips/MemoryVirtualMem.h>
 #include <Project64-core/N64System/Mips/SystemTiming.h>
-#include <Project64-core/N64System/Mips/TLBClass.h>
+#include <Project64-core/N64System/Mips/TLB.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
 #include <Project64-core/N64System/Interpreter/InterpreterCPU.h>
 #include <Project64-core/Logging.h>
@@ -3042,7 +3042,7 @@ void R4300iOp::UnknownOpcode()
 
         strcat(Message, "\n\nDo you wish to enter the debugger ?");
 
-        response = MessageBox(NULL, Message, GS(MSG_MSGBOX_ERROR_TITLE), MB_YESNO | MB_ICONERROR);
+        response = MessageBox(nullptr, Message, GS(MSG_MSGBOX_ERROR_TITLE), MB_YESNO | MB_ICONERROR);
         if (response == IDYES)
         {
             Enter_R4300i_Commands_Window();

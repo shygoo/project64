@@ -2,16 +2,16 @@
 #include "InterpreterCPU.h"
 
 #include <Project64-core/N64System/SystemGlobals.h>
-#include <Project64-core/N64System/N64Class.h>
+#include <Project64-core/N64System/N64System.h>
 #include <Project64-core/N64System/Mips/MemoryVirtualMem.h>
 #include <Project64-core/N64System/Mips/OpcodeName.h>
 #include <Project64-core/N64System/Interpreter/InterpreterOps32.h>
-#include <Project64-core/Plugins/PluginClass.h>
+#include <Project64-core/Plugins/Plugin.h>
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/ExceptionHandler.h>
 #include <Project64-core/Debugger.h>
 
-R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = NULL;
+R4300iOp::Func * CInterpreterCPU::m_R4300i_Opcode = nullptr;
 
 void ExecuteInterpreterOps(uint32_t /*Cycles*/)
 {
@@ -242,7 +242,7 @@ void CInterpreterCPU::InPermLoop()
         (g_Reg->STATUS_REGISTER & STATUS_ERL) != 0 ||
         (g_Reg->STATUS_REGISTER & 0xFF00) == 0)
     {
-        if (g_Plugins->Gfx()->UpdateScreen != NULL)
+        if (g_Plugins->Gfx()->UpdateScreen != nullptr)
         {
             g_Plugins->Gfx()->UpdateScreen();
         }

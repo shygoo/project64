@@ -1,5 +1,5 @@
 #pragma once
-#include "stdtypes.h"
+#include <stdint.h>
 
 class SyncEvent
 {
@@ -15,8 +15,8 @@ public:
     void * GetHandle();
 
 protected:
-    SyncEvent(const SyncEvent&);				// Disable copy constructor
-    SyncEvent& operator=(const SyncEvent&);		// Disable assignment
+    SyncEvent(const SyncEvent&);
+    SyncEvent& operator=(const SyncEvent&);
 
     void * m_Event;
 #ifndef _WIN32

@@ -1,13 +1,12 @@
 // Implements the CRandom class
 // This class implements the Lehmer Random Number Generator
 
-#include "stdafx.h"
 #include "Random.h"
 #include <time.h>
 
 CRandom::CRandom()
 {
-    m_state = (uint32_t)time(NULL);
+    m_state = (uint32_t)time(nullptr);
 }
 
 CRandom::CRandom(uint32_t state_value)

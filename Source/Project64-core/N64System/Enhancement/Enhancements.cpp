@@ -2,9 +2,9 @@
 #include <Project64-core/N64System/Enhancement/Enhancements.h>
 #include <Project64-core/N64System/Enhancement/EnhancementFile.h>
 #include <Project64-core/N64System/Mips/MemoryVirtualMem.h>
-#include <Project64-core/N64System/Recompiler/RecompilerClass.h>
+#include <Project64-core/N64System/Recompiler/Recompiler.h>
 #include <Project64-core/N64System/SystemGlobals.h>
-#include <Project64-core/Plugins/PluginClass.h>
+#include <Project64-core/Plugins/Plugin.h>
 #include <Project64-core/Plugins/GFXPlugin.h>
 #include <Project64-core/Plugins/AudioPlugin.h>
 #include <Project64-core/Plugins/RSPPlugin.h>
@@ -322,22 +322,22 @@ void CEnhancements::LoadActive(CEnhancementList & List, CPlugins * Plugins)
             for (size_t i = 0, n = PluginList.size(); i < n; i++)
             {
                 std::string PluginName = stdstr(PluginList[i]).Trim();
-                if (Plugins->Gfx() != NULL && strstr(Plugins->Gfx()->PluginName(), PluginName.c_str()) != nullptr)
+                if (Plugins->Gfx() != nullptr && strstr(Plugins->Gfx()->PluginName(), PluginName.c_str()) != nullptr)
                 {
                     LoadEntry = true;
                     break;
                 }
-                if (Plugins->Audio() != NULL && strstr(Plugins->Audio()->PluginName(), PluginName.c_str()) != nullptr)
+                if (Plugins->Audio() != nullptr && strstr(Plugins->Audio()->PluginName(), PluginName.c_str()) != nullptr)
                 {
                     LoadEntry = true;
                     break;
                 }
-                if (Plugins->RSP() != NULL && strstr(Plugins->RSP()->PluginName(), PluginName.c_str()) != nullptr)
+                if (Plugins->RSP() != nullptr && strstr(Plugins->RSP()->PluginName(), PluginName.c_str()) != nullptr)
                 {
                     LoadEntry = true;
                     break;
                 }
-                if (Plugins->Control() != NULL && strstr(Plugins->Control()->PluginName(), PluginName.c_str()) != nullptr)
+                if (Plugins->Control() != nullptr && strstr(Plugins->Control()->PluginName(), PluginName.c_str()) != nullptr)
                 {
                     LoadEntry = true;
                     break;

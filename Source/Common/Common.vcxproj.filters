@@ -11,19 +11,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CriticalSection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="FileClass.cpp">
+    <ClCompile Include="File.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="IniFileClass.cpp">
+    <ClCompile Include="IniFile.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="LogClass.cpp">
+    <ClCompile Include="Log.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="md5.cpp">
@@ -59,7 +56,7 @@
     <ClCompile Include="HighResTimeStamp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DateTimeClass.cpp">
+    <ClCompile Include="DateTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Random.cpp">
@@ -67,19 +64,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="CriticalSection.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileClass.h">
+    <ClInclude Include="File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IniFileClass.h">
+    <ClInclude Include="IniFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LogClass.h">
+    <ClInclude Include="Log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="md5.h">
@@ -89,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="path.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SmartPointer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="StdString.h">
@@ -124,7 +115,7 @@
     <ClInclude Include="HighResTimeStamp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DateTimeClass.h">
+    <ClInclude Include="DateTime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Random.h">

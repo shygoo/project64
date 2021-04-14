@@ -200,7 +200,7 @@ void CDebugScripts::ConsoleCopy()
 
 void CDebugScripts::ConsolePrint(const char* text)
 {
-    if (m_hWnd != NULL)
+    if (m_hWnd != nullptr)
     {
         // OnConsolePrint will free this
         char* textCopy = _strdup(text);
@@ -210,7 +210,7 @@ void CDebugScripts::ConsolePrint(const char* text)
 
 void CDebugScripts::ConsoleClear()
 {
-    if (m_hWnd != NULL)
+    if (m_hWnd != nullptr)
     {
         PostMessage(WM_CONSOLE_CLEAR);
     }
@@ -218,7 +218,7 @@ void CDebugScripts::ConsoleClear()
 
 void CDebugScripts::RefreshList()
 {
-    if (m_hWnd != NULL)
+    if (m_hWnd != nullptr)
     {
         PostMessage(WM_REFRESH_LIST);
     }
@@ -250,7 +250,7 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
         ConsoleCopy();
         break;
     case IDC_SCRIPTDIR_BTN:
-        ShellExecute(NULL, L"open", L"Scripts", NULL, NULL, SW_SHOW);
+        ShellExecute(nullptr, L"open", L"Scripts", nullptr, nullptr, SW_SHOW);
         break;
     }
     return FALSE;
@@ -308,7 +308,7 @@ LRESULT CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
 
     jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(m_SelectedScriptName.c_str());
 
-    HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(IDR_SCRIPT_POPUP));
+    HMENU hMenu = LoadMenu(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDR_SCRIPT_POPUP));
     HMENU hPopupMenu = GetSubMenu(hMenu, 0);
 
     if (status == JS_STATUS_STARTING || status == JS_STATUS_STARTED)
@@ -322,7 +322,7 @@ LRESULT CDebugScripts::OnScriptListRClicked(NMHDR* pNMHDR)
     
     POINT mouse;
     GetCursorPos(&mouse);
-    TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, NULL);
+    TrackPopupMenu(hPopupMenu, TPM_LEFTALIGN, mouse.x, mouse.y, 0, m_hWnd, nullptr);
     DestroyMenu(hMenu);
 
     return 0;
@@ -498,7 +498,7 @@ void CDebugScripts::ToggleSelected()
 
 void CDebugScripts::EditSelected()
 {
-    ShellExecute(NULL, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), NULL, L"Scripts", SW_SHOWNORMAL);
+    ShellExecute(nullptr, L"edit", stdstr(m_SelectedScriptName).ToUTF16().c_str(), nullptr, L"Scripts", SW_SHOWNORMAL);
 }
 
 LRESULT CDebugScripts::OnInputSpecialKey(NMHDR* pNMHDR)

@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "RomList.h"
 #include <Project64-core/3rdParty/zip.h>
-#include <Project64-core/N64System/N64RomClass.h>
-#include <Project64-core/N64System/N64DiskClass.h>
+#include <Project64-core/N64System/N64Rom.h>
+#include <Project64-core/N64System/N64Disk.h>
 
 #ifdef _WIN32
 #include <Project64-core/3rdParty/7zip.h>
@@ -31,12 +31,12 @@ CRomList::CRomList() :
     m_RefreshThread((CThread::CTHREAD_START_ROUTINE)RefreshRomListStatic),
     m_StopRefresh(false),
     m_GameDir(g_Settings->LoadStringVal(RomList_GameDir).c_str()),
-    m_NotesIniFile(NULL),
-    m_ExtIniFile(NULL),
+    m_NotesIniFile(nullptr),
+    m_ExtIniFile(nullptr),
 #ifdef _WIN32
-    m_ZipIniFile(NULL),
+    m_ZipIniFile(nullptr),
 #endif
-    m_RomIniFile(NULL)
+    m_RomIniFile(nullptr)
 {
     WriteTrace(TraceRomList, TraceVerbose, "Start");
     if (g_Settings)
@@ -63,23 +63,23 @@ CRomList::~CRomList()
     if (m_NotesIniFile)
     {
         delete m_NotesIniFile;
-        m_NotesIniFile = NULL;
+        m_NotesIniFile = nullptr;
     }
     if (m_ExtIniFile)
     {
         delete m_ExtIniFile;
-        m_ExtIniFile = NULL;
+        m_ExtIniFile = nullptr;
     }
     if (m_RomIniFile)
     {
         delete m_RomIniFile;
-        m_RomIniFile = NULL;
+        m_RomIniFile = nullptr;
     }
 #ifdef _WIN32
     if (m_ZipIniFile)
     {
         delete m_ZipIniFile;
-        m_ZipIniFile = NULL;
+        m_ZipIniFile = nullptr;
     }
 #endif
     if (g_Settings)
@@ -93,7 +93,7 @@ void CRomList::RefreshRomList(void)
 {
     if (m_RefreshThread.isRunning())
     {
-        WriteTrace(TraceRomList, TraceVerbose, "already refreshing, ignoring");
+        WriteTrace(TraceRomList, TraceVerbose, "Already refreshing, ignoring");
         return;
     }
     WriteTrace(TraceRomList, TraceDebug, "Starting thread");
@@ -105,11 +105,11 @@ void CRomList::RefreshRomList(void)
 void CRomList::RefreshRomListThread(void)
 {
     WriteTrace(TraceRomList, TraceVerbose, "Start");
-    //delete cache
+    // Delete cache
     CPath(g_Settings->LoadStringVal(RomList_RomListCache)).Delete();
-    WriteTrace(TraceRomList, TraceVerbose, "Cache Deleted");
+    WriteTrace(TraceRomList, TraceVerbose, "Cache deleted");
 
-    //clear all current items
+    // Clear all current items
     RomListReset();
     m_RomInfo.clear();
 
@@ -134,7 +134,7 @@ void CRomList::AddRomToList(const char * RomLocation)
     }
     else
     {
-        WriteTrace(TraceRomList, TraceVerbose, "Failed to fill rom information, ignoring");
+        WriteTrace(TraceRomList, TraceVerbose, "Failed to fill ROM information, ignoring");
     }
     WriteTrace(TraceRomList, TraceVerbose, "Done");
 }
@@ -158,7 +158,7 @@ void CRomList::FillRomList(strlist & FileList, const char * Directory)
         WriteTrace(TraceRomList, TraceVerbose, "Found: \"%s\" m_StopRefresh = %s", (const char *)SearchDir, m_StopRefresh ? "true" : "false");
         if (m_StopRefresh)
         {
-            WriteTrace(TraceRomList, TraceVerbose, "stop refresh set, stopping");
+            WriteTrace(TraceRomList, TraceVerbose, "Stop refresh set, stopping");
             break;
         }
 
@@ -262,7 +262,7 @@ void CRomList::FillRomList(strlist & FileList, const char * Directory)
                             WriteTrace(TraceUserInterface, TraceDebug, "11a %s", RomHeader.c_str());
                             int32_t CicChip = CN64Rom::GetCicChipID(RomData);
 
-                            //save this info
+                            // Save this info
                             WriteTrace(TraceUserInterface, TraceDebug, "12");
                             m_ZipIniFile->SaveString(SectionName.c_str(), FileName.c_str(), RomHeader.c_str());
                             m_ZipIniFile->SaveNumber(SectionName.c_str(), stdstr_f("%s-Cic", FileName.c_str()).c_str(), CicChip);
@@ -277,7 +277,7 @@ void CRomList::FillRomList(strlist & FileList, const char * Directory)
                             const char backup_character = szHeader[2 * x + delimit_offset];
 
                             szHeader[2 * x + delimit_offset] = '\0';
-                            *(uint32_t *)&RomData[x] = strtoul(&szHeader[2 * x], NULL, 16);
+                            *(uint32_t *)&RomData[x] = strtoul(&szHeader[2 * x], nullptr, 16);
                             szHeader[2 * x + delimit_offset] = backup_character;
                         }
 
@@ -310,7 +310,7 @@ void CRomList::FillRomList(strlist & FileList, const char * Directory)
                 }
                 catch (...)
                 {
-                    WriteTrace(TraceUserInterface, TraceError, "exception processing %s", (LPCSTR)SearchDir);
+                    WriteTrace(TraceUserInterface, TraceError, "Exception processing %s", (LPCSTR)SearchDir);
                 }
             }
 #endif
@@ -344,13 +344,13 @@ bool CRomList::LoadDataFromRomFile(const char * FileName, uint8_t * Data, int32_
         char zname[132];
         unzFile file;
         file = unzOpen(FileName);
-        if (file == NULL) { return false; }
+        if (file == nullptr) { return false; }
 
         port = unzGoToFirstFile(file);
         FoundRom = false;
         while (port == UNZ_OK && FoundRom == false)
         {
-            unzGetCurrentFileInfo(file, &info, zname, 128, NULL, 0, NULL, 0);
+            unzGetCurrentFileInfo(file, &info, zname, 128, nullptr, 0, nullptr, 0);
             if (unzLocateFile(file, zname, 1) != UNZ_OK)
             {
                 unzClose(file);
@@ -421,9 +421,9 @@ bool CRomList::LoadDataFromRomFile(const char * FileName, uint8_t * Data, int32_
             uint32_t diskidoffset = 0x43670;
             uint32_t romdataoffset = 0x738C0;
             bool isValidDisk = false;
-            //Could still be a Disk Image
+            // Could still be a disk image
 
-            //System Data
+            // System data
             const uint8_t blocks[7] = { 2, 3, 10, 11, 1, 8, 9 };
             for (int i = 0; i < 7; i++)
             {
@@ -462,7 +462,7 @@ bool CRomList::LoadDataFromRomFile(const char * FileName, uint8_t * Data, int32_
         }
         else if (CN64Disk::IsValidDiskImage(Test))
         {
-            //Is a Disk Image
+            // If it is a disk image
             uint32_t sysdataoffset = 0;
             uint32_t diskidoffset = 0x100;
             uint32_t romdataoffset = 0x200;
@@ -507,7 +507,7 @@ bool CRomList::FillRomInfo(ROM_INFO * pRomInfo)
 
     if (LoadDataFromRomFile(pRomInfo->szFullFileName, RomData, sizeof(RomData), &pRomInfo->RomSize, pRomInfo->FileFormat))
     {
-        if (strstr(pRomInfo->szFullFileName, "?") != NULL)
+        if (strstr(pRomInfo->szFullFileName, "?") != nullptr)
         {
             strcpy(pRomInfo->FileName, strstr(pRomInfo->szFullFileName, "?") + 1);
         }
@@ -564,7 +564,7 @@ bool CRomList::FillRomInfo(ROM_INFO * pRomInfo)
 
 void CRomList::FillRomExtensionInfo(ROM_INFO * pRomInfo)
 {
-    //Initialize the structure
+    // Initialize the structure
     pRomInfo->UserNotes[0] = '\0';
     pRomInfo->Developer[0] = '\0';
     pRomInfo->ReleaseDate[0] = '\0';
@@ -588,32 +588,32 @@ void CRomList::FillRomExtensionInfo(ROM_INFO * pRomInfo)
         }
     }
 
-    //Rom Notes
+    // ROM notes
     strncpy(pRomInfo->UserNotes, m_NotesIniFile->GetString(Identifier, "Note", "").c_str(), sizeof(pRomInfo->UserNotes) / sizeof(char));
 
-    //Rom Extension info
+    // ROM extension info
     strncpy(pRomInfo->Developer, m_ExtIniFile->GetString(Identifier, "Developer", "").c_str(), sizeof(pRomInfo->Developer) / sizeof(char));
     strncpy(pRomInfo->ReleaseDate, m_ExtIniFile->GetString(Identifier, "ReleaseDate", "").c_str(), sizeof(pRomInfo->ReleaseDate) / sizeof(char));
     strncpy(pRomInfo->Genre, m_ExtIniFile->GetString(Identifier, "Genre", "").c_str(), sizeof(pRomInfo->Genre) / sizeof(char));
     m_ExtIniFile->GetNumber(Identifier, "Players", 1, (uint32_t &)pRomInfo->Players);
     strncpy(pRomInfo->ForceFeedback, m_ExtIniFile->GetString(Identifier, "ForceFeedback", "unknown").c_str(), sizeof(pRomInfo->ForceFeedback) / sizeof(char));
 
-    //Rom Settings
+    // ROM settings
     strncpy(pRomInfo->GoodName, m_RomIniFile->GetString(Identifier, "Good Name", pRomInfo->GoodName).c_str(), sizeof(pRomInfo->GoodName) / sizeof(char));
     strncpy(pRomInfo->Name, m_RomIniFile->GetString(Identifier, "Good Name", pRomInfo->Name).c_str(), sizeof(pRomInfo->Name) / sizeof(char));
     strncpy(pRomInfo->Status, m_RomIniFile->GetString(Identifier, "Status", pRomInfo->Status).c_str(), sizeof(pRomInfo->Status) / sizeof(char));
     strncpy(pRomInfo->CoreNotes, m_RomIniFile->GetString(Identifier, "Core Note", "").c_str(), sizeof(pRomInfo->CoreNotes) / sizeof(char));
     strncpy(pRomInfo->PluginNotes, m_RomIniFile->GetString(Identifier, "Plugin Note", "").c_str(), sizeof(pRomInfo->PluginNotes) / sizeof(char));
 
-    //Get the text color
+    // Get the text color
     stdstr String = m_RomIniFile->GetString("Rom Status", pRomInfo->Status, "000000");
     pRomInfo->TextColor = (strtoul(String.c_str(), 0, 16) & 0xFFFFFF);
     pRomInfo->TextColor = (pRomInfo->TextColor & 0x00FF00) | ((pRomInfo->TextColor >> 0x10) & 0xFF) | ((pRomInfo->TextColor & 0xFF) << 0x10);
 
-    //Get the selected color
+    // Get the selected color
     String.Format("%s.Sel", pRomInfo->Status);
     String = m_RomIniFile->GetString("Rom Status", String.c_str(), "FFFFFFFF");
-    uint32_t selcol = strtoul(String.c_str(), NULL, 16);
+    uint32_t selcol = strtoul(String.c_str(), nullptr, 16);
     if (selcol & 0x80000000)
     {
         pRomInfo->SelColor = -1;
@@ -624,7 +624,7 @@ void CRomList::FillRomExtensionInfo(ROM_INFO * pRomInfo)
         pRomInfo->SelColor = selcol;
     }
 
-    //Get the selected text color
+    // Get the selected text color
     String.Format("%s.Seltext", pRomInfo->Status);
     String = m_RomIniFile->GetString("Rom Status", String.c_str(), "FFFFFF");
     pRomInfo->SelTextColor = (strtoul(String.c_str(), 0, 16) & 0xFFFFFF);
@@ -638,9 +638,9 @@ void CRomList::ByteSwapRomData(uint8_t * Data, int32_t DataLen)
     switch (*((uint32_t *)&Data[0]))
     {
     case 0x12408037:
-    case 0x07408027: //64DD IPL
-    case 0xD316E848: //64DD JP Disk
-    case 0xEE562263: //64DD US Disk
+    case 0x07408027: // 64DD IPL
+    case 0xD316E848: // 64DD JP disk
+    case 0xEE562263: // 64DD US disk
         for (count = 0; count < DataLen; count += 4)
         {
             Data[count] ^= Data[count + 2];
@@ -651,11 +651,11 @@ void CRomList::ByteSwapRomData(uint8_t * Data, int32_t DataLen)
             Data[count + 1] ^= Data[count + 3];
         }
         break;
-    case 0x40072780: //64DD IPL
-    case 0x16D348E8: //64DD JP Disk
-    case 0x56EE6322: //64DD US Disk
+    case 0x40072780: // 64DD IPL
+    case 0x16D348E8: // 64DD JP disk
+    case 0x56EE6322: // 64DD US disk
     case 0x40123780:
-    case 0x00000000: //64DD DEV Disk
+    case 0x00000000: // 64DD DEV disk
         for (count = 0; count < DataLen; count += 4)
         {
             Data[count] ^= Data[count + 3];
@@ -667,9 +667,9 @@ void CRomList::ByteSwapRomData(uint8_t * Data, int32_t DataLen)
         }
         break;
     case 0x80371240:
-    case 0x80270740: //64DD IPL
-    case 0xE848D316: //64DD JP Disk
-    case 0x2263EE56: //64DD US Disk
+    case 0x80270740: // 64DD IPL
+    case 0xE848D316: // 64DD JP disk
+    case 0x2263EE56: // 64DD US disk
         break;
     }
 }
@@ -682,7 +682,7 @@ void CRomList::LoadRomList(void)
 
     if (!file.IsOpen())
     {
-        //if file does not exist then refresh the data
+        // If file does not exist then refresh the data
         RefreshRomList();
         return;
     }
@@ -694,7 +694,7 @@ void CRomList::LoadRomList(void)
         return;
     }
 
-    //Read the size of ROM_INFO
+    // Read the size of ROM_INFO
     int32_t RomInfoSize = 0;
     if (!file.Read(&RomInfoSize, sizeof(RomInfoSize)) || RomInfoSize != sizeof(ROM_INFO))
     {
@@ -703,11 +703,11 @@ void CRomList::LoadRomList(void)
         return;
     }
 
-    //Read the Number of entries
+    // Read the number of entries
     int32_t Entries = 0;
     file.Read(&Entries, sizeof(Entries));
 
-    //Read Every Entry
+    // Read every entry
     m_RomInfo.clear();
     RomListReset();
     for (int32_t count = 0; count < Entries; count++)
@@ -722,10 +722,9 @@ void CRomList::LoadRomList(void)
     WriteTrace(TraceRomList, TraceVerbose, "Done");
 }
 
-/*
-* 	SaveRomList - save all the rom information about the current roms in the rom brower
-*                to a cache file, so it is quick to reload the information
-*/
+// SaveRomList - save all the ROM information about the current ROMs in the ROM browser
+// to a cache file, so it is quick to reload the information
+
 void CRomList::SaveRomList(strlist & FileList)
 {
     MD5 ListHash = RomListHash(FileList);
@@ -734,21 +733,21 @@ void CRomList::SaveRomList(strlist & FileList)
     CFile file(FileName, CFileBase::modeWrite | CFileBase::modeCreate);
     file.Write(ListHash.raw_digest(), 16);
 
-    //Write the size of ROM_INFO
+    // Write the size of ROM_INFO
     int32_t RomInfoSize = sizeof(ROM_INFO);
     file.Write(&RomInfoSize, sizeof(RomInfoSize));
 
-    //Write the Number of entries
+    // Write the number of entries
     int32_t Entries = m_RomInfo.size();
     file.Write(&Entries, sizeof(Entries));
 
-    //Write Every Entry
+    // Write every entry
     for (int32_t count = 0; count < Entries; count++)
     {
         file.Write(&m_RomInfo[count], RomInfoSize);
     }
 
-    //Close the file handle
+    // Close the file handle
     file.Close();
 }
 
