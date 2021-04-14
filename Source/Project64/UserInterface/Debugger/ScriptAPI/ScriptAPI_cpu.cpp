@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "../ScriptAPI.h"
-#include <Project64-core/N64System/Mips/RegisterClass.h>
+#include <Project64-core/N64System/Mips/Register.h>
 
 #pragma warning(disable: 4702)
 
