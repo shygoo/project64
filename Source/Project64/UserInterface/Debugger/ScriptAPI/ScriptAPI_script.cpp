@@ -43,17 +43,17 @@ duk_ret_t ScriptAPI::js_script_keepalive(duk_context *ctx)
     duk_bool_t bKeepAlive = duk_get_boolean(ctx, 0);
 
     duk_push_global_object(ctx);
-    duk_bool_t bHaveProp = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("KEEPALIVE"));
+    duk_bool_t bHaveProp = duk_has_prop_string(ctx, -1, HSYM_KEEPALIVE);
 
     if(bKeepAlive && !bHaveProp)
     {
         duk_push_boolean(ctx, 1);
-        duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("KEEPALIVE"));
+        duk_put_prop_string(ctx, -2, HSYM_KEEPALIVE);
         inst->IncRefCount();
     }
     else if(!bKeepAlive && bHaveProp)
     {
-        duk_del_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("KEEPALIVE"));
+        duk_del_prop_string(ctx, -1, HSYM_KEEPALIVE);
         inst->DecRefCount();
     }
 

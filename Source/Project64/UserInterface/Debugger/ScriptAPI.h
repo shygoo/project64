@@ -4,6 +4,13 @@
 
 #pragma once
 
+#define HSYM_APPCALLBACKS  DUK_HIDDEN_SYMBOL("APPCALLBACKS")
+#define HSYM_INSTANCE      DUK_HIDDEN_SYMBOL("INSTANCE")
+#define HSYM_INPUTLISTENER DUK_HIDDEN_SYMBOL("INPUTLISTENER")
+#define HSYM_CURDRAWINGCTX DUK_HIDDEN_SYMBOL("CURDRAWCTX")
+#define HSYM_OPENFILES     DUK_HIDDEN_SYMBOL("OPENFILES")
+#define HSYM_KEEPALIVE     DUK_HIDDEN_SYMBOL("KEEPALIVE")
+
 namespace ScriptAPI
 {
     enum mem_type_t {
@@ -22,7 +29,6 @@ namespace ScriptAPI
     duk_ret_t CallbackFinalizer(duk_context* ctx);
 
     duk_ret_t js_Duktape_modSearch(duk_context* ctx);
-    duk_ret_t js_exec(duk_context* ctx);
 
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
 
@@ -76,10 +82,6 @@ namespace ScriptAPI
     duk_ret_t js_script_keepalive(duk_context* ctx);
     duk_ret_t js_script_timeout(duk_context* ctx);
 
-    // ScriptAPI_Number_hex
-    void Define_Number_prototype_hex(duk_context* ctx);
-    duk_ret_t js_Number_prototype_hex(duk_context* ctx);
-
     // ScriptAPI_fs
     void Define_fs(duk_context* ctx);
     duk_ret_t js_fs_open(duk_context* ctx);
@@ -98,10 +100,6 @@ namespace ScriptAPI
     duk_ret_t js_fs_Stats_isDirectory(duk_context* ctx);
     duk_ret_t js_fs_Stats_isFile(duk_context* ctx);
 
-    // ScriptAPI_AddressRange
-    void Define_AddressRange(duk_context* ctx);
-    duk_ret_t js_AddressRange__constructor(duk_context* ctx);
-
     // ScriptAPI_debug
     void Define_debug(duk_context* ctx);
     duk_ret_t js_debug_breakhere(duk_context* ctx);
@@ -115,10 +113,6 @@ namespace ScriptAPI
     duk_ret_t js_asm_gprname(duk_context* ctx);
     duk_ret_t js_asm_encode(duk_context* ctx);
     duk_ret_t js_asm_decode(duk_context* ctx);
-
-    // ScriptAPI_alert
-    void Define_alert(duk_context* ctx);
-    duk_ret_t js_alert(duk_context* ctx);
 
     // ScriptAPI_cpu
     void Define_cpu(duk_context* ctx);
@@ -154,6 +148,22 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
     duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
     duk_ret_t js_DrawingContext_getdata(duk_context* ctx);
+
+    // ScriptAPI_AddressRange
+    void Define_AddressRange(duk_context* ctx);
+    duk_ret_t js_AddressRange__constructor(duk_context* ctx);
+
+    // ScriptAPI_Number_hex
+    void Define_Number_prototype_hex(duk_context* ctx);
+    duk_ret_t js_Number_prototype_hex(duk_context* ctx);
+
+    // ScriptAPI_exec
+    void Define_exec(duk_context* ctx);
+    duk_ret_t js_exec(duk_context* ctx);
+
+    // ScriptAPI_alert
+    void Define_alert(duk_context* ctx);
+    duk_ret_t js_alert(duk_context* ctx);
 
     enum {
         R0, AT, V0, V1, A0, A1, A2, A3,

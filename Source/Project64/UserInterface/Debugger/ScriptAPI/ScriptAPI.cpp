@@ -7,37 +7,38 @@
 
 void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
 {
-    duk_push_global_object(ctx);
-    duk_push_pointer(ctx, inst);
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("INSTANCE"));
-    duk_push_object(ctx); // callbackId => { hookId, callbackId, function }
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("APPCALLBACKS"));
-    duk_push_object(ctx); // fd => { fp }
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("FILES"));
-    duk_pop(ctx);
-
+    duk_module_duktape_init(ctx);
     duk_get_global_string(ctx, "Duktape");
     duk_push_c_function(ctx, js_Duktape_modSearch, 4);
     duk_put_prop_string(ctx, -2, "modSearch");
     duk_pop(ctx);
 
-    duk_push_c_function(ctx, js_exec, DUK_VARARGS);
-    duk_put_global_string(ctx, "exec");
+    duk_push_pointer(ctx, inst);
+    duk_put_global_string(ctx, HSYM_INSTANCE);
 
-    Define_script(ctx);
-    Define_console(ctx);
-    Define_events(ctx);
-    Define_mem(ctx);
-    Define_fs(ctx);
-    Define_AddressRange(ctx);
+    duk_push_object(ctx); // callbackId => { hookId, callbackId, function }
+    duk_put_global_string(ctx, HSYM_APPCALLBACKS);
+
+    duk_push_object(ctx); // fd => { fp }
+    duk_put_global_string(ctx, HSYM_OPENFILES);
+
     Define_asm(ctx);
+    Define_console(ctx);
     Define_cpu(ctx);
     Define_debug(ctx);
-    Define_alert(ctx);
+    Define_events(ctx);
+    Define_fs(ctx);
+    Define_mem(ctx);
     Define_pj64(ctx);
+    Define_script(ctx);
+    
+    Define_alert(ctx);
+    Define_exec(ctx);
+    
+    Define_AddressRange(ctx);
     Define_DrawingContext(ctx);
-
     //Define_Server(ctx);
+    
     Define_Number_prototype_hex(ctx);
     DefineGlobalConstants(ctx);
 
@@ -219,10 +220,9 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
 
 CScriptInstance* ScriptAPI::GetInstance(duk_context* ctx)
 {
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INSTANCE"));
+    duk_get_global_string(ctx, HSYM_INSTANCE);
     CScriptInstance* instance = (CScriptInstance*)duk_get_pointer(ctx, -1);
-    duk_pop_n(ctx, 2);
+    duk_pop(ctx);
     return instance;
 }
 
@@ -237,8 +237,7 @@ jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallbac
         return JS_INVALID_CALLBACK;
     }
 
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("APPCALLBACKS"));
+    duk_get_global_string(ctx, HSYM_APPCALLBACKS);
 
     duk_push_object(ctx);
     duk_push_number(ctx, hookId);
@@ -253,7 +252,7 @@ jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallbac
 
     duk_put_prop_index(ctx, -2, callbackId);
 
-    duk_pop_n(ctx, 2);
+    duk_pop(ctx);
 
     inst->IncRefCount();
 
@@ -262,8 +261,7 @@ jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallbac
 
 bool ScriptAPI::RemoveCallback(duk_context* ctx, jscb_id_t callbackId)
 {
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("APPCALLBACKS"));
+    duk_get_global_string(ctx, HSYM_APPCALLBACKS);
     duk_bool_t bExists = duk_has_prop_index(ctx, -1, callbackId);
 
     if(bExists)
@@ -272,7 +270,7 @@ bool ScriptAPI::RemoveCallback(duk_context* ctx, jscb_id_t callbackId)
         duk_del_prop_index(ctx, -1, callbackId); 
     }
 
-    duk_pop_n(ctx, 2);
+    duk_pop(ctx);
     return bExists != 0;
 }
 
@@ -329,148 +327,7 @@ duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
-{
-    CScriptInstance* inst = GetInstance(ctx);
-    CScriptSystem* sys = inst->System();
 
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if (nargs > 2 || !duk_is_string(ctx, 0) ||
-        (nargs == 2 && !duk_is_object(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
-    const char* command = duk_get_string(ctx, 0);
-
-    struct
-    {
-        bool bShowWindow = false;
-        bool bVerbose = false;
-        const char* cwd = nullptr;
-    } options;
-
-    if (duk_is_object(ctx, 1))
-    {
-        duk_get_prop_string(ctx, 1, "hidden");
-        options.bShowWindow = duk_get_boolean_default(ctx, -1, false);
-        duk_pop(ctx);
-
-        duk_get_prop_string(ctx, 1, "verbose");
-        options.bVerbose = duk_get_boolean_default(ctx, -1, false);
-        duk_pop(ctx);
-
-        duk_get_prop_string(ctx, 1, "cwd");
-        options.cwd = duk_get_string_default(ctx, -1, nullptr);
-        duk_pop(ctx);
-    }
-
-    stdstr resultStdOut;
-    stdstr resultStdErr;
-    DWORD  resultExitCode = EXIT_FAILURE;
-
-    SECURITY_ATTRIBUTES secAttr;
-    secAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
-    secAttr.bInheritHandle = TRUE;
-    secAttr.lpSecurityDescriptor = nullptr;
-
-    HANDLE hStdIn_r, hStdIn_w;
-    HANDLE hStdOut_r, hStdOut_w;
-    HANDLE hStdErr_r, hStdErr_w;
-
-    CreatePipe(&hStdIn_r, &hStdIn_w, &secAttr, 0);
-    CreatePipe(&hStdOut_r, &hStdOut_w, &secAttr, 0);
-    CreatePipe(&hStdErr_r, &hStdErr_w, &secAttr, 0);
-    
-    STARTUPINFOA startupInfo;
-    ZeroMemory(&startupInfo, sizeof(startupInfo));
-    startupInfo.dwFlags = STARTF_USESTDHANDLES;
-    startupInfo.hStdInput = hStdIn_r;
-    startupInfo.hStdOutput = hStdOut_w;
-    startupInfo.hStdError = hStdErr_w;
-
-    if (!options.bShowWindow)
-    {
-        startupInfo.dwFlags |= STARTF_USESHOWWINDOW;
-        startupInfo.wShowWindow = SW_HIDE;
-    }
-
-    PROCESS_INFORMATION processInfo;
-
-    BOOL bSuccess = CreateProcessA(nullptr, (LPSTR)stdstr_f("cmd /c %s", command).c_str(), nullptr, nullptr, TRUE,
-        0, nullptr, options.cwd, &startupInfo, &processInfo);
-
-    if (bSuccess)
-    {
-        CloseHandle(hStdIn_r);
-        CloseHandle(hStdIn_w);
-        CloseHandle(hStdOut_w);
-        CloseHandle(hStdErr_w);
-
-        char buffer[1024];
-        DWORD nBytesRead;
-        while (ReadFile(hStdOut_r, buffer, sizeof(buffer), &nBytesRead, nullptr) && nBytesRead != 0)
-        {
-            for (size_t i = 0; i < nBytesRead; i++)
-            {
-                resultStdOut += buffer[i];
-            }
-
-            if (options.bVerbose)
-            {
-                sys->Print("%.*s", nBytesRead, buffer);
-            }
-        }
-
-        while (ReadFile(hStdErr_r, buffer, sizeof(buffer), &nBytesRead, nullptr) && nBytesRead != 0)
-        {
-            for (size_t i = 0; i < nBytesRead; i++)
-            {
-                resultStdErr += buffer[i];
-            }
-        }
-
-        CloseHandle(hStdErr_r);
-        CloseHandle(hStdOut_r);
-        CloseHandle(processInfo.hThread);
-
-        WaitForSingleObject(processInfo.hProcess, INFINITE);
-        GetExitCodeProcess(processInfo.hProcess, &resultExitCode);
-
-        CloseHandle(processInfo.hProcess);
-    }
-    else
-    {
-        CloseHandle(hStdIn_r);
-        CloseHandle(hStdIn_w);
-        CloseHandle(hStdOut_r);
-        CloseHandle(hStdOut_w);
-        CloseHandle(hStdErr_r);
-        CloseHandle(hStdErr_w);
-    }
-
-    if (!bSuccess || resultExitCode != 0)
-    {
-        duk_push_error_object(ctx, resultExitCode, "command failed");
-        duk_push_number(ctx, resultExitCode);
-        duk_put_prop_string(ctx, -2, "status");
-        duk_push_string(ctx, resultStdOut.c_str());
-        duk_put_prop_string(ctx, -2, "stdout");
-        duk_push_string(ctx, resultStdErr.c_str());
-        duk_put_prop_string(ctx, -2, "stderr");
-        duk_push_number(ctx, processInfo.dwProcessId);
-        duk_put_prop_string(ctx, -2, "pid");
-
-        return duk_throw(ctx);
-    }
-    else
-    {
-        duk_push_string(ctx, resultStdOut.c_str());
-    }
-
-    return 1;
-}
 
 duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)
 {

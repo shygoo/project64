@@ -99,8 +99,7 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
     int fd = _fileno(fp);
 
     //  FILES[fd] = {fp: fp}
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+    duk_get_global_string(ctx, HSYM_OPENFILES);
 
     duk_push_object(ctx);
     duk_push_pointer(ctx, fp);
@@ -126,8 +125,7 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
     int fd = duk_get_int(ctx, 0);
     int rc = -1;
 
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+    duk_get_global_string(ctx, HSYM_OPENFILES);
 
     if(duk_has_prop_index(ctx, -1, fd))
     {
@@ -143,8 +141,6 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         duk_del_prop_index(ctx, -3, fd);
 
         duk_pop_n(ctx, 2);
-        duk_push_number(ctx, rc);
-        return 1;
     }
     else
     {
@@ -152,7 +148,7 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
         return duk_throw(ctx);
     }
 
-    duk_pop_n(ctx, 2);
+    duk_pop(ctx);
     duk_push_number(ctx, rc);
     return 1;
 }
@@ -527,8 +523,7 @@ static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op)
         goto err_invalid_range;
     }
 
-    duk_push_global_object(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("FILES"));
+    duk_get_global_string(ctx, HSYM_OPENFILES);
 
     if(!duk_has_prop_index(ctx, -1, fd))
     {
@@ -539,7 +534,7 @@ static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op)
     duk_get_prop_string(ctx, -1, "fp");
     fp = (FILE*)duk_get_pointer(ctx, -1);
     
-    duk_pop_n(ctx, 4);
+    duk_pop_n(ctx, 3);
 
     if(bHavePos)
     {

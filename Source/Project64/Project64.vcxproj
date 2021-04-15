@@ -88,6 +88,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_debug.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_DrawingContext.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_events.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_exec.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_fs.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_mem.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_Number_hex.cpp" />

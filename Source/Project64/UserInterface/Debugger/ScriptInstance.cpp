@@ -58,7 +58,6 @@ bool CScriptInstance::Run(const char* path)
     }
 
     m_Ctx = duk_create_heap(nullptr, nullptr, nullptr, this, nullptr);
-    duk_module_duktape_init(m_Ctx);
 
     if(m_Ctx == nullptr)
     {
@@ -174,8 +173,8 @@ void CScriptInstance::RawInput(const char* code)
 {
     m_System->Log("> %s", code);
 
-    duk_push_global_object(m_Ctx);
-    duk_get_prop_string(m_Ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+    duk_get_global_string(m_Ctx, HSYM_INPUTLISTENER);
+
     if (duk_is_function(m_Ctx, -1))
     {
         m_ExecStartTime = Timestamp();
@@ -184,16 +183,16 @@ void CScriptInstance::RawInput(const char* code)
         {
             duk_get_prop_string(m_Ctx, -1, "stack");
             m_System->Log("%s", duk_safe_to_string(m_Ctx, -1));
-            duk_pop_n(m_Ctx, 3);
+            duk_pop_n(m_Ctx, 2);
             return;
         }
         else
         {
-            duk_pop_n(m_Ctx, 2);
+            duk_pop(m_Ctx);
             return;
         }
     }
-    duk_pop_n(m_Ctx, 2);
+    duk_pop(m_Ctx);
 
     m_ExecStartTime = Timestamp();
     duk_push_string(m_Ctx, stdstr_f("<eval:%s>", m_Name.c_str()).c_str());

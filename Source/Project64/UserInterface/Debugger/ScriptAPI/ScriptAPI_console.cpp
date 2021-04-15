@@ -59,12 +59,12 @@ duk_ret_t ScriptAPI::js_console_listen(duk_context* ctx)
     CScriptInstance* inst = GetInstance(ctx);
 
     duk_push_global_object(ctx);
-    duk_bool_t haveListener = duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+    duk_bool_t haveListener = duk_has_prop_string(ctx, -1, HSYM_INPUTLISTENER);
 
     if (duk_is_function(ctx, 0))
     {
         duk_pull(ctx, 0);
-        duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+        duk_put_prop_string(ctx, -2, HSYM_INPUTLISTENER);
         if (!haveListener)
         {
             inst->IncRefCount();
@@ -75,7 +75,7 @@ duk_ret_t ScriptAPI::js_console_listen(duk_context* ctx)
     {
         if (haveListener)
         {
-            duk_del_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("INPUT_LISTENER"));
+            duk_del_prop_string(ctx, -1, HSYM_INPUTLISTENER);
             inst->DecRefCount();
         }
         return 0;

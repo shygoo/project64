@@ -657,7 +657,7 @@ duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
     duk_new(ctx, 1);
 
     duk_dup(ctx, -1);
-    duk_put_global_string(ctx, DUK_HIDDEN_SYMBOL("curDrawingContext"));
+    duk_put_global_string(ctx, HSYM_CURDRAWINGCTX);
     env->jsDrawingContext = duk_get_heapptr(ctx, -1);
 
     duk_put_prop_string(ctx, -2, "drawingContext");
