@@ -70,8 +70,13 @@ function idfmt(text)
     return text.replace(/\./g, "_");
 }
 
+var date = new Date();
+var vnums = { y: date.getFullYear(), m: date.getMonth()+1, d: date.getDate() };
+var docVersion = "prerelease " + vnums.y + '.' + (vnums.m < 10 ? '0':'') + vnums.m  + '.' + (vnums.d < 10 ? '0':'') + vnums.d;
+
 var cssSource = fs.readFileSync('docsrc/style.css').toString();
 var yamlSource = fs.readFileSync('docsrc/documentation.yaml').toString();
+var jsHeadSource = fs.readFileSync('docsrc/head.js').toString();
 
 var content = '';
 var modlinks = '';
@@ -128,20 +133,26 @@ var html = (`<!DOCTYPE html>
 <!-- Generated ${(new Date()).toDateString().match(/.+? (.+?)$/)[1]} -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API</title>
+<title>Project64 JavaScript API ${docVersion}</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 ${cssSource}
 </style>
+<script>
+${jsHeadSource}
+</script>
 </head>
 <body>
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
+${docVersion}
 <hr>
 <ul>
 ${modlinks}
 </ul>
+<hr>
+<label style="font-size: 12px; vertical-align: middle; user-select: none;"><input id="darkmode-toggle" type="checkbox" style="vertical-align: bottom; margin-right: 5px;"/>Dark theme</label>
 </div>
 </div>
 <div class="content">

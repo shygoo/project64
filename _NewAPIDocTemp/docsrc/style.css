@@ -1,9 +1,51 @@
+:root {
+    --clr-bg0: #EEE;
+    --clr-bg1: #FFF;
+    --clr-bg2: #DDD;
+    --clr-bg3: #CCC;
+    --clr-text: #222;
+    --clr-hr: #ECC;
+    --clr-link: #090;
+    --clr-link-hover: #070;
+    --clr-highlight: #DFD;
+    --clr-tag-blue: #8AD;
+    --clr-tag-red: #D77;
+    --clr-js-keyword: #22F;
+    --clr-js-string: #880;
+    --clr-js-number: #722;
+    --clr-js-comment: #272;
+    --clr-js-word: #222;
+    --clr-js-etc: #666;
+}
+
+[data-theme="dark"] {
+    --clr-bg0: #222;
+    --clr-bg1: #2A2A2A;
+    --clr-bg2: #444;
+    --clr-bg3: #555;
+    --clr-text: #FFF;
+    --clr-hr: #744;
+    --clr-link: #8D8;
+    --clr-link-hover: #7C7;
+    --clr-highlight: #252;
+    --clr-tag-blue: #247;
+    --clr-tag-red: #722;
+    --clr-js-keyword: #67F;
+    --clr-js-string: #FFA;
+    --clr-js-number: #FAA;
+    --clr-js-comment: #7A7;
+    --clr-js-word: #FFF;
+    --clr-js-etc: #AAA;
+}
+
 body {
     margin: 0px;
     background: #EEE;
+    background: var(--clr-bg0);
     font-family: 'Open Sans', sans-serif;
     font-size: 14px;
     color: #222;
+    color: var(--clr-text);
 }
 
 table {
@@ -14,29 +56,35 @@ table {
 
 td {
     border: 1px solid #CCC;
+    border-color: var(--clr-bg3);
     padding: 2px 6px;
 }
 
 thead {
     font-weight: bold;
     background: #EEE;
+    background: var(--clr-bg0);
 }
 
 ul {
     color: #222;
+    color: var(--text-color);
     padding-inline-start: 20px;
 }
 
 hr {
     border: none;
     border-top: 1px solid #ECC;
+    border-color: var(--clr-hr);
 }
 
 div.module {
     border-top: 1px solid #ECC;
+    border-color: var(--clr-hr);
     padding: 20px;
     margin-bottom: 10px;
     background: #FFF;
+    background: var(--clr-bg1);
 }
 
 div.modtitle {
@@ -51,10 +99,12 @@ div.pagetitle {
 
 span.title:target {
     background: #DFD;
+    background: var(--clr-highlight);
 }
 
 div.prop {
     border-top: 1px solid #DDD;
+    border-color: var(--clr-bg2);
     padding-top: 20px;
     margin-top: 20px;
     font-size: 1.3em;
@@ -79,6 +129,7 @@ div.desc {
 span.snip {
     display: inline-block;
     background: #EEE;
+    background: var(--clr-bg0);
     font-family: monospace;
     padding-left: 2px;
     padding-right: 2px;
@@ -90,11 +141,13 @@ div.vtab {
 
 a {
     color: #090;
+    color: var(--clr-link);
     text-decoration: none;
 }
 
 a:hover {
     color: #070;
+    color: var(--clr-link-hover);
 }
 
 div.tag {
@@ -106,11 +159,13 @@ div.tag {
 }
 
 div.tag.blue {
-    background-color: #8AD;
+    background: #8AD;
+    background: var(--tag-blue);
 }
 
 div.tag.red {
-    background-color: #D77;
+    background: #D77;
+    background: var(--tag-red);
 }
 
 div.sidebar {
@@ -121,6 +176,7 @@ div.sidebar {
     bottom: 0px;
     overflow-y: auto;
     background: #FFF;
+    background: var(--clr-bg1);
 }
 
 div.sidebar-content {
@@ -134,7 +190,9 @@ div.content {
 
 *::-webkit-scrollbar {
     background: #FFF;
+    background: var(--clr-bg1);
     border: 1px solid #FFF;
+    border-color: var(--clr-bg1);
     width: 1.2em;
     padding: 2px;
     margin: 2px;
@@ -142,11 +200,14 @@ div.content {
 
 *::-webkit-scrollbar-thumb {
     background: #DDD;
+    background: var(--clr-bg2);
     border: 2px solid #FFF;
+    border-color: var(--clr-bg1);
 }
 
 *::-webkit-scrollbar-thumb:hover {
     background: #CCC;
+    background: var(--clr-bg3);
 }
 
 pre.ex {
@@ -155,42 +216,14 @@ pre.ex {
     font-family: monospace;
     font-size: 0.9em;
     background: #EEE;
+    background: var(--clr-bg0);
     color: #666;
+    color: var(--clr-js-etc);
     white-space: pre-wrap;
 }
 
-span.js-keyword { color: #22F; }
-span.js-string { color: #880; }
-span.js-number { color: #722; }
-span.js-comment { color: #272; }
-span.js-word { color: #222; }
-
-/*
-@media (prefers-color-scheme: dark) {
-    body { background: #222; color: #FFF; }
-    div.module { background: #2A2A2A; border-top: 1px solid #744;}
-    pre.ex { background: #222; color: #AAA; }
-    div.prop { border-top: 1px solid #222; }
-    span.snip { background: #222; }
-    a { color: #8d8; }
-    a:hover { color: #7c7; }
-    span.title:target { background: #252; }
-    ul { color: #FFF; }
-    hr { border-top: 1px solid #744; }
-    div.tag.blue { background: #247; }
-    div.tag.red { background: #722; }
-    td { border: 1px solid #444; }
-    thead { background: #444; }
-    div.sidebar { background: #2A2A2A; }
-    
-    *::-webkit-scrollbar { background: #2A2A2A; border-color: #2A2A2A; }
-    *::-webkit-scrollbar-thumb { background: #444; border-color: #2A2A2A; }
-    *::-webkit-scrollbar-thumb:hover { background: #555; }
-
-    span.js-keyword { color: #67F; }
-    span.js-string { color: #FFA; }
-    span.js-number { color: #FAA; }
-    span.js-comment { color: #7A7; }
-    span.js-word { color: #FFF; }
-}
-*/
+span.js-keyword { color: #22F; color: var(--clr-js-keyword); }
+span.js-string { color: #880; color: var(--clr-js-string); }
+span.js-number { color: #722; color: var(--clr-js-number); }
+span.js-comment { color: #272; color: var(--clr-js-comment); }
+span.js-word { color: #222; color: var(--clr-js-word); }
