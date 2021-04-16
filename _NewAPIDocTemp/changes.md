@@ -41,6 +41,7 @@ Changes that will break compatibility with old scripts:
 - move `gpr.pc` to `cpu.pc`
 - move `gpr.hi`/`ugpr.hi` to `cpu.hi`/`cpu.uhi`
 - move `gpr.lo`/`ugpr.lo` to `cpu.hi`/`cpu.ulo`
+- remove maskless version of `events.onopcode`
 - remove redundant `rom` interface because `mem` interface can access ROM
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 

@@ -68,7 +68,7 @@ thead {
 
 ul {
     color: #222;
-    color: var(--text-color);
+    color: var(--clr-text);
     padding-inline-start: 20px;
 }
 
@@ -160,12 +160,12 @@ div.tag {
 
 div.tag.blue {
     background: #8AD;
-    background: var(--tag-blue);
+    background: var(--clr-tag-blue);
 }
 
 div.tag.red {
     background: #D77;
-    background: var(--tag-red);
+    background: var(--clr-tag-red);
 }
 
 div.sidebar {

@@ -32,7 +32,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "onread",     js_events_onread, 2 },
         { "onwrite",    js_events_onwrite, 2 },
         { "ongprvalue", js_events_ongprvalue, 4 },
-        { "onopcode",   js_events_onopcode, DUK_VARARGS },
+        { "onopcode",   js_events_onopcode, 4 },
         { "ondraw",     js_events_ondraw, 1 },
         { "onpifread",  js_events_onpifread, 1 },
         { "remove",     js_events_remove, 1 },
@@ -130,28 +130,19 @@ duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
         return ThrowNeedInterpreterError(ctx);
     }
 
-    duk_idx_t nargs = duk_get_top(ctx);
-    duk_idx_t cbidx = (nargs == 4) ? 3 : 2;
-
     uint32_t addrStart, addrEnd;
-    if ((nargs < 3 || nargs > 4) ||
-        !GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
+    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
         !duk_is_number(ctx, 1) ||
-        (nargs == 4 && !duk_is_number(ctx, 2)) ||
-        !duk_is_function(ctx, cbidx))
+        !duk_is_number(ctx, 2) ||
+        !duk_is_function(ctx, 3))
     {
         return ThrowInvalidArgsError(ctx);
     }
 
     uint32_t opcode = duk_get_uint(ctx, 1);
-    uint32_t mask = 0xFFFFFFFF;
+    uint32_t mask = duk_get_uint(ctx, 2);
 
-    if (nargs == 4)
-    {
-        mask = duk_get_uint(ctx, 2);
-    }
-
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, cbidx),
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 3),
         CbCond_PcBetween_OpcodeEquals, CbArgs_OpcodeEventObject);
     cb.params.addrStart = addrStart;
     cb.params.addrEnd = addrEnd;

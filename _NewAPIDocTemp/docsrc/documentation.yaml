@@ -272,17 +272,6 @@
           });
           ```
 
-  - name: events.onopcode
-    js:   events.onopcode(address, opcode, callback)
-    ts:   "events.onopcode(address: number | AddressRange, opcode: number, callback: (e: CPUOpcodeEvent) => void): number"
-    tags: [["Requires interpreter core", "blue"]]
-    desc: |
-          Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at `address` and
-          `opcode` is equal to the current opcode.
-          `callback` receives a [CPUOpcodeEvent](#CPUOpcodeEvent) object.
-          <div class="vtab"></div>
-          Returns a callback ID.
-
   - name: events.ongprvalue
     js:   events.ongprvalue(address, regFlags, value, callback)
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (e: CPURegValueEvent) => void): number"
