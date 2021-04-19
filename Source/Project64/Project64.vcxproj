@@ -78,6 +78,7 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger.cpp" />
     <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptRenderWindow.cpp" />
     <ClCompile Include="UserInterface\Debugger\DMALog.cpp" />
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="UserInterface\Debugger\debugger.h" />
     <ClInclude Include="UserInterface\Debugger\DebuggerUI.h" />
     <ClInclude Include="UserInterface\Debugger\DebugMMU.h" />
+    <ClInclude Include="UserInterface\Debugger\ScriptRenderWindow.h" />
     <ClInclude Include="UserInterface\Debugger\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\MemoryScanner.h" />
     <ClInclude Include="UserInterface\Debugger\OpInfo.h" />

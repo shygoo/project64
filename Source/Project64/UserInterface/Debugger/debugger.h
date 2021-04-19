@@ -23,6 +23,8 @@ class CSymbolTable;
 class CBreakpoints;
 class CScriptSystem;
 
+class CScriptRenderWindow;
+
 class CDebuggerUI :
     public CDebugger,
     public CDebugSettings,
@@ -78,6 +80,8 @@ public:
     CSymbolTable* SymbolTable();
     SyncEvent& StepEvent();
 
+    CScriptRenderWindow* ScriptRenderWindow();
+
     static void GameReset(CDebuggerUI * _this);
     static void GameCpuRunningChanged(CDebuggerUI * _this);
     static void GameNameChanged(CDebuggerUI * _this);
@@ -107,6 +111,8 @@ private:
     CDebugStackTrace     * m_StackTrace;
     CDebugStackView      * m_StackView;
     CDebugExcBreakpoints * m_ExcBreakpoints;
+
+    CScriptRenderWindow   * m_ScriptRenderWindow;
 
     CBreakpoints        * m_Breakpoints;
     CScriptSystem       * m_ScriptSystem;

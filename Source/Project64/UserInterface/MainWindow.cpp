@@ -5,6 +5,8 @@
 #include <Project64-core/Settings/SettingType/SettingsType-Application.h>
 #include <Project64-core/N64System/Enhancement/Enhancements.h>
 #include <Project64-core/N64System/N64Disk.h>
+#include <Project64/UserInterface/Debugger/debugger.h>
+#include <Project64/UserInterface/Debugger/ScriptRenderWindow.h>
 #include "DiscordRPC.h"
 
 void EnterLogOptions(HWND hwndOwner);
@@ -686,6 +688,15 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             }
             KillTimer(hWnd, Timer_SetWindowPos);
             SetTimer(hWnd, Timer_SetWindowPos, 1000, nullptr);
+            // TODO CLEAN UP
+            if (CDebuggerUI::HaveDebugger())
+            {
+                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
+                if (debugger && debugger->ScriptRenderWindow())
+                {
+                    debugger->ScriptRenderWindow()->FixPosition(hWnd);
+                }
+            }
         }
         if (CGuiSettings::bCPURunning() && g_BaseSystem)
         {
@@ -726,6 +737,15 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 if (wParam == SIZE_RESTORED && _this->RomBrowserVisible())
                 {
                     _this->RomBrowserMaximize(false);
+                }
+            }
+            // TODO CLEAN UP
+            if (CDebuggerUI::HaveDebugger())
+            {
+                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
+                if (debugger && debugger->ScriptRenderWindow())
+                {
+                    debugger->ScriptRenderWindow()->FixPosition(hWnd);
                 }
             }
         }
@@ -858,6 +878,17 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                         g_BaseSystem->ExternalEvent(fActive ? SysEvent_ResumeCPU_AppGainedActive : SysEvent_PauseCPU_AppLostActive);
                     }
                 }
+            }
+        }
+        break;
+    case WM_ACTIVATE:
+        // TODO CLEAN UP
+        if (CDebuggerUI::HaveDebugger())
+        {
+            CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
+            if (debugger && debugger->ScriptRenderWindow())
+            {
+                debugger->ScriptRenderWindow()->FixPosition(hWnd);
             }
         }
         break;

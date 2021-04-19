@@ -2383,10 +2383,10 @@ void CN64System::RefreshScreen()
     {
         WriteTrace(TraceGFXPlugin, TraceDebug, "UpdateScreen Starting");
         g_Plugins->Gfx()->UpdateScreen();
-		if (g_Debugger != nullptr && HaveDebugger())
-		{
-			g_Debugger->FrameDrawn();
-		}
+        if (g_Debugger != nullptr && HaveDebugger())
+        {
+            g_Debugger->FrameDrawn();
+        }
         WriteTrace(TraceGFXPlugin, TraceDebug, "UpdateScreen Done");
     }
     __except_catch()

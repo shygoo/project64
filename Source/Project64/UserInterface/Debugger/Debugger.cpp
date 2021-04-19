@@ -4,6 +4,7 @@
 #include "CPULog.h"
 #include "DMALog.h"
 #include "Symbols.h"
+#include "ScriptRenderWindow.h"
 
 CPj64Module _Module;
 
@@ -25,7 +26,8 @@ CDebuggerUI::CDebuggerUI() :
     m_DMALog(nullptr),
     m_CPULog(nullptr),
     m_SymbolTable(nullptr),
-    m_StepEvent(false)
+    m_StepEvent(false),
+    m_ScriptRenderWindow(nullptr)
 {
     g_Debugger = this;
 
@@ -35,6 +37,8 @@ CDebuggerUI::CDebuggerUI() :
     m_DMALog = new CDMALog();
     m_CPULog = new CCPULog();
     m_SymbolTable = new CSymbolTable(this);
+
+    m_ScriptRenderWindow = new CScriptRenderWindow();
 
     g_Settings->RegisterChangeCB(GameRunning_InReset, this, (CSettings::SettingChangedFunc)GameReset);
     g_Settings->RegisterChangeCB(Debugger_SteppingOps, this, (CSettings::SettingChangedFunc)SteppingOpsChanged);
@@ -63,6 +67,7 @@ CDebuggerUI::~CDebuggerUI(void)
     delete m_DMALog;
     delete m_CPULog;
     delete m_SymbolTable;
+    delete m_ScriptRenderWindow;
 }
 
 void CDebuggerUI::SteppingOpsChanged(CDebuggerUI * _this)
@@ -454,6 +459,11 @@ SyncEvent& CDebuggerUI::StepEvent()
     return m_StepEvent;
 }
 
+CScriptRenderWindow* CDebuggerUI::ScriptRenderWindow()
+{
+    return m_ScriptRenderWindow;
+}
+
 // CDebugger implementation
 
 void CDebuggerUI::TLBChanged()
@@ -651,43 +661,24 @@ void CDebuggerUI::CPUStepEnded()
 
 void CDebuggerUI::FrameDrawn()
 {
-    static HWND hMainWnd = nullptr;
+    RenderWindow* mainWindow = g_Plugins->MainWindow();
+    HWND hDebugWnd = m_ScriptRenderWindow->GetWindowHandle();
+    HWND hMainWnd = (HWND)mainWindow->GetWindowHandle();
 
-    static HFONT monoFont = CreateFont(-11, 0, 0, 0,
-        FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-        OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-        PROOF_QUALITY, FF_DONTCARE, L"Consolas"
-    );
-
-    if (hMainWnd == nullptr)
-    {
-        RenderWindow* mainWindow = g_Plugins->MainWindow();
-
-        if (mainWindow == nullptr)
-        {
-            return;
-        }
-
-        hMainWnd = (HWND)mainWindow->GetWindowHandle();
-    }
-
-    HDC hdc = GetDC(hMainWnd);
-
-    CRect rt;
-
-    GetClientRect(hMainWnd, &rt);
-    SetBkColor(hdc, RGB(0, 0, 0));
-
-    SelectObject(hdc, monoFont);
-    SetTextColor(hdc, RGB(255, 255, 255));
-    SetBkColor(hdc, RGB(0, 0, 0));
+    HDC hDebugDC = GetDC(hDebugWnd);
+    HDC hMainDC = GetDC(hMainWnd);
 
     jshook_env_gfxupdate_t env;
-    env.hdc = hdc;
+    env.hdc = hMainDC;
     env.jsDrawingContext = nullptr;
     m_ScriptSystem->Invoke(JS_HOOK_GFXUPDATE, &env);
 
-    ReleaseDC(hMainWnd, hdc);
+    CRect rc;
+    GetClientRect(hDebugWnd, &rc);
+    BitBlt(hDebugDC, 0, 0, rc.Width(), rc.Height(), hMainDC, 0, 0, SRCCOPY);
+
+    ReleaseDC(hDebugWnd, hDebugDC);
+    ReleaseDC(hDebugWnd, hMainDC);
 }
 
 void CDebuggerUI::PIFReadStarted(void)
