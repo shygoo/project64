@@ -1,19 +1,22 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
+#include "../ScriptRenderWindow.h"
 
-static void* GetPtr(duk_context* ctx)
+static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 {
     duk_push_this(ctx);
-    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("ptr"));
+    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("srw"));
     void* p = duk_get_pointer(ctx, -1);
-    duk_pop(ctx);
-    return p;
-}
 
-static duk_ret_t ThrowContextExpiredError(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR, "internal drawing context expired");
-    return duk_throw(ctx);
+    if (p == nullptr)
+    {
+        duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR, "internal drawing context expired");
+        duk_throw(ctx);
+        return nullptr;
+    }
+
+    duk_pop(ctx);
+    return (CScriptRenderWindow*)p;
 }
 
 void ScriptAPI::Define_DrawingContext(duk_context* ctx)
@@ -49,18 +52,120 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
 
     duk_push_this(ctx);
 
-    duk_push_uint(ctx, 0xFFFFFFFF);
-    duk_put_prop_string(ctx, -2, "fillColor"); // todo make nonconfigurable
+    duk_push_string(ctx, "fillColor");
+    duk_push_c_function(ctx, js_DrawingContext__get_fillColor, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_fillColor, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
 
-    duk_dup(ctx, 0); // hdc, TODO: make this raw frame data
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("ptr"));
+    duk_push_string(ctx, "width");
+    duk_push_c_function(ctx, js_DrawingContext__get_width, 0);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
+
+    duk_push_string(ctx, "height");
+    duk_push_c_function(ctx, js_DrawingContext__get_height, 0);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
+
+    duk_push_string(ctx, "fontFamily");
+    duk_push_c_function(ctx, js_DrawingContext__get_fontFamily, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_fontFamily, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+
+    duk_push_string(ctx, "fontSize");
+    duk_push_c_function(ctx, js_DrawingContext__get_fontSize, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_fontSize, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+
+    duk_dup(ctx, 0); // ScriptRenderWindow*
+    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("srw"));
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_DrawingContext__get_width(duk_context* ctx) { return 0; }
-duk_ret_t ScriptAPI::js_DrawingContext__get_height(duk_context* ctx) { return 0; }
-duk_ret_t ScriptAPI::js_DrawingContext__get_fillColor(duk_context* ctx) { return 0; }
-duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx) { return 0; }
+duk_ret_t ScriptAPI::js_DrawingContext__get_width(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_number(ctx, rw->GetWidth());
+    return 1;
+}
+duk_ret_t ScriptAPI::js_DrawingContext__get_height(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_number(ctx, rw->GetHeight());
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_fillColor(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    // todo
+    duk_push_uint(ctx, 1);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    duk_double_t color = duk_get_number(ctx, 0);
+
+    if (color < 0 || color > UINT_MAX)
+    {
+        return DUK_RET_RANGE_ERROR;
+    }
+
+    uint32_t rgba32 = (uint32_t)color;
+    float r = (float)((rgba32 >> 24) & 0xFF) / 255.0f;
+    float g = (float)((rgba32 >> 16) & 0xFF) / 255.0f;
+    float b = (float)((rgba32 >>  8) & 0xFF) / 255.0f;
+    float a = (float)((rgba32 >>  0) & 0xFF) / 255.0f;
+
+    rw->GfxSetFillColor(r, g, b, a);
+
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_fontFamily(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_string(ctx, "todo");
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_fontFamily(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    if (!duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    const char* fontFamily = duk_get_string(ctx, 0);
+    rw->GfxSetFontFamily(stdstr(fontFamily).ToUTF16().c_str());
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_fontSize(duk_context* ctx)
+{
+    duk_push_string(ctx, "todo");
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_fontSize(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    duk_double_t fontSize = duk_get_number(ctx, 0);
+    rw->GfxSetFontSize((float)fontSize);
+    return 0;
+}
 
 // TODO this should be static
 duk_ret_t ScriptAPI::js_DrawingContext_color(duk_context* ctx)
@@ -97,24 +202,20 @@ duk_ret_t ScriptAPI::js_DrawingContext_color(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)
 {
-    void* ptr = GetPtr(ctx);
-    if (ptr == nullptr)
-    {
-        ThrowContextExpiredError(ctx);
-    }
+    CScriptRenderWindow* rw = GetThisRW(ctx);
 
+    int x = duk_get_number(ctx, 0);
+    int y = duk_get_number(ctx, 1);
+    const char* text = duk_safe_to_string(ctx, 2);
 
+    rw->GfxDrawText(x, y, stdstr(text).ToUTF16().c_str());
 
     return 0;
 }
 
 duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
 {
-    void* ptr = GetPtr(ctx);
-    if (ptr == nullptr)
-    {
-        return ThrowContextExpiredError(ctx);
-    }
+    CScriptRenderWindow* rw = GetThisRW(ctx);
     
     if (!duk_is_number(ctx, 0) ||
         !duk_is_number(ctx, 1) ||
@@ -128,41 +229,25 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
     duk_get_prop_string(ctx, -1, "fillColor");
     uint32_t fillColor = duk_get_uint(ctx, -1);
 
-    //GetInstance(ctx)->System()->Log("fillColor: %08X", fillColor);
-
     int x = duk_get_number(ctx, 0);
     int y = duk_get_number(ctx, 1);
     int w = duk_get_number(ctx, 2);
     int h = duk_get_number(ctx, 3);
 
-    // alpha must be zero for now
-
-    HDC hdc = (HDC)ptr;
-    HBRUSH hbr = CreateSolidBrush(DUK_BSWAP32(fillColor));
-    CRect rc(x, y, x + w, y + h);
-    FillRect(hdc, &rc, hbr);
-    DeleteObject(hbr);
+    rw->GfxFillRect(x, y, x + w, y + h);
 
     return 0;
 }
 duk_ret_t ScriptAPI::js_DrawingContext_setdata(duk_context* ctx)
 {
-    void* ptr = GetPtr(ctx);
-    if (ptr == nullptr)
-    {
-        ThrowContextExpiredError(ctx);
-    }
+    CScriptRenderWindow* rw = GetThisRW(ctx);
 
     return 0;
 }
 
 duk_ret_t ScriptAPI::js_DrawingContext_getdata(duk_context* ctx)
 {
-    void* ptr = GetPtr(ctx);
-    if (ptr == nullptr)
-    {
-        ThrowContextExpiredError(ctx);
-    }
+    CScriptRenderWindow* rw = GetThisRW(ctx);
 
     return 0;
 }

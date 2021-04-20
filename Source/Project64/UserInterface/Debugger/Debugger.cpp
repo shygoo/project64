@@ -38,7 +38,7 @@ CDebuggerUI::CDebuggerUI() :
     m_CPULog = new CCPULog();
     m_SymbolTable = new CSymbolTable(this);
 
-    m_ScriptRenderWindow = new CScriptRenderWindow();
+    m_ScriptRenderWindow = new CScriptRenderWindow(this);
 
     g_Settings->RegisterChangeCB(GameRunning_InReset, this, (CSettings::SettingChangedFunc)GameReset);
     g_Settings->RegisterChangeCB(Debugger_SteppingOps, this, (CSettings::SettingChangedFunc)SteppingOpsChanged);
@@ -662,23 +662,32 @@ void CDebuggerUI::CPUStepEnded()
 void CDebuggerUI::FrameDrawn()
 {
     RenderWindow* mainWindow = g_Plugins->MainWindow();
-    HWND hDebugWnd = m_ScriptRenderWindow->GetWindowHandle();
     HWND hMainWnd = (HWND)mainWindow->GetWindowHandle();
 
-    HDC hDebugDC = GetDC(hDebugWnd);
-    HDC hMainDC = GetDC(hMainWnd);
+    if (m_ScriptSystem->HaveCallbacks(JS_HOOK_GFXUPDATE))
+    {
+        if (!m_ScriptRenderWindow->IsVisible())
+        {
+            m_ScriptRenderWindow->SetVisible(true);
+        }
 
-    jshook_env_gfxupdate_t env;
-    env.hdc = hMainDC;
-    env.jsDrawingContext = nullptr;
-    m_ScriptSystem->Invoke(JS_HOOK_GFXUPDATE, &env);
+        m_ScriptRenderWindow->GfxBeginDraw();
+        m_ScriptRenderWindow->GfxCopyWindow(hMainWnd);
 
-    CRect rc;
-    GetClientRect(hDebugWnd, &rc);
-    BitBlt(hDebugDC, 0, 0, rc.Width(), rc.Height(), hMainDC, 0, 0, SRCCOPY);
+        jshook_env_gfxupdate_t env;
+        env.scriptRenderWindow = m_ScriptRenderWindow;
+        env.jsDrawingContext = nullptr;
+        m_ScriptSystem->Invoke(JS_HOOK_GFXUPDATE, &env);
 
-    ReleaseDC(hDebugWnd, hDebugDC);
-    ReleaseDC(hDebugWnd, hMainDC);
+        m_ScriptRenderWindow->GfxEndDraw();
+    }
+    else
+    {
+        if (m_ScriptRenderWindow->IsVisible())
+        {
+            m_ScriptRenderWindow->SetVisible(false);
+        }
+    }
 }
 
 void CDebuggerUI::PIFReadStarted(void)

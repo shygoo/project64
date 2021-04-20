@@ -644,7 +644,7 @@ duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
     duk_put_prop_string(ctx, -2, "callbackId");
 
     duk_get_global_string(ctx, "DrawingContext");
-    duk_push_pointer(ctx, env->hdc); // TODO
+    duk_push_pointer(ctx, env->scriptRenderWindow);
     duk_new(ctx, 1);
 
     duk_dup(ctx, -1);
@@ -660,11 +660,10 @@ duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
 
 void CbFinish_KillDrawingContext(duk_context* ctx, void* _env)
 {
-    // set DrawingContext object's hdc to nullptr
     jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
     duk_push_heapptr(ctx, env->jsDrawingContext);
     duk_push_pointer(ctx, nullptr);
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("ptr")); // TODO: this won't be hdc later
+    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("srw"));
     duk_pop(ctx);
 }
 

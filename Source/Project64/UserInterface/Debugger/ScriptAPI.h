@@ -143,6 +143,10 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__get_height(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fillColor(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fillColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_fontFamily(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_fontFamily(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_fontSize(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_fontSize(duk_context* ctx);
     duk_ret_t js_DrawingContext_color(duk_context* ctx);
     duk_ret_t js_DrawingContext_print(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);

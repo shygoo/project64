@@ -70,7 +70,7 @@ typedef struct {
 } jshook_env_cpustep_t;
 
 typedef struct {
-    HDC hdc; // todo change to pointer to raw image data
+    CScriptRenderWindow* scriptRenderWindow;
     void* jsDrawingContext;
 } jshook_env_gfxupdate_t;
 

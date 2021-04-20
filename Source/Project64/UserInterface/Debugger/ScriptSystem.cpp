@@ -119,6 +119,14 @@ void CScriptSystem::Input(const char *name, const char *code)
     PostCommand(CMD_INPUT, name, code);
 }
 
+bool CScriptSystem::HaveCallbacks(jshook_id_t hookId)
+{
+    CGuard guard(m_InstancesCS);
+
+    return (m_AppCallbackHooks.count(hookId) > 0 &&
+            m_AppCallbackHooks[hookId].size() > 0);
+}
+
 void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
 {
     CGuard guard(m_InstancesCS);
