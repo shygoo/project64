@@ -1,0 +1,53 @@
+new N64Image(format, width, height, data[, palette])
+new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)
+
+  image.format: number
+  image.width: number
+  image.height: number
+  image.data: Buffer
+  image.palette: Buffer
+
+---------------------
+
+  image.toPNG(): Buffer
+
+    Returns a PNG representation of the image data as a Buffer.
+
+        var width = 64;
+        var height = 64;
+        var texelSize = 2;
+        var imageData = mem.getblock(0x802CB1C0, width * height * texelSize);
+        var image = new N64Image(IMG_RGBA16, imageData, width, height);
+        var pngData = image.toPNG();
+        fs.writefile("dumped_texture.png", pngData);
+
+---------------------
+
+  N64Image.fromPNG(pngData: Buffer, format?: number = IMG_RGBA32): N64Image
+
+    Static function. Creates an N64Image object from PNG image data.
+
+        var pngData = fs.readfile('image.png');
+        var image = N64Image.fromPNG(pngData);
+
+    Color quantization is not implemented. An error is thrown if `format` is a color-index (CI) type
+    and the color count of the PNG image exceeds the maximum number of colors supported. The maximum
+    number of colors supported by CI8 and CI4 formats are 256 and 16, respectively.
+
+---------------------
+
+  Image formats
+
+    Format          Data                           Palette
+
+    IMG_I4          4-bit intensity                (not used)
+    IMG_I8          8-bit intensity                (not used)
+    IMG_IA4         4-bit intensity/alpha (i4a1)   (not used)
+    IMG_IA8         8-bit intensity/alpha (i4a4)   (not used)
+    IMG_IA16        16-bit intensity/alpha (i8a8)  (not used)
+    IMG_RGBA16      16-bit color (r5g5b5a1)        (not used)
+    IMG_RGBA32      32-bit color (r8g8b8a8)        (not used)
+    IMG_CI8_RGBA16  8-bit color index              16-bit color (r5g5b5a1)
+    IMG_CI4_RGBA16  4-bit color index              16-bit color (r5g5b5a1)
+    IMG_CI8_IA16    8-bit color index              16-bit intensity/alpha (i8a8)
+    IMG_CI4_IA16    4-bit color index              16-bit intensity/alpha (i8a8)
