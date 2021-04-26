@@ -296,11 +296,12 @@
     js:   events.onpifread(callback)
     ts:   "events.onpifread(callback: (e: EmuEvent) => void): number"
     desc: |
-          Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
+          Registers a callback that will be invoked when PIF RAM data is going to be read into RDRAM.
           `callback` receives an [EmuEvent](#EmuEvent) object.
-          Useful for monitoring and overriding controller input.
           <div class="vtab"></div>
           Returns a callback ID.
+          <div class="vtab"></div>
+          Useful for monitoring and overriding controller input.
           ```
           // Log P1's controller input
           events.onpifread(function() {
@@ -390,7 +391,7 @@
           <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
           <tr><td>`e.valueType`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
           <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
-          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.type` is `u64`; otherwise `undefined`.</td></tr>
+          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.valueType` is `u64`; otherwise `undefined`.</td></tr>
           </table>
           <div class="vtab"></div>
           <table>
@@ -472,26 +473,6 @@
 - name:    DrawingContext
   tagline: Screen drawing context
   props:
-  - name: ctx.width
-    js:   ctx.width
-    ts:   "ctx.width: number"
-    desc: Width of the screen. Read-only.
-
-  - name: ctx.height
-    js:   ctx.height
-    ts:   "ctx.height: number"
-    desc: Height of the screen. Read-only.
-
-  - name: ctx.fillColor
-    js:   ctx.fillColor
-    ts:   "ctx.fillColor: number"
-    desc: |
-          The current RGBA32 fill color. Opaque white (`0xFFFFFFFF`) by default.
-          ```
-          // Set fillColor to opaque green
-          ctx.fillColor = ctx.color(0, 255, 0, 1.0);
-          ```
-
   - name: ctx.color
     js:   ctx.color(r, g, b[, alpha])
     ts:   "ctx.color(r: number, g: number, b: number, alpha?: number)"
@@ -507,7 +488,6 @@
   - name: ctx.print
     js:   ctx.print(x, y, text)
     ts:   "ctx.print(x: number, y: number, text: string): void"
-    tags: [[Unstable, red]]
     desc: |
           Prints text to the screen at the provided `x` and `y` coordinates.
           ```
@@ -568,6 +548,71 @@
               ctx.drawdata(20, 20, image.data, image.width, image.height);
           }
           ```
+
+  - name: ctx.width
+    js:   ctx.width
+    ts:   "ctx.width: number"
+    desc: Width of the screen. Read-only.
+
+  - name: ctx.height
+    js:   ctx.height
+    ts:   "ctx.height: number"
+    desc: Height of the screen. Read-only.
+
+  - name: ctx.fillColor
+    js:   ctx.fillColor
+    ts:   "ctx.fillColor: number"
+    desc: |
+          The current fill color. `COLOR_WHITE` (`0xFFFFFFFF`) by default.
+          ```
+          // Set fillColor to opaque green
+          ctx.fillColor = ctx.color(0, 255, 0, 1.0);
+          ```
+
+  - name: ctx.strokeColor
+    js:   ctx.strokeColor
+    ts:   "ctx.strokeColor: number"
+    desc: |
+          The current stroke color. `COLOR_BLACK` (`0x000000FF`) by default.
+
+  - name: ctx.strokeWidth
+    js:   ctx.strokeWidth
+    ts:   "ctx.strokeWidth: number"
+    desc: |
+          The current stroke width. `0.0` by default.
+
+  - name: ctx.fontFamily
+    js:   ctx.fontFamily
+    ts:   "ctx.fontFamily: string"
+    desc: |
+          The current font family. `"Courier New"` by default.
+
+  - name: ctx.fontWeight
+    js:   ctx.fontWeight
+    ts:   "ctx.fontWeight: string"
+    desc: |
+          The current font weight. Valid weights include `"normal"`, `"bold"`, and `"light"`. `"normal"` by default.
+
+  - name: ctx.fontSize
+    js:   ctx.fontSize
+    ts:   "ctx.fontSize: number"
+    desc: |
+          The current font size. `14` by default.
+
+  - name: Predefined_colors
+    js:   Predefined colors
+    desc: |
+          <table>
+          <tr><td>`COLOR_BLACK`</td><td>   0x000000FF</td></tr>
+          <tr><td>`COLOR_WHITE`</td><td>   0xFFFFFFFF</td></tr>
+          <tr><td>`COLOR_GRAY`</td><td>    0x808080FF</td></tr>
+          <tr><td>`COLOR_RED`</td><td>     0xFF0000FF</td></tr>
+          <tr><td>`COLOR_GREEN`</td><td>   0x00FF00FF</td></tr>
+          <tr><td>`COLOR_BLUE`</td><td>    0x0000FFFF</td></tr>
+          <tr><td>`COLOR_YELLOW`</td><td>  0xFFFF00FF</td></tr>
+          <tr><td>`COLOR_CYAN`</td><td>    0x00FFFFFF</td></tr>
+          <tr><td>`COLOR_MAGENTA`</td><td> 0xFF00FFFF</td></tr>
+          </table>
 
 # cpu
 - name:    cpu
@@ -916,8 +961,8 @@
           Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
           Setting this value to zero will allow tasks to run indefinitely.
 
-# global definitions
-- name: Global definitions
+# global functions
+- name: Global functions
   props:
   - name: require
     js:   require(id)
@@ -963,8 +1008,8 @@
           ```
 
   - name: exec
-    js:   exec(commandLine[, options])
-    ts:   "exec(commandLine: string, options?: Object): string"
+    js:   exec(command[, options])
+    ts:   "exec(command: string, options?: Object): string"
     desc: |
           Executes a system command. Does not return until the subprocess exits.
           <div class="vtab"></div>
@@ -1014,11 +1059,12 @@
           n.hex(4); // 007B
           ```
 
+# global constants
+- name: Global constants
+  props:
   - name: type_ids
     js:   Type IDs
     desc: |
-          Global type IDs.
-          <div class="vtab"></div>
           <table>
           <tr><td>`u8`  </td><td>Unsigned 8-bit integer</td></tr>
           <tr><td>`u16` </td><td>Unsigned 16-bit integer</td></tr>
@@ -1034,8 +1080,8 @@
           <div class="vtab"></div>
           Note: The [mem.bind*](#mem_bindvar)/[mem.typedef](#mem_typedef) APIs do not currently support `u64` and `s64`.
 
-  - name: Memory_mapped_register_addresses
-    js:   Memory mapped register addresses
+  - name: N64_memory_addresses
+    js:   N64 memory addresses
     desc: |
           <table>
           <tr><td>`RDRAM_CONFIG_REG`       </td><td>0xA3F00000</td></tr>
@@ -1049,7 +1095,6 @@
           <tr><td>`RDRAM_MIN_INTERVAL_REG` </td><td>0xA3F0001C</td></tr>
           <tr><td>`RDRAM_ADDR_SELECT_REG`  </td><td>0xA3F00020</td></tr>
           <tr><td>`RDRAM_DEVICE_MANUF_REG` </td><td>0xA3F00024</td></tr>
-
           <tr><td>`SP_MEM_ADDR_REG`        </td><td>0xA4040000</td></tr>
           <tr><td>`SP_DRAM_ADDR_REG`       </td><td>0xA4040004</td></tr>
           <tr><td>`SP_RD_LEN_REG`          </td><td>0xA4040008</td></tr>
@@ -1058,10 +1103,8 @@
           <tr><td>`SP_DMA_FULL_REG`        </td><td>0xA4040014</td></tr>
           <tr><td>`SP_DMA_BUSY_REG`        </td><td>0xA4040018</td></tr>
           <tr><td>`SP_SEMAPHORE_REG`       </td><td>0xA404001C</td></tr>
-
           <tr><td>`SP_PC_REG`              </td><td>0xA4080000</td></tr>
           <tr><td>`SP_IBIST_REG`           </td><td>0xA4080004</td></tr>
-
           <tr><td>`DPC_START_REG`          </td><td>0xA4100000</td></tr>
           <tr><td>`DPC_END_REG`            </td><td>0xA4100004</td></tr>
           <tr><td>`DPC_CURRENT_REG`        </td><td>0xA4100008</td></tr>
@@ -1070,19 +1113,16 @@
           <tr><td>`DPC_BUFBUSY_REG`        </td><td>0xA4100014</td></tr>
           <tr><td>`DPC_PIPEBUSY_REG`       </td><td>0xA4100018</td></tr>
           <tr><td>`DPC_TMEM_REG`           </td><td>0xA410001C</td></tr>
-
           <tr><td>`DPS_TBIST_REG`          </td><td>0xA4200000</td></tr>
           <tr><td>`DPS_TEST_MODE_REG`      </td><td>0xA4200004</td></tr>
           <tr><td>`DPS_BUFTEST_ADDR_REG`   </td><td>0xA4200008</td></tr>
           <tr><td>`DPS_BUFTEST_DATA_REG`   </td><td>0xA420000C</td></tr>
-
           <tr><td>`MI_INIT_MODE_REG`       </td><td>0xA4300000</td></tr>
           <tr><td>`MI_MODE_REG`            </td><td>0xA4300000</td></tr>
           <tr><td>`MI_VERSION_REG`         </td><td>0xA4300004</td></tr>
           <tr><td>`MI_NOOP_REG`            </td><td>0xA4300004</td></tr>
           <tr><td>`MI_INTR_REG`            </td><td>0xA4300008</td></tr>
           <tr><td>`MI_INTR_MASK_REG`       </td><td>0xA430000C</td></tr>
-
           <tr><td>`VI_STATUS_REG`          </td><td>0xA4400000</td></tr>
           <tr><td>`VI_CONTROL_REG`         </td><td>0xA4400000</td></tr>
           <tr><td>`VI_ORIGIN_REG`          </td><td>0xA4400004</td></tr>
@@ -1106,14 +1146,12 @@
           <tr><td>`VI_V_BURST_REG`         </td><td>0xA440002C</td></tr>
           <tr><td>`VI_X_SCALE_REG`         </td><td>0xA4400030</td></tr>
           <tr><td>`VI_Y_SCALE_REG`         </td><td>0xA4400034</td></tr>
-
           <tr><td>`AI_DRAM_ADDR_REG`       </td><td>0xA4500000</td></tr>
           <tr><td>`AI_LEN_REG`             </td><td>0xA4500004</td></tr>
           <tr><td>`AI_CONTROL_REG`         </td><td>0xA4500008</td></tr>
           <tr><td>`AI_STATUS_REG`          </td><td>0xA450000C</td></tr>
           <tr><td>`AI_DACRATE_REG`         </td><td>0xA4500010</td></tr>
           <tr><td>`AI_BITRATE_REG`         </td><td>0xA4500014</td></tr>
-
           <tr><td>`PI_DRAM_ADDR_REG`       </td><td>0xA4600000</td></tr>
           <tr><td>`PI_CART_ADDR_REG`       </td><td>0xA4600004</td></tr>
           <tr><td>`PI_RD_LEN_REG`          </td><td>0xA4600008</td></tr>
@@ -1127,7 +1165,6 @@
           <tr><td>`PI_BSD_DOM2_PWD_REG`    </td><td>0xA4600028</td></tr>
           <tr><td>`PI_BSD_DOM2_PGS_REG`    </td><td>0xA460002C</td></tr>
           <tr><td>`PI_BSD_DOM2_RLS_REG`    </td><td>0xA4600030</td></tr>
-
           <tr><td>`RI_MODE_REG`            </td><td>0xA4700000</td></tr>
           <tr><td>`RI_CONFIG_REG`          </td><td>0xA4700004</td></tr>
           <tr><td>`RI_CURRENT_LOAD_REG`    </td><td>0xA4700008</td></tr>
@@ -1137,22 +1174,20 @@
           <tr><td>`RI_LATENCY_REG`         </td><td>0xA4700014</td></tr>
           <tr><td>`RI_RERROR_REG`          </td><td>0xA4700018</td></tr>
           <tr><td>`RI_WERROR_REG`          </td><td>0xA470001C</td></tr>
-
           <tr><td>`SI_DRAM_ADDR_REG`       </td><td>0xA4800000</td></tr>
           <tr><td>`SI_PIF_ADDR_RD64B_REG`  </td><td>0xA4800004</td></tr>
           <tr><td>`SI_PIF_ADDR_WR64B_REG`  </td><td>0xA4800010</td></tr>
           <tr><td>`SI_STATUS_REG`          </td><td>0xA4800018</td></tr>
           </table>
-
-  - name: Miscellaneous
-    js:   Miscellaneous
-    desc: |
+          <div class="vtab"></div>
           <table>
           <tr><td>`PIF_ROM_START` </td><td>0xBFC00000</td></tr>
           <tr><td>`PIF_RAM_START` </td><td>0xBFC007C0</td></tr>
           <tr><td>`SP_DMEM_START` </td><td>0xA4000000</td></tr>
           <tr><td>`SP_IMEM_START` </td><td>0xA4001000</td></tr>
-
+          </table>
+          <div class="vtab"></div>
+          <table>
           <tr><td>`KUBASE`  </td><td>0x00000000</td></tr>
           <tr><td>`K0BASE`  </td><td>0x80000000</td></tr>
           <tr><td>`K1BASE`  </td><td>0xA0000000</td></tr>
@@ -1163,7 +1198,7 @@
           <tr><td>`ECC_VEC` </td><td>0x80000100</td></tr>
           <tr><td>`E_VEC`   </td><td>0x80000180</td></tr>
           </table>
-      
+
 - name: JavaScript environment
   desc: |
         <div class="vtab"></div>

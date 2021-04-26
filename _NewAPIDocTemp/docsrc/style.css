@@ -3,6 +3,7 @@
     --clr-bg1: #FFF;
     --clr-bg2: #DDD;
     --clr-bg3: #CCC;
+    --clr-bg4: #BBB;
     --clr-text: #222;
     --clr-hr: #ECC;
     --clr-link: #090;
@@ -23,6 +24,7 @@
     --clr-bg1: #2A2A2A;
     --clr-bg2: #444;
     --clr-bg3: #555;
+    --clr-bg4: #666;
     --clr-text: #FFF;
     --clr-hr: #744;
     --clr-link: #8D8;
@@ -36,6 +38,33 @@
     --clr-js-comment: #7A7;
     --clr-js-word: #FFF;
     --clr-js-etc: #AAA;
+}
+
+*::-webkit-scrollbar {
+    background: #FFF;
+    background: var(--clr-bg1);
+    border: 1px solid #FFF;
+    border-color: var(--clr-bg1);
+    width: 1.2em;
+    padding: 2px;
+    margin: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #DDD;
+    background: var(--clr-bg2);
+    border: 2px solid #FFF;
+    border-color: var(--clr-bg1);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #CCC;
+    background: var(--clr-bg3);
+}
+
+*::-webkit-scrollbar-thumb:active {
+    background: #BBB;
+    background: var(--clr-bg4);
 }
 
 body {
@@ -186,28 +215,6 @@ div.sidebar-content {
 div.content {
     margin-left: 440px;
     padding: 10px;
-}
-
-*::-webkit-scrollbar {
-    background: #FFF;
-    background: var(--clr-bg1);
-    border: 1px solid #FFF;
-    border-color: var(--clr-bg1);
-    width: 1.2em;
-    padding: 2px;
-    margin: 2px;
-}
-
-*::-webkit-scrollbar-thumb {
-    background: #DDD;
-    background: var(--clr-bg2);
-    border: 2px solid #FFF;
-    border-color: var(--clr-bg1);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-    background: #CCC;
-    background: var(--clr-bg3);
 }
 
 pre.ex {

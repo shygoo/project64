@@ -1,4 +1,5 @@
 #include <stdafx.h>
+#include <dwrite.h>
 #include "../ScriptAPI.h"
 
 #pragma warning(disable: 4702)
@@ -209,6 +210,16 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
         { "XUT_VEC", 0x80000080 },
         { "ECC_VEC", 0x80000100 },
         { "E_VEC", 0x80000180 },
+
+        { "COLOR_BLACK",   0x000000FF },
+        { "COLOR_WHITE",   0xFFFFFFFF },
+        { "COLOR_GRAY",    0x808080FF },
+        { "COLOR_RED",     0xFF0000FF },
+        { "COLOR_GREEN",   0x00FF00FF },
+        { "COLOR_BLUE",    0x0000FFFF },
+        { "COLOR_YELLOW",  0xFFFF00FF },
+        { "COLOR_CYAN",    0x00FFFFFF },
+        { "COLOR_MAGENTA", 0xFF00FFFF },
 
         { nullptr, 0 },
     };

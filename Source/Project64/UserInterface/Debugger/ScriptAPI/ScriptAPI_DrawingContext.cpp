@@ -2,6 +2,8 @@
 #include "../ScriptAPI.h"
 #include "../ScriptRenderWindow.h"
 
+#pragma warning(disable: 4702)
+
 static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 {
     duk_push_this(ctx);
@@ -52,11 +54,6 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
 
     duk_push_this(ctx);
 
-    duk_push_string(ctx, "fillColor");
-    duk_push_c_function(ctx, js_DrawingContext__get_fillColor, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_fillColor, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
-
     duk_push_string(ctx, "width");
     duk_push_c_function(ctx, js_DrawingContext__get_width, 0);
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
@@ -64,6 +61,21 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
     duk_push_string(ctx, "height");
     duk_push_c_function(ctx, js_DrawingContext__get_height, 0);
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
+
+    duk_push_string(ctx, "fillColor");
+    duk_push_c_function(ctx, js_DrawingContext__get_fillColor, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_fillColor, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+
+    duk_push_string(ctx, "strokeColor");
+    duk_push_c_function(ctx, js_DrawingContext__get_strokeColor, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_strokeColor, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+
+    duk_push_string(ctx, "strokeWidth");
+    duk_push_c_function(ctx, js_DrawingContext__get_strokeWidth, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_strokeWidth, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
 
     duk_push_string(ctx, "fontFamily");
     duk_push_c_function(ctx, js_DrawingContext__get_fontFamily, 0);
@@ -73,6 +85,11 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
     duk_push_string(ctx, "fontSize");
     duk_push_c_function(ctx, js_DrawingContext__get_fontSize, 0);
     duk_push_c_function(ctx, js_DrawingContext__set_fontSize, 1);
+    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+
+    duk_push_string(ctx, "fontWeight");
+    duk_push_c_function(ctx, js_DrawingContext__get_fontWeight, 0);
+    duk_push_c_function(ctx, js_DrawingContext__set_fontWeight, 1);
     duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
 
     duk_dup(ctx, 0); // ScriptRenderWindow*
@@ -96,8 +113,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__get_height(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext__get_fillColor(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
-    // todo
-    duk_push_uint(ctx, 1);
+    duk_push_uint(ctx, rw->GfxGetFillColor());
     return 1;
 }
 
@@ -107,7 +123,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx)
 
     if (!duk_is_number(ctx, 0))
     {
-        return ThrowInvalidArgsError(ctx);
+        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
     }
 
     duk_double_t color = duk_get_number(ctx, 0);
@@ -117,13 +133,54 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx)
         return DUK_RET_RANGE_ERROR;
     }
 
-    uint32_t rgba32 = (uint32_t)color;
-    float r = (float)((rgba32 >> 24) & 0xFF) / 255.0f;
-    float g = (float)((rgba32 >> 16) & 0xFF) / 255.0f;
-    float b = (float)((rgba32 >>  8) & 0xFF) / 255.0f;
-    float a = (float)((rgba32 >>  0) & 0xFF) / 255.0f;
+    rw->GfxSetFillColor((uint32_t)color);
+    return 0;
+}
 
-    rw->GfxSetFillColor(r, g, b, a);
+duk_ret_t ScriptAPI::js_DrawingContext__get_strokeColor(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_number(ctx, rw->GfxGetStrokeColor());
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_strokeColor(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+    }
+
+    duk_double_t color = duk_get_number(ctx, 0);
+
+    if (color < 0 || color > UINT_MAX)
+    {
+        return DUK_RET_RANGE_ERROR;
+    }
+
+    rw->GfxSetStrokeColor((uint32_t)color);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_strokeWidth(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_number(ctx, rw->GfxGetStrokeWidth());
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_strokeWidth(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+    }
+
+    rw->GfxSetStrokeWidth(duk_get_number(ctx, 0));
 
     return 0;
 }
@@ -131,7 +188,8 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx)
 duk_ret_t ScriptAPI::js_DrawingContext__get_fontFamily(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
-    duk_push_string(ctx, "todo");
+    stdstr fontFamily = rw->GfxGetFontFamily();
+    duk_push_string(ctx, fontFamily.c_str());
     return 1;
 }
 
@@ -150,7 +208,8 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontFamily(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_DrawingContext__get_fontSize(duk_context* ctx)
 {
-    duk_push_string(ctx, "todo");
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_number(ctx, rw->GfxGetFontSize());
     return 1;
 }
 
@@ -164,6 +223,55 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontSize(duk_context* ctx)
 
     duk_double_t fontSize = duk_get_number(ctx, 0);
     rw->GfxSetFontSize((float)fontSize);
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_fontWeight(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    DWRITE_FONT_WEIGHT weight = rw->GfxGetFontWeight();
+    const char* weightName = "";
+
+    switch (weight)
+    {
+    case DWRITE_FONT_WEIGHT_LIGHT:
+        weightName = "light";
+        break;
+    case DWRITE_FONT_WEIGHT_NORMAL:
+        weightName = "normal";
+        break;
+    case DWRITE_FONT_WEIGHT_BOLD:
+        weightName = "bold";
+        break;
+    }
+
+    duk_push_string(ctx, weightName);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    if (!duk_is_string(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+    }
+
+    const char* weightName = duk_get_string(ctx, 0);
+
+    const std::map<std::string, DWRITE_FONT_WEIGHT> weights = {
+        { "light", DWRITE_FONT_WEIGHT_LIGHT },
+        { "normal", DWRITE_FONT_WEIGHT_NORMAL },
+        { "bold", DWRITE_FONT_WEIGHT_BOLD }
+    };
+
+    if (weights.count(weightName) == 0)
+    {
+        return DUK_RET_ERROR; // todo invalid font weight error
+    }
+
+    rw->GfxSetFontWeight(weights.at(weightName));
     return 0;
 }
 
@@ -204,8 +312,8 @@ duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
 
-    int x = duk_get_number(ctx, 0);
-    int y = duk_get_number(ctx, 1);
+    duk_double_t x = duk_get_number(ctx, 0);
+    duk_double_t y = duk_get_number(ctx, 1);
     const char* text = duk_safe_to_string(ctx, 2);
 
     rw->GfxDrawText(x, y, stdstr(text).ToUTF16().c_str());
@@ -225,16 +333,12 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    duk_push_this(ctx);
-    duk_get_prop_string(ctx, -1, "fillColor");
-    uint32_t fillColor = duk_get_uint(ctx, -1);
+    duk_double_t x = duk_get_number(ctx, 0);
+    duk_double_t y = duk_get_number(ctx, 1);
+    duk_double_t width = duk_get_number(ctx, 2);
+    duk_double_t height = duk_get_number(ctx, 3);
 
-    int x = duk_get_number(ctx, 0);
-    int y = duk_get_number(ctx, 1);
-    int w = duk_get_number(ctx, 2);
-    int h = duk_get_number(ctx, 3);
-
-    rw->GfxFillRect(x, y, x + w, y + h);
+    rw->GfxFillRect(x, y, x + width, y + height);
 
     return 0;
 }

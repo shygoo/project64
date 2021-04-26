@@ -67,10 +67,18 @@ TODO:
 - pj64.limitfps(limitFps = true)
 - pj64.pause()
 - pj64.resume()
-
-
 - pj64.addmenu(null, caption, callback, menuKey)
 - pj64.delmenu()
+
+- DrawingContext:
+   ctx.strokerect(x, y, width, height)
+   ctx.moveto(x, y)
+   ctx.lineto(x, y)
+   ctx.stroke()
+   ctx.print -> ctx.drawtext
+   ctx.measuretext
+   subtract status bar height from ctx.height
+
 
 - formatting/cleanup printfs, comments etc
 

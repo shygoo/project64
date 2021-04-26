@@ -1,6 +1,13 @@
 #include <stdafx.h>
 #include "ScriptRenderWindow.h"
 
+#define DEFAULT_FILLCOLOR   0xFFFFFFFF
+#define DEFAULT_FONTFAMILY  "Courier New"
+#define DEFAULT_FONTSIZE    14.0f
+#define DEFAULT_STROKEWIDTH 0.0f
+#define DEFAULT_STROKECOLOR 0x000000FF
+#define DEFAULT_FONTWEIGHT  DWRITE_FONT_WEIGHT_NORMAL
+
 CScriptRenderWindow::CScriptRenderWindow(CDebuggerUI* debugger) :
     m_Debugger(debugger),
     m_hWnd(nullptr),
@@ -12,9 +19,17 @@ CScriptRenderWindow::CScriptRenderWindow(CDebuggerUI* debugger) :
     m_DWriteFactory(nullptr),
     m_Gfx(nullptr),
     m_GfxFillBrush(nullptr),
+    m_GfxStrokeBrush(nullptr),
     m_GfxTextFormat(nullptr),
     m_Width(0),
-    m_Height(0)
+    m_Height(0),
+    m_TextRenderer(nullptr),
+    m_FontSize(DEFAULT_FONTSIZE),
+    m_FontFamilyName(DEFAULT_FONTFAMILY),
+    m_FontWeight(DEFAULT_FONTWEIGHT),
+    m_StrokeWidth(DEFAULT_STROKEWIDTH),
+    m_FillColor(DEFAULT_FILLCOLOR),
+    m_StrokeColor(DEFAULT_STROKECOLOR)
 {
     GfxLoadLibs();
     GfxInitFactories();
@@ -30,6 +45,11 @@ CScriptRenderWindow::~CScriptRenderWindow()
         DestroyWindow(m_hWnd);
     }
 
+    if (m_TextRenderer != nullptr)
+    {
+        delete m_TextRenderer;
+    }
+    
     if (m_GfxTextFormat) m_GfxTextFormat->Release();
     if (m_GfxFillBrush) m_GfxFillBrush->Release();
     if (m_Gfx) m_Gfx->Release();
@@ -107,8 +127,10 @@ void CScriptRenderWindow::CpuRunningChanged(void* p)
 
 void CScriptRenderWindow::LimitFPSChanged(void* p)
 {
-    CScriptRenderWindow* _this = (CScriptRenderWindow*)p;
-    bool bLimitFPS = g_Settings->LoadBool(GameRunning_LimitFPS);
+    // TODO should toggle vsync here
+     
+    //CScriptRenderWindow* _this = (CScriptRenderWindow*)p;
+    //bool bLimitFPS = g_Settings->LoadBool(GameRunning_LimitFPS);
 }
 
 LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
@@ -288,9 +310,11 @@ bool CScriptRenderWindow::GfxInitTarget()
 
         if (SUCCEEDED(hr) && m_Gfx)
         {
-            // defaults
-            GfxSetFillColor(1, 1, 1);
-            GfxSetFont(L"Consolas", 12);
+            m_TextRenderer = new COutlinedTextRenderer(m_D2DFactory, m_Gfx, &m_GfxFillBrush, &m_GfxStrokeBrush);
+            GfxSetFillColor(DEFAULT_FILLCOLOR);
+            GfxSetStrokeColor(DEFAULT_STROKECOLOR);
+            GfxSetStrokeWidth(DEFAULT_STROKEWIDTH);
+            GfxSetFont(stdstr(DEFAULT_FONTFAMILY).ToUTF16().c_str(), DEFAULT_FONTSIZE);
             return true;
         }
     }
@@ -307,8 +331,8 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
 
     CRect rc;
     GetClientRect(hSrcWnd, &rc);
-    int width = rc.Width();
-    int height = rc.Height();
+    float width = (float)rc.Width();
+    float height = (float)rc.Height();
     std::vector<uint8_t> frameRGBA32(width * height * 4);
     CaptureWindowRGBA32(hSrcWnd, width, height, &frameRGBA32[0]);
 
@@ -326,7 +350,7 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
         m_Gfx->DrawBitmap(
             bitmap,
             D2D1::RectF(0, 0, width, height),
-            1.0,
+            1.0f,
             D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
             D2D1::RectF(0, 0, width, height));
 
@@ -354,19 +378,64 @@ void CScriptRenderWindow::GfxEndDraw()
     m_Gfx->EndDraw();
 }
 
-void CScriptRenderWindow::GfxSetFillColor(float r, float g, float b, float alpha)
+void CScriptRenderWindow::GfxSetFillColor(uint32_t rgba)
 {
     if (!m_Gfx)
     {
         return;
     }
 
-    if (m_GfxFillBrush != nullptr)
+    m_FillColor = rgba;
+    D2D1::ColorF colorF = D2D1ColorFromRGBA32(m_FillColor);
+
+    if (m_GfxFillBrush == nullptr)
     {
-        m_GfxFillBrush->Release();
+        m_Gfx->CreateSolidColorBrush(colorF, &m_GfxFillBrush);
     }
 
-    m_Gfx->CreateSolidColorBrush(D2D1::ColorF(r, g, b, alpha), &m_GfxFillBrush);
+    m_GfxFillBrush->SetColor(colorF);
+}
+
+uint32_t CScriptRenderWindow::GfxGetFillColor()
+{
+    return m_FillColor;
+}
+
+void CScriptRenderWindow::GfxSetStrokeColor(uint32_t rgba)
+{
+    if (!m_Gfx)
+    {
+        return;
+    }
+
+    m_FillColor = rgba;
+    D2D1::ColorF colorF = D2D1ColorFromRGBA32(m_FillColor);
+
+    if (m_GfxStrokeBrush == nullptr)
+    {
+        m_Gfx->CreateSolidColorBrush(colorF, &m_GfxStrokeBrush);
+    }
+
+    m_GfxStrokeBrush->SetColor(colorF);
+}
+
+uint32_t CScriptRenderWindow::GfxGetStrokeColor()
+{
+    return m_StrokeColor;
+}
+
+void CScriptRenderWindow::GfxSetStrokeWidth(float strokeWidth)
+{
+    if (m_TextRenderer != nullptr)
+    {
+        m_StrokeWidth = strokeWidth;
+        m_TextRenderer->SetStrokeWidth(strokeWidth);
+    }
+}
+
+float CScriptRenderWindow::GfxGetStrokeWidth()
+{
+    return m_StrokeWidth;
 }
 
 void CScriptRenderWindow::GfxRefreshTextFormat()
@@ -385,7 +454,7 @@ void CScriptRenderWindow::GfxRefreshTextFormat()
     m_DWriteFactory->CreateTextFormat(
         m_FontFamilyName.ToUTF16().c_str(),
         nullptr,
-        DWRITE_FONT_WEIGHT_NORMAL,
+        m_FontWeight,
         DWRITE_FONT_STYLE_NORMAL,
         DWRITE_FONT_STRETCH_NORMAL,
         m_FontSize,
@@ -406,10 +475,31 @@ void CScriptRenderWindow::GfxSetFontFamily(const wchar_t* fontFamily)
     GfxRefreshTextFormat();
 }
 
+stdstr CScriptRenderWindow::GfxGetFontFamily()
+{
+    return m_FontFamilyName;
+}
+
 void CScriptRenderWindow::GfxSetFontSize(float fontSize)
 {
     m_FontSize = fontSize;
     GfxRefreshTextFormat();
+}
+
+float CScriptRenderWindow::GfxGetFontSize()
+{
+    return m_FontSize;
+}
+
+void CScriptRenderWindow::GfxSetFontWeight(DWRITE_FONT_WEIGHT fontWeight)
+{
+    m_FontWeight = fontWeight;
+    GfxRefreshTextFormat();
+}
+
+DWRITE_FONT_WEIGHT CScriptRenderWindow::GfxGetFontWeight()
+{
+    return m_FontWeight;
 }
 
 void CScriptRenderWindow::GfxDrawText(float x, float y, const wchar_t* text)
@@ -419,41 +509,20 @@ void CScriptRenderWindow::GfxDrawText(float x, float y, const wchar_t* text)
         return;
     }
 
-    m_Gfx->DrawText(text, wcslen(text), m_GfxTextFormat, D2D1::RectF(x, y, m_Width, m_Height), m_GfxFillBrush);
-
-    /*
-    IDWriteFontFacePtr ?
-
-    size_t length = wcslen(text);
-    std::vector<uint32_t> codePoints(length); 
-    std::vector<uint16_t> glyphIndices(length);
-
-    for(size_t i = 0; i < length; i++)
+    if (m_StrokeWidth > 0.0f)
     {
-        codePoints[i] = (uint32_t)text[i];
+        IDWriteTextLayout* textLayout = nullptr;
+        HRESULT hr = m_DWriteFactory->CreateTextLayout(text, wcslen(text), m_GfxTextFormat, (float)m_Width, (float)m_Height, &textLayout);
+        if (SUCCEEDED(hr))
+        {
+            textLayout->Draw(nullptr, m_TextRenderer, x, y);
+            textLayout->Release();
+        }
     }
-
-    ID2D1PathGeometry* pathGeometry = nullptr;
-    ID2D1GeometrySink* geometrySink = nullptr;
-
-    m_D2DFactory->CreatePathGeometry(&pathGeometry);
-    pathGeometry->Open((ID2D1GeometrySink**)&geometrySink);
-
-    fontFace->GetGlyphIndicesW(&codePoints[0], length, &glyphIndices[0]);
-    
-    fontFace->GetGlyphRunOutline(12.0f, &glyphIndices[0], nullptr, nullptr,
-        length, false, false, geometrySink);
-
-    m_Gfx->SetTransform(D2D1::Matrix3x2F::Translation(x, y));
-    m_Gfx->DrawGeometry(pathGeometry, m_StrokeBrush, m_StrokeWidth);
-    m_Gfx->FillGeometry(pathGeometry, m_FillBrush);
-
-
-    geometrySink->Close();
-
-    geometrySink->Release();
-    pathGeometry->Release();
-    */
+    else
+    {
+        m_Gfx->DrawText(text, wcslen(text), m_GfxTextFormat, D2D1::RectF(x, y, m_Width, m_Height), m_GfxFillBrush);
+    }
 }
 
 void CScriptRenderWindow::GfxFillRect(float left, float top, float right, float bottom)
@@ -474,4 +543,13 @@ int CScriptRenderWindow::GetWidth()
 int CScriptRenderWindow::GetHeight()
 {
     return m_Height;
+}
+
+D2D1::ColorF CScriptRenderWindow::D2D1ColorFromRGBA32(uint32_t color)
+{
+    float r = ((color >> 24) & 0xFF) / 255.0f;
+    float g = ((color >> 16) & 0xFF) / 255.0f;
+    float b = ((color >>  8) & 0xFF) / 255.0f;
+    float a = ((color >>  0) & 0xFF) / 255.0f;
+    return D2D1::ColorF(r, g, b, a);
 }

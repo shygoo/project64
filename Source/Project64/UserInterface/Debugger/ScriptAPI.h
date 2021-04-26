@@ -41,6 +41,7 @@ namespace ScriptAPI
     duk_ret_t js_events_ongprvalue(duk_context* ctx);
     duk_ret_t js_events_ondraw(duk_context* ctx);
     duk_ret_t js_events_onpifread(duk_context* ctx);
+    duk_ret_t js_events_onrsptask(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console
@@ -143,10 +144,16 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__get_height(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fillColor(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fillColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_strokeColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_strokeColor(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_strokeWidth(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_strokeWidth(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fontFamily(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontFamily(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fontSize(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontSize(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_fontWeight(duk_context* ctx);
+    duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext_color(duk_context* ctx);
     duk_ret_t js_DrawingContext_print(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);

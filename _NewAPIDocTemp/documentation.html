@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated Apr 16 2021 -->
+<!-- Generated Apr 26 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.04.16</title>
+<title>Project64 JavaScript API prerelease 2021.04.26</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -10,6 +10,7 @@
     --clr-bg1: #FFF;
     --clr-bg2: #DDD;
     --clr-bg3: #CCC;
+    --clr-bg4: #BBB;
     --clr-text: #222;
     --clr-hr: #ECC;
     --clr-link: #090;
@@ -30,6 +31,7 @@
     --clr-bg1: #2A2A2A;
     --clr-bg2: #444;
     --clr-bg3: #555;
+    --clr-bg4: #666;
     --clr-text: #FFF;
     --clr-hr: #744;
     --clr-link: #8D8;
@@ -43,6 +45,33 @@
     --clr-js-comment: #7A7;
     --clr-js-word: #FFF;
     --clr-js-etc: #AAA;
+}
+
+*::-webkit-scrollbar {
+    background: #FFF;
+    background: var(--clr-bg1);
+    border: 1px solid #FFF;
+    border-color: var(--clr-bg1);
+    width: 1.2em;
+    padding: 2px;
+    margin: 2px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #DDD;
+    background: var(--clr-bg2);
+    border: 2px solid #FFF;
+    border-color: var(--clr-bg1);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #CCC;
+    background: var(--clr-bg3);
+}
+
+*::-webkit-scrollbar-thumb:active {
+    background: #BBB;
+    background: var(--clr-bg4);
 }
 
 body {
@@ -195,28 +224,6 @@ div.content {
     padding: 10px;
 }
 
-*::-webkit-scrollbar {
-    background: #FFF;
-    background: var(--clr-bg1);
-    border: 1px solid #FFF;
-    border-color: var(--clr-bg1);
-    width: 1.2em;
-    padding: 2px;
-    margin: 2px;
-}
-
-*::-webkit-scrollbar-thumb {
-    background: #DDD;
-    background: var(--clr-bg2);
-    border: 2px solid #FFF;
-    border-color: var(--clr-bg1);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-    background: #CCC;
-    background: var(--clr-bg3);
-}
-
 pre.ex {
     margin-top: 10px;
     padding: 10px;
@@ -263,7 +270,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.04.16
+prerelease 2021.04.26
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -308,14 +315,20 @@ prerelease 2021.04.16
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#DrawingContext">DrawingContext</a>: Screen drawing context<ul>
-<li><a href="#ctx_width">ctx.width</a></li>
-<li><a href="#ctx_height">ctx.height</a></li>
-<li><a href="#ctx_fillColor">ctx.fillColor</a></li>
 <li><a href="#ctx_color">ctx.color(r, g, b[, alpha])</a></li>
 <li><a href="#ctx_print">ctx.print(x, y, text)</a></li>
 <li><a href="#ctx_fillrect">ctx.fillrect(x, y, width, height)</a></li>
 <li><a href="#ctx_getdata">ctx.getdata(x, y, width, height)</a></li>
 <li><a href="#ctx_setdata">ctx.setdata(x, y, data, width, height)</a></li>
+<li><a href="#ctx_width">ctx.width</a></li>
+<li><a href="#ctx_height">ctx.height</a></li>
+<li><a href="#ctx_fillColor">ctx.fillColor</a></li>
+<li><a href="#ctx_strokeColor">ctx.strokeColor</a></li>
+<li><a href="#ctx_strokeWidth">ctx.strokeWidth</a></li>
+<li><a href="#ctx_fontFamily">ctx.fontFamily</a></li>
+<li><a href="#ctx_fontWeight">ctx.fontWeight</a></li>
+<li><a href="#ctx_fontSize">ctx.fontSize</a></li>
+<li><a href="#Predefined_colors">Predefined colors</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#cpu">cpu</a>: CPU register interface<ul>
 <li><a href="#cpu_pc">cpu.pc</a></li>
@@ -377,14 +390,15 @@ prerelease 2021.04.16
 <li><a href="#script_keepalive">script.keepalive(keepAlive)</a></li>
 <li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#Global definitions">Global definitions</a><ul>
+<li><a href="#Global functions">Global functions</a><ul>
 <li><a href="#require">require(id)</a></li>
-<li><a href="#exec">exec(commandLine[, options])</a></li>
+<li><a href="#exec">exec(command[, options])</a></li>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
+</ul><div class="vtab"></div></li>
+<li><a href="#Global constants">Global constants</a><ul>
 <li><a href="#type_ids">Type IDs</a></li>
-<li><a href="#Memory_mapped_register_addresses">Memory mapped register addresses</a></li>
-<li><a href="#Miscellaneous">Miscellaneous</a></li>
+<li><a href="#N64_memory_addresses">N64 memory addresses</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
 </ul>
@@ -677,11 +691,12 @@ See <a href="#GPR_flags">General purpose register flags</a> for a list of valid 
 <div class="prop"><span class="title" id="events_onpifread">events.onpifread(callback)</span></div>
 <div class="tsproto">events.onpifread(callback: (e: EmuEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked before PIF RAM data is copied into RDRAM.
+Registers a callback that will be invoked when PIF RAM data is going to be read into RDRAM.
 <span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
-Useful for monitoring and overriding controller input.
 <div class="vtab"></div>
 Returns a callback ID.
+<div class="vtab"></div>
+Useful for monitoring and overriding controller input.
 <pre class="ex">
 <span class="js-comment">// Log P1's controller input</span>
 <span class="js-word">events</span>.<span class="js-word">onpifread</span>(<span class="js-keyword">function</span>() {
@@ -767,7 +782,7 @@ Unregisters the callback specified by <span class="snip">callbackId</span>.
 <tr><td><span class="snip">e.reg</span></td><td>Index of the source/destination register.</td></tr>
 <tr><td><span class="snip">e.valueType</span></td><td>The value's <a href="#type_ids">type ID</a>. Varies depending on the opcode; refer to the table below.</td></tr>
 <tr><td><span class="snip">e.value</span></td><td>Value that the CPU is going to read/write.</td></tr>
-<tr><td><span class="snip">e.valueHi</span></td><td>Upper 32 bits of the value if <span class="snip">e.type</span> is <span class="snip">u64</span>; otherwise <span class="snip">undefined</span>.</td></tr>
+<tr><td><span class="snip">e.valueHi</span></td><td>Upper 32 bits of the value if <span class="snip">e.valueType</span> is <span class="snip">u64</span>; otherwise <span class="snip">undefined</span>.</td></tr>
 </table>
 <div class="vtab"></div>
 <table>
@@ -846,25 +861,6 @@ The following <span class="snip">AddressRange</span> objects are defined globall
 <div class="modtitle"><span class="title" id="DrawingContext">DrawingContext</span></div>
 Screen drawing context
 <div class="vtab"></div>
-<!-- ctx.width -->
-<div class="prop"><span class="title" id="ctx_width">ctx.width</span></div>
-<div class="tsproto">ctx.width: number</div>
-<div class="vtab"></div>
-Width of the screen. Read-only.
-<!-- ctx.height -->
-<div class="prop"><span class="title" id="ctx_height">ctx.height</span></div>
-<div class="tsproto">ctx.height: number</div>
-<div class="vtab"></div>
-Height of the screen. Read-only.
-<!-- ctx.fillColor -->
-<div class="prop"><span class="title" id="ctx_fillColor">ctx.fillColor</span></div>
-<div class="tsproto">ctx.fillColor: number</div>
-<div class="vtab"></div>
-The current RGBA32 fill color. Opaque white (<span class="snip">0xFFFFFFFF</span>) by default.
-<pre class="ex">
-<span class="js-comment">// Set fillColor to opaque green</span>
-<span class="js-word">ctx</span>.<span class="js-word">fillColor</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">0</span>, <span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">1</span>.<span class="js-number">0</span>);
-</pre>
 <!-- ctx.color -->
 <div class="prop"><span class="title" id="ctx_color">ctx.color(r, g, b[, alpha])</span></div>
 <div class="tsproto">ctx.color(r: number, g: number, b: number, alpha?: number)</div>
@@ -877,7 +873,7 @@ If <span class="snip">alpha</span> is not used it will default to <span class="s
 <span class="js-keyword">const</span> <span class="js-word">clrYellow</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">255</span>, <span class="js-number">255</span>, <span class="js-number">0</span>); <span class="js-comment">// 0xFFFF00FF</span>
 </pre>
 <!-- ctx.print -->
-<div class="prop"><span class="title" id="ctx_print">ctx.print(x, y, text)</span><div class="tag red">Unstable</div></div>
+<div class="prop"><span class="title" id="ctx_print">ctx.print(x, y, text)</span></div>
 <div class="tsproto">ctx.print(x: number, y: number, text: string): void</div>
 <div class="vtab"></div>
 Prints text to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
@@ -938,6 +934,64 @@ The byte length of <span class="snip">data</span> must be equal to <span class="
     <span class="js-word">ctx</span>.<span class="js-word">drawdata</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-word">image</span>.<span class="js-word">data</span>, <span class="js-word">image</span>.<span class="js-word">width</span>, <span class="js-word">image</span>.<span class="js-word">height</span>);
 }
 </pre>
+<!-- ctx.width -->
+<div class="prop"><span class="title" id="ctx_width">ctx.width</span></div>
+<div class="tsproto">ctx.width: number</div>
+<div class="vtab"></div>
+Width of the screen. Read-only.
+<!-- ctx.height -->
+<div class="prop"><span class="title" id="ctx_height">ctx.height</span></div>
+<div class="tsproto">ctx.height: number</div>
+<div class="vtab"></div>
+Height of the screen. Read-only.
+<!-- ctx.fillColor -->
+<div class="prop"><span class="title" id="ctx_fillColor">ctx.fillColor</span></div>
+<div class="tsproto">ctx.fillColor: number</div>
+<div class="vtab"></div>
+The current fill color. <span class="snip">COLOR_WHITE</span> (<span class="snip">0xFFFFFFFF</span>) by default.
+<pre class="ex">
+<span class="js-comment">// Set fillColor to opaque green</span>
+<span class="js-word">ctx</span>.<span class="js-word">fillColor</span> = <span class="js-word">ctx</span>.<span class="js-word">color</span>(<span class="js-number">0</span>, <span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">1</span>.<span class="js-number">0</span>);
+</pre>
+<!-- ctx.strokeColor -->
+<div class="prop"><span class="title" id="ctx_strokeColor">ctx.strokeColor</span></div>
+<div class="tsproto">ctx.strokeColor: number</div>
+<div class="vtab"></div>
+The current stroke color. <span class="snip">COLOR_BLACK</span> (<span class="snip">0x000000FF</span>) by default.
+<!-- ctx.strokeWidth -->
+<div class="prop"><span class="title" id="ctx_strokeWidth">ctx.strokeWidth</span></div>
+<div class="tsproto">ctx.strokeWidth: number</div>
+<div class="vtab"></div>
+The current stroke width. <span class="snip">0.0</span> by default.
+<!-- ctx.fontFamily -->
+<div class="prop"><span class="title" id="ctx_fontFamily">ctx.fontFamily</span></div>
+<div class="tsproto">ctx.fontFamily: string</div>
+<div class="vtab"></div>
+The current font family. <span class="snip">"Courier New"</span> by default.
+<!-- ctx.fontWeight -->
+<div class="prop"><span class="title" id="ctx_fontWeight">ctx.fontWeight</span></div>
+<div class="tsproto">ctx.fontWeight: string</div>
+<div class="vtab"></div>
+The current font weight. Valid weights include <span class="snip">"normal"</span>, <span class="snip">"bold"</span>, and <span class="snip">"light"</span>. <span class="snip">"normal"</span> by default.
+<!-- ctx.fontSize -->
+<div class="prop"><span class="title" id="ctx_fontSize">ctx.fontSize</span></div>
+<div class="tsproto">ctx.fontSize: number</div>
+<div class="vtab"></div>
+The current font size. <span class="snip">14</span> by default.
+<!-- Predefined_colors -->
+<div class="prop"><span class="title" id="Predefined_colors">Predefined colors</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">COLOR_BLACK</span></td><td>   0x000000FF</td></tr>
+<tr><td><span class="snip">COLOR_WHITE</span></td><td>   0xFFFFFFFF</td></tr>
+<tr><td><span class="snip">COLOR_GRAY</span></td><td>    0x808080FF</td></tr>
+<tr><td><span class="snip">COLOR_RED</span></td><td>     0xFF0000FF</td></tr>
+<tr><td><span class="snip">COLOR_GREEN</span></td><td>   0x00FF00FF</td></tr>
+<tr><td><span class="snip">COLOR_BLUE</span></td><td>    0x0000FFFF</td></tr>
+<tr><td><span class="snip">COLOR_YELLOW</span></td><td>  0xFFFF00FF</td></tr>
+<tr><td><span class="snip">COLOR_CYAN</span></td><td>    0x00FFFFFF</td></tr>
+<tr><td><span class="snip">COLOR_MAGENTA</span></td><td> 0xFF00FFFF</td></tr>
+</table>
 
 </div>
 <!-- cpu -->
@@ -1293,9 +1347,9 @@ Sets the maximum amount of time tasks may run on the script instance before erro
 Setting this value to zero will allow tasks to run indefinitely.
 
 </div>
-<!-- Global definitions -->
+<!-- Global functions -->
 <div class="module">
-<div class="modtitle"><span class="title" id="Global definitions">Global definitions</span></div>
+<div class="modtitle"><span class="title" id="Global functions">Global functions</span></div>
 <div class="vtab"></div>
 <!-- require -->
 <div class="prop"><span class="title" id="require">require(id)</span></div>
@@ -1340,8 +1394,8 @@ The below example demonstrates one way module and submodule loading can be imple
 };
 </pre>
 <!-- exec -->
-<div class="prop"><span class="title" id="exec">exec(commandLine[, options])</span></div>
-<div class="tsproto">exec(commandLine: string, options?: Object): string</div>
+<div class="prop"><span class="title" id="exec">exec(command[, options])</span></div>
+<div class="tsproto">exec(command: string, options?: Object): string</div>
 <div class="vtab"></div>
 Executes a system command. Does not return until the subprocess exits.
 <div class="vtab"></div>
@@ -1388,10 +1442,14 @@ The returned string is prepended with zeroes so that its character length is <sp
 <span class="js-word">n</span>.<span class="js-word">hex</span>();  <span class="js-comment">// 0000007B</span>
 <span class="js-word">n</span>.<span class="js-word">hex</span>(<span class="js-number">4</span>); <span class="js-comment">// 007B</span>
 </pre>
+
+</div>
+<!-- Global constants -->
+<div class="module">
+<div class="modtitle"><span class="title" id="Global constants">Global constants</span></div>
+<div class="vtab"></div>
 <!-- type_ids -->
 <div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
-<div class="vtab"></div>
-Global type IDs.
 <div class="vtab"></div>
 <table>
 <tr><td><span class="snip">u8</span>  </td><td>Unsigned 8-bit integer</td></tr>
@@ -1407,8 +1465,8 @@ Global type IDs.
 </table>
 <div class="vtab"></div>
 Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typedef</a> APIs do not currently support <span class="snip">u64</span> and <span class="snip">s64</span>.
-<!-- Memory_mapped_register_addresses -->
-<div class="prop"><span class="title" id="Memory_mapped_register_addresses">Memory mapped register addresses</span></div>
+<!-- N64_memory_addresses -->
+<div class="prop"><span class="title" id="N64_memory_addresses">N64 memory addresses</span></div>
 <div class="vtab"></div>
 <table>
 <tr><td><span class="snip">RDRAM_CONFIG_REG</span>       </td><td>0xA3F00000</td></tr>
@@ -1422,7 +1480,6 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">RDRAM_MIN_INTERVAL_REG</span> </td><td>0xA3F0001C</td></tr>
 <tr><td><span class="snip">RDRAM_ADDR_SELECT_REG</span>  </td><td>0xA3F00020</td></tr>
 <tr><td><span class="snip">RDRAM_DEVICE_MANUF_REG</span> </td><td>0xA3F00024</td></tr>
-
 <tr><td><span class="snip">SP_MEM_ADDR_REG</span>        </td><td>0xA4040000</td></tr>
 <tr><td><span class="snip">SP_DRAM_ADDR_REG</span>       </td><td>0xA4040004</td></tr>
 <tr><td><span class="snip">SP_RD_LEN_REG</span>          </td><td>0xA4040008</td></tr>
@@ -1431,10 +1488,8 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">SP_DMA_FULL_REG</span>        </td><td>0xA4040014</td></tr>
 <tr><td><span class="snip">SP_DMA_BUSY_REG</span>        </td><td>0xA4040018</td></tr>
 <tr><td><span class="snip">SP_SEMAPHORE_REG</span>       </td><td>0xA404001C</td></tr>
-
 <tr><td><span class="snip">SP_PC_REG</span>              </td><td>0xA4080000</td></tr>
 <tr><td><span class="snip">SP_IBIST_REG</span>           </td><td>0xA4080004</td></tr>
-
 <tr><td><span class="snip">DPC_START_REG</span>          </td><td>0xA4100000</td></tr>
 <tr><td><span class="snip">DPC_END_REG</span>            </td><td>0xA4100004</td></tr>
 <tr><td><span class="snip">DPC_CURRENT_REG</span>        </td><td>0xA4100008</td></tr>
@@ -1443,19 +1498,16 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">DPC_BUFBUSY_REG</span>        </td><td>0xA4100014</td></tr>
 <tr><td><span class="snip">DPC_PIPEBUSY_REG</span>       </td><td>0xA4100018</td></tr>
 <tr><td><span class="snip">DPC_TMEM_REG</span>           </td><td>0xA410001C</td></tr>
-
 <tr><td><span class="snip">DPS_TBIST_REG</span>          </td><td>0xA4200000</td></tr>
 <tr><td><span class="snip">DPS_TEST_MODE_REG</span>      </td><td>0xA4200004</td></tr>
 <tr><td><span class="snip">DPS_BUFTEST_ADDR_REG</span>   </td><td>0xA4200008</td></tr>
 <tr><td><span class="snip">DPS_BUFTEST_DATA_REG</span>   </td><td>0xA420000C</td></tr>
-
 <tr><td><span class="snip">MI_INIT_MODE_REG</span>       </td><td>0xA4300000</td></tr>
 <tr><td><span class="snip">MI_MODE_REG</span>            </td><td>0xA4300000</td></tr>
 <tr><td><span class="snip">MI_VERSION_REG</span>         </td><td>0xA4300004</td></tr>
 <tr><td><span class="snip">MI_NOOP_REG</span>            </td><td>0xA4300004</td></tr>
 <tr><td><span class="snip">MI_INTR_REG</span>            </td><td>0xA4300008</td></tr>
 <tr><td><span class="snip">MI_INTR_MASK_REG</span>       </td><td>0xA430000C</td></tr>
-
 <tr><td><span class="snip">VI_STATUS_REG</span>          </td><td>0xA4400000</td></tr>
 <tr><td><span class="snip">VI_CONTROL_REG</span>         </td><td>0xA4400000</td></tr>
 <tr><td><span class="snip">VI_ORIGIN_REG</span>          </td><td>0xA4400004</td></tr>
@@ -1479,14 +1531,12 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">VI_V_BURST_REG</span>         </td><td>0xA440002C</td></tr>
 <tr><td><span class="snip">VI_X_SCALE_REG</span>         </td><td>0xA4400030</td></tr>
 <tr><td><span class="snip">VI_Y_SCALE_REG</span>         </td><td>0xA4400034</td></tr>
-
 <tr><td><span class="snip">AI_DRAM_ADDR_REG</span>       </td><td>0xA4500000</td></tr>
 <tr><td><span class="snip">AI_LEN_REG</span>             </td><td>0xA4500004</td></tr>
 <tr><td><span class="snip">AI_CONTROL_REG</span>         </td><td>0xA4500008</td></tr>
 <tr><td><span class="snip">AI_STATUS_REG</span>          </td><td>0xA450000C</td></tr>
 <tr><td><span class="snip">AI_DACRATE_REG</span>         </td><td>0xA4500010</td></tr>
 <tr><td><span class="snip">AI_BITRATE_REG</span>         </td><td>0xA4500014</td></tr>
-
 <tr><td><span class="snip">PI_DRAM_ADDR_REG</span>       </td><td>0xA4600000</td></tr>
 <tr><td><span class="snip">PI_CART_ADDR_REG</span>       </td><td>0xA4600004</td></tr>
 <tr><td><span class="snip">PI_RD_LEN_REG</span>          </td><td>0xA4600008</td></tr>
@@ -1500,7 +1550,6 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">PI_BSD_DOM2_PWD_REG</span>    </td><td>0xA4600028</td></tr>
 <tr><td><span class="snip">PI_BSD_DOM2_PGS_REG</span>    </td><td>0xA460002C</td></tr>
 <tr><td><span class="snip">PI_BSD_DOM2_RLS_REG</span>    </td><td>0xA4600030</td></tr>
-
 <tr><td><span class="snip">RI_MODE_REG</span>            </td><td>0xA4700000</td></tr>
 <tr><td><span class="snip">RI_CONFIG_REG</span>          </td><td>0xA4700004</td></tr>
 <tr><td><span class="snip">RI_CURRENT_LOAD_REG</span>    </td><td>0xA4700008</td></tr>
@@ -1510,21 +1559,20 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">RI_LATENCY_REG</span>         </td><td>0xA4700014</td></tr>
 <tr><td><span class="snip">RI_RERROR_REG</span>          </td><td>0xA4700018</td></tr>
 <tr><td><span class="snip">RI_WERROR_REG</span>          </td><td>0xA470001C</td></tr>
-
 <tr><td><span class="snip">SI_DRAM_ADDR_REG</span>       </td><td>0xA4800000</td></tr>
 <tr><td><span class="snip">SI_PIF_ADDR_RD64B_REG</span>  </td><td>0xA4800004</td></tr>
 <tr><td><span class="snip">SI_PIF_ADDR_WR64B_REG</span>  </td><td>0xA4800010</td></tr>
 <tr><td><span class="snip">SI_STATUS_REG</span>          </td><td>0xA4800018</td></tr>
 </table>
-<!-- Miscellaneous -->
-<div class="prop"><span class="title" id="Miscellaneous">Miscellaneous</span></div>
 <div class="vtab"></div>
 <table>
 <tr><td><span class="snip">PIF_ROM_START</span> </td><td>0xBFC00000</td></tr>
 <tr><td><span class="snip">PIF_RAM_START</span> </td><td>0xBFC007C0</td></tr>
 <tr><td><span class="snip">SP_DMEM_START</span> </td><td>0xA4000000</td></tr>
 <tr><td><span class="snip">SP_IMEM_START</span> </td><td>0xA4001000</td></tr>
-
+</table>
+<div class="vtab"></div>
+<table>
 <tr><td><span class="snip">KUBASE</span>  </td><td>0x00000000</td></tr>
 <tr><td><span class="snip">K0BASE</span>  </td><td>0x80000000</td></tr>
 <tr><td><span class="snip">K1BASE</span>  </td><td>0xA0000000</td></tr>

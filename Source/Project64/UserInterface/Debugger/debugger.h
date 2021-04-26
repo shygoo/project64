@@ -94,6 +94,7 @@ protected:
     void CPUStepEnded(void);
     void FrameDrawn(void);
     void PIFReadStarted(void);
+    void RSPReceivedTask(void);
 
 private:
     CDebuggerUI(const CDebuggerUI&);

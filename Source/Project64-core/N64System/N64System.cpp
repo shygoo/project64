@@ -2259,6 +2259,11 @@ void CN64System::RunRSP()
                     return;
                 }
 
+                if (g_Debugger != NULL && HaveDebugger())
+                {
+                    g_Debugger->RSPReceivedTask();
+                }
+
                 switch (Task)
                 {
                 case 1:

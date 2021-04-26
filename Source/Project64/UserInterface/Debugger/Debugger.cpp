@@ -695,6 +695,11 @@ void CDebuggerUI::PIFReadStarted(void)
     m_ScriptSystem->Invoke(JS_HOOK_PIFREAD, nullptr);
 }
 
+void CDebuggerUI::RSPReceivedTask(void)
+{
+    m_ScriptSystem->Invoke(JS_HOOK_RSPTASK, nullptr);
+}
+
 void CDebuggerUI::WaitForStep(void)
 {
     g_Settings->SaveBool(Debugger_WaitingForStep, true);

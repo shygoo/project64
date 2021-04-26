@@ -35,6 +35,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "onopcode",   js_events_onopcode, 4 },
         { "ondraw",     js_events_ondraw, 1 },
         { "onpifread",  js_events_onpifread, 1 },
+        { "onrsptask",  js_events_onrsptask, 1 },
         { "remove",     js_events_remove, 1 },
         { nullptr, nullptr, 0 }
     };
@@ -197,7 +198,7 @@ duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
     jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_GFXUPDATE, cb);
 
     duk_push_uint(ctx, callbackId);
-    return 0;
+    return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
@@ -227,6 +228,19 @@ duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr, CbArgs_EmuEventObject);
     jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_PIFREAD, cb);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onrsptask(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr, CbArgs_EmuEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_RSPTASK, cb);
     duk_push_uint(ctx, callbackId);
     return 1;
 }

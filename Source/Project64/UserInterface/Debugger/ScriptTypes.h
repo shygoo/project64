@@ -82,6 +82,7 @@ typedef enum {
     JS_HOOK_CPUSTEP,
     JS_HOOK_PIFREAD,
     JS_HOOK_GFXUPDATE,
+    JS_HOOK_RSPTASK,
     JS_NUM_APP_HOOKS
 } jshook_id_t;
 
