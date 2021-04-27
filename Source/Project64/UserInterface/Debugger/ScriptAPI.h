@@ -41,7 +41,7 @@ namespace ScriptAPI
     duk_ret_t js_events_ongprvalue(duk_context* ctx);
     duk_ret_t js_events_ondraw(duk_context* ctx);
     duk_ret_t js_events_onpifread(duk_context* ctx);
-    duk_ret_t js_events_onrsptask(duk_context* ctx);
+    duk_ret_t js_events_onsptask(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console
@@ -154,7 +154,6 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__set_fontSize(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
-    duk_ret_t js_DrawingContext_color(duk_context* ctx);
     duk_ret_t js_DrawingContext_print(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
     duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
@@ -175,6 +174,10 @@ namespace ScriptAPI
     // ScriptAPI_alert
     void Define_alert(duk_context* ctx);
     duk_ret_t js_alert(duk_context* ctx);
+
+    // ScriptAPI_RGBA
+    void Define_RGBA(duk_context* ctx);
+    duk_ret_t js_RGBA(duk_context* ctx);
 
     enum {
         R0, AT, V0, V1, A0, A1, A2, A3,

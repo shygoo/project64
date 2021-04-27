@@ -246,8 +246,8 @@
           Returns a callback ID.
           ```
           events.onwrite(PI_WR_LEN_REG, function(e) {
-              var romAddr = mem.u32[PI_CART_ADDR_REG] + 0xA0000000;
-              var ramAddr = mem.u32[PI_DRAM_ADDR_REG] + 0x80000000;
+              var romAddr = mem.u32[PI_CART_ADDR_REG] + K1BASE;
+              var ramAddr = mem.u32[PI_DRAM_ADDR_REG] + K0BASE;
               var length = e.value + 1;
               console.log("Loaded " + romAddr.hex() + " -> " + ramAddr.hex() + " (Length: " + length.hex() + ")");
           });
@@ -327,6 +327,52 @@
               }
           });
           ```
+
+  - name: events.onsptask
+    js:   events.onsptask(callback)
+    ts:   "events.onsptask(callback: (e: EmuEvent) => void): number"
+    desc: |
+          Registers a callback that will be invoked when a task is sent to the RSP.
+          `callback` receives an [EmuEvent](#EmuEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
+          <div class="vtab"></div>
+          Useful for monitoring and overriding display lists and audio lists.
+          ```
+          const SP_TASK_ADDR = SP_DMEM_START + 0xFC0;
+          const M_GFXTASK = 1;
+          const M_AUDTASK = 2;
+
+          const OSTask = mem.typedef({
+              type:             u32,
+              flags:            u32,
+              ucode_boot_addr:  u32,
+              ucode_boot_size:  u32,
+              ucode_addr:       u32,
+              ucode_size:       u32,
+              ucode_data_addr:  u32,
+              ucode_data_size:  u32,
+              dram_stack_addr:  u32,
+              dram_stack_size:  u32,
+              output_buff_addr: u32,
+              output_buff_size: u32,
+              data_addr:        u32,
+              data_size:        u32,
+              yield_data_addr:  u32,
+              yield_data_size:  u32
+          });
+
+          events.onsptask(function(e) {
+              var task = new OSTask(SP_TASK_ADDR);
+              if (task.type == M_GFXTASK) {
+                  console.log("Display list address: " + task.data_addr.hex());
+              }
+              else if (task.type == M_AUDTASK) {
+                  console.log("Audio list address: " + task.data_addr.hex());
+              }
+          });
+          ```
+
   - name: events.ondraw
     js:   events.ondraw(callback)
     ts:   "events.ondraw(callback: (e: DrawEvent) => void): number"
@@ -341,16 +387,11 @@
           ```
           events.ondraw(function(e) {
               var ctx = e.drawingContext;
-              drawStuff(ctx);
-          });
-
-          function drawStuff(ctx) {
               ctx.print(20, 20, "Hello world!");
-          }
+          });
           ```
           <div class="vtab"></div>
           The event's [DrawingContext](#DrawingContext) expires when `callback` returns.
-          If a method or property of the [DrawingContext](#DrawingContext) object is used after `callback` returns, an error is thrown.
 
   - name: events.remove
     js:   events.remove(callbackId)
@@ -369,14 +410,14 @@
     js:   EmuEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           </table>
 
   - name: CPUExecEvent
     js:   CPUExecEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           </table>
 
@@ -384,7 +425,7 @@
     js:   CPUReadWriteEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
           <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
@@ -406,14 +447,12 @@
           <tr><td>`f32`</td><td>LWC1, SWC1</td></tr>
           <tr><td>`f64`</td><td>LDC1, SDC1</td></tr>
           </table>
-          
-          </table>
 
   - name: CPUOpcodeEvent
     js:   CPUOpcodeEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.opcode`</td><td>The opcode.</td></tr>
           </table>
@@ -422,7 +461,7 @@
     js:   CPURegValueEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
           <tr><td>`e.value`</td><td>The value.</td></tr>
           <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
@@ -432,7 +471,7 @@
     js:   DrawEvent
     desc: |
           <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with this event.</td></tr>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.drawingContext`</td><td>[DrawingContext](#DrawingContext) object.</td></tr>
           </table>
 
@@ -473,81 +512,53 @@
 - name:    DrawingContext
   tagline: Screen drawing context
   props:
-  - name: ctx.color
-    js:   ctx.color(r, g, b[, alpha])
-    ts:   "ctx.color(r: number, g: number, b: number, alpha?: number)"
-    desc: |
-          Utility function that returns an RGBA32 number representation of a color.
-          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`.
-          If `alpha` is not used it will default to `1.0`.
-          ```
-          const clrTranslucentRed = ctx.color(255, 0, 0, 0.5); // 0xFF00007F
-          const clrYellow = ctx.color(255, 255, 0); // 0xFFFF00FF
-          ```
-
-  - name: ctx.print
-    js:   ctx.print(x, y, text)
-    ts:   "ctx.print(x: number, y: number, text: string): void"
-    desc: |
-          Prints text to the screen at the provided `x` and `y` coordinates.
-          ```
-          events.ondraw(function(e) {
-              var ctx = e.drawingContext;
-              ctx.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
-          });
-          ```
-
-  - name: ctx.fillrect
-    js:   ctx.fillrect(x, y, width, height)
-    desc: Draws a rectangle to the screen.
-
-  - name: ctx.getdata
-    js:   ctx.getdata(x, y, width, height)
-    ts:   "ctx.getdata(x: number, y: number, width: number, height: number): Buffer"
-    desc: Returns a Buffer object representing a portion of the screen.
-  
-  - name: ctx.setdata
-    js:   ctx.setdata(x, y, data, width, height)
-    ts:   "ctx.setdata(x: number, y: number, data: Buffer | UInt8Array, width: number, height: number)"
-    desc: |
-          Draws a raw data image to the screen at the provided `x` and `y` coordinates.
-          The `data` argument should be a Buffer or Uint8Array in which each 4 elements represent the red, green, blue, and alpha channels of a pixel.
-          The byte length of `data` must be equal to `((width * height) * 4)`.
-          ```
-          function RandomDataImage(width, height) {
-              var numBytes = ((width * height) * 4);
-              this.width = width;
-              this.height = height;
-              this.data = new Uint8Array(numBytes);
-              for(var i = 0; i < numBytes; i += 4) {
-                  this.data[i + 0] = Math.random()*256; // R
-                  this.data[i + 1] = Math.random()*256; // G
-                  this.data[i + 2] = Math.random()*256; // B
-                  this.data[i + 3] = 0xFF; // A
-              }
-          }
-
-          var randSquare = new RandomDataImage(32, 32);
-
-          events.ondraw(function(e) {
-              var ctx = e.drawingContext;
-              ctx.drawdata(20, 20, randSquare.data, randSquare.width, randSquare.height);
-          }
-          ```
-          ```
-          function FileDataImage(path, width, height) {
-              this.data = fs.readfile(path);
-              this.width = width;
-              this.height = height;
-          }
-
-          var image = new FileDataImage("image_32x32.bin", 32, 32);
-
-          events.ondraw(function(e) {
-              var ctx = e.drawingContext;
-              ctx.drawdata(20, 20, image.data, image.width, image.height);
-          }
-          ```
+#  - name: ctx.getdata
+#    js:   ctx.getdata(x, y, width, height)
+#    ts:   "ctx.getdata(x: number, y: number, width: number, height: number): Buffer"
+#    desc: Returns a Buffer object representing a portion of the screen.
+#  
+#  - name: ctx.setdata
+#    js:   ctx.setdata(x, y, data, width, height)
+#    ts:   "ctx.setdata(x: number, y: number, data: Buffer | UInt8Array, width: number, height: number)"
+#    desc: |
+#          Draws a raw data image to the screen at the provided `x` and `y` coordinates.
+#          The `data` argument should be a Buffer or Uint8Array in which each 4 elements represent the red, green, blue, and alpha channels of a pixel.
+#          The byte length of `data` must be equal to `((width * height) * 4)`.
+#          ```
+#          function RandomDataImage(width, height) {
+#              var numBytes = ((width * height) * 4);
+#              this.width = width;
+#              this.height = height;
+#              this.data = new Uint8Array(numBytes);
+#              for(var i = 0; i < numBytes; i += 4) {
+#                  this.data[i + 0] = Math.random()*256; // R
+#                  this.data[i + 1] = Math.random()*256; // G
+#                  this.data[i + 2] = Math.random()*256; // B
+#                  this.data[i + 3] = 0xFF; // A
+#              }
+#          }
+#
+#          var randSquare = new RandomDataImage(32, 32);
+#
+#          events.ondraw(function(e) {
+#              var ctx = e.drawingContext;
+#              ctx.drawdata(20, 20, randSquare.data, randSquare.width, randSquare.height);
+#          }
+#          ```
+#          ```
+#          function FileDataImage(path, width, height) {
+#              this.data = fs.readfile(path);
+#              this.width = width;
+#              this.height = height;
+#          }
+#
+#          var image = new FileDataImage("image_32x32.bin", 32, 32);
+#
+#          events.ondraw(function(e) {
+#              var ctx = e.drawingContext;
+#              ctx.drawdata(20, 20, image.data, image.width, image.height);
+#          }
+#          ```
 
   - name: ctx.width
     js:   ctx.width
@@ -565,9 +576,9 @@
     desc: |
           The current fill color. `COLOR_WHITE` (`0xFFFFFFFF`) by default.
           ```
-          // Set fillColor to opaque green
-          ctx.fillColor = ctx.color(0, 255, 0, 1.0);
+          ctx.fillColor = COLOR_GREEN;
           ```
+          See also: [Predefined colors](#Predefined_colors).
 
   - name: ctx.strokeColor
     js:   ctx.strokeColor
@@ -597,7 +608,24 @@
     js:   ctx.fontSize
     ts:   "ctx.fontSize: number"
     desc: |
-          The current font size. `14` by default.
+          The current font size. `14.0` by default.
+
+  - name: ctx.print
+    js:   ctx.print(x, y, text)
+    ts:   "ctx.print(x: number, y: number, text: string): void"
+    desc: |
+          Prints text to the screen at the provided `x` and `y` coordinates.
+          ```
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.print(20, 20, "Power: " + mem.u8[0x8033B21E]);
+          });
+          ```
+
+  - name: ctx.fillrect
+    js:   ctx.fillrect(x, y, width, height)
+    ts:   "ctx.fillrect(x: number, y: number, width: number, height: number)"
+    desc: Fills the specified rectangle area with the current fill color.
 
   - name: Predefined_colors
     js:   Predefined colors
@@ -1046,6 +1074,27 @@
     ts:   "alert(message: string, caption?: string): void"
     desc: |
           Shows a message box over the main window. Does not return until the message box is dismissed.
+
+  - name: RGBA
+    js:   RGBA(r, g, b[, alpha])
+    ts:   "RGBA(r: number, g: number, b: number, alpha?: number)"
+    desc: |
+          Returns an RGBA32 number representation of a color.
+          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`.
+          If `alpha` is not used it will default to `1.0`.
+          ```
+          const clrTranslucentRed = RGBA(255, 0, 0, 0.5); // 0xFF000080
+          const clrYellow = RGBA(255, 255, 0); // 0xFFFF00FF
+          ```
+
+#  - name: RGBA_2
+#    js:   RGBA(color, alpha)
+#    ts:   "RGBA(color: number, alpha: number)"
+#    desc: |
+#          Replaces the alpha channel of an existing RGBA32 color and returns the result.
+#          ```
+#          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); // 0xFF000080
+#          ```
 
   - name: number.hex
     js:   number.hex([numChars])

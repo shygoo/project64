@@ -35,6 +35,7 @@ void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
     
     Define_alert(ctx);
     Define_exec(ctx);
+    Define_RGBA(ctx);
     
     Define_AddressRange(ctx);
     Define_DrawingContext(ctx);
@@ -337,8 +338,6 @@ duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
     delete[] sourceCode;
     return 1;
 }
-
-
 
 duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)
 {

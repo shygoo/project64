@@ -24,7 +24,7 @@ static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 void ScriptAPI::Define_DrawingContext(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "color", js_DrawingContext_color, DUK_VARARGS },
+        //{ "color", js_DrawingContext_color, DUK_VARARGS },
         { "print", js_DrawingContext_print, 3 },
         { "fillrect", js_DrawingContext_fillrect, 4 },
         { "setdata", js_DrawingContext_setdata, 5 },
@@ -273,39 +273,6 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
 
     rw->GfxSetFontWeight(weights.at(weightName));
     return 0;
-}
-
-// TODO this should be static
-duk_ret_t ScriptAPI::js_DrawingContext_color(duk_context* ctx)
-{
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if (!duk_is_number(ctx, 0) ||
-        !duk_is_number(ctx, 1) ||
-        !duk_is_number(ctx, 2) ||
-        (nargs == 4 && !duk_is_number(ctx, 3)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
-    duk_double_t r = duk_get_number(ctx, 0);
-    duk_double_t g = duk_get_number(ctx, 1);
-    duk_double_t b = duk_get_number(ctx, 2);
-    duk_double_t a = (nargs == 4) ? duk_get_number(ctx, 3) : 1.0;
-
-    if (r < 0 || r > 255 ||
-        g < 0 || g > 255 ||
-        b < 0 || b > 255 ||
-        a < 0 || a > 1.0)
-    {
-        return DUK_RET_RANGE_ERROR;
-    }
-
-    uint32_t rgba32 = (uint32_t)r << 24 | (uint32_t)g << 16 |
-                      (uint32_t)b << 8 | (uint32_t)(255 * a);
-
-    duk_push_uint(ctx, rgba32);
-    return 1;
 }
 
 duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)

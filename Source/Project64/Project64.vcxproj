@@ -78,6 +78,7 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger.cpp" />
     <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptRenderWindow.cpp" />
     <ClCompile Include="UserInterface\Debugger\DMALog.cpp" />
     <ClCompile Include="UserInterface\Debugger\MemoryScanner.cpp" />

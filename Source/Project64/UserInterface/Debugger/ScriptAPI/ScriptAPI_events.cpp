@@ -35,7 +35,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "onopcode",   js_events_onopcode, 4 },
         { "ondraw",     js_events_ondraw, 1 },
         { "onpifread",  js_events_onpifread, 1 },
-        { "onrsptask",  js_events_onrsptask, 1 },
+        { "onsptask",   js_events_onsptask, 1 },
         { "remove",     js_events_remove, 1 },
         { nullptr, nullptr, 0 }
     };
@@ -232,7 +232,7 @@ duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
     return 1;
 }
 
-duk_ret_t ScriptAPI::js_events_onrsptask(duk_context* ctx)
+duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
 {
     if (!duk_is_function(ctx, 0))
     {
