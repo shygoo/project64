@@ -193,7 +193,7 @@ bool CScriptRenderWindow::IsVisible()
     return m_hWnd ? IsWindowVisible(m_hWnd) : false;
 }
 
-void CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32)
+bool CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32)
 {
     size_t numBytes = width * height * 4;
 
@@ -223,10 +223,16 @@ void CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, 
         outRGBA32[i + 3] = 0xFF;
     }
 
+    // TODO: Detect BitBlt error
+    // SRCCOPY from main window doesn't work unless a Direct3D GFX plugin is used
+    bool bSucceeded = true;
+
     ReleaseDC(hWnd, hSrcDC);
     DeleteDC(hMemDC);
     DeleteObject(hMemBitmap);
     DeleteObject(hOldBitmap);
+
+    return bSucceeded;
 }
 
 bool CScriptRenderWindow::GfxLoadLibs()
@@ -334,7 +340,13 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
     float width = (float)rc.Width();
     float height = (float)rc.Height();
     std::vector<uint8_t> frameRGBA32(width * height * 4);
-    CaptureWindowRGBA32(hSrcWnd, width, height, &frameRGBA32[0]);
+    static bool bLoggedError = false;
+
+    if (!CaptureWindowRGBA32(hSrcWnd, width, height, &frameRGBA32[0]) && !bLoggedError)
+    {
+        m_Debugger->Debug_LogScriptsWindow("[SCRIPTSYS]: Failed to sample game screen. A Direct3D graphics plugin may be required.\r\n");
+        bLoggedError = true;
+    }
 
     ID2D1Bitmap* bitmap;
 

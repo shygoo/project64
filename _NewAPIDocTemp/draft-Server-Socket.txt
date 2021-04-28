@@ -1,0 +1,24 @@
+new Server(connectionListener)
+  server.listen(port[, host])
+  server.address()
+  server.listening
+
+  server.on(eventName, listener)
+    'connection'
+    'close'
+    'error'
+
+  server.off(listener)
+
+---------------------------------------
+
+new Socket()
+  socket.connect()
+  socket.write()
+  socket.close()
+
+  socket.on(eventName, listener)
+    'data'
+    'close'
+
+  socket.off(eventName, listener)

@@ -364,11 +364,12 @@
 
           events.onsptask(function(e) {
               var task = new OSTask(SP_TASK_ADDR);
+              var listAddr = (task.data_addr + K0BASE).hex();
               if (task.type == M_GFXTASK) {
-                  console.log("Display list address: " + task.data_addr.hex());
+                  console.log("Display list address: " + listAddr);
               }
               else if (task.type == M_AUDTASK) {
-                  console.log("Audio list address: " + task.data_addr.hex());
+                  console.log("Audio list address: " + listAddr);
               }
           });
           ```

@@ -87,7 +87,7 @@ public:
 
     static void CpuRunningChanged(void* p);
     static void LimitFPSChanged(void* p);
-    static void CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32);
+    static bool CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32);
     static D2D1::ColorF D2D1ColorFromRGBA32(uint32_t color);
 };
 

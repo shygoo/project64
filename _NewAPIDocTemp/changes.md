@@ -12,6 +12,7 @@ Changes:
 - improve console.log's performance
 - add remaining registers to `cop0` interface
 - add events.onpifread(callback)
+- add events.onsptask(callback)
 - add console.listen(inputListener)
 - add script.keepalive(keepAlive)
 - add script.timeout(milliseconds)
@@ -79,6 +80,9 @@ TODO:
    ctx.measuretext
    subtract status bar height from ctx.height
 
+   Note GFX plugin and OS compatibility in documentation
+   - Not compatible with Windows XP and older
+   - A Direct3D graphics plugin may be required for Windows 7 (e.g. Jabo Direct3D 8)
 
 - formatting/cleanup printfs, comments etc
 
@@ -89,6 +93,9 @@ var toolsMenu = pj64.addmenu(null, 'tools_menu', "Tools",);
 pj64.addmenu(toolsMenu, "Kill Mario", function(){
     mem.u16[0x8033B21E] = 0;
 });
+
+---------------------------
+
 
 ---------------------------
 

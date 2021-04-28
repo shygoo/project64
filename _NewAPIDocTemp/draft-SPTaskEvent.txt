@@ -1,0 +1,21 @@
+SPTaskEvent
+
+  e.callbackId         ID of the callback associated with the event.
+  e.taskType           The task type. 1 (M_GFXTASK) for graphics tasks, or 2 (M_AUDTASK) for audio tasks.
+  e.taskFlags          Task flags.
+  e.ucodeBootAddress   Address of the boot microcode.
+  e.ucodeBootSize      Size of the boot microcode.
+  e.ucodeAddress       Address of the task microcode.
+  e.ucodeSize          Size of the task microcode.
+  e.ucodeDataAddress   Address of the microcode data.
+  e.ucodeDataSize      Size of the microcode data.
+  e.dramStackAddress   Address of the DRAM matrix stack.
+  e.dramStackSize      Size of the DRAM matrix stack.
+  e.outputBuffAddress  DP command buffer address for "_dram" and "_fifo" graphics microcodes.
+  e.outputBuffSize     DP command buffer size for "_dram" and "_fifo" graphics microcodes.
+  e.dataAddress        Address of the display list or audio list.
+  e.dataSize           Size of the display list or audio list.
+  e.yieldDataAddress   Address of the yield data buffer.
+  e.yieldDataSize      Size of the yield data buffer.
+
+Note: The address fields use KSEG0 addresses.
