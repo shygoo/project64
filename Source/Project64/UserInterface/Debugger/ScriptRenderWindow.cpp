@@ -1,5 +1,6 @@
 #include <stdafx.h>
 #include "ScriptRenderWindow.h"
+#include "DebuggerUI.h"
 
 #define DEFAULT_FILLCOLOR   0xFFFFFFFF
 #define DEFAULT_FONTFAMILY  "Courier New"
@@ -146,32 +147,69 @@ LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lPa
         g_Settings->UnregisterChangeCB(GameRunning_CPU_Running, this, CpuRunningChanged);
         g_Settings->UnregisterChangeCB(GameRunning_LimitFPS, this, LimitFPSChanged);
         break;
-    case WM_SETFOCUS:
     case WM_LBUTTONDOWN:
-        if (g_Plugins && g_Plugins->MainWindow() && g_Plugins->MainWindow()->GetWindowHandle())
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    {
+        int button = uMsg == WM_LBUTTONDOWN ? 0 :
+                             WM_MBUTTONDOWN ? 1 :
+                             WM_RBUTTONDOWN ? 2 : -1;
+        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEDOWN,
+            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
+    } break;
+    //case WM_SETFOCUS:
+    //    // this messes up the WM_MOUSEDOWN message
+    //    if (g_Plugins && g_Plugins->MainWindow() && g_Plugins->MainWindow()->GetWindowHandle())
+    //    {
+    //        HWND hMainWnd = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
+    //        BringWindowToTop(hMainWnd);
+    //        SetFocus(hMainWnd);
+    //    }
+    //    break;
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+    {
+        int button = uMsg == WM_LBUTTONDOWN ? 0 :
+                             WM_MBUTTONDOWN ? 1 :
+                             WM_RBUTTONDOWN ? 2 : -1;
+        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEUP,
+            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
+    } break;
+    case WM_MOUSEMOVE:
+    {
+        // todo why is mousemove being sent when mouse isn't moving
+        static int lastX = 0;
+        static int lastY = 0;
+        int x = GET_X_LPARAM(lParam);
+        int y = GET_Y_LPARAM(lParam);
+        if (lastX != x && lastY != y)
         {
-            HWND hMainWnd = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
-            BringWindowToTop(hMainWnd);
-            SetFocus(hMainWnd);
+            m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEMOVE, x, y);
+            lastX = x;
+            lastY = y;
         }
-        break;
+    } break;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
-void CScriptRenderWindow::FixPosition(HWND hMainWnd)
+void CScriptRenderWindow::FixPosition(HWND hMainWnd, HWND hStatusWnd)
 {
     if (m_hWnd != nullptr && hMainWnd != nullptr)
     {
-        CRect rc;
-        GetClientRect(hMainWnd, &rc);
-        ClientToScreen(hMainWnd, &rc.TopLeft());
-        ClientToScreen(hMainWnd, &rc.BottomRight());
-        SetWindowPos(m_hWnd, HWND_TOP, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOACTIVATE);
+        CRect mainRc, statusRc;
+        GetClientRect(hMainWnd, &mainRc);
+        ClientToScreen(hMainWnd, &mainRc.TopLeft());
+        ClientToScreen(hMainWnd, &mainRc.BottomRight());
 
-        m_Width = rc.Width();
-        m_Height = rc.Height();
+        GetClientRect(hStatusWnd, &statusRc);
+
+        m_Width = mainRc.Width();
+        m_Height = mainRc.Height() - statusRc.Height();
+
+        SetWindowPos(m_hWnd, HWND_TOP, mainRc.left, mainRc.top, m_Width, m_Height, SWP_NOACTIVATE);
 
         if (m_Gfx)
         {
@@ -564,4 +602,46 @@ D2D1::ColorF CScriptRenderWindow::D2D1ColorFromRGBA32(uint32_t color)
     float b = ((color >>  8) & 0xFF) / 255.0f;
     float a = ((color >>  0) & 0xFF) / 255.0f;
     return D2D1::ColorF(r, g, b, a);
+}
+
+void CScriptRenderWindow::GfxBeginPath()
+{
+    m_Paths.clear();
+}
+
+void CScriptRenderWindow::GfxMoveTo(float x, float y)
+{
+    pointpath_t path({ D2D1::Point2F(x, y) });
+    m_Paths.push_back(path);
+}
+
+void CScriptRenderWindow::GfxLineTo(float x, float y)
+{
+    pointpath_t& path = m_Paths.back();
+    path.push_back({ D2D1::Point2F(x, y) });
+}
+
+void CScriptRenderWindow::GfxStroke()
+{
+    for (size_t nPath = 0; nPath < m_Paths.size(); nPath++)
+    {
+        pointpath_t& path = m_Paths[nPath];
+
+        if (path.size() < 2)
+        {
+            continue;
+        }
+
+        for (size_t nPoint = 0; nPoint < path.size() - 1; nPoint++)
+        {
+            D2D1_POINT_2F& pointA = path[nPoint];
+            D2D1_POINT_2F& pointB = path[nPoint + 1];
+            
+            m_Gfx->DrawLine(
+                D2D1::Point2F(pointA.x, pointA.y),
+                D2D1::Point2F(pointB.x, pointB.y),
+                m_GfxStrokeBrush,
+                m_StrokeWidth);
+        }
+    }
 }

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated Apr 28 2021 -->
+<!-- Generated May 03 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.04.28</title>
+<title>Project64 JavaScript API prerelease 2021.05.03</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -270,7 +270,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.04.28
+prerelease 2021.05.03
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -296,7 +296,7 @@ prerelease 2021.04.28
 <li><a href="#mem_ramSize">mem.ramSize</a></li>
 <li><a href="#mem_romSize">mem.romSize</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#events">events</a>: Emulation event hooking interface<ul>
+<li><a href="#events">events</a>: Event hooking interface<ul>
 <li><a href="#events_onexec">events.onexec(address, callback)</a></li>
 <li><a href="#events_onread">events.onread(address, callback)</a></li>
 <li><a href="#events_onwrite">events.onwrite(address, callback)</a></li>
@@ -305,6 +305,9 @@ prerelease 2021.04.28
 <li><a href="#events_onpifread">events.onpifread(callback)</a></li>
 <li><a href="#events_onsptask">events.onsptask(callback)</a></li>
 <li><a href="#events_ondraw">events.ondraw(callback)</a></li>
+<li><a href="#events_onmousedown">events.onmousedown(callback)</a></li>
+<li><a href="#events_onmouseup">events.onmouseup(callback)</a></li>
+<li><a href="#events_onmousemove">events.onmousemove(callback)</a></li>
 <li><a href="#events_remove">events.remove(callbackId)</a></li>
 <li><a href="#EmuEvent">EmuEvent</a></li>
 <li><a href="#CPUExecEvent">CPUExecEvent</a></li>
@@ -312,6 +315,7 @@ prerelease 2021.04.28
 <li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
 <li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
 <li><a href="#DrawEvent">DrawEvent</a></li>
+<li><a href="#MouseEvent">MouseEvent</a></li>
 <li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
@@ -326,6 +330,10 @@ prerelease 2021.04.28
 <li><a href="#ctx_fontSize">ctx.fontSize</a></li>
 <li><a href="#ctx_print">ctx.print(x, y, text)</a></li>
 <li><a href="#ctx_fillrect">ctx.fillrect(x, y, width, height)</a></li>
+<li><a href="#ctx_beginpath">ctx.beginpath()</a></li>
+<li><a href="#ctx_moveto">ctx.moveto(x, y)</a></li>
+<li><a href="#ctx_lineto">ctx.lineto(x, y)</a></li>
+<li><a href="#ctx_stroke">ctx.stroke()</a></li>
 <li><a href="#Predefined_colors">Predefined colors</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#cpu">cpu</a>: CPU register interface<ul>
@@ -603,13 +611,13 @@ The size of cartridge ROM in bytes. <span class="snip">0</span> if ROM is not in
 <!-- events -->
 <div class="module">
 <div class="modtitle"><span class="title" id="events">events</span></div>
-Emulation event hooking interface
+Event hooking interface
 <div class="vtab"></div>
 <!-- events.onexec -->
 <div class="prop"><span class="title" id="events_onexec">events.onexec(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
+Registers a callback that is invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUExecEvent">CPUExecEvent</a> object.
 <div class="vtab"></div>
@@ -629,7 +637,7 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_onread">events.onread(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to read from <span class="snip">address</span>.
+Registers a callback that is invoked at the beginning of a CPU step if the CPU is going to read from <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab"></div>
@@ -638,7 +646,7 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_onwrite">events.onwrite(address, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the CPU is going to write to <span class="snip">address</span>.
+Registers a callback that is invoked at the beginning of a CPU step if the CPU is going to write to <span class="snip">address</span>.
 <span class="snip">address</span> may be a single address or an object containing <span class="snip">start</span> and <span class="snip">end</span> address properties (e.g. <a href="#AddressRange">AddressRange</a>).
 <span class="snip">callback</span> receives a <a href="#CPUReadWriteEvent">CPUReadWriteEvent</a> object.
 <div class="vtab"></div>
@@ -655,7 +663,7 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_onopcode">events.onopcode(address, opcode, mask, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
+Registers a callback that is invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and
 <span class="snip">opcode</span> is equal to the current opcode ANDed with <span class="snip">mask</span>.
 <span class="snip">callback</span> receives a <a href="#CPUOpcodeEvent">CPUOpcodeEvent</a> object.
 <div class="vtab"></div>
@@ -672,7 +680,7 @@ Returns a callback ID.
 <div class="prop"><span class="title" id="events_ongprvalue">events.ongprvalue(address, regFlags, value, callback)</span><div class="tag blue">Requires interpreter core</div></div>
 <div class="tsproto">events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (e: CPURegValueEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and at least one of
+Registers a callback that is invoked at the beginning of a CPU step if the program counter is at <span class="snip">address</span> and at least one of
 the general purpose registers specified by <span class="snip">regFlags</span> is equal to <span class="snip">value</span> (lower 32 bits only).
 <span class="snip">callback</span> receives a <a href="#CPURegValueEvent">CPURegValueEvent</a> object.
 <div class="vtab"></div>
@@ -690,7 +698,7 @@ See <a href="#GPR_flags">General purpose register flags</a> for a list of valid 
 <div class="prop"><span class="title" id="events_onpifread">events.onpifread(callback)</span></div>
 <div class="tsproto">events.onpifread(callback: (e: EmuEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked when PIF RAM data is going to be read into RDRAM.
+Registers a callback that is invoked when PIF RAM data is going to be read into RDRAM.
 <span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
 <div class="vtab"></div>
 Returns a callback ID.
@@ -725,7 +733,7 @@ Useful for monitoring and overriding controller input.
 <div class="prop"><span class="title" id="events_onsptask">events.onsptask(callback)</span></div>
 <div class="tsproto">events.onsptask(callback: (e: EmuEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked when a task is sent to the RSP.
+Registers a callback that is invoked when a task is sent to the RSP.
 <span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
 <div class="vtab"></div>
 Returns a callback ID.
@@ -770,7 +778,7 @@ Useful for monitoring and overriding display lists and audio lists.
 <div class="prop"><span class="title" id="events_ondraw">events.ondraw(callback)</span></div>
 <div class="tsproto">events.ondraw(callback: (e: DrawEvent) => void): number</div>
 <div class="vtab"></div>
-Registers a callback that will be invoked when Project64 receives a screen update from the graphics plugin.
+Registers a callback that is invoked when Project64 receives a screen update from the graphics plugin.
 <span class="snip">callback</span> receives a <a href="#DrawEvent">DrawEvent</a> object.
 <div class="vtab"></div>
 Returns a callback ID.
@@ -785,6 +793,30 @@ whose methods can be used to draw over or sample the current frame.
 </pre>
 <div class="vtab"></div>
 The event's <a href="#DrawingContext">DrawingContext</a> expires when <span class="snip">callback</span> returns.
+<!-- events.onmousedown -->
+<div class="prop"><span class="title" id="events_onmousedown">events.onmousedown(callback)</span></div>
+<div class="tsproto">events.onmousedown(callback: (e: MouseEvent) => void): number</div>
+<div class="vtab"></div>
+Registers a callback that is invoked when a mouse button is pressed over the main screen.
+<span class="snip">callback</span> receives a <a href="#MouseEvent">MouseEvent</a> object.
+<div class="vtab"></div>
+Returns a callback ID.
+<!-- events.onmouseup -->
+<div class="prop"><span class="title" id="events_onmouseup">events.onmouseup(callback)</span></div>
+<div class="tsproto">events.onmouseup(callback: (e: MouseEvent) => void): number</div>
+<div class="vtab"></div>
+Registers a callback that is invoked when a mouse button is released over the main screen.
+<span class="snip">callback</span> receives a <a href="#MouseEvent">MouseEvent</a> object.
+<div class="vtab"></div>
+Returns a callback ID.
+<!-- events.onmousemove -->
+<div class="prop"><span class="title" id="events_onmousemove">events.onmousemove(callback)</span></div>
+<div class="tsproto">events.onmousemove(callback: (e: MouseEvent) => void): number</div>
+<div class="vtab"></div>
+Registers a callback that is invoked when the mouse is moved over the main screen.
+<span class="snip">callback</span> receives a <a href="#MouseEvent">MouseEvent</a> object.
+<div class="vtab"></div>
+Returns a callback ID.
 <!-- events.remove -->
 <div class="prop"><span class="title" id="events_remove">events.remove(callbackId)</span></div>
 <div class="tsproto">events.remove(callbackId: number): void</div>
@@ -859,6 +891,15 @@ Unregisters the callback specified by <span class="snip">callbackId</span>.
 <table>
 <tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with the event.</td></tr>
 <tr><td><span class="snip">e.drawingContext</span></td><td><a href="#DrawingContext">DrawingContext</a> object.</td></tr>
+</table>
+<!-- MouseEvent -->
+<div class="prop"><span class="title" id="MouseEvent">MouseEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with the event.</td></tr>
+<tr><td><span class="snip">e.button</span></td><td>The mouse button. <span class="snip">0</span> = left, <span class="snip">1</span> = middle, <span class="snip">2</span> = right. <span class="snip">-1</span> if not applicable.</td></tr>
+<tr><td><span class="snip">e.x</span></td><td>Cursor X position.</td></tr>
+<tr><td><span class="snip">e.y</span></td><td>Cursor Y position.</td></tr>
 </table>
 <!-- GPR_flags -->
 <div class="prop"><span class="title" id="GPR_flags">General purpose register flags</span></div>
@@ -955,9 +996,29 @@ Prints text to the screen at the provided <span class="snip">x</span> and <span 
 </pre>
 <!-- ctx.fillrect -->
 <div class="prop"><span class="title" id="ctx_fillrect">ctx.fillrect(x, y, width, height)</span></div>
-<div class="tsproto">ctx.fillrect(x: number, y: number, width: number, height: number)</div>
+<div class="tsproto">ctx.fillrect(x: number, y: number, width: number, height: number): void</div>
 <div class="vtab"></div>
 Fills the specified rectangle area with the current fill color.
+<!-- ctx.beginpath -->
+<div class="prop"><span class="title" id="ctx_beginpath">ctx.beginpath()</span></div>
+<div class="tsproto">ctx.beginpath()</div>
+<div class="vtab"></div>
+Clears all stored sub-paths.
+<!-- ctx.moveto -->
+<div class="prop"><span class="title" id="ctx_moveto">ctx.moveto(x, y)</span></div>
+<div class="tsproto">ctx.moveto(x: number, y: number): void</div>
+<div class="vtab"></div>
+Starts a new sub-path at the provided coordinates.
+<!-- ctx.lineto -->
+<div class="prop"><span class="title" id="ctx_lineto">ctx.lineto(x, y)</span></div>
+<div class="tsproto">ctx.lineto(x: number, y: number): void</div>
+<div class="vtab"></div>
+Adds a point to the current sub-path.
+<!-- ctx.stroke -->
+<div class="prop"><span class="title" id="ctx_stroke">ctx.stroke()</span></div>
+<div class="tsproto">ctx.stroke()</div>
+<div class="vtab"></div>
+Strokes all sub-paths.
 <!-- Predefined_colors -->
 <div class="prop"><span class="title" id="Predefined_colors">Predefined colors</span></div>
 <div class="vtab"></div>

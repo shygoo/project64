@@ -23,7 +23,10 @@ namespace ScriptAPI
     void DefineGlobalConstants(duk_context* ctx);
     
     CScriptInstance* GetInstance(duk_context* ctx);
-        
+
+    jscb_id_t AddCallback(duk_context* ctx, duk_idx_t callbackIdx, jshook_id_t hookId,
+        jscond_fn_t fnCondition = nullptr, jsargs_fn_t fnPushArgs = nullptr, jsfn_t fnFinish = nullptr);
+
     jscb_id_t AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallback& callback);
     bool RemoveCallback(duk_context* ctx, jscb_id_t callbackId);
     duk_ret_t CallbackFinalizer(duk_context* ctx);
@@ -42,6 +45,9 @@ namespace ScriptAPI
     duk_ret_t js_events_ondraw(duk_context* ctx);
     duk_ret_t js_events_onpifread(duk_context* ctx);
     duk_ret_t js_events_onsptask(duk_context* ctx);
+    duk_ret_t js_events_onmouseup(duk_context* ctx);
+    duk_ret_t js_events_onmousedown(duk_context* ctx);
+    duk_ret_t js_events_onmousemove(duk_context* ctx);
     duk_ret_t js_events_remove(duk_context* ctx);
 
     // ScriptAPI_console
@@ -156,8 +162,12 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext_print(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
-    duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
-    duk_ret_t js_DrawingContext_getdata(duk_context* ctx);
+    //duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
+    //duk_ret_t js_DrawingContext_getdata(duk_context* ctx);
+    duk_ret_t js_DrawingContext_beginpath(duk_context* ctx);
+    duk_ret_t js_DrawingContext_moveto(duk_context* ctx);
+    duk_ret_t js_DrawingContext_lineto(duk_context* ctx);
+    duk_ret_t js_DrawingContext_stroke(duk_context* ctx);
 
     // ScriptAPI_AddressRange
     void Define_AddressRange(duk_context* ctx);

@@ -17,6 +17,7 @@ static duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* env);
 
 static void CbFinish_KillDrawingContext(duk_context* ctx, void* env);
 
@@ -28,15 +29,18 @@ static bool HaveInterpreter();
 void ScriptAPI::Define_events(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "onexec",     js_events_onexec, 2 },
-        { "onread",     js_events_onread, 2 },
-        { "onwrite",    js_events_onwrite, 2 },
-        { "ongprvalue", js_events_ongprvalue, 4 },
-        { "onopcode",   js_events_onopcode, 4 },
-        { "ondraw",     js_events_ondraw, 1 },
-        { "onpifread",  js_events_onpifread, 1 },
-        { "onsptask",   js_events_onsptask, 1 },
-        { "remove",     js_events_remove, 1 },
+        { "onexec",       js_events_onexec, 2 },
+        { "onread",       js_events_onread, 2 },
+        { "onwrite",      js_events_onwrite, 2 },
+        { "ongprvalue",   js_events_ongprvalue, 4 },
+        { "onopcode",     js_events_onopcode, 4 },
+        { "ondraw",       js_events_ondraw, 1 },
+        { "onpifread",    js_events_onpifread, 1 },
+        { "onsptask",     js_events_onsptask, 1 },
+        { "onmouseup",    js_events_onmouseup, 1 },
+        { "onmousedown",  js_events_onmousedown, 1 },
+        { "onmousemove",  js_events_onmousemove, 1 },
+        { "remove",       js_events_remove, 1 },
         { nullptr, nullptr, 0 }
     };
 
@@ -192,11 +196,68 @@ duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr,
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_GFXUPDATE, nullptr,
         CbArgs_DrawEventObject, CbFinish_KillDrawingContext);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
 
-    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_GFXUPDATE, cb);
+duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
 
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIFREAD, nullptr, CbArgs_EmuEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, nullptr, CbArgs_EmuEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onmouseup(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEUP, nullptr, CbArgs_MouseEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onmousedown(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEDOWN, nullptr, CbArgs_MouseEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onmousemove(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEMOVE, nullptr, CbArgs_MouseEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
@@ -219,33 +280,6 @@ duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
-{
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr, CbArgs_EmuEventObject);
-    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_PIFREAD, cb);
-    duk_push_uint(ctx, callbackId);
-    return 1;
-}
-
-duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
-{
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
-    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 0), nullptr, CbArgs_EmuEventObject);
-    jscb_id_t callbackId = AddCallback(ctx, JS_HOOK_RSPTASK, cb);
-    duk_push_uint(ctx, callbackId);
-    return 1;
-}
-
-// onread
 bool CbCond_ReadAddrBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
@@ -261,7 +295,6 @@ bool CbCond_ReadAddrBetween(JSCallback* cb, void* _env)
             addr <= cb->params.addrEnd);
 }
 
-// onwrite
 bool CbCond_WriteAddrBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
@@ -277,7 +310,6 @@ bool CbCond_WriteAddrBetween(JSCallback* cb, void* _env)
             addr <= cb->params.addrEnd);
 }
 
-// onexec
 bool CbCond_PcBetween(JSCallback* cb, void* _env)
 {
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
@@ -285,7 +317,6 @@ bool CbCond_PcBetween(JSCallback* cb, void* _env)
             env->pc <= cb->params.addrEnd);
 }
 
-// onopcode
 bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* _env)
 {
     if (!CbCond_PcBetween(cb, _env))
@@ -297,7 +328,6 @@ bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* _env)
     return cb->params.opcode == (env->opInfo.m_OpCode.Hex & cb->params.opcodeMask);
 }
 
-// ongprvalue
 static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* _env)
 {
     if (!CbCond_PcBetween(cb, _env))
@@ -681,7 +711,24 @@ void CbFinish_KillDrawingContext(duk_context* ctx, void* _env)
     duk_pop(ctx);
 }
 
-bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd)
+static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    jshook_env_mouse_t* env = (jshook_env_mouse_t*)_env;
+    duk_push_object(ctx);
+    duk_push_uint(ctx, inst->CallbackId());
+    duk_put_prop_string(ctx, -2, "callbackId");
+    duk_push_number(ctx, env->button);
+    duk_put_prop_string(ctx, -2, "button");
+    duk_push_number(ctx, env->x);
+    duk_put_prop_string(ctx, -2, "x");
+    duk_push_number(ctx, env->y);
+    duk_put_prop_string(ctx, -2, "y");
+    duk_freeze(ctx, -1);
+    return 1;
+}
+
+bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t* addrEnd)
 {
     if(duk_is_number(ctx, idx))
     {

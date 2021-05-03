@@ -24,11 +24,12 @@ static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 void ScriptAPI::Define_DrawingContext(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        //{ "color", js_DrawingContext_color, DUK_VARARGS },
         { "print", js_DrawingContext_print, 3 },
         { "fillrect", js_DrawingContext_fillrect, 4 },
-        { "setdata", js_DrawingContext_setdata, 5 },
-        { "getdata", js_DrawingContext_getdata, 4 },
+        { "beginpath", js_DrawingContext_beginpath, 0 },
+        { "moveto", js_DrawingContext_moveto, 2 },
+        { "lineto", js_DrawingContext_lineto, 2 },
+        { "stroke", js_DrawingContext_stroke, 0 },
         { nullptr, nullptr, 0 }
     };
 
@@ -309,16 +310,53 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
 
     return 0;
 }
-duk_ret_t ScriptAPI::js_DrawingContext_setdata(duk_context* ctx)
+
+duk_ret_t ScriptAPI::js_DrawingContext_beginpath(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
+    rw->GfxBeginPath();
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_moveto(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0) ||
+        !duk_is_number(ctx, 1))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    float x = duk_get_number(ctx, 0);
+    float y = duk_get_number(ctx, 1);
+    
+    rw->GfxMoveTo(x, y);
 
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_DrawingContext_getdata(duk_context* ctx)
+duk_ret_t ScriptAPI::js_DrawingContext_lineto(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
 
+    if (!duk_is_number(ctx, 0) ||
+        !duk_is_number(ctx, 1))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    float x = duk_get_number(ctx, 0);
+    float y = duk_get_number(ctx, 1);
+
+    rw->GfxLineTo(x, y);
+
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_stroke(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    rw->GfxStroke();
     return 0;
 }

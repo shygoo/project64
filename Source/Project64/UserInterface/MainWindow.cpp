@@ -694,7 +694,7 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
                 if (debugger && debugger->ScriptRenderWindow())
                 {
-                    debugger->ScriptRenderWindow()->FixPosition(hWnd);
+                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
                 }
             }
         }
@@ -745,7 +745,7 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
                 if (debugger && debugger->ScriptRenderWindow())
                 {
-                    debugger->ScriptRenderWindow()->FixPosition(hWnd);
+                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
                 }
             }
         }
@@ -878,17 +878,6 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                         g_BaseSystem->ExternalEvent(fActive ? SysEvent_ResumeCPU_AppGainedActive : SysEvent_PauseCPU_AppLostActive);
                     }
                 }
-            }
-        }
-        break;
-    case WM_ACTIVATE:
-        // TODO CLEAN UP
-        if (CDebuggerUI::HaveDebugger())
-        {
-            CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
-            if (debugger && debugger->ScriptRenderWindow())
-            {
-                debugger->ScriptRenderWindow()->FixPosition(hWnd);
             }
         }
         break;
@@ -1109,6 +1098,19 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             }
         }
         break;
+    case WM_WINDOWPOSCHANGED:
+        {
+            CMainGui* _this = (CMainGui*)GetProp(hWnd, L"Class");
+            if (CDebuggerUI::HaveDebugger())
+            {
+                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
+                if (debugger && debugger->ScriptRenderWindow())
+                {
+                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
+                }
+            }
+        }
+        return DefWindowProc(hWnd, uMsg, wParam, lParam);
     case WM_DESTROY:
         WriteTrace(TraceUserInterface, TraceDebug, "WM_DESTROY - start");
         {

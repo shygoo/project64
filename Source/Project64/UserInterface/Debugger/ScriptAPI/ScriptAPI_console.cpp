@@ -23,8 +23,21 @@ void ScriptAPI::Define_console(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_console_print(duk_context* ctx)
 {
-    const char* str = duk_safe_to_string(ctx, 0);
-    GetInstance(ctx)->System()->Print("%s", str);
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    stdstr str;
+
+    for (duk_idx_t n = 0; n < nargs; n++)
+    {
+        if (n != 0)
+        {
+            str += " ";
+        }
+
+        str += duk_safe_to_string(ctx, n - nargs);
+    }
+
+    GetInstance(ctx)->System()->Print("%s", str.c_str());
     return 0;
 }
 

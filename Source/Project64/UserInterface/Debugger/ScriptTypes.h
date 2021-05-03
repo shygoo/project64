@@ -74,15 +74,41 @@ typedef struct {
     void* jsDrawingContext;
 } jshook_env_gfxupdate_t;
 
+typedef struct {
+    int x, y;
+    int button; // 0=left,1=middle,2=right
+} jshook_env_mouse_t;
+
 enum {
     JS_EXEC_TIMEOUT = 500
 };
+
+/*
+enum {
+    JS_MOUSEDOWN,
+    JS_MOUSEUP,
+    JS_MOUSEMOVE
+} jsmouse_event_t;
+
+void DoMouseEvent(jshook_id_t hookId, int x, int y, int button = -1)
+{
+    jshook_env_mouse_t env;
+    env.x = x;
+    env.y = y;
+    env.button = button;
+
+    Invoke(hookId, (void*)&env);
+}
+*/
 
 typedef enum {
     JS_HOOK_CPUSTEP,
     JS_HOOK_PIFREAD,
     JS_HOOK_GFXUPDATE,
     JS_HOOK_RSPTASK,
+    JS_HOOK_MOUSEUP,
+    JS_HOOK_MOUSEDOWN,
+    JS_HOOK_MOUSEMOVE,
     JS_NUM_APP_HOOKS
 } jshook_id_t;
 

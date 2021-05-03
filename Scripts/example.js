@@ -20,6 +20,8 @@ events.ondraw(function(e) {
     ctx.fontWeight = "bold";
     ctx.fontSize = 18;
     ctx.strokeWidth = 3;
+    ctx.strokeColor = COLOR_BLACK;
+    ctx.fillColor = COLOR_WHITE;
     
     ctx.print(10, 100, "Hello world!");
     ctx.print(10, 120, "Type \".doc\" in the script console to view API documentation");

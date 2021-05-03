@@ -56,7 +56,7 @@ but I changed `cpu.cop0.cause` to include them both.
 TODO:
 
 - debug.stepping
-- debug.breakhere no window option
+- debug.breakhere silent option
 - script auto-run feature?
 - finish implementing new server/socket
 - finish implementing new screen interface
@@ -68,34 +68,26 @@ TODO:
 - pj64.limitfps(limitFps = true)
 - pj64.pause()
 - pj64.resume()
-- pj64.addmenu(null, caption, callback, menuKey)
-- pj64.delmenu()
 
 - DrawingContext:
    ctx.strokerect(x, y, width, height)
-   ctx.moveto(x, y)
-   ctx.lineto(x, y)
-   ctx.stroke()
    ctx.print -> ctx.drawtext
-   ctx.measuretext
-   subtract status bar height from ctx.height
+   ctx.measuretext()
 
    Note GFX plugin and OS compatibility in documentation
    - Not compatible with Windows XP and older
    - A Direct3D graphics plugin may be required for Windows 7 (e.g. Jabo Direct3D 8)
 
+- RGBA(existingColor, newAlpha)
+- name RGBA something else?
+
+- fix scriptrenderwindow focus bugs
+
+- reset drawingcontext attributes every frame
+- support mouse events when scriptrenderwindow isn't used
+- take ownership of mouse when dragging
+- make constructors for event objects
 - formatting/cleanup printfs, comments etc
-
------------------------------
-
-var toolsMenu = pj64.addmenu(null, 'tools_menu', "Tools",);
-
-pj64.addmenu(toolsMenu, "Kill Mario", function(){
-    mem.u16[0x8033B21E] = 0;
-});
-
----------------------------
-
 
 ---------------------------
 
@@ -105,3 +97,10 @@ backburner:
 - debug.setsymbol?
 - pj64.savesetting(section, name, value)
 - pj64.loadsetting(section, name)
+- pj64.addmenu(null, caption, callback, menuKey)
+- pj64.delmenu()
+
+var toolsMenu = pj64.addmenu(null, 'tools_menu', "Tools");
+pj64.addmenu(toolsMenu, "Kill Mario", function(){
+    mem.u16[0x8033B21E] = 0;
+});

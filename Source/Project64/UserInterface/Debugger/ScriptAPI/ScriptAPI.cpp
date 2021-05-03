@@ -238,6 +238,13 @@ CScriptInstance* ScriptAPI::GetInstance(duk_context* ctx)
     return instance;
 }
 
+jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, duk_idx_t callbackIdx, jshook_id_t hookId,
+    jscond_fn_t fnCondition, jsargs_fn_t fnPushArgs, jsfn_t fnFinish)
+{
+    JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, callbackIdx), fnCondition, fnPushArgs, fnFinish);
+    return AddCallback(ctx, hookId, cb);
+}
+
 jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallback& callback)
 {
     CScriptInstance* inst = GetInstance(ctx);

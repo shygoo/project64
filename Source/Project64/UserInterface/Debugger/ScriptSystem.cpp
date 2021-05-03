@@ -158,6 +158,12 @@ void CScriptSystem::Invoke(jshook_id_t hookId, void* env)
     }
 }
 
+void CScriptSystem::DoMouseEvent(jshook_id_t hookId, int x, int y, int button)
+{
+    jshook_env_mouse_t env = { x, y, button };
+    Invoke(hookId, (void*)&env);
+}
+
 void CScriptSystem::SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs, void *argsParam)
 {
     CGuard guard(m_InstancesCS);

@@ -54,6 +54,7 @@ public:
 
     bool HaveCallbacks(jshook_id_t hookId);
     void Invoke(jshook_id_t hookId, void* env);
+    void DoMouseEvent(jshook_id_t hookId, int x, int y, int button = -1);
     jscb_id_t RawAddCallback(jshook_id_t hookId, JSCallback& callback);
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);
     

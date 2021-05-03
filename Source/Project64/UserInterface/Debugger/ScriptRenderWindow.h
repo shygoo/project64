@@ -47,6 +47,9 @@ private:
 
     COutlinedTextRenderer* m_TextRenderer;
 
+    typedef std::vector<D2D1_POINT_2F> pointpath_t;
+    std::vector<pointpath_t> m_Paths;
+
     bool GfxLoadLibs();
     void GfxFreeLibs();
     bool GfxInitFactories();
@@ -78,10 +81,15 @@ public:
     void GfxFillRect(float left, float top, float right, float bottom);
     void GfxCopyWindow(HWND hSrcWnd);
 
+    void GfxBeginPath();
+    void GfxMoveTo(float x, float y);
+    void GfxLineTo(float x, float y);
+    void GfxStroke();
+
     int GetWidth();
     int GetHeight();
 
-    void FixPosition(HWND hMainWnd);
+    void FixPosition(HWND hMainWnd, HWND hStatusWnd);
     void SetVisible(bool bVisible);
     bool IsVisible();
 
