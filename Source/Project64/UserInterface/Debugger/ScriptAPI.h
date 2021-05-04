@@ -169,6 +169,13 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext_lineto(duk_context* ctx);
     duk_ret_t js_DrawingContext_stroke(duk_context* ctx);
 
+    // ScriptAPI_3d
+    void Define_3d(duk_context* ctx);
+    duk_ret_t vec3_create(duk_context* ctx);
+    duk_ret_t vec3_transformMat4(duk_context* ctx);
+    duk_ret_t mat4_create(duk_context* ctx);
+    duk_ret_t mat4_mul(duk_context* ctx);
+
     // ScriptAPI_AddressRange
     void Define_AddressRange(duk_context* ctx);
     duk_ret_t js_AddressRange__constructor(duk_context* ctx);

@@ -151,9 +151,13 @@ LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lPa
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
     {
-        int button = uMsg == WM_LBUTTONDOWN ? 0 :
-                             WM_MBUTTONDOWN ? 1 :
-                             WM_RBUTTONDOWN ? 2 : -1;
+        int button = -1;
+        switch (uMsg)
+        {
+        case WM_LBUTTONDOWN: button = 0; break;
+        case WM_MBUTTONDOWN: button = 1; break;
+        case WM_RBUTTONDOWN: button = 2; break;
+        }
         m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEDOWN,
             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
     } break;
@@ -170,9 +174,13 @@ LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lPa
     case WM_MBUTTONUP:
     case WM_RBUTTONUP:
     {
-        int button = uMsg == WM_LBUTTONDOWN ? 0 :
-                             WM_MBUTTONDOWN ? 1 :
-                             WM_RBUTTONDOWN ? 2 : -1;
+        int button = -1;
+        switch (uMsg)
+        {
+        case WM_LBUTTONUP: button = 0; break;
+        case WM_MBUTTONUP: button = 1; break;
+        case WM_RBUTTONUP: button = 2; break;
+        }
         m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEUP,
             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
     } break;
@@ -262,7 +270,7 @@ bool CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, 
     }
 
     // TODO: Detect BitBlt error
-    // SRCCOPY from main window doesn't work unless a Direct3D GFX plugin is used
+    // SRCCOPY from main window doesn't work on Win7 unless a Direct3D GFX plugin is used
     bool bSucceeded = true;
 
     ReleaseDC(hWnd, hSrcDC);
@@ -349,11 +357,13 @@ bool CScriptRenderWindow::GfxInitTarget()
 
         hr = m_D2DFactory->CreateHwndRenderTarget(
             D2D1::RenderTargetProperties(),
-            D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(m_Width, m_Height), D2D1_PRESENT_OPTIONS_NONE),
+            D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(m_Width, m_Height), D2D1_PRESENT_OPTIONS_IMMEDIATELY),
             &m_Gfx);
 
         if (SUCCEEDED(hr) && m_Gfx)
         {
+            //m_Gfx->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+
             m_TextRenderer = new COutlinedTextRenderer(m_D2DFactory, m_Gfx, &m_GfxFillBrush, &m_GfxStrokeBrush);
             GfxSetFillColor(DEFAULT_FILLCOLOR);
             GfxSetStrokeColor(DEFAULT_STROKECOLOR);

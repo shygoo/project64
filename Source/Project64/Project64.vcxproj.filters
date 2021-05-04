@@ -90,6 +90,7 @@
     <ClCompile Include="UserInterface\WTLControls\wtl-BitmapPicture.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptRenderWindow.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_3d.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\About.h" />

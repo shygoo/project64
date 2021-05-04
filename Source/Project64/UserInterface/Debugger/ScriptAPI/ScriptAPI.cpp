@@ -32,6 +32,7 @@ void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
     Define_mem(ctx);
     Define_pj64(ctx);
     Define_script(ctx);
+    Define_3d(ctx);
     
     Define_alert(ctx);
     Define_exec(ctx);
