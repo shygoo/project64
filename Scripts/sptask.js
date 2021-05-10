@@ -147,9 +147,6 @@ function drawHotFace(ctx)
         var y = (v0[1] + v1[1] + v2[1]) / 3;
         var z = (v0[2] + v1[2] + v2[2]) / 3;
 
-        var dx = mouseX - x;
-        var dy = mouseY - y;
-
         if(pointInTriangle([mouseX, mouseY], v0, v1, v2))
         {
             if(hotFaceIdx == -1 && hotFaceXYZ[2] < z)
@@ -200,15 +197,13 @@ function Checkbox(x, y, label, cb)
     this.label = label;
     this.checked = false;
     var _this = this;
-    //this.cb = cb;
 
-    events.onmouseup(function(e){
+    this.cbId = events.onmouseup(function(e) {
         if(e.x >= _this.x && e.x < _this.x + 10 &&
            e.y >= _this.y && e.y < _this.y + 10)
         {
             gShowWireframe = !gShowWireframe;
             _this.checked = !_this.checked;
-            //_this.cb(_this.checked);
         }
     })
 }
@@ -228,13 +223,11 @@ var wireframeCheckbox = new Checkbox(20, 100, "Wireframe");
 var triInfoCheckbox = new Checkbox(20, 116, "Tri addr");
 var vtxInfoCheckbox = new Checkbox(20, 132, "Vtx addr");
 
-
 events.ondraw(function(e) {
     var ctx = e.drawingContext;
     ctx.fontSize = 14;
     ctx.fontFamily = "Consolas";
     ctx.fontWeight = "bold";
-    //ctx.strokeWidth = 3;
     var y = 100;
 
     function ny(){
@@ -363,14 +356,11 @@ DLParser.prototype.parseF3D = function(dlistAddr) {
 
     for(var i = 0; i < 64; i++) {
         // (only loading xyz)
-        spVertices[i] = vec3.create(); //new Array(3);
+        spVertices[i] = vec3.create();
     }
 
     for(var i = 0; i < spMatrices.length; i++) {
-        spMatrices[i] = mat4.create(); //new Array(16);
-        //for(var j = 0; j < 16; j++) {
-        //    spMatrices[i][j] = 0;
-        //}
+        spMatrices[i] = mat4.create();
     }
 
     // G_VTX
@@ -451,13 +441,11 @@ DLParser.prototype.parseF3D = function(dlistAddr) {
                 faceHeap[faceIdx].debugAddr = K0BASE + dlAddress - 8;
                 vhidx += 3;
                 faceIdx++;
-                //console.log("    " + w0.hex(), w1.hex());
                 //numTriangles++;
             } break;
             case 0x01: {
                 var maddr = spSegments[(w1 >>> 24) & 0x0F] + (w1 & 0x00FFFFFF);
                 mtxflags = (w0 >>> 16) & 0xFF;
-                //console.log(w0.hex(), w1.hex(), "//", maddr.hex());
                 
                 if(mtxflags & 0x01) { // G_MTX_PROJECTION
                     if(mtxflags & 0x02) { // G_MTX_LOAD
@@ -465,7 +453,6 @@ DLParser.prototype.parseF3D = function(dlistAddr) {
                     }
                     else {
                         loadMatrix(ram, maddr, scratchMtx);
-                        //multMatrix(spProjectionMatrix, scratchMtx, spProjectionMatrix);
                         mat4_mul(spProjectionMatrix, spProjectionMatrix, scratchMtx);
                     }
                 }
@@ -481,7 +468,6 @@ DLParser.prototype.parseF3D = function(dlistAddr) {
                     }
                     else { // G_MTX_MUL
                         loadMatrix(ram, maddr, scratchMtx);
-                        //multMatrix(curMtx, scratchMtx, spMatrices[spMatrixIndex]);
                         mat4_mul(spMatrices[spMatrixIndex], curMtx, scratchMtx);
                     }
 
