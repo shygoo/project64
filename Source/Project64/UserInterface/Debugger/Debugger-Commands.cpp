@@ -1441,10 +1441,11 @@ LRESULT CDebugCommandsView::OnListBoxClicked(WORD /*wNotifyCode*/, WORD wID, HWN
         int index = m_BreakpointList.GetCaretIndex();
         uint32_t address = m_BreakpointList.GetItemData(index);
         int len = m_BreakpointList.GetTextLen(index);
-        wchar_t* rowText = (wchar_t*)malloc((len + 1) * sizeof(wchar_t));
-        rowText[len] = '\0';
-        m_BreakpointList.GetText(index, rowText);
-        if (*rowText == L'E')
+        std::wstring rowText;
+        rowText.resize(len);
+
+        m_BreakpointList.GetText(index, (wchar_t *)rowText.data());
+        if (rowText[0] == L'E')
         {
             ShowAddress(address, true);
         }
@@ -1452,7 +1453,6 @@ LRESULT CDebugCommandsView::OnListBoxClicked(WORD /*wNotifyCode*/, WORD wID, HWN
         {
             m_Debugger->Debug_ShowMemoryLocation(address, true);
         }
-        free(rowText);
     }
     return FALSE;
 }
@@ -1676,10 +1676,8 @@ LRESULT CDebugCommandsView::OnOpEditKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM
     }
     else if (wParam == VK_RETURN)
     {
-        wchar_t text[256] = { 0 };
-        m_OpEdit.GetWindowText(text, (sizeof(text) / sizeof(text[0])) - 1);
         uint32_t op;
-        bool bValid = CAssembler::AssembleLine(stdstr().FromUTF16(text).c_str(), &op, m_SelectedAddress);
+        bool bValid = CAssembler::AssembleLine(GetCWindowText(m_OpEdit).c_str(), &op, m_SelectedAddress);
         if (bValid)
         {
             m_OpEdit.SetWindowText(L"");
@@ -1700,19 +1698,15 @@ LRESULT CDebugCommandsView::OnOpEditKeyDown(UINT /*uMsg*/, WPARAM wParam, LPARAM
 LRESULT CDebugCommandsView::OnOpEditChanged(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hwnd*/, BOOL& /*bHandled*/)
 {
     // Handle multiline input
-    size_t length = m_OpEdit.GetWindowTextLength();
-    wchar_t* text = new wchar_t[length + 1];
-    m_OpEdit.GetWindowText(text, length + 1);
-
-    if (wcschr(text, L'\n') == nullptr)
+    std::string text = GetCWindowText(m_OpEdit);
+    if (strchr(text.c_str(), '\n') == nullptr)
     {
-        delete[] text;
         return FALSE;
     }
 
     EndOpEdit();
 
-    for (size_t i = 0; i < length; i++)
+    for (size_t i = 0 , n = text.size(); i < n; i++)
     {
         if (text[i] == '\r')
         {
@@ -1720,15 +1714,15 @@ LRESULT CDebugCommandsView::OnOpEditChanged(WORD /*wNotifyCode*/, WORD /*wID*/, 
         }
     }
 
-    wchar_t *tokctx;
-    wchar_t *line = wcstok_s(text, L"\n", &tokctx);
+    char * tokctx;
+    char * line = strtok_s((char *)text.c_str(), "\n", &tokctx);
 
     while (line != nullptr)
     {
-        if (wcslen(line) != 0)
+        if (strlen(line) != 0)
         {
             uint32_t op;
-            bool bValid = CAssembler::AssembleLine(stdstr().FromUTF16(line).c_str(), &op, m_SelectedAddress);
+            bool bValid = CAssembler::AssembleLine(line, &op, m_SelectedAddress);
 
             if (bValid)
             {
@@ -1739,18 +1733,16 @@ LRESULT CDebugCommandsView::OnOpEditChanged(WORD /*wNotifyCode*/, WORD /*wID*/, 
             {
                 ShowAddress(m_StartAddress, TRUE);
                 BeginOpEdit(m_SelectedAddress);
-                m_OpEdit.SetWindowText(line);
-                delete[] text;
+                m_OpEdit.SetWindowText(stdstr(line).ToUTF16().c_str());
                 return FALSE;
             }
         }
 
-        line = wcstok_s(nullptr, L"\n", &tokctx);
+        line = strtok_s(nullptr, "\n", &tokctx);
     }
 
     ShowAddress(m_StartAddress, TRUE);
     BeginOpEdit(m_SelectedAddress);
-    delete[] text;
     return FALSE;
 }
 

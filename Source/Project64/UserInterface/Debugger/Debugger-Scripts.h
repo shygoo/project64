@@ -4,6 +4,7 @@
 #include <Project64/UserInterface/WTLControls/EditConInput.h>
 #include <Project64/UserInterface/WTLControls/TooltipDialog.h>
 #include <string>
+#include <vector>
 
 class CDebugScripts :
     public CDebugDialog<CDebugScripts>,
