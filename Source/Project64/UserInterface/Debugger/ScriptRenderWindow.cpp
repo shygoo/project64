@@ -134,6 +134,33 @@ void CScriptRenderWindow::LimitFPSChanged(void* p)
     //bool bLimitFPS = g_Settings->LoadBool(GameRunning_LimitFPS);
 }
 
+int CScriptRenderWindow::MouseMessageButtonNumber(DWORD uMsg)
+{
+    //todo
+    //switch (uMsg)
+    //{
+    //case WM_LBUTTONDOWN:
+    //case WM_MBUTTONDOWN:
+    //case WM_RBUTTONDOWN:
+    //}
+    return -1;
+}
+
+void CScriptRenderWindow::MainWndHookProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
+{
+    switch (uMsg)
+    {
+    case WM_MOVE:
+    case WM_SIZE:
+    case WM_WINDOWPOSCHANGED:
+        {
+            CMainGui * mainWindow = (CMainGui *)GetProp(hWnd, L"Class");
+            FixPosition(hWnd, (HWND)mainWindow->GetStatusBar());
+        }
+        break;
+    }
+}
+
 LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
 {
     switch (uMsg)
@@ -160,6 +187,13 @@ LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lPa
         }
         m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEDOWN,
             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
+
+        if (g_Plugins && g_Plugins->MainWindow() && g_Plugins->MainWindow()->GetWindowHandle())
+        {
+            HWND hMainWnd = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
+            BringWindowToTop(hMainWnd);
+            SetFocus(hMainWnd);
+        }
     } break;
     //case WM_SETFOCUS:
     //    // this messes up the WM_MOUSEDOWN message
@@ -207,6 +241,8 @@ void CScriptRenderWindow::FixPosition(HWND hMainWnd, HWND hStatusWnd)
 {
     if (m_hWnd != nullptr && hMainWnd != nullptr)
     {
+        //if(IsWindowEnabled(m_hWnd))
+
         CRect mainRc, statusRc;
         GetClientRect(hMainWnd, &mainRc);
         ClientToScreen(hMainWnd, &mainRc.TopLeft());
@@ -363,12 +399,7 @@ bool CScriptRenderWindow::GfxInitTarget()
         if (SUCCEEDED(hr) && m_Gfx)
         {
             //m_Gfx->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-
             m_TextRenderer = new COutlinedTextRenderer(m_D2DFactory, m_Gfx, &m_GfxFillBrush, &m_GfxStrokeBrush);
-            GfxSetFillColor(DEFAULT_FILLCOLOR);
-            GfxSetStrokeColor(DEFAULT_STROKECOLOR);
-            GfxSetStrokeWidth(DEFAULT_STROKEWIDTH);
-            GfxSetFont(stdstr(DEFAULT_FONTFAMILY).ToUTF16().c_str(), DEFAULT_FONTSIZE);
             return true;
         }
     }
@@ -424,6 +455,11 @@ void CScriptRenderWindow::GfxBeginDraw()
     {
         return;
     }
+
+    GfxSetFillColor(DEFAULT_FILLCOLOR);
+    GfxSetStrokeColor(DEFAULT_STROKECOLOR);
+    GfxSetStrokeWidth(DEFAULT_STROKEWIDTH);
+    GfxSetFont(stdstr(DEFAULT_FONTFAMILY).ToUTF16().c_str(), DEFAULT_FONTSIZE);
 
     m_Gfx->BeginDraw();
 }

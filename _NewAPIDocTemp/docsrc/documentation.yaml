@@ -392,7 +392,7 @@
           });
           ```
           <div class="vtab"></div>
-          The event's [DrawingContext](#DrawingContext) expires when `callback` returns.
+          The event's [DrawingContext](#DrawingContext) object expires when `callback` returns.
 
   - name: events.onmousedown
     js:   events.onmousedown(callback)
@@ -549,6 +549,17 @@
 # screen
 - name:    DrawingContext
   tagline: Screen drawing context
+  desc: |
+        Screen drawing context
+        <div class="vtab"></div>
+        This object is accessed via [events.ondraw](#events_ondraw).
+        ```
+        events.ondraw(function(e) {
+            var ctx = e.drawingContext;
+            ctx.print(20, 20, "Hello world!");
+        });
+        ```
+        Note: Not compatible with Windows XP. A Direct3D graphics plugin may be required on Windows 7.
   props:
 #  - name: ctx.getdata
 #    js:   ctx.getdata(x, y, width, height)

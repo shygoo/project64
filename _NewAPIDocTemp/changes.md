@@ -59,7 +59,6 @@ TODO:
 - debug.breakhere silent option
 - script auto-run feature?
 - finish implementing new server/socket
-- finish implementing new screen interface
 - full test suite
 
 - pj64.savestate(path)
@@ -74,16 +73,10 @@ TODO:
    ctx.print -> ctx.drawtext
    ctx.measuretext()
 
-   Note GFX plugin and OS compatibility in documentation
-   - Not compatible with Windows XP and older
-   - A Direct3D graphics plugin may be required for Windows 7 (e.g. Jabo Direct3D 8)
-
 - RGBA(existingColor, newAlpha)
 - name RGBA something else?
 
 - fix scriptrenderwindow focus bugs
-
-- reset drawingcontext attributes every frame
 - support mouse events when scriptrenderwindow isn't used
 - take ownership of mouse when dragging
 - make constructors for event objects

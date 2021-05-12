@@ -21,6 +21,8 @@ const OSTask = mem.typedef({
     yield_data_size:  u32
 });
 
+var screenWidth = 320;
+var screenHeight = 240;
 var dlResult0 = null;
 var dlResult1 = null;
 var dumped = false;
@@ -225,6 +227,8 @@ var vtxInfoCheckbox = new Checkbox(20, 132, "Vtx addr");
 
 events.ondraw(function(e) {
     var ctx = e.drawingContext;
+    screenWidth = ctx.width;
+    screenHeight = ctx.height;
     ctx.fontSize = 14;
     ctx.fontFamily = "Consolas";
     ctx.fontWeight = "bold";
@@ -277,7 +281,7 @@ function onGfxTask(task) {
 
     var dlp = new DLParser();
     dlp.ram = mem.getblock(K0BASE, mem.ramSize);
-    dlp.parseF3D(dlistAddr);
+    dlp.parseF3D(dlistAddr, screenWidth, screenHeight);
     dlResult0 = dlp.result;
 
     if(!dumped)
@@ -325,7 +329,7 @@ function loadMatrix(ram, offset, dst)
     }
 }
 
-DLParser.prototype.parseF3D = function(dlistAddr) {
+DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
     var parseTimeStart = performance.now();
 
     var dlAddress = dlistAddr;
@@ -343,10 +347,10 @@ DLParser.prototype.parseF3D = function(dlistAddr) {
     var spFinalMatrix = mat4.create();
 
     var screenMtx = mat4.create();
-    screenMtx[0] = 320;
-    screenMtx[5] = -240;
-    screenMtx[12] = 320;
-    screenMtx[13] = 240;
+    screenMtx[0] = screenWidth/2;
+    screenMtx[5] = -screenHeight/2;
+    screenMtx[12] = screenWidth/2;
+    screenMtx[13] = screenHeight/2;
 
     var scratchMtx = mat4.create();
 

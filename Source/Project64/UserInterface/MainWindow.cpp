@@ -592,6 +592,15 @@ void CMainGui::SaveWindowLoc(void)
 
 LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
 {
+    if (CDebuggerUI::HaveDebugger())
+    {
+        CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
+        if (debugger && debugger->ScriptRenderWindow())
+        {
+            debugger->ScriptRenderWindow()->MainWndHookProc(hWnd, uMsg, wParam, lParam);
+        }
+    }
+
     switch (uMsg)
     {
     case WM_CREATE:
@@ -688,15 +697,6 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             }
             KillTimer(hWnd, Timer_SetWindowPos);
             SetTimer(hWnd, Timer_SetWindowPos, 1000, nullptr);
-            // TODO CLEAN UP
-            if (CDebuggerUI::HaveDebugger())
-            {
-                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
-                if (debugger && debugger->ScriptRenderWindow())
-                {
-                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
-                }
-            }
         }
         if (CGuiSettings::bCPURunning() && g_BaseSystem)
         {
@@ -737,15 +737,6 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
                 if (wParam == SIZE_RESTORED && _this->RomBrowserVisible())
                 {
                     _this->RomBrowserMaximize(false);
-                }
-            }
-            // TODO CLEAN UP
-            if (CDebuggerUI::HaveDebugger())
-            {
-                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
-                if (debugger && debugger->ScriptRenderWindow())
-                {
-                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
                 }
             }
         }
@@ -1098,19 +1089,6 @@ LRESULT CALLBACK CMainGui::MainGui_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWO
             }
         }
         break;
-    case WM_WINDOWPOSCHANGED:
-        {
-            CMainGui* _this = (CMainGui*)GetProp(hWnd, L"Class");
-            if (CDebuggerUI::HaveDebugger())
-            {
-                CDebuggerUI* debugger = (CDebuggerUI*)g_Debugger;
-                if (debugger && debugger->ScriptRenderWindow())
-                {
-                    debugger->ScriptRenderWindow()->FixPosition(hWnd, _this->m_hStatusWnd);
-                }
-            }
-        }
-        return DefWindowProc(hWnd, uMsg, wParam, lParam);
     case WM_DESTROY:
         WriteTrace(TraceUserInterface, TraceDebug, "WM_DESTROY - start");
         {

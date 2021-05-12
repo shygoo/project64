@@ -56,9 +56,13 @@ private:
     bool GfxInitTarget();
     void GfxRefreshTextFormat();
 
+    static int MouseMessageButtonNumber(DWORD uMsg);
+
 public:
     CScriptRenderWindow(CDebuggerUI* debugger);
     ~CScriptRenderWindow();
+
+    void MainWndHookProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
 
     HWND GetWindowHandle(void);
     
@@ -150,6 +154,7 @@ public:
         ID2D1PathGeometry* pathGeometry = nullptr;
         ID2D1GeometrySink* geometrySink = nullptr;
         ID2D1TransformedGeometry* transformedGeometry = nullptr;
+        D2D1::Matrix3x2F matrix;
 
         hr = m_D2DFactory->CreatePathGeometry(&pathGeometry);
 
@@ -182,7 +187,7 @@ public:
 
         geometrySink->Close();
 
-        D2D1::Matrix3x2F matrix = D2D1::Matrix3x2F(1, 0, 0, 1, baselineOriginX, baselineOriginY);
+        matrix = D2D1::Matrix3x2F(1, 0, 0, 1, baselineOriginX, baselineOriginY);
 
         hr = m_D2DFactory->CreateTransformedGeometry(pathGeometry, &matrix, &transformedGeometry);
 
