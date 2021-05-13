@@ -156,7 +156,7 @@
     desc: |
           Returns a block of data from memory as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
           ```
-          fs.writefile("ram_dump.bin",  mem.getblock(K0BASE, mem.ramSize));
+          fs.writefile("ram_dump.bin", mem.getblock(K0BASE, mem.ramSize));
           ```
 
   - name: mem.setblock

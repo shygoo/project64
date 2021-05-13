@@ -17,7 +17,7 @@ new N64Image(format: number, width: number, height: number, data: Buffer, palett
         var height = 64;
         var texelSize = 2;
         var imageData = mem.getblock(0x802CB1C0, width * height * texelSize);
-        var image = new N64Image(IMG_RGBA16, imageData, width, height);
+        var image = new N64Image(IMG_RGBA16, width, height, imageData);
         var pngData = image.toPNG();
         fs.writefile("dumped_texture.png", pngData);
 
@@ -32,7 +32,7 @@ new N64Image(format: number, width: number, height: number, data: Buffer, palett
 
     Color quantization is not implemented. An error is thrown if `format` is a color-index (CI) type
     and the color count of the PNG image exceeds the maximum number of colors supported. The maximum
-    number of colors supported by CI8 and CI4 formats are 256 and 16, respectively.
+    number of colors supported by the CI8 and CI4 formats are 256 and 16, respectively.
 
 ---------------------
 

@@ -91,6 +91,7 @@
     <ClCompile Include="UserInterface\Debugger\ScriptRenderWindow.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_3d.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_N64Image.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\About.h" />

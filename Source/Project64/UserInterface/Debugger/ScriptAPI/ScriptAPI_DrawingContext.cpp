@@ -95,7 +95,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
     duk_push_c_function(ctx, js_DrawingContext__set_fontWeight, 1);
     duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
 
-    duk_dup(ctx, 0); // ScriptRenderWindow*
+    duk_dup(ctx, 0); // CScriptRenderWindow*
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("srw"));
     return 0;
 }
@@ -263,7 +263,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
 
     const char* weightName = duk_get_string(ctx, 0);
 
-    const std::map<std::string, DWRITE_FONT_WEIGHT> weights = {
+    static const std::map<std::string, DWRITE_FONT_WEIGHT> weights = {
         { "light", DWRITE_FONT_WEIGHT_LIGHT },
         { "normal", DWRITE_FONT_WEIGHT_NORMAL },
         { "bold", DWRITE_FONT_WEIGHT_BOLD }

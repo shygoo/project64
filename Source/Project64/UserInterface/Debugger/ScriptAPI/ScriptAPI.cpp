@@ -226,6 +226,18 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
         { "COLOR_CYAN",    0x00FFFFFF },
         { "COLOR_MAGENTA", 0xFF00FFFF },
 
+        { "IMG_I4", IMG_I4 },
+        { "IMG_I8", IMG_I8 },
+        { "IMG_IA4", IMG_IA4 },
+        { "IMG_IA8", IMG_IA8 },
+        { "IMG_IA16", IMG_IA16 },
+        { "IMG_RGBA16", IMG_RGBA16 },
+        { "IMG_RGBA32", IMG_RGBA32 },
+        { "IMG_CI8_RGBA16", IMG_CI8_RGBA16 },
+        { "IMG_CI4_RGBA16", IMG_CI4_RGBA16 },
+        { "IMG_CI8_IA16", IMG_CI8_IA16 },
+        { "IMG_CI4_IA16", IMG_CI4_IA16 },
+
         { nullptr, 0 },
     };
 

@@ -64,11 +64,11 @@ TODO:
    make sure ctx.fill() implementation is correct
 
 - N64Image class
-- SPTaskEvent
 - onpidma
 
 - make constructors for event objects
-- formatting/cleanup printfs, comments etc
+- private constructor flag
+- formatting/cleanup printfs, todo comments etc
 - full test suite
 
 
