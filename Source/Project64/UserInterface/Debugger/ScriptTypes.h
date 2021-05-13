@@ -83,24 +83,6 @@ enum {
     JS_EXEC_TIMEOUT = 500
 };
 
-/*
-enum {
-    JS_MOUSEDOWN,
-    JS_MOUSEUP,
-    JS_MOUSEMOVE
-} jsmouse_event_t;
-
-void DoMouseEvent(jshook_id_t hookId, int x, int y, int button = -1)
-{
-    jshook_env_mouse_t env;
-    env.x = x;
-    env.y = y;
-    env.button = button;
-
-    Invoke(hookId, (void*)&env);
-}
-*/
-
 typedef enum {
     JS_HOOK_CPUSTEP,
     JS_HOOK_PIFREAD,

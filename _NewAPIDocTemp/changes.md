@@ -30,6 +30,8 @@ Changes:
 - add pj64.close()
 - add exec(command)
 - add require(id)
+- reads from `cpu.cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
+- writes to `cpu.cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
 
 Changes that will break compatibility with old scripts:
 
@@ -46,12 +48,6 @@ Changes that will break compatibility with old scripts:
 - remove redundant `rom` interface because `mem` interface can access ROM
 - remove `GPR_ANY_ARG`, `GPR_ANY_TEMP`, `GPR_ANY_SAVE`
 
-I am not sure what the situation is with `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`,
-but I changed `cpu.cop0.cause` to include them both.
-
-- reads from `cpu.cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
-- writes to `cpu.cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
-
 ---------------------
 TODO:
 
@@ -59,28 +55,22 @@ TODO:
 - debug.breakhere silent option
 - script auto-run feature?
 - finish implementing new server/socket
-- full test suite
-
-- pj64.savestate(path)
-- pj64.loadstate(path)
-- pj64.reset(softReset = true)
-- pj64.limitfps(limitFps = true)
-- pj64.pause()
-- pj64.resume()
+- native module loader
+- move 3d math interface to a native module
 
 - DrawingContext:
-   ctx.strokerect(x, y, width, height)
-   ctx.print -> ctx.drawtext
-   ctx.measuretext()
+   ctx.measuretext(text)
+   ctx.drawimage()
+   make sure ctx.fill() implementation is correct
 
-- RGBA(existingColor, newAlpha)
-- name RGBA something else?
+- N64Image class
+- SPTaskEvent
+- onpidma
 
-- fix scriptrenderwindow focus bugs
-- support mouse events when scriptrenderwindow isn't used
-- take ownership of mouse when dragging
 - make constructors for event objects
 - formatting/cleanup printfs, comments etc
+- full test suite
+
 
 ---------------------------
 
@@ -92,8 +82,9 @@ backburner:
 - pj64.loadsetting(section, name)
 - pj64.addmenu(null, caption, callback, menuKey)
 - pj64.delmenu()
-
-var toolsMenu = pj64.addmenu(null, 'tools_menu', "Tools");
-pj64.addmenu(toolsMenu, "Kill Mario", function(){
-    mem.u16[0x8033B21E] = 0;
-});
+- pj64.savestate(path)
+- pj64.loadstate(path)
+- pj64.reset(softReset = true)
+- pj64.limitfps(limitFps = true)
+- pj64.pause()
+- pj64.resume()

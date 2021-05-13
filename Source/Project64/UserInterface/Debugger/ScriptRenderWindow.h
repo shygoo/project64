@@ -19,7 +19,7 @@ private:
     bool Create();
     bool RegisterWinClass();
     static LRESULT CALLBACK ScriptRenderWindow_Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
-    LRESULT Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
+    LRESULT ScriptRenderWndProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
 
     CDebuggerUI*           m_Debugger;
 
@@ -56,7 +56,10 @@ private:
     bool GfxInitTarget();
     void GfxRefreshTextFormat();
 
-    static int MouseMessageButtonNumber(DWORD uMsg);
+    static int WinMouseMessageButton(DWORD uMsg);
+    void ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
+
+    //void ToggleVisible();
 
 public:
     CScriptRenderWindow(CDebuggerUI* debugger);
@@ -83,12 +86,14 @@ public:
     DWRITE_FONT_WEIGHT GfxGetFontWeight();
     void GfxDrawText(float x, float y, const wchar_t* text);
     void GfxFillRect(float left, float top, float right, float bottom);
+    void GfxStrokeRect(float left, float top, float right, float bottom);
     void GfxCopyWindow(HWND hSrcWnd);
 
     void GfxBeginPath();
     void GfxMoveTo(float x, float y);
     void GfxLineTo(float x, float y);
     void GfxStroke();
+    void GfxFill();
 
     int GetWidth();
     int GetHeight();

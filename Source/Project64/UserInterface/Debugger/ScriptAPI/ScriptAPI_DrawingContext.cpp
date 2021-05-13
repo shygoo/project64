@@ -24,12 +24,14 @@ static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 void ScriptAPI::Define_DrawingContext(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "print", js_DrawingContext_print, 3 },
+        { "drawtext", js_DrawingContext_drawtext, 3 },
         { "fillrect", js_DrawingContext_fillrect, 4 },
+        { "strokerect", js_DrawingContext_strokerect, 4 },
         { "beginpath", js_DrawingContext_beginpath, 0 },
         { "moveto", js_DrawingContext_moveto, 2 },
         { "lineto", js_DrawingContext_lineto, 2 },
         { "stroke", js_DrawingContext_stroke, 0 },
+        { "fill", js_DrawingContext_fill, 0 },
         { nullptr, nullptr, 0 }
     };
 
@@ -276,7 +278,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
     return 0;
 }
 
-duk_ret_t ScriptAPI::js_DrawingContext_print(duk_context* ctx)
+duk_ret_t ScriptAPI::js_DrawingContext_drawtext(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
 
@@ -307,6 +309,28 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
     duk_double_t height = duk_get_number(ctx, 3);
 
     rw->GfxFillRect(x, y, x + width, y + height);
+
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_strokerect(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0) ||
+        !duk_is_number(ctx, 1) ||
+        !duk_is_number(ctx, 2) ||
+        !duk_is_number(ctx, 3))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    duk_double_t x = duk_get_number(ctx, 0);
+    duk_double_t y = duk_get_number(ctx, 1);
+    duk_double_t width = duk_get_number(ctx, 2);
+    duk_double_t height = duk_get_number(ctx, 3);
+
+    rw->GfxStrokeRect(x, y, x + width, y + height);
 
     return 0;
 }
@@ -358,5 +382,12 @@ duk_ret_t ScriptAPI::js_DrawingContext_stroke(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
     rw->GfxStroke();
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_fill(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    rw->GfxFill();
     return 0;
 }

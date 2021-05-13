@@ -15,6 +15,30 @@ duk_ret_t ScriptAPI::js_RGBA(duk_context* ctx)
 {
     duk_idx_t nargs = duk_get_top(ctx);
 
+    // (existingColor, newAlpha)
+    if (nargs == 2)
+    {
+        if (!duk_is_number(ctx, 0) ||
+            !duk_is_number(ctx, 1))
+        {
+            return ThrowInvalidArgsError(ctx);
+        }
+
+        duk_double_t color = duk_get_uint(ctx, 0);
+        duk_double_t alpha = duk_get_number(ctx, 1);
+
+        if (alpha < 0 || alpha > 1.0 ||
+            color < 0)
+        {
+            return DUK_RET_RANGE_ERROR;
+        }
+
+        uint32_t newColor = (uint32_t)color & 0xFFFFFF00 | (uint8_t)roundf(255 * alpha);
+        duk_push_number(ctx, newColor);
+        return 1;
+    }
+
+    // (r, g, b[, alpha])
     if (!duk_is_number(ctx, 0) ||
         !duk_is_number(ctx, 1) ||
         !duk_is_number(ctx, 2) ||

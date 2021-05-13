@@ -160,14 +160,16 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__set_fontSize(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
-    duk_ret_t js_DrawingContext_print(duk_context* ctx);
+    duk_ret_t js_DrawingContext_drawtext(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
-    //duk_ret_t js_DrawingContext_setdata(duk_context* ctx);
-    //duk_ret_t js_DrawingContext_getdata(duk_context* ctx);
+    duk_ret_t js_DrawingContext_strokerect(duk_context* ctx);
+    //duk_ret_t js_DrawingContext_drawimage(duk_context* ctx);
+    //duk_ret_t js_DrawingContext_getimage(duk_context* ctx);
     duk_ret_t js_DrawingContext_beginpath(duk_context* ctx);
     duk_ret_t js_DrawingContext_moveto(duk_context* ctx);
     duk_ret_t js_DrawingContext_lineto(duk_context* ctx);
     duk_ret_t js_DrawingContext_stroke(duk_context* ctx);
+    duk_ret_t js_DrawingContext_fill(duk_context* ctx);
 
     // ScriptAPI_3d
     void Define_3d(duk_context* ctx);

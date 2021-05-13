@@ -116,7 +116,7 @@ LRESULT CALLBACK CScriptRenderWindow::ScriptRenderWindow_Proc(HWND hWnd, DWORD u
         return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
 
-    return _this->Proc(hWnd, uMsg, wParam, lParam);
+    return _this->ScriptRenderWndProc(hWnd, uMsg, wParam, lParam);
 }
 
 void CScriptRenderWindow::CpuRunningChanged(void* p)
@@ -126,6 +126,13 @@ void CScriptRenderWindow::CpuRunningChanged(void* p)
     _this->SetVisible(bRunning);
 }
 
+//void CScriptRenderWindow::ToggleVisible()
+//{
+//    if(g_Settings->LoadBool(GameRunning_CPU_Running) &&
+//       m_Debugger->ScriptSystem()->HaveCallbacks(JS_HOOK_GFXUPDATE) &&
+//       IsWindowEnabled())
+//}
+
 void CScriptRenderWindow::LimitFPSChanged(void* p)
 {
     // TODO should toggle vsync here
@@ -134,20 +141,62 @@ void CScriptRenderWindow::LimitFPSChanged(void* p)
     //bool bLimitFPS = g_Settings->LoadBool(GameRunning_LimitFPS);
 }
 
-int CScriptRenderWindow::MouseMessageButtonNumber(DWORD uMsg)
+int CScriptRenderWindow::WinMouseMessageButton(DWORD uMsg)
 {
-    //todo
-    //switch (uMsg)
-    //{
-    //case WM_LBUTTONDOWN:
-    //case WM_MBUTTONDOWN:
-    //case WM_RBUTTONDOWN:
-    //}
+    switch (uMsg)
+    {
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+        return 0;
+    case WM_MBUTTONDOWN:
+    case WM_MBUTTONUP:
+        return 1;
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+        return 2;
+    }
     return -1;
+}
+
+void CScriptRenderWindow::ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
+{
+    switch (uMsg)
+    {
+    case WM_LBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+        SetCapture(hWnd);
+        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEDOWN,
+            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), WinMouseMessageButton(uMsg));
+        break;
+    case WM_LBUTTONUP:
+    case WM_MBUTTONUP:
+    case WM_RBUTTONUP:
+        ReleaseCapture();
+        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEUP,
+            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), WinMouseMessageButton(uMsg));
+        break;
+    case WM_MOUSEMOVE:
+    {
+        static int lastX = 0;
+        static int lastY = 0;
+        int x = GET_X_LPARAM(lParam);
+        int y = GET_Y_LPARAM(lParam);
+        if (lastX != x || lastY != y)
+        {
+            m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEMOVE, x, y);
+            lastX = x;
+            lastY = y;
+        }
+    }
+    break;
+    }
 }
 
 void CScriptRenderWindow::MainWndHookProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
 {
+    ScreenMouseEventProc(hWnd, uMsg, wParam, lParam);
+    
     switch (uMsg)
     {
     case WM_MOVE:
@@ -158,11 +207,26 @@ void CScriptRenderWindow::MainWndHookProc(HWND hWnd, DWORD uMsg, DWORD wParam, D
             FixPosition(hWnd, (HWND)mainWindow->GetStatusBar());
         }
         break;
+    case WM_ENABLE:
+        if (!wParam)
+        {
+            SetVisible(false);
+        }
+        break;
+    case WM_ACTIVATEAPP:
+        if (wParam && g_Settings->LoadBool(GameRunning_CPU_Running) &&
+            m_Debugger->ScriptSystem()->HaveCallbacks(JS_HOOK_GFXUPDATE))
+        {
+            SetVisible(true);
+        }
+        break;
     }
 }
 
-LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
+LRESULT CScriptRenderWindow::ScriptRenderWndProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
 {
+    ScreenMouseEventProc(hWnd, uMsg, wParam, lParam);
+
     switch (uMsg)
     {
     case WM_CREATE:
@@ -177,61 +241,13 @@ LRESULT CScriptRenderWindow::Proc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lPa
     case WM_LBUTTONDOWN:
     case WM_MBUTTONDOWN:
     case WM_RBUTTONDOWN:
-    {
-        int button = -1;
-        switch (uMsg)
-        {
-        case WM_LBUTTONDOWN: button = 0; break;
-        case WM_MBUTTONDOWN: button = 1; break;
-        case WM_RBUTTONDOWN: button = 2; break;
-        }
-        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEDOWN,
-            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
-
         if (g_Plugins && g_Plugins->MainWindow() && g_Plugins->MainWindow()->GetWindowHandle())
         {
             HWND hMainWnd = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
             BringWindowToTop(hMainWnd);
             SetFocus(hMainWnd);
         }
-    } break;
-    //case WM_SETFOCUS:
-    //    // this messes up the WM_MOUSEDOWN message
-    //    if (g_Plugins && g_Plugins->MainWindow() && g_Plugins->MainWindow()->GetWindowHandle())
-    //    {
-    //        HWND hMainWnd = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
-    //        BringWindowToTop(hMainWnd);
-    //        SetFocus(hMainWnd);
-    //    }
-    //    break;
-    case WM_LBUTTONUP:
-    case WM_MBUTTONUP:
-    case WM_RBUTTONUP:
-    {
-        int button = -1;
-        switch (uMsg)
-        {
-        case WM_LBUTTONUP: button = 0; break;
-        case WM_MBUTTONUP: button = 1; break;
-        case WM_RBUTTONUP: button = 2; break;
-        }
-        m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEUP,
-            GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), button);
-    } break;
-    case WM_MOUSEMOVE:
-    {
-        // todo why is mousemove being sent when mouse isn't moving
-        static int lastX = 0;
-        static int lastY = 0;
-        int x = GET_X_LPARAM(lParam);
-        int y = GET_Y_LPARAM(lParam);
-        if (lastX != x && lastY != y)
-        {
-            m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEMOVE, x, y);
-            lastX = x;
-            lastY = y;
-        }
-    } break;
+        break;
     }
 
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
@@ -266,7 +282,7 @@ void CScriptRenderWindow::SetVisible(bool bVisible)
 {
     if (m_hWnd != nullptr)
     {
-        ShowWindow(m_hWnd, bVisible ? SW_SHOW : SW_HIDE);
+        ShowWindow(m_hWnd, bVisible ? SW_SHOWNOACTIVATE : SW_HIDE);
     }
 }
 
@@ -631,6 +647,16 @@ void CScriptRenderWindow::GfxFillRect(float left, float top, float right, float 
     m_Gfx->FillRectangle(D2D1::RectF(left, top, right, bottom), m_GfxFillBrush);
 }
 
+void CScriptRenderWindow::GfxStrokeRect(float left, float top, float right, float bottom)
+{
+    if (!m_Gfx)
+    {
+        return;
+    }
+
+    m_Gfx->DrawRectangle(D2D1::RectF(left, top, right, bottom), m_GfxStrokeBrush, m_StrokeWidth);
+}
+
 int CScriptRenderWindow::GetWidth()
 {
     return m_Width;
@@ -690,4 +716,45 @@ void CScriptRenderWindow::GfxStroke()
                 m_StrokeWidth);
         }
     }
+}
+
+// todo make sure this implementation is similar to web CanvasRenderingContext2D.fill
+void CScriptRenderWindow::GfxFill()
+{
+    ID2D1PathGeometry* pathGeometry;
+    ID2D1GeometrySink* sink;
+
+    if (FAILED(m_D2DFactory->CreatePathGeometry(&pathGeometry)))
+    {
+        return;
+    }
+
+    if (FAILED(pathGeometry->Open(&sink)))
+    {
+        return;
+    }
+
+    for (size_t nPath = 0; nPath < m_Paths.size(); nPath++)
+    {
+        pointpath_t& path = m_Paths[nPath];
+        if (path.size() < 3)
+        {
+            continue;
+        }
+        sink->BeginFigure(path[0], D2D1_FIGURE_BEGIN_FILLED);
+
+        for (size_t nPoint = 1; nPoint < path.size(); nPoint++)
+        {
+            sink->AddLine(path[nPoint]);
+        }
+
+        sink->EndFigure(D2D1_FIGURE_END_CLOSED);
+    }
+
+    sink->Close();
+
+    m_Gfx->FillGeometry(pathGeometry, m_GfxFillBrush);
+    
+    sink->Release();
+    pathGeometry->Release();
 }
