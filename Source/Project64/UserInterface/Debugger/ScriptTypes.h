@@ -79,6 +79,25 @@ typedef struct {
     int button; // 0=left,1=middle,2=right
 } jshook_env_mouse_t;
 
+typedef struct {
+    uint32_t taskType;
+    uint32_t taskFlags;
+    uint32_t ucodeBootAddress;
+    uint32_t ucodeBootSize;
+    uint32_t ucodeAddress;
+    uint32_t ucodeSize;
+    uint32_t ucodeDataAddress;
+    uint32_t ucodeDataSize;
+    uint32_t dramStackAddress;
+    uint32_t dramStackSize;
+    uint32_t outputBuffAddress;
+    uint32_t outputBuffSize;
+    uint32_t dataAddress;
+    uint32_t dataSize;
+    uint32_t yieldDataAddress;
+    uint32_t yieldDataSize;
+} jshook_env_sptask_t;
+
 enum {
     JS_EXEC_TIMEOUT = 500
 };

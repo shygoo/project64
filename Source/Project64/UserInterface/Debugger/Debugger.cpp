@@ -697,7 +697,26 @@ void CDebuggerUI::PIFReadStarted(void)
 
 void CDebuggerUI::RSPReceivedTask(void)
 {
-    m_ScriptSystem->Invoke(JS_HOOK_RSPTASK, nullptr);
+    jshook_env_sptask_t env;
+
+    DebugLoad_VAddr(0xA4000FC0, env.taskType);
+    DebugLoad_VAddr(0xA4000FC4, env.taskFlags);
+    DebugLoad_VAddr(0xA4000FC8, env.ucodeBootAddress);
+    DebugLoad_VAddr(0xA4000FCC, env.ucodeBootSize);
+    DebugLoad_VAddr(0xA4000FD0, env.ucodeAddress);
+    DebugLoad_VAddr(0xA4000FD4, env.ucodeSize);
+    DebugLoad_VAddr(0xA4000FD8, env.ucodeDataAddress);
+    DebugLoad_VAddr(0xA4000FDC, env.ucodeDataSize);
+    DebugLoad_VAddr(0xA4000FE0, env.dramStackAddress);
+    DebugLoad_VAddr(0xA4000FE4, env.dramStackSize);
+    DebugLoad_VAddr(0xA4000FE8, env.outputBuffAddress);
+    DebugLoad_VAddr(0xA4000FEC, env.outputBuffSize);
+    DebugLoad_VAddr(0xA4000FF0, env.dataAddress);
+    DebugLoad_VAddr(0xA4000FF4, env.dataSize);
+    DebugLoad_VAddr(0xA4000FF8, env.yieldDataAddress);
+    DebugLoad_VAddr(0xA4000FFC, env.yieldDataSize);
+
+    m_ScriptSystem->Invoke(JS_HOOK_RSPTASK, &env);
 }
 
 void CDebuggerUI::WaitForStep(void)

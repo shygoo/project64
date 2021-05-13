@@ -314,20 +314,13 @@ prerelease 2021.05.13
 <li><a href="#CPUReadWriteEvent">CPUReadWriteEvent</a></li>
 <li><a href="#CPUOpcodeEvent">CPUOpcodeEvent</a></li>
 <li><a href="#CPURegValueEvent">CPURegValueEvent</a></li>
+<li><a href="#SPTaskEvent">SPTaskEvent</a></li>
 <li><a href="#DrawEvent">DrawEvent</a></li>
 <li><a href="#MouseEvent">MouseEvent</a></li>
 <li><a href="#GPR_flags">General purpose register flags</a></li>
 <li><a href="#AddressRange">new AddressRange(start, end)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#DrawingContext">DrawingContext</a>: Screen drawing context<ul>
-<li><a href="#ctx_width">ctx.width</a></li>
-<li><a href="#ctx_height">ctx.height</a></li>
-<li><a href="#ctx_fillColor">ctx.fillColor</a></li>
-<li><a href="#ctx_strokeColor">ctx.strokeColor</a></li>
-<li><a href="#ctx_strokeWidth">ctx.strokeWidth</a></li>
-<li><a href="#ctx_fontFamily">ctx.fontFamily</a></li>
-<li><a href="#ctx_fontWeight">ctx.fontWeight</a></li>
-<li><a href="#ctx_fontSize">ctx.fontSize</a></li>
 <li><a href="#ctx_drawtext">ctx.drawtext(x, y, text)</a></li>
 <li><a href="#ctx_fillrect">ctx.fillrect(x, y, width, height)</a></li>
 <li><a href="#ctx_strokerect">ctx.strokerect(x, y, width, height)</a></li>
@@ -336,6 +329,14 @@ prerelease 2021.05.13
 <li><a href="#ctx_lineto">ctx.lineto(x, y)</a></li>
 <li><a href="#ctx_stroke">ctx.stroke()</a></li>
 <li><a href="#ctx_fill">ctx.fill()</a></li>
+<li><a href="#ctx_width">ctx.width</a></li>
+<li><a href="#ctx_height">ctx.height</a></li>
+<li><a href="#ctx_fillColor">ctx.fillColor</a></li>
+<li><a href="#ctx_strokeColor">ctx.strokeColor</a></li>
+<li><a href="#ctx_strokeWidth">ctx.strokeWidth</a></li>
+<li><a href="#ctx_fontFamily">ctx.fontFamily</a></li>
+<li><a href="#ctx_fontWeight">ctx.fontWeight</a></li>
+<li><a href="#ctx_fontSize">ctx.fontSize</a></li>
 <li><a href="#Predefined_colors">Predefined colors</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#cpu">cpu</a>: CPU register interface<ul>
@@ -409,6 +410,7 @@ prerelease 2021.05.13
 <li><a href="#Global constants">Global constants</a><ul>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#N64_memory_addresses">N64 memory addresses</a></li>
+<li><a href="#Miscellaneous">Miscellaneous</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#JavaScript environment">JavaScript environment</a><div class="vtab"></div></li>
 </ul>
@@ -734,46 +736,21 @@ Useful for monitoring and overriding controller input.
 </pre>
 <!-- events.onsptask -->
 <div class="prop"><span class="title" id="events_onsptask">events.onsptask(callback)</span></div>
-<div class="tsproto">events.onsptask(callback: (e: EmuEvent) => void): number</div>
+<div class="tsproto">events.onsptask(callback: (e: SPTaskEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that is invoked when a task is sent to the RSP.
-<span class="snip">callback</span> receives an <a href="#EmuEvent">EmuEvent</a> object.
+<span class="snip">callback</span> receives an <a href="#SPTaskEvent">SPTaskEvent</a> object.
 <div class="vtab"></div>
 Returns a callback ID.
 <div class="vtab"></div>
 Useful for monitoring and overriding display lists and audio lists.
 <pre class="ex">
-<span class="js-keyword">const</span> <span class="js-word">SP_TASK_ADDR</span> = <span class="js-word">SP_DMEM_START</span> + <span class="js-number">0xFC0</span>;
-<span class="js-keyword">const</span> <span class="js-word">M_GFXTASK</span> = <span class="js-number">1</span>;
-<span class="js-keyword">const</span> <span class="js-word">M_AUDTASK</span> = <span class="js-number">2</span>;
-
-<span class="js-keyword">const</span> <span class="js-word">OSTask</span> = <span class="js-word">mem</span>.<span class="js-word">typedef</span>({
-    <span class="js-word">type</span>:             <span class="js-word">u32</span>,
-    <span class="js-word">flags</span>:            <span class="js-word">u32</span>,
-    <span class="js-word">ucode_boot_addr</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">ucode_boot_size</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">ucode_addr</span>:       <span class="js-word">u32</span>,
-    <span class="js-word">ucode_size</span>:       <span class="js-word">u32</span>,
-    <span class="js-word">ucode_data_addr</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">ucode_data_size</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">dram_stack_addr</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">dram_stack_size</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">output_buff_addr</span>: <span class="js-word">u32</span>,
-    <span class="js-word">output_buff_size</span>: <span class="js-word">u32</span>,
-    <span class="js-word">data_addr</span>:        <span class="js-word">u32</span>,
-    <span class="js-word">data_size</span>:        <span class="js-word">u32</span>,
-    <span class="js-word">yield_data_addr</span>:  <span class="js-word">u32</span>,
-    <span class="js-word">yield_data_size</span>:  <span class="js-word">u32</span>
-});
-
 <span class="js-word">events</span>.<span class="js-word">onsptask</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
-    <span class="js-keyword">var</span> <span class="js-word">task</span> = <span class="js-keyword">new</span> <span class="js-word">OSTask</span>(<span class="js-word">SP_TASK_ADDR</span>);
-    <span class="js-keyword">var</span> <span class="js-word">listAddr</span> = (<span class="js-word">task</span>.<span class="js-word">data_addr</span> + <span class="js-word">K0BASE</span>).<span class="js-word">hex</span>();
-    <span class="js-keyword">if</span> (<span class="js-word">task</span>.<span class="js-word">type</span> == <span class="js-word">M_GFXTASK</span>) {
-        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Display list address: "</span> + <span class="js-word">listAddr</span>);
+    <span class="js-keyword">if</span> (<span class="js-word">e</span>.<span class="js-word">taskType</span> == <span class="js-word">M_GFXTASK</span>) {
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Display list address: "</span> + <span class="js-word">e</span>.<span class="js-word">dataAddress</span>);
     }
-    <span class="js-keyword">else</span> <span class="js-keyword">if</span> (<span class="js-word">task</span>.<span class="js-word">type</span> == <span class="js-word">M_AUDTASK</span>) {
-        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Audio list address: "</span> + <span class="js-word">listAddr</span>);
+    <span class="js-keyword">else</span> <span class="js-keyword">if</span> (<span class="js-word">e</span>.<span class="js-word">taskType</span> == <span class="js-word">M_AUDTASK</span>) {
+        <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Audio list address: "</span> + <span class="js-word">e</span>.<span class="js-word">dataAddress</span>);
     }
 });
 </pre>
@@ -888,6 +865,31 @@ Unregisters the callback specified by <span class="snip">callbackId</span>.
 <tr><td><span class="snip">e.value</span></td><td>The value.</td></tr>
 <tr><td><span class="snip">e.reg</span></td><td>Index of the register containing the value.</td></tr>
 </table>
+<!-- SPTaskEvent -->
+<div class="prop"><span class="title" id="SPTaskEvent">SPTaskEvent</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">e.callbackId</span>       </td><td>ID of the callback associated with the event.</td></tr>
+<tr><td><span class="snip">e.taskType</span>         </td><td>The task type. 1 (M_GFXTASK) for graphics tasks, or 2 (M_AUDTASK) for audio tasks.</td></tr>
+<tr><td><span class="snip">e.taskFlags</span>        </td><td>Task flags.</td></tr>
+<tr><td><span class="snip">e.ucodeBootAddress</span> </td><td>Address of the boot microcode.</td></tr>
+<tr><td><span class="snip">e.ucodeBootSize</span>    </td><td>Size of the boot microcode.</td></tr>
+<tr><td><span class="snip">e.ucodeAddress</span>     </td><td>Address of the task microcode.</td></tr>
+<tr><td><span class="snip">e.ucodeSize</span>        </td><td>Size of the task microcode.</td></tr>
+<tr><td><span class="snip">e.ucodeDataAddress</span> </td><td>Address of the microcode data.</td></tr>
+<tr><td><span class="snip">e.ucodeDataSize</span>    </td><td>Size of the microcode data.</td></tr>
+<tr><td><span class="snip">e.dramStackAddress</span> </td><td>Address of the DRAM matrix stack.</td></tr>
+<tr><td><span class="snip">e.dramStackSize</span>    </td><td>Size of the DRAM matrix stack.</td></tr>
+<tr><td><span class="snip">e.outputBuffAddress</span></td><td>DP command buffer address for "_dram" and "_fifo" graphics microcodes.</td></tr>
+<tr><td><span class="snip">e.outputBuffSize</span>   </td><td>DP command buffer size for "_dram" and "_fifo" graphics microcodes.</td></tr>
+<tr><td><span class="snip">e.dataAddress</span>      </td><td>Address of the display list or audio list.</td></tr>
+<tr><td><span class="snip">e.dataSize</span>         </td><td>Size of the display list or audio list.</td></tr>
+<tr><td><span class="snip">e.yieldDataAddress</span> </td><td>Address of the yield data buffer.</td></tr>
+<tr><td><span class="snip">e.yieldDataSize</span>    </td><td>Size of the yield data buffer.</td></tr>
+</table>
+<div class="vtab"></div>
+Note: The properties of this object differ slightly from those in the OSTask structure;
+all physical addresses are converted to KSEG0 addresses.
 <!-- DrawEvent -->
 <div class="prop"><span class="title" id="DrawEvent">DrawEvent</span></div>
 <div class="vtab"></div>
@@ -951,6 +953,52 @@ This object is accessed via <a href="#events_ondraw">events.ondraw</a>.
 </pre>
 Note: Not compatible with Windows XP. A Direct3D graphics plugin may be required on Windows 7.
 <div class="vtab"></div>
+<!-- ctx.drawtext -->
+<div class="prop"><span class="title" id="ctx_drawtext">ctx.drawtext(x, y, text)</span></div>
+<div class="tsproto">ctx.drawtext(x: number, y: number, text: string): void</div>
+<div class="vtab"></div>
+Prints text to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
+<pre class="ex">
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">drawtext</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
+});
+</pre>
+<!-- ctx.fillrect -->
+<div class="prop"><span class="title" id="ctx_fillrect">ctx.fillrect(x, y, width, height)</span></div>
+<div class="tsproto">ctx.fillrect(x: number, y: number, width: number, height: number): void</div>
+<div class="vtab"></div>
+Fills the specified rectangle area with the current fill color.
+<!-- ctx.strokerect -->
+<div class="prop"><span class="title" id="ctx_strokerect">ctx.strokerect(x, y, width, height)</span></div>
+<div class="tsproto">ctx.strokerect(x: number, y: number, width: number, height: number): void</div>
+<div class="vtab"></div>
+Outlines the specified rectangle area with the current stroke color/width.
+<!-- ctx.beginpath -->
+<div class="prop"><span class="title" id="ctx_beginpath">ctx.beginpath()</span></div>
+<div class="tsproto">ctx.beginpath()</div>
+<div class="vtab"></div>
+Clears all stored sub-paths.
+<!-- ctx.moveto -->
+<div class="prop"><span class="title" id="ctx_moveto">ctx.moveto(x, y)</span></div>
+<div class="tsproto">ctx.moveto(x: number, y: number): void</div>
+<div class="vtab"></div>
+Starts a new sub-path at the provided coordinates.
+<!-- ctx.lineto -->
+<div class="prop"><span class="title" id="ctx_lineto">ctx.lineto(x, y)</span></div>
+<div class="tsproto">ctx.lineto(x: number, y: number): void</div>
+<div class="vtab"></div>
+Adds a point to the current sub-path.
+<!-- ctx.stroke -->
+<div class="prop"><span class="title" id="ctx_stroke">ctx.stroke()</span></div>
+<div class="tsproto">ctx.stroke()</div>
+<div class="vtab"></div>
+Strokes all sub-paths.
+<!-- ctx.fill -->
+<div class="prop"><span class="title" id="ctx_fill">ctx.fill()</span></div>
+<div class="tsproto">ctx.fill()</div>
+<div class="vtab"></div>
+Fills all sub-paths.
 <!-- ctx.width -->
 <div class="prop"><span class="title" id="ctx_width">ctx.width</span></div>
 <div class="tsproto">ctx.width: number</div>
@@ -995,52 +1043,6 @@ The current font weight. Valid weights include <span class="snip">"normal"</span
 <div class="tsproto">ctx.fontSize: number</div>
 <div class="vtab"></div>
 The current font size. <span class="snip">14.0</span> by default.
-<!-- ctx.drawtext -->
-<div class="prop"><span class="title" id="ctx_drawtext">ctx.drawtext(x, y, text)</span></div>
-<div class="tsproto">ctx.drawtext(x: number, y: number, text: string): void</div>
-<div class="vtab"></div>
-Prints text to the screen at the provided <span class="snip">x</span> and <span class="snip">y</span> coordinates.
-<pre class="ex">
-<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
-    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
-    <span class="js-word">ctx</span>.<span class="js-word">drawtext</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
-});
-</pre>
-<!-- ctx.fillrect -->
-<div class="prop"><span class="title" id="ctx_fillrect">ctx.fillrect(x, y, width, height)</span></div>
-<div class="tsproto">ctx.fillrect(x: number, y: number, width: number, height: number): void</div>
-<div class="vtab"></div>
-Fills the specified rectangle area with the current fill color.
-<!-- ctx.strokerect -->
-<div class="prop"><span class="title" id="ctx_strokerect">ctx.strokerect(x, y, width, height)</span></div>
-<div class="tsproto">ctx.strokerect(x: number, y: number, width: number, height: number): void</div>
-<div class="vtab"></div>
-Strokes the specified rectangle area with the current stroke color and stroke width.
-<!-- ctx.beginpath -->
-<div class="prop"><span class="title" id="ctx_beginpath">ctx.beginpath()</span></div>
-<div class="tsproto">ctx.beginpath()</div>
-<div class="vtab"></div>
-Clears all stored sub-paths.
-<!-- ctx.moveto -->
-<div class="prop"><span class="title" id="ctx_moveto">ctx.moveto(x, y)</span></div>
-<div class="tsproto">ctx.moveto(x: number, y: number): void</div>
-<div class="vtab"></div>
-Starts a new sub-path at the provided coordinates.
-<!-- ctx.lineto -->
-<div class="prop"><span class="title" id="ctx_lineto">ctx.lineto(x, y)</span></div>
-<div class="tsproto">ctx.lineto(x: number, y: number): void</div>
-<div class="vtab"></div>
-Adds a point to the current sub-path.
-<!-- ctx.stroke -->
-<div class="prop"><span class="title" id="ctx_stroke">ctx.stroke()</span></div>
-<div class="tsproto">ctx.stroke()</div>
-<div class="vtab"></div>
-Strokes all sub-paths.
-<!-- ctx.fill -->
-<div class="prop"><span class="title" id="ctx_fill">ctx.fill()</span></div>
-<div class="tsproto">ctx.fill()</div>
-<div class="vtab"></div>
-Fills all sub-paths.
 <!-- Predefined_colors -->
 <div class="prop"><span class="title" id="Predefined_colors">Predefined colors</span></div>
 <div class="vtab"></div>
@@ -1658,11 +1660,21 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <tr><td><span class="snip">K0BASE</span>  </td><td>0x80000000</td></tr>
 <tr><td><span class="snip">K1BASE</span>  </td><td>0xA0000000</td></tr>
 <tr><td><span class="snip">K2BASE</span>  </td><td>0xC0000000</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
 <tr><td><span class="snip">UT_VEC</span>  </td><td>0x80000000</td></tr>
 <tr><td><span class="snip">R_VEC</span>   </td><td>0xBFC00000</td></tr>
 <tr><td><span class="snip">XUT_VEC</span> </td><td>0x80000080</td></tr>
 <tr><td><span class="snip">ECC_VEC</span> </td><td>0x80000100</td></tr>
 <tr><td><span class="snip">E_VEC</span>   </td><td>0x80000180</td></tr>
+</table>
+<!-- Miscellaneous -->
+<div class="prop"><span class="title" id="Miscellaneous">Miscellaneous</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">M_GFXTASK</span></td><td>1</td></tr>
+<tr><td><span class="snip">M_AUDTASK</span></td><td>2</td></tr>
 </table>
 
 </div>

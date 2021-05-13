@@ -212,7 +212,10 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
         { "XUT_VEC", 0x80000080 },
         { "ECC_VEC", 0x80000100 },
         { "E_VEC", 0x80000180 },
-
+            
+        { "M_GFXTASK", 1 },
+        { "M_AUDTASK", 2 },
+        
         { "COLOR_BLACK",   0x000000FF },
         { "COLOR_WHITE",   0xFFFFFFFF },
         { "COLOR_GRAY",    0x808080FF },

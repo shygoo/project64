@@ -18,6 +18,7 @@ static duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* env);
 
 static void CbFinish_KillDrawingContext(duk_context* ctx, void* env);
 
@@ -221,7 +222,7 @@ duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, nullptr, CbArgs_EmuEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, nullptr, CbArgs_SPTaskEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
@@ -724,6 +725,47 @@ static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* _env)
     duk_put_prop_string(ctx, -2, "x");
     duk_push_number(ctx, env->y);
     duk_put_prop_string(ctx, -2, "y");
+    duk_freeze(ctx, -1);
+    return 1;
+}
+
+static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    jshook_env_sptask_t* env = (jshook_env_sptask_t*)_env;
+    duk_push_object(ctx);
+
+    std::pair<const char*, uint32_t> props[] = {
+        { "callbackId",        inst->CallbackId() },
+        { "taskType",          env->taskType },
+        { "taskFlags",         env->taskFlags },
+        { "ucodeBootAddress",  env->ucodeBootAddress | 0x80000000 },
+        { "ucodeBootSize",     env->ucodeBootSize },
+        { "ucodeAddress",      env->ucodeAddress | 0x80000000 },
+        { "ucodeSize",         env->ucodeSize },
+        { "ucodeDataAddress",  env->ucodeDataAddress | 0x80000000 },
+        { "ucodeDataSize",     env->ucodeDataSize },
+        { "dramStackAddress",  env->dramStackAddress | 0x80000000 },
+        { "dramStackSize",     env->dramStackSize },
+        { "outputBuffAddress", env->outputBuffAddress | 0x80000000 },
+        { "outputBuffSize",    env->outputBuffSize },
+        { "dataAddress",       env->dataAddress | 0x80000000 },
+        { "dataSize",          env->dataSize },
+        { "yieldDataAddress",  env->yieldDataAddress | 0x80000000 },
+        { "yieldDataSize",     env->yieldDataSize },
+        { nullptr, 0 }
+    };
+
+    for (size_t i = 0;; i++)
+    {
+        if (props[i].first == nullptr)
+        {
+            break;
+        }
+        duk_push_uint(ctx, props[i].second);
+        duk_put_prop_string(ctx, -2, props[i].first);
+    }
+
     duk_freeze(ctx, -1);
     return 1;
 }

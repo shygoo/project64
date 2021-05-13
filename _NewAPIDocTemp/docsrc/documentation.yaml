@@ -330,46 +330,21 @@
 
   - name: events.onsptask
     js:   events.onsptask(callback)
-    ts:   "events.onsptask(callback: (e: EmuEvent) => void): number"
+    ts:   "events.onsptask(callback: (e: SPTaskEvent) => void): number"
     desc: |
           Registers a callback that is invoked when a task is sent to the RSP.
-          `callback` receives an [EmuEvent](#EmuEvent) object.
+          `callback` receives an [SPTaskEvent](#SPTaskEvent) object.
           <div class="vtab"></div>
           Returns a callback ID.
           <div class="vtab"></div>
           Useful for monitoring and overriding display lists and audio lists.
           ```
-          const SP_TASK_ADDR = SP_DMEM_START + 0xFC0;
-          const M_GFXTASK = 1;
-          const M_AUDTASK = 2;
-
-          const OSTask = mem.typedef({
-              type:             u32,
-              flags:            u32,
-              ucode_boot_addr:  u32,
-              ucode_boot_size:  u32,
-              ucode_addr:       u32,
-              ucode_size:       u32,
-              ucode_data_addr:  u32,
-              ucode_data_size:  u32,
-              dram_stack_addr:  u32,
-              dram_stack_size:  u32,
-              output_buff_addr: u32,
-              output_buff_size: u32,
-              data_addr:        u32,
-              data_size:        u32,
-              yield_data_addr:  u32,
-              yield_data_size:  u32
-          });
-
           events.onsptask(function(e) {
-              var task = new OSTask(SP_TASK_ADDR);
-              var listAddr = (task.data_addr + K0BASE).hex();
-              if (task.type == M_GFXTASK) {
-                  console.log("Display list address: " + listAddr);
+              if (e.taskType == M_GFXTASK) {
+                  console.log("Display list address: " + e.dataAddress);
               }
-              else if (task.type == M_AUDTASK) {
-                  console.log("Audio list address: " + listAddr);
+              else if (e.taskType == M_AUDTASK) {
+                  console.log("Audio list address: " + e.dataAddress);
               }
           });
           ```
@@ -495,6 +470,32 @@
           <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
           </table>
 
+  - name: SPTaskEvent
+    js:   SPTaskEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`       </td><td>ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.taskType`         </td><td>The task type. 1 (M_GFXTASK) for graphics tasks, or 2 (M_AUDTASK) for audio tasks.</td></tr>
+          <tr><td>`e.taskFlags`        </td><td>Task flags.</td></tr>
+          <tr><td>`e.ucodeBootAddress` </td><td>Address of the boot microcode.</td></tr>
+          <tr><td>`e.ucodeBootSize`    </td><td>Size of the boot microcode.</td></tr>
+          <tr><td>`e.ucodeAddress`     </td><td>Address of the task microcode.</td></tr>
+          <tr><td>`e.ucodeSize`        </td><td>Size of the task microcode.</td></tr>
+          <tr><td>`e.ucodeDataAddress` </td><td>Address of the microcode data.</td></tr>
+          <tr><td>`e.ucodeDataSize`    </td><td>Size of the microcode data.</td></tr>
+          <tr><td>`e.dramStackAddress` </td><td>Address of the DRAM matrix stack.</td></tr>
+          <tr><td>`e.dramStackSize`    </td><td>Size of the DRAM matrix stack.</td></tr>
+          <tr><td>`e.outputBuffAddress`</td><td>DP command buffer address for "_dram" and "_fifo" graphics microcodes.</td></tr>
+          <tr><td>`e.outputBuffSize`   </td><td>DP command buffer size for "_dram" and "_fifo" graphics microcodes.</td></tr>
+          <tr><td>`e.dataAddress`      </td><td>Address of the display list or audio list.</td></tr>
+          <tr><td>`e.dataSize`         </td><td>Size of the display list or audio list.</td></tr>
+          <tr><td>`e.yieldDataAddress` </td><td>Address of the yield data buffer.</td></tr>
+          <tr><td>`e.yieldDataSize`    </td><td>Size of the yield data buffer.</td></tr>
+          </table>
+          <div class="vtab"></div>
+          Note: The properties of this object differ slightly from those in the OSTask structure;
+          all physical addresses are converted to KSEG0 addresses.
+
   - name: DrawEvent
     js:   DrawEvent
     desc: |
@@ -561,6 +562,53 @@
         ```
         Note: Not compatible with Windows XP. A Direct3D graphics plugin may be required on Windows 7.
   props:
+  - name: ctx.drawtext
+    js:   ctx.drawtext(x, y, text)
+    ts:   "ctx.drawtext(x: number, y: number, text: string): void"
+    desc: |
+          Prints text to the screen at the provided `x` and `y` coordinates.
+          ```
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.drawtext(20, 20, "Power: " + mem.u8[0x8033B21E]);
+          });
+          ```
+
+  - name: ctx.fillrect
+    js:   ctx.fillrect(x, y, width, height)
+    ts:   "ctx.fillrect(x: number, y: number, width: number, height: number): void"
+    desc: Fills the specified rectangle area with the current fill color.
+
+  - name: ctx.strokerect
+    js:   ctx.strokerect(x, y, width, height)
+    ts:   "ctx.strokerect(x: number, y: number, width: number, height: number): void"
+    desc: Outlines the specified rectangle area with the current stroke color/width.
+
+  - name: ctx.beginpath
+    js:   ctx.beginpath()
+    ts:   ctx.beginpath()
+    desc: Clears all stored sub-paths.
+
+  - name: ctx.moveto
+    js:   ctx.moveto(x, y)
+    ts:   "ctx.moveto(x: number, y: number): void"
+    desc: Starts a new sub-path at the provided coordinates.
+
+  - name: ctx.lineto
+    js:   ctx.lineto(x, y)
+    ts:   "ctx.lineto(x: number, y: number): void"
+    desc: Adds a point to the current sub-path.
+
+  - name: ctx.stroke
+    js:   ctx.stroke()
+    ts:   "ctx.stroke()"
+    desc: Strokes all sub-paths.
+
+  - name: ctx.fill
+    js:   ctx.fill()
+    ts:   "ctx.fill()"
+    desc: Fills all sub-paths.
+
   - name: ctx.width
     js:   ctx.width
     ts:   "ctx.width: number"
@@ -610,53 +658,6 @@
     ts:   "ctx.fontSize: number"
     desc: |
           The current font size. `14.0` by default.
-
-  - name: ctx.drawtext
-    js:   ctx.drawtext(x, y, text)
-    ts:   "ctx.drawtext(x: number, y: number, text: string): void"
-    desc: |
-          Prints text to the screen at the provided `x` and `y` coordinates.
-          ```
-          events.ondraw(function(e) {
-              var ctx = e.drawingContext;
-              ctx.drawtext(20, 20, "Power: " + mem.u8[0x8033B21E]);
-          });
-          ```
-
-  - name: ctx.fillrect
-    js:   ctx.fillrect(x, y, width, height)
-    ts:   "ctx.fillrect(x: number, y: number, width: number, height: number): void"
-    desc: Fills the specified rectangle area with the current fill color.
-
-  - name: ctx.strokerect
-    js:   ctx.strokerect(x, y, width, height)
-    ts:   "ctx.strokerect(x: number, y: number, width: number, height: number): void"
-    desc: Strokes the specified rectangle area with the current stroke color and stroke width.
-
-  - name: ctx.beginpath
-    js:   ctx.beginpath()
-    ts:   ctx.beginpath()
-    desc: Clears all stored sub-paths.
-
-  - name: ctx.moveto
-    js:   ctx.moveto(x, y)
-    ts:   "ctx.moveto(x: number, y: number): void"
-    desc: Starts a new sub-path at the provided coordinates.
-
-  - name: ctx.lineto
-    js:   ctx.lineto(x, y)
-    ts:   "ctx.lineto(x: number, y: number): void"
-    desc: Adds a point to the current sub-path.
-
-  - name: ctx.stroke
-    js:   ctx.stroke()
-    ts:   "ctx.stroke()"
-    desc: Strokes all sub-paths.
-
-  - name: ctx.fill
-    js:   ctx.fill()
-    ts:   "ctx.fill()"
-    desc: Fills all sub-paths.
 
   - name: Predefined_colors
     js:   Predefined colors
@@ -1280,11 +1281,22 @@
           <tr><td>`K0BASE`  </td><td>0x80000000</td></tr>
           <tr><td>`K1BASE`  </td><td>0xA0000000</td></tr>
           <tr><td>`K2BASE`  </td><td>0xC0000000</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
           <tr><td>`UT_VEC`  </td><td>0x80000000</td></tr>
           <tr><td>`R_VEC`   </td><td>0xBFC00000</td></tr>
           <tr><td>`XUT_VEC` </td><td>0x80000080</td></tr>
           <tr><td>`ECC_VEC` </td><td>0x80000100</td></tr>
           <tr><td>`E_VEC`   </td><td>0x80000180</td></tr>
+          </table>
+
+  - name: Miscellaneous
+    js:   Miscellaneous
+    desc: |
+          <table>
+          <tr><td>`M_GFXTASK`</td><td>1</td></tr>
+          <tr><td>`M_AUDTASK`</td><td>2</td></tr>
           </table>
 
 - name: JavaScript environment
