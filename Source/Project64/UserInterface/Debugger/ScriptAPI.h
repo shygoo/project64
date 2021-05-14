@@ -260,6 +260,7 @@ namespace ScriptAPI
         IMG_CI8_RGBA16,
         IMG_CI4_RGBA16,
         IMG_CI8_IA16,
-        IMG_CI4_IA16
+        IMG_CI4_IA16,
+        NUM_IMG_FORMATS
     };
 };
