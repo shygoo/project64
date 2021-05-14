@@ -674,6 +674,63 @@
           <tr><td>`COLOR_MAGENTA`</td><td> 0xFF00FFFF</td></tr>
           </table>
 
+# N64Image
+- name: N64Image
+  tagline: N64 Image class
+  props:
+  - name: new_N64Image
+    js:   new N64Image(format, width, height, data[, palette])
+    ts:   "new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)"
+    desc: |
+          Creates an `N64Image` object.
+          <div class="vtab"></div>
+          <table>
+          <thead>
+          <tr><td>`format`        </td><td>`data`                           </td><td>`palette`</td></tr>
+          </thead>
+          <tr><td>`IMG_I4`        </td><td>4-bit intensity                </td><td>(not used)</td></tr>
+          <tr><td>`IMG_I8`        </td><td>8-bit intensity                </td><td>(not used)</td></tr>
+          <tr><td>`IMG_IA4`       </td><td>4-bit intensity/alpha (i4a1)   </td><td>(not used)</td></tr>
+          <tr><td>`IMG_IA8`       </td><td>8-bit intensity/alpha (i4a4)   </td><td>(not used)</td></tr>
+          <tr><td>`IMG_IA16`      </td><td>16-bit intensity/alpha (i8a8)  </td><td>(not used)</td></tr>
+          <tr><td>`IMG_RGBA16`    </td><td>16-bit color (r5g5b5a1)        </td><td>(not used)</td></tr>
+          <tr><td>`IMG_RGBA32`    </td><td>32-bit color (r8g8b8a8)        </td><td>(not used)</td></tr>
+          <tr><td>`IMG_CI8_RGBA16`</td><td>8-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
+          <tr><td>`IMG_CI4_RGBA16`</td><td>4-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
+          <tr><td>`IMG_CI8_IA16`  </td><td>8-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
+          <tr><td>`IMG_CI4_IA16`  </td><td>4-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
+          </table>
+
+  - name: image_toPNG
+    js:   image.toPNG()
+    ts:   "image.toPNG(): Buffer"
+    desc: Returns a PNG representation of the image data as a Buffer object.
+
+  - name: image_format
+    js:   image.format
+    ts:   "image.format: number"
+    desc: The format ID.
+
+  - name: image_width
+    js:   image.width
+    ts:   "image.width: number"
+    desc: Width of the image.
+
+  - name: image_height
+    js:   image.height
+    ts:   "image.height: number"
+    desc: Height of the image.
+
+  - name: image_data
+    js:   image.data
+    ts:   "image.data: Buffer"
+    desc: The texel data of the image.
+
+  - name: image_palette
+    js:   image.palette
+    ts:   "image.palette: Buffer"
+    desc: The palette data of the image. `null` if the image does not use a color-index format.
+
 # cpu
 - name:    cpu
   tagline: CPU register interface

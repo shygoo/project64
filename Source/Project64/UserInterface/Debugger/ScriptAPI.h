@@ -188,9 +188,9 @@ namespace ScriptAPI
 
     // ScriptAPI_N64Image
     void Define_N64Image(duk_context* ctx);
-    duk_ret_t N64Image__constructor(duk_context* ctx);
-    duk_ret_t N64Image_toPNG(duk_context* ctx);
-    duk_ret_t N64Image_fromPNG(duk_context* ctx);
+    duk_ret_t js_N64Image__constructor(duk_context* ctx);
+    duk_ret_t js_N64Image_toPNG(duk_context* ctx);
+    duk_ret_t js_N64Image_fromPNG(duk_context* ctx);
 
     // ScriptAPI_exec
     void Define_exec(duk_context* ctx);
@@ -260,7 +260,6 @@ namespace ScriptAPI
         IMG_CI8_RGBA16,
         IMG_CI4_RGBA16,
         IMG_CI8_IA16,
-        IMG_CI4_IA16,
-        NUM_IMG_FORMATS
+        IMG_CI4_IA16
     };
 };

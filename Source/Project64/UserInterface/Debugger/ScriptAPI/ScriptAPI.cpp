@@ -40,6 +40,7 @@ void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
     
     Define_AddressRange(ctx);
     Define_DrawingContext(ctx);
+    Define_N64Image(ctx);
     //Define_Server(ctx);
     
     Define_Number_prototype_hex(ctx);

@@ -11,7 +11,7 @@ new N64Image(format: number, width: number, height: number, data: Buffer, palett
 
   image.toPNG(): Buffer
 
-    Returns a PNG representation of the image data as a Buffer.
+    Returns a PNG representation of the image data as a Buffer object.
 
         var width = 64;
         var height = 64;

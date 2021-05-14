@@ -234,6 +234,9 @@
     <ProjectReference Include="..\3rdParty\duktape\duktape.vcxproj">
       <Project>{e8d9a652-a354-4374-b6c5-a51ee62749fd}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\3rdParty\png\png.vcxproj">
+      <Project>{17836496-31b0-46f2-b1b1-366d7df6f04c}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\3rdParty\zlib\zlib.vcxproj">
       <Project>{731bd205-2826-4631-b7af-117658e88dbc}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
