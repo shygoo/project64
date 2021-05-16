@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 14 2021 -->
+<!-- Generated May 16 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.05.14</title>
+<title>Project64 JavaScript API prerelease 2021.05.16</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -270,7 +270,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.05.14
+prerelease 2021.05.16
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -341,6 +341,7 @@ prerelease 2021.05.14
 </ul><div class="vtab"></div></li>
 <li><a href="#N64Image">N64Image</a>: N64 Image class<ul>
 <li><a href="#new_N64Image">new N64Image(format, width, height, data[, palette])</a></li>
+<li><a href="#N64Image_fromPNG">N64Image.fromPNG(pngData[, format])</a></li>
 <li><a href="#image_toPNG">image.toPNG()</a></li>
 <li><a href="#image_format">image.format</a></li>
 <li><a href="#image_width">image.width</a></li>
@@ -1077,7 +1078,7 @@ N64 Image class
 <div class="prop"><span class="title" id="new_N64Image">new N64Image(format, width, height, data[, palette])</span></div>
 <div class="tsproto">new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)</div>
 <div class="vtab"></div>
-Creates an <span class="snip">N64Image</span> object.
+Creates an <a href="#N64Image">N64Image</a> object.
 <div class="vtab"></div>
 <table>
 <thead>
@@ -1095,11 +1096,22 @@ Creates an <span class="snip">N64Image</span> object.
 <tr><td><span class="snip">IMG_CI8_IA16</span>  </td><td>8-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
 <tr><td><span class="snip">IMG_CI4_IA16</span>  </td><td>4-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
 </table>
+<!-- N64Image_fromPNG -->
+<div class="prop"><span class="title" id="N64Image_fromPNG">N64Image.fromPNG(pngData[, format])</span></div>
+<div class="tsproto">N64Image.fromPNG(pngData: Buffer, format?: number = IMG_RGBA32): N64Image</div>
+<div class="vtab"></div>
+Static function. Creates an <a href="#N64Image">N64Image</a> object from a PNG file.
+<pre class="ex">
+<span class="js-keyword">var</span> <span class="js-word">image</span> = <span class="js-word">N64Image</span>.<span class="js-word">fromPNG</span>(<span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-string">"image.png"</span>));
+</pre>
 <!-- image_toPNG -->
 <div class="prop"><span class="title" id="image_toPNG">image.toPNG()</span></div>
 <div class="tsproto">image.toPNG(): Buffer</div>
 <div class="vtab"></div>
-Returns a PNG representation of the image data as a Buffer object.
+Returns a PNG representation of the image data as a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object.
+<pre class="ex">
+<span class="js-word">fs</span>.<span class="js-word">writefile</span>(<span class="js-string">"image.png"</span>, <span class="js-word">image</span>.<span class="js-word">toPNG</span>());
+</pre>
 <!-- image_format -->
 <div class="prop"><span class="title" id="image_format">image.format</span></div>
 <div class="tsproto">image.format: number</div>

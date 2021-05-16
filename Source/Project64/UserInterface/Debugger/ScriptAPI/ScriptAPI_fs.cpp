@@ -160,7 +160,7 @@ duk_ret_t ScriptAPI::js_fs_write(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 2)
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -180,7 +180,7 @@ duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
     }
     else
     {
-        return DUK_RET_TYPE_ERROR;
+        return ThrowInvalidArgsError(ctx);
     }
 
     FILE* fp = fopen(path, "wb");
@@ -208,7 +208,7 @@ duk_ret_t ScriptAPI::js_fs_read(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -246,7 +246,7 @@ duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1 || !duk_is_number(ctx, 0))
+    if(!duk_is_number(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -263,7 +263,7 @@ duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_stat(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -280,7 +280,7 @@ duk_ret_t ScriptAPI::js_fs_stat(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1)
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -292,7 +292,7 @@ duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1)
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -304,7 +304,7 @@ duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_rmdir(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1)
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -317,7 +317,7 @@ duk_ret_t ScriptAPI::js_fs_rmdir(duk_context *ctx)
 // todo make sure failure behavior is similar to nodejs's fs.readdirSync
 duk_ret_t ScriptAPI::js_fs_readdir(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
+    if(!duk_is_string(ctx, 0))
     {
         return ThrowInvalidArgsError(ctx);
     }

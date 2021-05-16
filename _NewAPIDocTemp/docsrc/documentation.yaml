@@ -682,7 +682,7 @@
     js:   new N64Image(format, width, height, data[, palette])
     ts:   "new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)"
     desc: |
-          Creates an `N64Image` object.
+          Creates an [N64Image](#N64Image) object.
           <div class="vtab"></div>
           <table>
           <thead>
@@ -701,10 +701,23 @@
           <tr><td>`IMG_CI4_IA16`  </td><td>4-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
           </table>
 
+  - name: N64Image_fromPNG
+    js:   N64Image.fromPNG(pngData[, format])
+    ts:   "N64Image.fromPNG(pngData: Buffer, format?: number = IMG_RGBA32): N64Image"
+    desc: |
+          Static function. Creates an [N64Image](#N64Image) object from a PNG file.
+          ```
+          var image = N64Image.fromPNG(fs.readfile("image.png"));
+          ```
+
   - name: image_toPNG
     js:   image.toPNG()
     ts:   "image.toPNG(): Buffer"
-    desc: Returns a PNG representation of the image data as a Buffer object.
+    desc: |
+          Returns a PNG representation of the image data as a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object.
+          ```
+          fs.writefile("image.png", image.toPNG());
+          ```
 
   - name: image_format
     js:   image.format

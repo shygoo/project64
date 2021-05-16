@@ -9,9 +9,16 @@ static unsigned int GetTexel(int format, void* data, size_t nPixel);
 static uint32_t ColorToRGBA32(int srcFormat, unsigned int color);
 static uint32_t GetColor(int format, size_t nPixel, void* data, void* palette = nullptr);
 
+enum {
+    ReadPNG_Success,
+    ReadPNG_WrongFileType,
+    ReadPNG_OutOfMemory,
+    ReadPNG_ParseFailed,
+    ReadPNG_Exception
+};
+
 static void MakePNG(uint8_t* rgba32, size_t width, size_t height, std::vector<uint8_t>& buffer);
-static void PngWriteData(png_structp png_ptr, png_bytep data, png_size_t length);
-static void PngOutputFlushNoop(png_structp png_ptr);
+static int ReadPNG(uint8_t* pngData, size_t pngSize, size_t* width, size_t* height, std::vector<uint8_t>& outRGBA32);
 
 void ScriptAPI::Define_N64Image(duk_context* ctx)
 {
@@ -161,10 +168,6 @@ duk_ret_t ScriptAPI::js_N64Image_toPNG(duk_context* ctx)
     duk_uint_t height = duk_get_uint(ctx, -1);
     duk_pop(ctx);
 
-    uint8_t *rgba32;
-
-    CScriptInstance* inst = GetInstance(ctx);
-
     duk_size_t dummy;
     if (format == IMG_RGBA32)
     {
@@ -179,7 +182,7 @@ duk_ret_t ScriptAPI::js_N64Image_toPNG(duk_context* ctx)
         return DUK_RET_ERROR;
     }
 
-    rgba32 = (uint8_t*)duk_get_buffer_data(ctx, -1, &dummy);
+    uint8_t* rgba32 = (uint8_t*)duk_get_buffer_data(ctx, -1, &dummy);
     
     if (rgba32 == nullptr)
     {
@@ -189,14 +192,77 @@ duk_ret_t ScriptAPI::js_N64Image_toPNG(duk_context* ctx)
     std::vector<uint8_t> pngData;
     MakePNG(rgba32, width, height, pngData);
 
-    void* jsPngData = duk_push_buffer(ctx, width * height * 4, false);
-    memcpy(jsPngData, &pngData[0], pngData.size());
+    void* pngDataCopy = duk_push_buffer(ctx, pngData.size(), false);
+    memcpy(pngDataCopy, &pngData[0], pngData.size());
 
     return 1;
 }
 
+// todo handle formats other than IMG_RGBA32
 duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
 {
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    if (!duk_is_buffer_data(ctx, 0) ||
+        (nargs == 2 && !duk_is_number(ctx, 1)))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    int format = IMG_RGBA32;
+
+    if (nargs == 2)
+    {
+        format = duk_get_uint(ctx, 1);
+
+        if (BitsPerPixel(format) == 0)
+        {
+            duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "invalid format");
+            return duk_throw(ctx);
+        }
+    }
+
+    duk_size_t pngSize;
+    uint8_t* pngData = (uint8_t*)duk_get_buffer_data(ctx, 0, &pngSize);
+
+    std::vector<uint8_t> rgba32;
+    size_t width, height;
+
+    int rc = ReadPNG(pngData, pngSize, &width, &height, rgba32);
+
+    if (rc != ReadPNG_Success)
+    {
+        duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "PNG reader failed (%d)", rc);
+        return duk_throw(ctx);
+    }
+
+    duk_push_object(ctx);
+    
+    uint8_t* rgba32Copy = (uint8_t*)duk_push_buffer(ctx, rgba32.size(), false);
+    memcpy(rgba32Copy, &rgba32[0], rgba32.size());
+    duk_put_prop_string(ctx, -2, "data");
+    
+    duk_push_number(ctx, IMG_RGBA32); // todo
+    duk_put_prop_string(ctx, -2, "format");
+
+    duk_push_number(ctx, width);
+    duk_put_prop_string(ctx, -2, "width");
+
+    duk_push_number(ctx, height);
+    duk_put_prop_string(ctx, -2, "height");
+
+    duk_push_null(ctx);
+    duk_put_prop_string(ctx, -2, "palette"); // todo
+
+    duk_push_null(ctx);
+    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("rgba32")); // todo
+
+    duk_push_global_object(ctx);
+    duk_get_prop_string(ctx, -1, "N64Image");
+    duk_get_prop_string(ctx, -1, "prototype");
+    duk_set_prototype(ctx, -4);
+    duk_pop_n(ctx, 2);
+
     return 1;
 }
 
@@ -277,7 +343,7 @@ static uint32_t ColorToRGBA32(int srcFormat, unsigned int color)
 {
     using namespace ScriptAPI;
 
-    float r, g, b, a;
+    float r = 0, g = 0, b = 0, a = 0;
 
     switch (srcFormat)
     {
@@ -384,17 +450,156 @@ static void MakePNG(uint8_t* rgba32, size_t width, size_t height, std::vector<ui
     }
 
     png_set_IHDR(png_ptr, info_ptr, width, height,
-        8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE,
+        8, PNG_COLOR_TYPE_RGBA, PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
     png_set_write_fn(png_ptr, &buffer, PngWriteData, PngOutputFlushNoop);
     png_write_info(png_ptr, info_ptr);
 
     size_t rowSize = width * 4;
+    
+    std::vector<png_bytep> rowPointers(height);
     for (size_t nRow = 0; nRow < height; nRow++)
     {
-        png_write_row(png_ptr, &rgba32[nRow * rowSize]);
+        rowPointers[nRow] = &rgba32[nRow * rowSize];
     }
-    
+
+    png_write_image(png_ptr, &rowPointers[0]);
+    png_write_end(png_ptr, info_ptr);
     png_destroy_write_struct(&png_ptr, &info_ptr);
+}
+
+struct PngReadState {
+    uint8_t*   pngData;
+    size_t     pngSize;
+    png_size_t offset;
+};
+
+static bool ParsePNGRow(png_byte* row, png_size_t rowSize, int bitDepth, int colorType, std::vector<uint8_t>& outRGBA32)
+{
+    if (colorType == PNG_COLOR_TYPE_RGBA)
+    {
+        if (bitDepth == 8)
+        {
+            outRGBA32.insert(outRGBA32.end(), &row[0], &row[rowSize]);
+            return true;
+        }
+        if (bitDepth == 16)
+        {
+            for (png_size_t i = 0; i < rowSize; i += 8)
+            {
+                outRGBA32.push_back(png_get_uint_16(&row[i + 0]) / 256);
+                outRGBA32.push_back(png_get_uint_16(&row[i + 2]) / 256);
+                outRGBA32.push_back(png_get_uint_16(&row[i + 4]) / 256);
+                outRGBA32.push_back(png_get_uint_16(&row[i + 6]) / 256);
+            }
+            return true;
+        }
+    }
+
+    if (colorType == PNG_COLOR_TYPE_RGB)
+    {
+        if (bitDepth == 8)
+        {
+            for (png_size_t i = 0; i < rowSize; i += 3)
+            {
+                outRGBA32.insert(outRGBA32.end(), &row[i], &row[i + 3]);
+                outRGBA32.push_back(255);
+            }
+            return true;
+        }
+        if (bitDepth == 16)
+        {
+            for (png_size_t i = 0; i < rowSize; i += 6)
+            {
+                outRGBA32.push_back(png_get_uint_16(&row[i + 0]) / 256);
+                outRGBA32.push_back(png_get_uint_16(&row[i + 2]) / 256);
+                outRGBA32.push_back(png_get_uint_16(&row[i + 4]) / 256);
+                outRGBA32.push_back(255);
+            }
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void PngReadData(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    PngReadState* state = (PngReadState*)png_get_io_ptr(png_ptr);
+    if (state->offset + length > state->pngSize)
+    {
+        return;
+    }
+    memcpy(data, &state->pngData[state->offset], length);
+    state->offset += length;
+}
+
+static int ReadPNG(uint8_t* pngData, size_t pngSize, size_t* outWidth, size_t* outHeight, std::vector<uint8_t>& outRGBA32)
+{
+    if (!png_check_sig(pngData, 8))
+    {
+        return ReadPNG_WrongFileType;
+    }
+
+    png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    
+    if (!png_ptr)
+    {
+        return ReadPNG_OutOfMemory;
+    }
+
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+
+    if (!info_ptr)
+    {
+        png_destroy_read_struct(&png_ptr, nullptr, nullptr);
+        return ReadPNG_OutOfMemory;
+    }
+
+    if (setjmp(png_jmpbuf(png_ptr)))
+    {
+        png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+        return ReadPNG_Exception;
+    }
+
+    PngReadState readState;
+    readState.pngData = pngData;
+    readState.pngSize = pngSize;
+    readState.offset = 8;
+
+    png_set_read_fn(png_ptr, &readState, PngReadData);
+    png_set_sig_bytes(png_ptr, 8);
+    png_read_info(png_ptr, info_ptr);
+
+    png_uint_32 width, height;
+    int bitDepth, colorType;
+    png_get_IHDR(png_ptr, info_ptr, &width, &height, &bitDepth,
+        &colorType, nullptr, nullptr, nullptr);
+
+    png_size_t rowSize = png_get_rowbytes(png_ptr, info_ptr);
+    std::vector<png_bytep> rowPointers(height);
+    std::vector<png_byte> imageData(height * rowSize);
+
+    for (size_t nRow = 0; nRow < height; nRow++)
+    {
+        rowPointers[nRow] = &imageData[nRow * rowSize];
+    }
+
+    png_read_image(png_ptr, &rowPointers[0]);
+
+    for (size_t nRow = 0; nRow < height; nRow++)
+    {
+        if (!ParsePNGRow(rowPointers[nRow], rowSize, bitDepth, colorType, outRGBA32))
+        {
+            png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+            return ReadPNG_ParseFailed;
+        }
+    }
+
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+    
+    *outWidth = width;
+    *outHeight = height;
+    return ReadPNG_Success;
 }
