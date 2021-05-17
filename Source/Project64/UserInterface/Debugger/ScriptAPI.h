@@ -189,8 +189,10 @@ namespace ScriptAPI
     // ScriptAPI_N64Image
     void Define_N64Image(duk_context* ctx);
     duk_ret_t js_N64Image__constructor(duk_context* ctx);
-    duk_ret_t js_N64Image_toPNG(duk_context* ctx);
     duk_ret_t js_N64Image_fromPNG(duk_context* ctx);
+    duk_ret_t js_N64Image_format(duk_context* ctx);
+    duk_ret_t js_N64Image_bpp(duk_context* ctx);
+    duk_ret_t js_N64Image_toPNG(duk_context* ctx);
 
     // ScriptAPI_exec
     void Define_exec(duk_context* ctx);
@@ -250,16 +252,37 @@ namespace ScriptAPI
     };
 
     enum {
-        IMG_I4,
-        IMG_I8,
-        IMG_IA4,
-        IMG_IA8,
-        IMG_IA16,
-        IMG_RGBA16,
-        IMG_RGBA32,
-        IMG_CI8_RGBA16,
-        IMG_CI4_RGBA16,
-        IMG_CI8_IA16,
-        IMG_CI4_IA16
+        G_IM_FMT_RGBA,
+        G_IM_FMT_YUV,
+        G_IM_FMT_CI,
+        G_IM_FMT_IA,
+        G_IM_FMT_I
+    };
+
+    enum {
+        G_IM_SIZ_4b,
+        G_IM_SIZ_8b,
+        G_IM_SIZ_16b,
+        G_IM_SIZ_32b
+    };
+
+    enum {
+        G_TT_NONE   = 0x0000,
+        G_TT_RGBA16 = 0x8000,
+        G_TT_IA16   = 0xC000,
+    };
+
+    enum {
+        IMG_RGBA16     = (G_IM_FMT_RGBA << 3 | G_IM_SIZ_16b),
+        IMG_RGBA32     = (G_IM_FMT_RGBA << 3 | G_IM_SIZ_32b),
+        IMG_CI4_RGBA16 = (G_IM_FMT_CI   << 3 | G_IM_SIZ_4b) | G_TT_RGBA16,
+        IMG_CI4_IA16   = (G_IM_FMT_CI   << 3 | G_IM_SIZ_4b) | G_TT_IA16,
+        IMG_CI8_RGBA16 = (G_IM_FMT_CI   << 3 | G_IM_SIZ_8b) | G_TT_RGBA16,
+        IMG_CI8_IA16   = (G_IM_FMT_CI   << 3 | G_IM_SIZ_8b) | G_TT_IA16,
+        IMG_IA4        = (G_IM_FMT_IA   << 3 | G_IM_SIZ_4b),
+        IMG_IA8        = (G_IM_FMT_IA   << 3 | G_IM_SIZ_8b),
+        IMG_IA16       = (G_IM_FMT_IA   << 3 | G_IM_SIZ_16b),
+        IMG_I4         = (G_IM_FMT_I    << 3 | G_IM_SIZ_4b),
+        IMG_I8         = (G_IM_FMT_I    << 3 | G_IM_SIZ_8b),
     };
 };

@@ -62,15 +62,21 @@ TODO:
    ctx.measuretext(text)
    ctx.drawimage()
    make sure ctx.fill() implementation is correct
+   disable text wrapping for ctx.drawtext
 
-- N64Image class
+- image.update() update internal bitmap after manual alterations are made to image.data or image.palette.
+- make sure toPNG returns actual Buffer object
+
 - onpidma
-
+- why is console input var keyword not going to global object 
 - make constructors for event objects
 - private constructor flag
 - formatting/cleanup printfs, todo comments etc
 - full test suite
 
+MouseEvent.LEFT
+MouseEvent.MIDDLE
+MouseEvent.RIGHT
 
 ---------------------------
 
@@ -88,3 +94,4 @@ backburner:
 - pj64.limitfps(limitFps = true)
 - pj64.pause()
 - pj64.resume()
+- image.fixpalette() // remove duplicate values from the image.palette buffer and resize to fit. update ci data in image.data and update internal bitmap.

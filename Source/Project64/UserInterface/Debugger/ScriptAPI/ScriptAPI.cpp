@@ -239,6 +239,21 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
         { "IMG_CI8_IA16", IMG_CI8_IA16 },
         { "IMG_CI4_IA16", IMG_CI4_IA16 },
 
+        { "G_IM_FMT_RGBA", G_IM_FMT_RGBA },
+        { "G_IM_FMT_YUV",  G_IM_FMT_YUV },
+        { "G_IM_FMT_CI",   G_IM_FMT_CI },
+        { "G_IM_FMT_IA",   G_IM_FMT_IA },
+        { "G_IM_FMT_I",    G_IM_FMT_I },
+
+        { "G_IM_SIZ_4b",  G_IM_SIZ_4b },
+        { "G_IM_SIZ_8b",  G_IM_SIZ_8b },
+        { "G_IM_SIZ_16b", G_IM_SIZ_16b },
+        { "G_IM_SIZ_32b", G_IM_SIZ_32b },
+
+        { "G_TT_NONE",    G_TT_NONE },
+        { "G_TT_RGBA16",  G_TT_RGBA16 },
+        { "G_TT_IA16",    G_TT_IA16 },
+
         { nullptr, 0 },
     };
 

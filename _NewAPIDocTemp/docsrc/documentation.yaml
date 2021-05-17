@@ -676,29 +676,36 @@
 
 # N64Image
 - name: N64Image
-  tagline: N64 Image class
+  tagline: N64 image class
   props:
   - name: new_N64Image
-    js:   new N64Image(format, width, height, data[, palette])
-    ts:   "new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)"
+    js:   new N64Image(format, width, height[, data[, palette]])
+    ts:   "new N64Image(format: number, width: number, height: number, data?: Buffer, palette?: Buffer)"
     desc: |
           Creates an [N64Image](#N64Image) object.
           <div class="vtab"></div>
+          `format`&#58; The desired image format. Refer to the table below.<br>
+          `width`&#58; Width of the image.<br>
+          `height`&#58; Height of the image.<br>
+          `data`&#58; Optional [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object containing pixel data.
+          The byte length must be equal to `(width * height * N64Image.bpp(format)) / 8`. Copied to [image.data](#image_data).<br>
+          `palette`&#58; Optional [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object containing palette data. Copied to [image.palette](#image_palette).
+          <div class="vtab"></div>
           <table>
           <thead>
-          <tr><td>`format`        </td><td>`data`                           </td><td>`palette`</td></tr>
+          <tr><td>Format</td><td>Data</td><td>Palette</td></tr>
           </thead>
-          <tr><td>`IMG_I4`        </td><td>4-bit intensity                </td><td>(not used)</td></tr>
-          <tr><td>`IMG_I8`        </td><td>8-bit intensity                </td><td>(not used)</td></tr>
-          <tr><td>`IMG_IA4`       </td><td>4-bit intensity/alpha (i3a1)   </td><td>(not used)</td></tr>
-          <tr><td>`IMG_IA8`       </td><td>8-bit intensity/alpha (i4a4)   </td><td>(not used)</td></tr>
-          <tr><td>`IMG_IA16`      </td><td>16-bit intensity/alpha (i8a8)  </td><td>(not used)</td></tr>
-          <tr><td>`IMG_RGBA16`    </td><td>16-bit color (r5g5b5a1)        </td><td>(not used)</td></tr>
-          <tr><td>`IMG_RGBA32`    </td><td>32-bit color (r8g8b8a8)        </td><td>(not used)</td></tr>
-          <tr><td>`IMG_CI8_RGBA16`</td><td>8-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
-          <tr><td>`IMG_CI4_RGBA16`</td><td>4-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
-          <tr><td>`IMG_CI8_IA16`  </td><td>8-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
-          <tr><td>`IMG_CI4_IA16`  </td><td>4-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
+          <tr><td>`IMG_RGBA16`    </td><td>16-bit colors (r5g5b5a1)            </td><td>(not used)</td></tr>
+          <tr><td>`IMG_RGBA32`    </td><td>32-bit colors (r8g8b8a8)            </td><td>(not used)</td></tr>
+          <tr><td>`IMG_CI4_RGBA16`</td><td>4-bit color indices                 </td><td>16-bit colors (r5g5b5a1)</td></tr>
+          <tr><td>`IMG_CI4_IA16`  </td><td>4-bit color indices                 </td><td>16-bit intensity/alpha values (i8a8)</td></tr>
+          <tr><td>`IMG_CI8_RGBA16`</td><td>8-bit color indices                 </td><td>16-bit colors (r5g5b5a1)</td></tr>
+          <tr><td>`IMG_CI8_IA16`  </td><td>8-bit color indices                 </td><td>16-bit intensity/alpha values (i8a8)</td></tr>
+          <tr><td>`IMG_IA4`       </td><td>4-bit intensity/alpha values (i3a1) </td><td>(not used)</td></tr>
+          <tr><td>`IMG_IA8`       </td><td>8-bit intensity/alpha values (i4a4) </td><td>(not used)</td></tr>
+          <tr><td>`IMG_IA16`      </td><td>16-bit intensity/alpha values (i8a8)</td><td>(not used)</td></tr>
+          <tr><td>`IMG_I4`        </td><td>4-bit intensity values              </td><td>(not used)</td></tr>
+          <tr><td>`IMG_I8`        </td><td>8-bit intensity values              </td><td>(not used)</td></tr>
           </table>
 
   - name: N64Image_fromPNG
@@ -708,6 +715,43 @@
           Static function. Creates an [N64Image](#N64Image) object from a PNG file.
           ```
           var image = N64Image.fromPNG(fs.readfile("image.png"));
+          ```
+          Color quantization is not implemented. An error is thrown if `format` is a color-index (CI) type
+          and the color count of the PNG image exceeds the maximum number of colors supported. The maximum
+          number of colors supported by the CI4 and CI8 formats are 16 and 256, respectively.
+
+  - name: N64Image_format
+    js: N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])
+    ts: "N64Image.format(gbiFmt: number, gbiSiz: number, gbiTlutFmt?: number): number"
+    desc: |
+          Static function. Returns a simplified image format number from a given GBI pixel size and format configuration.
+          Returns `-1` if the configuration is invalid or unsupported. See the table below for supported configurations.
+          <div class="vtab"></div>
+          <table>
+          <thead>
+          <tr><td>`gbiFmt`      </td><td>`gbiSiz`     </td><td>`gbiTlutFmt` </td><td>Return value</td></tr>
+          </thead>
+          <tr><td>`G_IM_FMT_RGBA` </td><td>`G_IM_SIZ_16b` </td><td>(not used)   </td><td>`IMG_RGBA16`</td></tr>
+          <tr><td>`G_IM_FMT_RGBA` </td><td>`G_IM_SIZ_32b` </td><td>(not used)   </td><td>`IMG_RGBA32`</td></tr>
+          <tr><td>`G_IM_FMT_CI`   </td><td>`G_IM_SIZ_4b`  </td><td>`G_TT_RGBA16`</td><td>`IMG_CI4_RGBA16`</td></tr>
+          <tr><td>`G_IM_FMT_CI`   </td><td>`G_IM_SIZ_4b`  </td><td>`G_TT_IA16`  </td><td>`IMG_CI4_IA16`</td></tr>
+          <tr><td>`G_IM_FMT_CI`   </td><td>`G_IM_SIZ_8b`  </td><td>`G_TT_RGBA16`</td><td>`IMG_CI8_RGBA16`</td></tr>
+          <tr><td>`G_IM_FMT_CI`   </td><td>`G_IM_SIZ_8b`  </td><td>`G_TT_IA16`  </td><td>`IMG_CI8_IA16`</td></tr>
+          <tr><td>`G_IM_FMT_IA`   </td><td>`G_IM_SIZ_4b`  </td><td>(not used)   </td><td>`IMG_IA4`</td></tr>
+          <tr><td>`G_IM_FMT_IA`   </td><td>`G_IM_SIZ_8b`  </td><td>(not used)   </td><td>`IMG_IA8`</td></tr>
+          <tr><td>`G_IM_FMT_IA`   </td><td>`G_IM_SIZ_16b` </td><td>(not used)   </td><td>`IMG_IA16`</td></tr>
+          <tr><td>`G_IM_FMT_I`    </td><td>`G_IM_SIZ_4b`  </td><td>(not used)   </td><td>`IMG_I4`</td></tr>
+          <tr><td>`G_IM_FMT_I`    </td><td>`G_IM_SIZ_8b`  </td><td>(not used)   </td><td>`IMG_I8`</td></tr>
+          </table>
+
+  - name: N64Image_bpp
+    js:   N64Image.bpp(format)
+    ts:   "N64Image.bpp(format: number): number"
+    desc: |
+          Static function. Returns the number of bits used per pixel for a given image format number or `G_IM_SIZ_*` constant. Does not include bits used for palette data.
+          ```
+          N64Image.bpp(IMG_CI8_RGBA16); // 8
+          N64Image.bpp(G_IM_SIZ_16b); // 16
           ```
 
   - name: image_toPNG
@@ -737,7 +781,7 @@
   - name: image_data
     js:   image.data
     ts:   "image.data: Buffer"
-    desc: The texel data of the image.
+    desc: The pixel data of the image.
 
   - name: image_palette
     js:   image.palette
@@ -962,9 +1006,9 @@
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
           [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray), string.
           <div class="vtab"></div>
-          `offset`&#58; optional position in the source buffer.<br>
-          `length`&#58; optional maximum number of bytes to write.<br>
-          `position`&#58; optional file position.
+          `offset`&#58; Optional position in the source buffer.<br>
+          `length`&#58; Optional maximum number of bytes to write.<br>
+          `position`&#58; Optional file position.
           <div class="vtab"></div>
           Returns the number of bytes written.
           ```
@@ -992,9 +1036,9 @@
           [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html),
           [DataView](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView),
           [TypedArray](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray).<br><br>
-          `offset`&#58; position in the source buffer.<br>
-          `length`&#58; number of bytes to read.<br>
-          `position`&#58; file position.
+          `offset`&#58; Position in the source buffer.<br>
+          `length`&#58; Number of bytes to read.<br>
+          `position`&#58; File position.
           <div class="vtab"></div>
           Returns the number of bytes read.
 
@@ -1367,6 +1411,27 @@
           <table>
           <tr><td>`M_GFXTASK`</td><td>1</td></tr>
           <tr><td>`M_AUDTASK`</td><td>2</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`G_IM_FMT_RGBA`</td><td>0</td></tr>
+          <tr><td>`G_IM_FMT_YUV`</td><td>1</td></tr>
+          <tr><td>`G_IM_FMT_CI`</td><td>2</td></tr>
+          <tr><td>`G_IM_FMT_IA`</td><td>3</td></tr>
+          <tr><td>`G_IM_FMT_I`</td><td>4</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`G_IM_SIZ_4b`</td><td>0</td></tr>
+          <tr><td>`G_IM_SIZ_8b`</td><td>1</td></tr>
+          <tr><td>`G_IM_SIZ_16b`</td><td>2</td></tr>
+          <tr><td>`G_IM_SIZ_32b`</td><td>3</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`G_TT_NONE`  </td><td>0x0000</td></tr>
+          <tr><td>`G_TT_RGBA16`</td><td>0x8000</td></tr>
+          <tr><td>`G_TT_IA16`  </td><td>0xC000</td></tr>
           </table>
 
 - name: JavaScript environment

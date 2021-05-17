@@ -6,8 +6,14 @@ static int BitsPerPixel(int format);
 static int PaletteColorCount(int format);
 static bool UsesPalette(int format);
 static unsigned int GetTexel(int format, void* data, size_t nPixel);
+static void SetTexel(int format, void* data, size_t nPixel, unsigned int value);
 static uint32_t ColorToRGBA32(int srcFormat, unsigned int color);
-static uint32_t GetColor(int format, size_t nPixel, void* data, void* palette = nullptr);
+static unsigned int RGBA32ToColor(int dstFormat, uint32_t rgba32);
+static unsigned int RGBA32CanConvert(int dstFormat, uint32_t rgba32);
+static uint32_t GetRGBA32(int format, size_t nPixel, void* data, void* palette = nullptr);
+
+static void MakePNG(uint8_t* rgba32, size_t width, size_t height, std::vector<uint8_t>& buffer);
+static int ReadPNG(uint8_t* pngData, size_t pngSize, size_t* width, size_t* height, std::vector<uint8_t>& outRGBA32);
 
 enum {
     ReadPNG_Success,
@@ -17,8 +23,23 @@ enum {
     ReadPNG_Exception
 };
 
-static void MakePNG(uint8_t* rgba32, size_t width, size_t height, std::vector<uint8_t>& buffer);
-static int ReadPNG(uint8_t* pngData, size_t pngSize, size_t* width, size_t* height, std::vector<uint8_t>& outRGBA32);
+struct ImgFormatInfo {
+    int bitsPerPixel;
+    int paletteColorCount;
+};
+
+static const std::map<int, ImgFormatInfo> m_FormatInfo = {
+    { ScriptAPI::IMG_I4,         { 4,  0 } },
+    { ScriptAPI::IMG_IA4,        { 4,  0 } },
+    { ScriptAPI::IMG_I8,         { 8,  0 } },
+    { ScriptAPI::IMG_IA8,        { 8,  0 } },
+    { ScriptAPI::IMG_RGBA16,     { 16, 0 } },
+    { ScriptAPI::IMG_RGBA32,     { 32, 0 } },
+    { ScriptAPI::IMG_CI4_RGBA16, { 4,  16 } },
+    { ScriptAPI::IMG_CI4_IA16,   { 4,  16 } },
+    { ScriptAPI::IMG_CI8_RGBA16, { 8,  256 } },
+    { ScriptAPI::IMG_CI8_IA16,   { 8,  256 } },
+};
 
 void ScriptAPI::Define_N64Image(duk_context* ctx)
 {
@@ -29,6 +50,8 @@ void ScriptAPI::Define_N64Image(duk_context* ctx)
     
     const duk_function_list_entry staticFuncs[] = {
         { "fromPNG", js_N64Image_fromPNG, DUK_VARARGS },
+        { "format",  js_N64Image_format, DUK_VARARGS },
+        { "bpp",     js_N64Image_bpp, DUK_VARARGS },
         { nullptr, 0 }
     };
 
@@ -47,10 +70,13 @@ void ScriptAPI::Define_N64Image(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
 {
+    duk_idx_t nargs = duk_get_top(ctx);
+
     if (!duk_is_number(ctx, 0) ||
         !duk_is_number(ctx, 1) ||
         !duk_is_number(ctx, 2) ||
-        !duk_is_buffer_data(ctx, 3))
+        (nargs > 3 && !duk_is_buffer_data(ctx, 3)) ||
+        (nargs > 4 && !duk_is_buffer_data(ctx, 4)))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -60,12 +86,11 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
     duk_uint_t height = duk_get_uint(ctx, 2);
 
     size_t numPixels = width * height;
-
-    size_t dataByteLength = 0, paletteByteLength = 0;
-    uint8_t* data = (uint8_t*)duk_get_buffer_data(ctx, 3, &dataByteLength);
-    uint8_t* paletteData = nullptr;
-
     int bpp = BitsPerPixel(format);
+    size_t requiredDataByteLength = (numPixels * bpp) / 8;
+    size_t dataByteLength = 0, paletteByteLength = 0;
+    uint8_t* data = nullptr;
+    uint8_t* palette = nullptr;
 
     if (bpp == 0)
     {
@@ -73,37 +98,52 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
         return duk_throw(ctx);
     }
 
-    size_t requiredDataByteLength = (numPixels * bpp) / 8;
+    if (nargs > 3)
+    {
+        data = (uint8_t*)duk_get_buffer_data(ctx, 3, &dataByteLength);
+    }
+    else
+    {
+        data = (uint8_t*)duk_push_buffer(ctx, requiredDataByteLength, false);
+        dataByteLength = requiredDataByteLength;
+    }
 
     if (dataByteLength != requiredDataByteLength)
     {
-        duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "invalid data size (%d); expected %d",
+        duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "invalid data size (%d bytes); expected %d bytes",
             dataByteLength, requiredDataByteLength);
         return duk_throw(ctx);
     }
 
     if (UsesPalette(format))
     {
-        if (!duk_is_buffer_data(ctx, 4))
+        if (nargs > 4)
         {
-            duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "palette argument is missing");
-            return duk_throw(ctx);
-        }
+            palette = (uint8_t*)duk_get_buffer_data(ctx, 4, &paletteByteLength);
+            size_t numColors = paletteByteLength / sizeof(uint16_t);
 
-        paletteData = (uint8_t*)duk_get_buffer_data(ctx, 4, &paletteByteLength);
-        size_t numColors = paletteByteLength / sizeof(uint16_t);
-
-        for (size_t i = 0; i < numPixels; i++)
-        {
-            if (GetTexel(format, data, i) >= numColors)
+            for (size_t i = 0; i < numPixels; i++)
             {
-                duk_push_error_object(ctx, DUK_RET_RANGE_ERROR, "color index out of bounds");
-                return duk_throw(ctx);
+                if (GetTexel(format, data, i) >= numColors)
+                {
+                    duk_push_error_object(ctx, DUK_RET_RANGE_ERROR, "image data contains invalid color index", i);
+                    return duk_throw(ctx);
+                }
             }
         }
+        else
+        {
+            if (bpp == 8)
+            {
+                paletteByteLength = 256 * sizeof(uint16_t);
+            }
+            else if (bpp == 4)
+            {
+                paletteByteLength = 16 * sizeof(uint16_t);
+            }
+            palette = (uint8_t*)duk_push_buffer(ctx, paletteByteLength, false);
+        }
     }
-
-    // TODO detect non-grayscale texel with intensity format and throw error 
 
     duk_push_this(ctx);
     duk_push_uint(ctx, format);
@@ -117,31 +157,23 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
     memcpy(dataCopy, data, dataByteLength);
     duk_put_prop_string(ctx, -2, "data");
 
-    if (format == IMG_RGBA32)
+    std::vector<uint8_t> internalBitmap(numPixels * sizeof(uint32_t));
+    for (size_t i = 0; i < numPixels; i++)
     {
-        duk_push_null(ctx);
-    }
-    else
-    {
-        size_t rgba32ByteLength = numPixels * 4;
-        uint8_t* rgba32 = (uint8_t*)duk_push_buffer(ctx, rgba32ByteLength, false);
-
-        for (size_t nPixel = 0; nPixel < numPixels; nPixel++)
-        {
-            uint32_t color = GetColor(format, nPixel, data, paletteData);
-            uint32_t* pPixelOut = (uint32_t*)(rgba32 + nPixel * 4);
-            *pPixelOut = _byteswap_ulong(color);
-        }
+        unsigned int colorRgba32 = GetRGBA32(format, i, data, palette);
+        SetTexel(IMG_RGBA32, &internalBitmap[0], i, colorRgba32);
     }
 
+    void* internalBitmapCopy = duk_push_buffer(ctx, internalBitmap.size(), false);
+    memcpy(internalBitmapCopy, &internalBitmap[0], internalBitmap.size() * sizeof(uint8_t));
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("rgba32"));
 
-    if (paletteData)
+    if (palette)
     {
-        int maxColors = PaletteColorCount(format);
-        size_t paletteCopySize = min(paletteByteLength, maxColors);
+        int maxPaletteByteLength = PaletteColorCount(format) * sizeof(uint16_t);
+        size_t paletteCopySize = min(paletteByteLength, maxPaletteByteLength);
         void* paletteCopy = duk_push_buffer(ctx, paletteCopySize, false);
-        memcpy(paletteCopy, paletteData, paletteCopySize);
+        memcpy(paletteCopy, palette, paletteCopySize);
     }
     else
     {
@@ -168,27 +200,15 @@ duk_ret_t ScriptAPI::js_N64Image_toPNG(duk_context* ctx)
     duk_uint_t height = duk_get_uint(ctx, -1);
     duk_pop(ctx);
 
-    duk_size_t dummy;
-    if (format == IMG_RGBA32)
-    {
-        duk_get_prop_string(ctx, -1, "data");
-    }
-    else if (duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("rgba32")))
-    {
-        duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("rgba32"));
-    }
-    else
+    if (!duk_has_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("rgba32")))
     {
         return DUK_RET_ERROR;
     }
 
+    duk_size_t dummy;
+    duk_get_prop_string(ctx, -1, DUK_HIDDEN_SYMBOL("rgba32"));
     uint8_t* rgba32 = (uint8_t*)duk_get_buffer_data(ctx, -1, &dummy);
     
-    if (rgba32 == nullptr)
-    {
-        return DUK_RET_ERROR;
-    }
-
     std::vector<uint8_t> pngData;
     MakePNG(rgba32, width, height, pngData);
 
@@ -198,13 +218,36 @@ duk_ret_t ScriptAPI::js_N64Image_toPNG(duk_context* ctx)
     return 1;
 }
 
-// todo handle formats other than IMG_RGBA32
+duk_ret_t ScriptAPI::js_N64Image_bpp(duk_context* ctx)
+{
+    if (!duk_is_number(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+    
+    duk_uint_t format = duk_get_uint(ctx, 0);
+
+    int bpp = 0;
+
+    switch (format)
+    {
+    case G_IM_SIZ_4b: bpp = 4; break;
+    case G_IM_SIZ_8b: bpp = 8; break;
+    case G_IM_SIZ_16b: bpp = 16; break;
+    case G_IM_SIZ_32b: bpp = 32; break;
+    default: bpp = BitsPerPixel(format); break;
+    }
+
+    duk_push_number(ctx, bpp);
+    return 1;
+}
+
 duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
 {
     duk_idx_t nargs = duk_get_top(ctx);
 
     if (!duk_is_buffer_data(ctx, 0) ||
-        (nargs == 2 && !duk_is_number(ctx, 1)))
+        (nargs > 1 && !duk_is_number(ctx, 1)))
     {
         return ThrowInvalidArgsError(ctx);
     }
@@ -225,10 +268,10 @@ duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
     duk_size_t pngSize;
     uint8_t* pngData = (uint8_t*)duk_get_buffer_data(ctx, 0, &pngSize);
 
-    std::vector<uint8_t> rgba32;
+    std::vector<uint8_t> internalBitmap;
     size_t width, height;
 
-    int rc = ReadPNG(pngData, pngSize, &width, &height, rgba32);
+    int rc = ReadPNG(pngData, pngSize, &width, &height, internalBitmap);
 
     if (rc != ReadPNG_Success)
     {
@@ -236,13 +279,15 @@ duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
         return duk_throw(ctx);
     }
 
+    size_t numPixels = width * height;
+
     duk_push_object(ctx);
     
-    uint8_t* rgba32Copy = (uint8_t*)duk_push_buffer(ctx, rgba32.size(), false);
-    memcpy(rgba32Copy, &rgba32[0], rgba32.size());
-    duk_put_prop_string(ctx, -2, "data");
-    
-    duk_push_number(ctx, IMG_RGBA32); // todo
+    uint8_t* internalBitmapCopy = (uint8_t*)duk_push_buffer(ctx, internalBitmap.size() * 4, false);
+    memcpy(internalBitmapCopy, &internalBitmap[0], internalBitmap.size());
+    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("rgba32"));
+
+    duk_push_number(ctx, format);
     duk_put_prop_string(ctx, -2, "format");
 
     duk_push_number(ctx, width);
@@ -251,11 +296,75 @@ duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
     duk_push_number(ctx, height);
     duk_put_prop_string(ctx, -2, "height");
 
-    duk_push_null(ctx);
-    duk_put_prop_string(ctx, -2, "palette"); // todo
+    std::vector<uint8_t> data((numPixels * BitsPerPixel(format)) / 8);
 
-    duk_push_null(ctx);
-    duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("rgba32")); // todo
+    if (UsesPalette(format))
+    {
+        std::vector<uint16_t> palette;
+        std::map<uint16_t, size_t> colorIndexMap;
+        std::vector<size_t> indices;
+        
+        for (size_t i = 0; i < numPixels; i++)
+        {
+            uint32_t colorRgba32 = GetTexel(IMG_RGBA32, &internalBitmap[0], i);
+
+            if (!RGBA32CanConvert(format, colorRgba32))
+            {
+                duk_push_error_object(ctx, DUK_ERR_ERROR, "color(s) not compatible with intensity format");
+                return duk_throw(ctx);
+            }
+
+            uint16_t color16 = (uint16_t)RGBA32ToColor(format, colorRgba32);
+
+            if (colorIndexMap.count(color16) > 0)
+            {
+                indices.push_back(colorIndexMap[color16]);
+            }
+            else
+            {
+                colorIndexMap[color16] = palette.size();
+                indices.push_back(palette.size());
+                palette.push_back(color16);
+            }
+        }
+
+        if (colorIndexMap.size() > PaletteColorCount(format))
+        {
+            duk_push_error_object(ctx, DUK_ERR_RANGE_ERROR, "image contains too many colors (%d)", colorIndexMap.size());
+            return duk_throw(ctx);
+        }
+
+        for (size_t i = 0; i < indices.size(); i++)
+        {
+            SetTexel(format, &data[0], i, indices[i]);
+        }
+
+        uint16_t* paletteCopy = (uint16_t*)duk_push_buffer(ctx, palette.size() * sizeof(uint16_t), false);
+        memcpy(paletteCopy, &palette[0], palette.size() * sizeof(uint16_t));
+        duk_put_prop_string(ctx, -2, "palette");
+    }
+    else
+    {
+        duk_push_null(ctx);
+        duk_put_prop_string(ctx, -2, "palette");
+
+        for (size_t i = 0; i < numPixels; i++)
+        {
+            uint32_t colorRgba32 = GetTexel(IMG_RGBA32, &internalBitmap[0], i);
+
+            if (!RGBA32CanConvert(format, colorRgba32))
+            {
+                duk_push_error_object(ctx, DUK_ERR_ERROR, "color(s) not compatible with intensity format");
+                return duk_throw(ctx);
+            }
+
+            SetTexel(format, &data[0], i, RGBA32ToColor(format, colorRgba32));
+        }
+    }
+
+    uint8_t* dataCopy = (uint8_t*)duk_push_buffer(ctx, data.size() * sizeof(uint8_t), false);
+    memcpy(dataCopy, &data[0], data.size() * sizeof(uint8_t));
+    duk_put_prop_string(ctx, -2, "data");
 
     duk_push_global_object(ctx);
     duk_get_prop_string(ctx, -1, "N64Image");
@@ -266,23 +375,44 @@ duk_ret_t ScriptAPI::js_N64Image_fromPNG(duk_context* ctx)
     return 1;
 }
 
-struct ImgFormatInfo {
-    int bitsPerPixel;
-    int paletteColorCount;
-};
+duk_ret_t ScriptAPI::js_N64Image_format(duk_context* ctx)
+{
+    duk_idx_t nargs = duk_get_top(ctx);
 
-static const std::map<int, ImgFormatInfo> m_FormatInfo = {
-    { ScriptAPI::IMG_I4,         { 4,  0 } },
-    { ScriptAPI::IMG_IA4,        { 4,  0 } },
-    { ScriptAPI::IMG_I8,         { 8,  0 } },
-    { ScriptAPI::IMG_IA8,        { 8,  0 } },
-    { ScriptAPI::IMG_RGBA16,     { 16, 0 } },
-    { ScriptAPI::IMG_RGBA32,     { 32, 0 } },
-    { ScriptAPI::IMG_CI4_RGBA16, { 4,  16 } },
-    { ScriptAPI::IMG_CI4_IA16,   { 4,  16 } },
-    { ScriptAPI::IMG_CI8_RGBA16, { 8,  256 } },
-    { ScriptAPI::IMG_CI8_IA16,   { 8,  256 } },
-};
+    if (!duk_is_number(ctx, 0) ||
+        !duk_is_number(ctx, 1) ||
+        (nargs > 2 && !duk_is_number(ctx, 2)))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    duk_uint_t gbiFmt = duk_get_number(ctx, 0);
+    duk_uint_t gbiSiz = duk_get_number(ctx, 1);
+    duk_uint_t gbiTlutFmt = (nargs > 2) ? duk_get_number(ctx, 2) : G_TT_NONE;
+
+    int format = (gbiFmt << 3) | gbiSiz | gbiTlutFmt;
+
+    switch (format)
+    {
+    case IMG_RGBA16:
+    case IMG_RGBA32:
+    case IMG_CI4_RGBA16:
+    case IMG_CI4_IA16:
+    case IMG_CI8_RGBA16:
+    case IMG_CI8_IA16:
+    case IMG_IA4:
+    case IMG_IA8:
+    case IMG_IA16:
+    case IMG_I4:
+    case IMG_I8:
+        duk_push_number(ctx, format);
+        break;
+    default:
+        duk_push_number(ctx, -1);
+    }
+
+    return 1;
+}
 
 static int BitsPerPixel(int format)
 {
@@ -311,6 +441,38 @@ static bool UsesPalette(int format)
     return false;
 }
 
+static void SetTexel(int format, void* data, size_t nPixel, unsigned int value)
+{
+    int bpp = BitsPerPixel(format);
+    size_t byteOffset = (bpp * nPixel) / 8;
+    void* pTexel = (uint8_t*)data + byteOffset;
+
+    switch (bpp)
+    {
+    case 4:
+        if (nPixel % 2)
+        {
+            *(uint8_t*)pTexel &= 0x0F;
+            *(uint8_t*)pTexel |= (value << 4) & 0xF0;
+        }
+        else
+        {
+            *(uint8_t*)pTexel &= 0xF0;
+            *(uint8_t*)pTexel |= value & 0x0F;
+        }
+        break;
+    case 8:
+        *(uint8_t*)pTexel = value & 0xFF;
+        break;
+    case 16:
+        *(uint16_t*)pTexel = _byteswap_ushort(value);
+        break;
+    case 32:
+        *(uint32_t*)pTexel = _byteswap_ulong(value);
+        break;
+    }
+}
+
 static unsigned int GetTexel(int format, void* data, size_t nPixel)
 {
     int bpp = BitsPerPixel(format);
@@ -333,7 +495,78 @@ static unsigned int GetTexel(int format, void* data, size_t nPixel)
     case 16:
         return _byteswap_ushort(*(uint16_t*)pTexel);
     case 32:
-        return _byteswap_ushort(*(uint32_t*)pTexel);
+        return _byteswap_ulong(*(uint32_t*)pTexel);
+    }
+
+    return 0;
+}
+
+static unsigned int RGBA32CanConvert(int dstFormat, uint32_t rgba32)
+{
+    using namespace ScriptAPI;
+
+    uint8_t r = (rgba32 >> 24);
+    uint8_t g = (rgba32 >> 16);
+    uint8_t b = (rgba32 >> 8);
+
+    if (r != g || g != b)
+    {
+        switch (dstFormat)
+        {
+        case IMG_IA16:
+        case IMG_CI8_IA16:
+        case IMG_CI4_IA16:
+        case IMG_I4:
+        case IMG_IA4:
+        case IMG_I8:
+        case IMG_IA8:
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static unsigned int RGBA32ToColor(int dstFormat, uint32_t rgba32)
+{
+    using namespace ScriptAPI;
+
+    if (dstFormat == IMG_RGBA32)
+    {
+        return rgba32;
+    }
+
+    float r = (rgba32 >> 24) / 255.0f;
+    float g = (rgba32 >> 16) / 255.0f;
+    float b = (rgba32 >>  8) / 255.0f;
+    float a = (rgba32 >>  0) / 255.0f;
+
+    float i = (r + g + b) / 3;
+
+    switch (dstFormat)
+    {
+    case IMG_RGBA16:
+    case IMG_CI8_RGBA16:
+    case IMG_CI4_RGBA16:
+        return (uint8_t)roundf(r * 31) << 11 |
+               (uint8_t)roundf(g * 31) <<  6 |
+               (uint8_t)roundf(b * 31) <<  1 |
+               (uint8_t)roundf(a * 31);
+    case IMG_IA16:
+    case IMG_CI8_IA16:
+    case IMG_CI4_IA16:
+        return (uint8_t)roundf(i * 255) << 8 |
+               (uint8_t)roundf(a * 255);
+    case IMG_I4:
+        return (uint8_t)roundf(i * 15);
+    case IMG_IA4:
+        return (uint8_t)roundf(i * 7) << 1 |
+               (uint8_t)roundf(a * 1);
+    case IMG_I8:
+        return (uint8_t)roundf(i * 255);
+    case IMG_IA8:
+        return (uint8_t)roundf(i * 15) << 4 |
+               (uint8_t)roundf(a * 15);
     }
 
     return 0;
@@ -399,7 +632,7 @@ static uint32_t ColorToRGBA32(int srcFormat, unsigned int color)
            (uint8_t)(255 * a);
 }
 
-static uint32_t GetColor(int format, size_t nPixel, void* data, void* palette)
+static uint32_t GetRGBA32(int format, size_t nPixel, void* data, void* palette)
 {
     unsigned int texel = GetTexel(format, data, nPixel);
 
@@ -409,7 +642,7 @@ static uint32_t GetColor(int format, size_t nPixel, void* data, void* palette)
         {
             return 0;
         }
-        void* pColor = (char*)palette + texel;
+        void* pColor = (char*)palette + (texel * sizeof(uint16_t));
         unsigned int color = _byteswap_ushort(*(uint16_t*)pColor);
         return ColorToRGBA32(format, color);
     }

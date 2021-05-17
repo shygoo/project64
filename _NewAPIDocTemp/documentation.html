@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 16 2021 -->
+<!-- Generated May 17 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.05.16</title>
+<title>Project64 JavaScript API prerelease 2021.05.17</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -270,7 +270,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.05.16
+prerelease 2021.05.17
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -339,9 +339,11 @@ prerelease 2021.05.16
 <li><a href="#ctx_fontSize">ctx.fontSize</a></li>
 <li><a href="#Predefined_colors">Predefined colors</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#N64Image">N64Image</a>: N64 Image class<ul>
-<li><a href="#new_N64Image">new N64Image(format, width, height, data[, palette])</a></li>
+<li><a href="#N64Image">N64Image</a>: N64 image class<ul>
+<li><a href="#new_N64Image">new N64Image(format, width, height[, data[, palette]])</a></li>
 <li><a href="#N64Image_fromPNG">N64Image.fromPNG(pngData[, format])</a></li>
+<li><a href="#N64Image_format">N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])</a></li>
+<li><a href="#N64Image_bpp">N64Image.bpp(format)</a></li>
 <li><a href="#image_toPNG">image.toPNG()</a></li>
 <li><a href="#image_format">image.format</a></li>
 <li><a href="#image_width">image.width</a></li>
@@ -1072,29 +1074,36 @@ The current font size. <span class="snip">14.0</span> by default.
 <!-- N64Image -->
 <div class="module">
 <div class="modtitle"><span class="title" id="N64Image">N64Image</span></div>
-N64 Image class
+N64 image class
 <div class="vtab"></div>
 <!-- new_N64Image -->
-<div class="prop"><span class="title" id="new_N64Image">new N64Image(format, width, height, data[, palette])</span></div>
-<div class="tsproto">new N64Image(format: number, width: number, height: number, data: Buffer, palette?: Buffer)</div>
+<div class="prop"><span class="title" id="new_N64Image">new N64Image(format, width, height[, data[, palette]])</span></div>
+<div class="tsproto">new N64Image(format: number, width: number, height: number, data?: Buffer, palette?: Buffer)</div>
 <div class="vtab"></div>
 Creates an <a href="#N64Image">N64Image</a> object.
 <div class="vtab"></div>
+<span class="snip">format</span>&#58; The desired image format. Refer to the table below.<br>
+<span class="snip">width</span>&#58; Width of the image.<br>
+<span class="snip">height</span>&#58; Height of the image.<br>
+<span class="snip">data</span>&#58; Optional <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object containing pixel data.
+The byte length must be equal to <span class="snip">(width * height * N64Image.bpp(format)) / 8</span>. Copied to <a href="#image_data">image.data</a>.<br>
+<span class="snip">palette</span>&#58; Optional <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object containing palette data. Copied to <a href="#image_palette">image.palette</a>.
+<div class="vtab"></div>
 <table>
 <thead>
-<tr><td><span class="snip">format</span>        </td><td><span class="snip">data</span>                           </td><td><span class="snip">palette</span></td></tr>
+<tr><td>Format</td><td>Data</td><td>Palette</td></tr>
 </thead>
-<tr><td><span class="snip">IMG_I4</span>        </td><td>4-bit intensity                </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_I8</span>        </td><td>8-bit intensity                </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_IA4</span>       </td><td>4-bit intensity/alpha (i3a1)   </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_IA8</span>       </td><td>8-bit intensity/alpha (i4a4)   </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_IA16</span>      </td><td>16-bit intensity/alpha (i8a8)  </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_RGBA16</span>    </td><td>16-bit color (r5g5b5a1)        </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_RGBA32</span>    </td><td>32-bit color (r8g8b8a8)        </td><td>(not used)</td></tr>
-<tr><td><span class="snip">IMG_CI8_RGBA16</span></td><td>8-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
-<tr><td><span class="snip">IMG_CI4_RGBA16</span></td><td>4-bit color index              </td><td>16-bit color (r5g5b5a1)</td></tr>
-<tr><td><span class="snip">IMG_CI8_IA16</span>  </td><td>8-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
-<tr><td><span class="snip">IMG_CI4_IA16</span>  </td><td>4-bit color index              </td><td>16-bit intensity/alpha (i8a8)</td></tr>
+<tr><td><span class="snip">IMG_RGBA16</span>    </td><td>16-bit colors (r5g5b5a1)            </td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_RGBA32</span>    </td><td>32-bit colors (r8g8b8a8)            </td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_CI4_RGBA16</span></td><td>4-bit color indices                 </td><td>16-bit colors (r5g5b5a1)</td></tr>
+<tr><td><span class="snip">IMG_CI4_IA16</span>  </td><td>4-bit color indices                 </td><td>16-bit intensity/alpha values (i8a8)</td></tr>
+<tr><td><span class="snip">IMG_CI8_RGBA16</span></td><td>8-bit color indices                 </td><td>16-bit colors (r5g5b5a1)</td></tr>
+<tr><td><span class="snip">IMG_CI8_IA16</span>  </td><td>8-bit color indices                 </td><td>16-bit intensity/alpha values (i8a8)</td></tr>
+<tr><td><span class="snip">IMG_IA4</span>       </td><td>4-bit intensity/alpha values (i3a1) </td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_IA8</span>       </td><td>8-bit intensity/alpha values (i4a4) </td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_IA16</span>      </td><td>16-bit intensity/alpha values (i8a8)</td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_I4</span>        </td><td>4-bit intensity values              </td><td>(not used)</td></tr>
+<tr><td><span class="snip">IMG_I8</span>        </td><td>8-bit intensity values              </td><td>(not used)</td></tr>
 </table>
 <!-- N64Image_fromPNG -->
 <div class="prop"><span class="title" id="N64Image_fromPNG">N64Image.fromPNG(pngData[, format])</span></div>
@@ -1103,6 +1112,41 @@ Creates an <a href="#N64Image">N64Image</a> object.
 Static function. Creates an <a href="#N64Image">N64Image</a> object from a PNG file.
 <pre class="ex">
 <span class="js-keyword">var</span> <span class="js-word">image</span> = <span class="js-word">N64Image</span>.<span class="js-word">fromPNG</span>(<span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-string">"image.png"</span>));
+</pre>
+Color quantization is not implemented. An error is thrown if <span class="snip">format</span> is a color-index (CI) type
+and the color count of the PNG image exceeds the maximum number of colors supported. The maximum
+number of colors supported by the CI4 and CI8 formats are 16 and 256, respectively.
+<!-- N64Image_format -->
+<div class="prop"><span class="title" id="N64Image_format">N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])</span></div>
+<div class="tsproto">N64Image.format(gbiFmt: number, gbiSiz: number, gbiTlutFmt?: number): number</div>
+<div class="vtab"></div>
+Static function. Returns a simplified image format number from a given GBI pixel size and format configuration.
+Returns <span class="snip">-1</span> if the configuration is invalid or unsupported. See the table below for supported configurations.
+<div class="vtab"></div>
+<table>
+<thead>
+<tr><td><span class="snip">gbiFmt</span>      </td><td><span class="snip">gbiSiz</span>     </td><td><span class="snip">gbiTlutFmt</span> </td><td>Return value</td></tr>
+</thead>
+<tr><td><span class="snip">G_IM_FMT_RGBA</span> </td><td><span class="snip">G_IM_SIZ_16b</span> </td><td>(not used)   </td><td><span class="snip">IMG_RGBA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_RGBA</span> </td><td><span class="snip">G_IM_SIZ_32b</span> </td><td>(not used)   </td><td><span class="snip">IMG_RGBA32</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_CI</span>   </td><td><span class="snip">G_IM_SIZ_4b</span>  </td><td><span class="snip">G_TT_RGBA16</span></td><td><span class="snip">IMG_CI4_RGBA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_CI</span>   </td><td><span class="snip">G_IM_SIZ_4b</span>  </td><td><span class="snip">G_TT_IA16</span>  </td><td><span class="snip">IMG_CI4_IA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_CI</span>   </td><td><span class="snip">G_IM_SIZ_8b</span>  </td><td><span class="snip">G_TT_RGBA16</span></td><td><span class="snip">IMG_CI8_RGBA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_CI</span>   </td><td><span class="snip">G_IM_SIZ_8b</span>  </td><td><span class="snip">G_TT_IA16</span>  </td><td><span class="snip">IMG_CI8_IA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_IA</span>   </td><td><span class="snip">G_IM_SIZ_4b</span>  </td><td>(not used)   </td><td><span class="snip">IMG_IA4</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_IA</span>   </td><td><span class="snip">G_IM_SIZ_8b</span>  </td><td>(not used)   </td><td><span class="snip">IMG_IA8</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_IA</span>   </td><td><span class="snip">G_IM_SIZ_16b</span> </td><td>(not used)   </td><td><span class="snip">IMG_IA16</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_I</span>    </td><td><span class="snip">G_IM_SIZ_4b</span>  </td><td>(not used)   </td><td><span class="snip">IMG_I4</span></td></tr>
+<tr><td><span class="snip">G_IM_FMT_I</span>    </td><td><span class="snip">G_IM_SIZ_8b</span>  </td><td>(not used)   </td><td><span class="snip">IMG_I8</span></td></tr>
+</table>
+<!-- N64Image_bpp -->
+<div class="prop"><span class="title" id="N64Image_bpp">N64Image.bpp(format)</span></div>
+<div class="tsproto">N64Image.bpp(format: number): number</div>
+<div class="vtab"></div>
+Static function. Returns the number of bits used per pixel for a given image format number or <span class="snip">G_IM_SIZ_*</span> constant. Does not include bits used for palette data.
+<pre class="ex">
+<span class="js-word">N64Image</span>.<span class="js-word">bpp</span>(<span class="js-word">IMG_CI8_RGBA16</span>); <span class="js-comment">// 8</span>
+<span class="js-word">N64Image</span>.<span class="js-word">bpp</span>(<span class="js-word">G_IM_SIZ_16b</span>); <span class="js-comment">// 16</span>
 </pre>
 <!-- image_toPNG -->
 <div class="prop"><span class="title" id="image_toPNG">image.toPNG()</span></div>
@@ -1131,7 +1175,7 @@ Height of the image.
 <div class="prop"><span class="title" id="image_data">image.data</span></div>
 <div class="tsproto">image.data: Buffer</div>
 <div class="vtab"></div>
-The texel data of the image.
+The pixel data of the image.
 <!-- image_palette -->
 <div class="prop"><span class="title" id="image_palette">image.palette</span></div>
 <div class="tsproto">image.palette: Buffer</div>
@@ -1371,9 +1415,9 @@ Writes <span class="snip">buffer</span> to the file referenced by file descripto
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>, string.
 <div class="vtab"></div>
-<span class="snip">offset</span>&#58; optional position in the source buffer.<br>
-<span class="snip">length</span>&#58; optional maximum number of bytes to write.<br>
-<span class="snip">position</span>&#58; optional file position.
+<span class="snip">offset</span>&#58; Optional position in the source buffer.<br>
+<span class="snip">length</span>&#58; Optional maximum number of bytes to write.<br>
+<span class="snip">position</span>&#58; Optional file position.
 <div class="vtab"></div>
 Returns the number of bytes written.
 <pre class="ex">
@@ -1399,9 +1443,9 @@ Reads data from the file referenced by <span class="snip">fd</span> into <span c
 <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView">DataView</a>,
 <a target="blank" href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray">TypedArray</a>.<br><br>
-<span class="snip">offset</span>&#58; position in the source buffer.<br>
-<span class="snip">length</span>&#58; number of bytes to read.<br>
-<span class="snip">position</span>&#58; file position.
+<span class="snip">offset</span>&#58; Position in the source buffer.<br>
+<span class="snip">length</span>&#58; Number of bytes to read.<br>
+<span class="snip">position</span>&#58; File position.
 <div class="vtab"></div>
 Returns the number of bytes read.
 <!-- fs.readfile -->
@@ -1755,6 +1799,27 @@ Note: The <a href="#mem_bindvar">mem.bind*</a>/<a href="#mem_typedef">mem.typede
 <table>
 <tr><td><span class="snip">M_GFXTASK</span></td><td>1</td></tr>
 <tr><td><span class="snip">M_AUDTASK</span></td><td>2</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">G_IM_FMT_RGBA</span></td><td>0</td></tr>
+<tr><td><span class="snip">G_IM_FMT_YUV</span></td><td>1</td></tr>
+<tr><td><span class="snip">G_IM_FMT_CI</span></td><td>2</td></tr>
+<tr><td><span class="snip">G_IM_FMT_IA</span></td><td>3</td></tr>
+<tr><td><span class="snip">G_IM_FMT_I</span></td><td>4</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">G_IM_SIZ_4b</span></td><td>0</td></tr>
+<tr><td><span class="snip">G_IM_SIZ_8b</span></td><td>1</td></tr>
+<tr><td><span class="snip">G_IM_SIZ_16b</span></td><td>2</td></tr>
+<tr><td><span class="snip">G_IM_SIZ_32b</span></td><td>3</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">G_TT_NONE</span>  </td><td>0x0000</td></tr>
+<tr><td><span class="snip">G_TT_RGBA16</span></td><td>0x8000</td></tr>
+<tr><td><span class="snip">G_TT_IA16</span>  </td><td>0xC000</td></tr>
 </table>
 
 </div>
