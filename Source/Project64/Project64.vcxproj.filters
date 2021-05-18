@@ -92,6 +92,8 @@
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_3d.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_N64Image.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image_PNG.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="UserInterface\About.h" />
@@ -176,6 +178,7 @@
     <ClInclude Include="UserInterface\WTLControls\wtl-BitmapPicture.h" />
     <ClInclude Include="WTLApp.h" />
     <ClInclude Include="UserInterface\Debugger\ScriptRenderWindow.h" />
+    <ClInclude Include="UserInterface\Debugger\ScriptAPI\N64Image.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="UserInterface\UIResources.rc" />

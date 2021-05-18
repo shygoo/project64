@@ -183,7 +183,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_strokeWidth(duk_context* ctx)
         return ThrowInvalidArgsError(ctx); // todo invalid assignment error
     }
 
-    rw->GfxSetStrokeWidth(duk_get_number(ctx, 0));
+    rw->GfxSetStrokeWidth((float)duk_get_number(ctx, 0));
 
     return 0;
 }
@@ -282,8 +282,8 @@ duk_ret_t ScriptAPI::js_DrawingContext_drawtext(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
 
-    duk_double_t x = duk_get_number(ctx, 0);
-    duk_double_t y = duk_get_number(ctx, 1);
+    float x = (float)duk_get_number(ctx, 0);
+    float y = (float)duk_get_number(ctx, 1);
     const char* text = duk_safe_to_string(ctx, 2);
 
     rw->GfxDrawText(x, y, stdstr(text).ToUTF16().c_str());
@@ -303,10 +303,10 @@ duk_ret_t ScriptAPI::js_DrawingContext_fillrect(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    duk_double_t x = duk_get_number(ctx, 0);
-    duk_double_t y = duk_get_number(ctx, 1);
-    duk_double_t width = duk_get_number(ctx, 2);
-    duk_double_t height = duk_get_number(ctx, 3);
+    float x = (float)duk_get_number(ctx, 0);
+    float y = (float)duk_get_number(ctx, 1);
+    float width = (float)duk_get_number(ctx, 2);
+    float height = (float)duk_get_number(ctx, 3);
 
     rw->GfxFillRect(x, y, x + width, y + height);
 
@@ -325,10 +325,10 @@ duk_ret_t ScriptAPI::js_DrawingContext_strokerect(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    duk_double_t x = duk_get_number(ctx, 0);
-    duk_double_t y = duk_get_number(ctx, 1);
-    duk_double_t width = duk_get_number(ctx, 2);
-    duk_double_t height = duk_get_number(ctx, 3);
+    float x = (float)duk_get_number(ctx, 0);
+    float y = (float)duk_get_number(ctx, 1);
+    float width = (float)duk_get_number(ctx, 2);
+    float height = (float)duk_get_number(ctx, 3);
 
     rw->GfxStrokeRect(x, y, x + width, y + height);
 
@@ -352,8 +352,8 @@ duk_ret_t ScriptAPI::js_DrawingContext_moveto(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    float x = duk_get_number(ctx, 0);
-    float y = duk_get_number(ctx, 1);
+    float x = (float)duk_get_number(ctx, 0);
+    float y = (float)duk_get_number(ctx, 1);
     
     rw->GfxMoveTo(x, y);
 
@@ -370,8 +370,8 @@ duk_ret_t ScriptAPI::js_DrawingContext_lineto(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    float x = duk_get_number(ctx, 0);
-    float y = duk_get_number(ctx, 1);
+    float x = (float)duk_get_number(ctx, 0);
+    float y = (float)duk_get_number(ctx, 1);
 
     rw->GfxLineTo(x, y);
 

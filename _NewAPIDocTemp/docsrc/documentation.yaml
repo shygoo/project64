@@ -763,6 +763,11 @@
           fs.writefile("image.png", image.toPNG());
           ```
 
+  - name: image_update
+    js:   image.update()
+    ts:   "image.update(): void"
+    desc: Updates the internal bitmap. Should be called after alterations are made to `image.data` or `image.palette`.
+
   - name: image_format
     js:   image.format
     ts:   "image.format: number"

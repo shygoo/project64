@@ -34,7 +34,7 @@ duk_ret_t ScriptAPI::js_RGBA(duk_context* ctx)
         }
 
         uint32_t newColor = (uint32_t)color & 0xFFFFFF00 | (uint8_t)roundf(255 * alpha);
-        duk_push_number(ctx, newColor);
+        duk_push_uint(ctx, newColor);
         return 1;
     }
 
@@ -61,7 +61,7 @@ duk_ret_t ScriptAPI::js_RGBA(duk_context* ctx)
     }
 
     uint32_t rgba32 = (uint32_t)r << 24 | (uint32_t)g << 16 |
-        (uint32_t)b << 8 | (uint32_t)roundf(255 * a);
+        (uint32_t)b << 8 | (uint32_t)roundf(255 * (float)a);
 
     duk_push_uint(ctx, rgba32);
     return 1;

@@ -83,7 +83,7 @@ bool CScriptInstance::Run(const char* path)
 
     m_SourceFile.read(m_SourceCode, statBuf.st_size);
 
-    if((size_t)m_SourceFile.tellg() != statBuf.st_size)
+    if((size_t)m_SourceFile.tellg() != (size_t)statBuf.st_size)
     {
         m_System->Log("[SCRIPTSYS]: error: could not read '%s'", path);
         goto error_cleanup;

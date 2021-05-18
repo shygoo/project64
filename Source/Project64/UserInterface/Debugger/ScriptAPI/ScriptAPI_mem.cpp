@@ -121,7 +121,7 @@ duk_ret_t ScriptAPI::js_mem_getblock(duk_context *ctx)
 
     uint32_t paddr;
     uint8_t* memsrc = nullptr;
-    uint32_t offsetStart;
+    uint32_t offsetStart = 0;
 
     if (addr < 0x80000000 || addr >= 0xC0000000)
     {

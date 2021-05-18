@@ -1,6 +1,7 @@
 #include <stdafx.h>
 #include <dwrite.h>
 #include "../ScriptAPI.h"
+#include "N64Image.h"
 
 #pragma warning(disable: 4702)
 

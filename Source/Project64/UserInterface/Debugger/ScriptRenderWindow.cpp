@@ -133,7 +133,7 @@ void CScriptRenderWindow::CpuRunningChanged(void* p)
 //       IsWindowEnabled())
 //}
 
-void CScriptRenderWindow::LimitFPSChanged(void* p)
+void CScriptRenderWindow::LimitFPSChanged(void* /*p*/)
 {
     // TODO should toggle vsync here
      
@@ -158,7 +158,7 @@ int CScriptRenderWindow::WinMouseMessageButton(DWORD uMsg)
     return -1;
 }
 
-void CScriptRenderWindow::ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam)
+void CScriptRenderWindow::ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD /*wParam*/, DWORD lParam)
 {
     switch (uMsg)
     {
@@ -288,7 +288,7 @@ void CScriptRenderWindow::SetVisible(bool bVisible)
 
 bool CScriptRenderWindow::IsVisible()
 {
-    return m_hWnd ? IsWindowVisible(m_hWnd) : false;
+    return m_hWnd ? (bool)IsWindowVisible(m_hWnd) : false;
 }
 
 bool CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32)
@@ -434,10 +434,10 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
     GetClientRect(hSrcWnd, &rc);
     float width = (float)rc.Width();
     float height = (float)rc.Height();
-    std::vector<uint8_t> frameRGBA32(width * height * 4);
+    std::vector<uint8_t> frameRGBA32((size_t)width * (size_t)height * 4);
     static bool bLoggedError = false;
 
-    if (!CaptureWindowRGBA32(hSrcWnd, width, height, &frameRGBA32[0]) && !bLoggedError)
+    if (!CaptureWindowRGBA32(hSrcWnd, (int)width, (int)height, &frameRGBA32[0]) && !bLoggedError)
     {
         m_Debugger->Debug_LogScriptsWindow("[SCRIPTSYS]: Failed to sample game screen. A Direct3D graphics plugin may be required.\r\n");
         bLoggedError = true;
@@ -446,7 +446,7 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
     ID2D1Bitmap* bitmap;
 
     HRESULT hr = m_Gfx->CreateBitmap(
-        D2D1::SizeU(width, height),
+        D2D1::SizeU((uint32_t)width, (uint32_t)height),
         &frameRGBA32[0],
         width * 4,
         D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
@@ -633,7 +633,7 @@ void CScriptRenderWindow::GfxDrawText(float x, float y, const wchar_t* text)
     }
     else
     {
-        m_Gfx->DrawText(text, wcslen(text), m_GfxTextFormat, D2D1::RectF(x, y, m_Width, m_Height), m_GfxFillBrush);
+        m_Gfx->DrawText(text, wcslen(text), m_GfxTextFormat, D2D1::RectF(x, y, (float)m_Width, (float)m_Height), m_GfxFillBrush);
     }
 }
 

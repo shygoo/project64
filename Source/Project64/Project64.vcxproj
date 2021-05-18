@@ -78,6 +78,8 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-ViewMemory.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger.cpp" />
     <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image.cpp" />
+    <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image_PNG.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_3d.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_N64Image.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
@@ -172,6 +174,7 @@
     <ClInclude Include="UserInterface\Debugger\debugger.h" />
     <ClInclude Include="UserInterface\Debugger\DebuggerUI.h" />
     <ClInclude Include="UserInterface\Debugger\DebugMMU.h" />
+    <ClInclude Include="UserInterface\Debugger\ScriptAPI\N64Image.h" />
     <ClInclude Include="UserInterface\Debugger\ScriptRenderWindow.h" />
     <ClInclude Include="UserInterface\Debugger\DMALog.h" />
     <ClInclude Include="UserInterface\Debugger\MemoryScanner.h" />

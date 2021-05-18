@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 17 2021 -->
+<!-- Generated May 18 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.05.17</title>
+<title>Project64 JavaScript API prerelease 2021.05.18</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -270,7 +270,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.05.17
+prerelease 2021.05.18
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -345,6 +345,7 @@ prerelease 2021.05.17
 <li><a href="#N64Image_format">N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])</a></li>
 <li><a href="#N64Image_bpp">N64Image.bpp(format)</a></li>
 <li><a href="#image_toPNG">image.toPNG()</a></li>
+<li><a href="#image_update">image.update()</a></li>
 <li><a href="#image_format">image.format</a></li>
 <li><a href="#image_width">image.width</a></li>
 <li><a href="#image_height">image.height</a></li>
@@ -1156,6 +1157,11 @@ Returns a PNG representation of the image data as a <a target="blank" href="http
 <pre class="ex">
 <span class="js-word">fs</span>.<span class="js-word">writefile</span>(<span class="js-string">"image.png"</span>, <span class="js-word">image</span>.<span class="js-word">toPNG</span>());
 </pre>
+<!-- image_update -->
+<div class="prop"><span class="title" id="image_update">image.update()</span></div>
+<div class="tsproto">image.update(): void</div>
+<div class="vtab"></div>
+Updates the internal bitmap. Should be called after alterations are made to <span class="snip">image.data</span> or <span class="snip">image.palette</span>.
 <!-- image_format -->
 <div class="prop"><span class="title" id="image_format">image.format</span></div>
 <div class="tsproto">image.format: number</div>
