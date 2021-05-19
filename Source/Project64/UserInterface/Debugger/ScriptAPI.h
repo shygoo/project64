@@ -111,10 +111,12 @@ namespace ScriptAPI
     // ScriptAPI_debug
     void Define_debug(duk_context* ctx);
     duk_ret_t js_debug_breakhere(duk_context* ctx);
+    duk_ret_t js_debug_step(duk_context* ctx);
     duk_ret_t js_debug_skip(duk_context* ctx);
     duk_ret_t js_debug_resume(duk_context* ctx);
     duk_ret_t js_debug_showmemory(duk_context* ctx);
     duk_ret_t js_debug_showcommands(duk_context* ctx);
+    duk_ret_t js_debug__get_paused(duk_context* ctx);
 
     // ScriptAPI_asm
     void Define_asm(duk_context* ctx);

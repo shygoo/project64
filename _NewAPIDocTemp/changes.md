@@ -51,8 +51,6 @@ Changes that will break compatibility with old scripts:
 ---------------------
 TODO:
 
-- debug.stepping
-- debug.breakhere silent option
 - script auto-run feature?
 - finish implementing new server/socket
 - native module loader
@@ -64,9 +62,6 @@ TODO:
    make sure ctx.fill() implementation is correct
    disable text wrapping for ctx.drawtext
 
-- make sure toPNG returns actual Buffer object
-
-- onpidma
 - why is console input var keyword not going to global object 
 - make constructors for event objects
 - private constructor flag

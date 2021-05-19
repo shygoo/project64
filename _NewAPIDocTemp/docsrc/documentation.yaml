@@ -335,7 +335,7 @@
               debug.breakhere();
           });
           ```
-          
+
   - name: GPR_flags
     js:   General purpose register flags
     desc: |
@@ -928,10 +928,12 @@
   tagline: Debugger interface
   props:
   - name: debug_breakhere
-    js:   debug.breakhere()
-    ts:   "debug.breakhere(): void"
+    js:   debug.breakhere([silent])
+    ts:   "debug.breakhere(silent?: boolean = false): void"
     desc: |
-          Pauses emulation and shows the CPU commands window. Useful for creating conditional breakpoints.
+          Pauses emulation via the debugger. The CPU commands window is not shown if `silent` is true.
+          <div class="vtab"></div>
+          Emulation may be resumed by calling [debug.resume()](#debug_resume) or clicking the "Go" button in the CPU commands window.
           ```
           // Break if the CPU tries to write 5 to 0x80339EA8
           events.onwrite(0x80339EA8, function(e) {
@@ -944,8 +946,12 @@
   - name: debug_resume
     js:   debug.resume()
     ts:   "debug.resume(): void"
-    desc: |
-          Resumes emulation after a debug break. 
+    desc: Resumes emulation from a debugger pause. 
+
+  - name: debug_step
+    js:   debug.step()
+    ts:  "debug.step(): void"
+    desc: Executes a single CPU command. Does nothing if [debug.paused](#debug_paused) is `false`.
 
   - name: debug_skip
     js:   debug.skip()
@@ -969,6 +975,11 @@
     ts:   "debug.showcommands(address: number): void"
     desc: Shows the CPU commands window at `address`.
 
+  - name: debug_paused
+    js:   debug.paused
+    ts:   "debug.paused: boolean"
+    desc: |
+          `true` if emulation is currrently paused by the debugger.
 
 # asm
 - name: asm

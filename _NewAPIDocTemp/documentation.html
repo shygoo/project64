@@ -385,11 +385,13 @@ prerelease 2021.05.19
 <li><a href="#cpu_cop0_errorepc">cpu.cop0.errorepc</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#debug">debug</a>: Debugger interface<ul>
-<li><a href="#debug_breakhere">debug.breakhere()</a></li>
+<li><a href="#debug_breakhere">debug.breakhere([silent])</a></li>
 <li><a href="#debug_resume">debug.resume()</a></li>
+<li><a href="#debug_step">debug.step()</a></li>
 <li><a href="#debug_skip">debug.skip()</a></li>
 <li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
 <li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
+<li><a href="#debug_paused">debug.paused</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#asm">asm</a>: ASM utilities<ul>
 <li><a href="#asm_encode">asm.encode(command[, address])</a></li>
@@ -1342,10 +1344,12 @@ Variable representing the ErrorEPC register.
 Debugger interface
 <div class="vtab"></div>
 <!-- debug_breakhere -->
-<div class="prop"><span class="title" id="debug_breakhere">debug.breakhere()</span></div>
-<div class="tsproto">debug.breakhere(): void</div>
+<div class="prop"><span class="title" id="debug_breakhere">debug.breakhere([silent])</span></div>
+<div class="tsproto">debug.breakhere(silent?: boolean = false): void</div>
 <div class="vtab"></div>
-Pauses emulation and shows the CPU commands window. Useful for creating conditional breakpoints.
+Pauses emulation via the debugger. The CPU commands window is not shown if <span class="snip">silent</span> is true.
+<div class="vtab"></div>
+Emulation may be resumed by calling <a href="#debug_resume">debug.resume()</a> or clicking the "Go" button in the CPU commands window.
 <pre class="ex">
 <span class="js-comment">// Break if the CPU tries to write 5 to 0x80339EA8</span>
 <span class="js-word">events</span>.<span class="js-word">onwrite</span>(<span class="js-number">0x80339EA8</span>, <span class="js-keyword">function</span>(<span class="js-word">e</span>) {
@@ -1358,7 +1362,12 @@ Pauses emulation and shows the CPU commands window. Useful for creating conditio
 <div class="prop"><span class="title" id="debug_resume">debug.resume()</span></div>
 <div class="tsproto">debug.resume(): void</div>
 <div class="vtab"></div>
-Resumes emulation after a debug break.
+Resumes emulation from a debugger pause.
+<!-- debug_step -->
+<div class="prop"><span class="title" id="debug_step">debug.step()</span></div>
+<div class="tsproto">debug.step(): void</div>
+<div class="vtab"></div>
+Executes a single CPU command. Does nothing if <a href="#debug_paused">debug.paused</a> is <span class="snip">false</span>.
 <!-- debug_skip -->
 <div class="prop"><span class="title" id="debug_skip">debug.skip()</span></div>
 <div class="tsproto">debug.skip(): void</div>
@@ -1380,6 +1389,11 @@ Shows the memory window at <span class="snip">address</span>.
 <div class="tsproto">debug.showcommands(address: number): void</div>
 <div class="vtab"></div>
 Shows the CPU commands window at <span class="snip">address</span>.
+<!-- debug_paused -->
+<div class="prop"><span class="title" id="debug_paused">debug.paused</span></div>
+<div class="tsproto">debug.paused: boolean</div>
+<div class="vtab"></div>
+<span class="snip">true</span> if emulation is currrently paused by the debugger.
 
 </div>
 <!-- asm -->

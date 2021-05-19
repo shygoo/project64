@@ -74,7 +74,11 @@ void CDebuggerUI::SteppingOpsChanged(CDebuggerUI * _this)
 {
     if (g_Settings->LoadBool(Debugger_SteppingOps))
     {
-        _this->OpenCommandWindow();
+        if (!g_Settings->LoadBool(Debugger_SilentBreak))
+        {
+            _this->OpenCommandWindow();
+        }
+        g_Settings->SaveBool(Debugger_SilentBreak, false);
     }
 }
 
