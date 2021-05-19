@@ -217,6 +217,8 @@ void ScriptAPI::DefineGlobalConstants(duk_context* ctx)
             
         { "M_GFXTASK", 1 },
         { "M_AUDTASK", 2 },
+        { "OS_READ", 0 },
+        { "OS_WRITE", 1 },
         
         { "COLOR_BLACK",   0x000000FF },
         { "COLOR_WHITE",   0xFFFFFFFF },

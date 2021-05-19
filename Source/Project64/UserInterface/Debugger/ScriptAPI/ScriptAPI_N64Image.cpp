@@ -56,7 +56,7 @@ static void InitImageObjectProps(duk_context* ctx, duk_idx_t idx, CN64Image* ima
 
     duk_push_external_buffer(ctx);
     duk_config_buffer(ctx, -1, image->PixelData().data(), image->PixelData().size());
-    duk_push_string(ctx, "data");
+    duk_push_string(ctx, "pixels");
     duk_push_buffer_object(ctx, -2, 0, image->PixelData().size(), DUK_BUFOBJ_NODEJS_BUFFER);
     duk_remove(ctx, -3);
     duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
@@ -99,7 +99,7 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
 
     if (!duk_is_number(ctx, 0) ||
         !duk_is_number(ctx, 1) ||
-        !duk_is_number(ctx, 2) ||
+        (nargs > 2 && !duk_is_number(ctx, 2)) ||
         (nargs > 3 && !duk_is_buffer_data(ctx, 3)) ||
         (nargs > 4 && !duk_is_buffer_data(ctx, 4)))
     {
@@ -111,22 +111,24 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
         return DUK_RET_ERROR;
     }
 
-    size_t dataSize = 0, paletteSize = 0;
+    size_t pixelDataSize = 0, paletteDataSize = 0;
 
-    int format = duk_get_int(ctx, 0);
-    size_t width = duk_get_uint(ctx, 1);
-    size_t height = duk_get_uint(ctx, 2);
-    void* data = (nargs > 3) ? duk_get_buffer_data(ctx, 3, &dataSize) : nullptr;
-    void* palette = (nargs > 4) ? duk_get_buffer_data(ctx, 4, &paletteSize) : nullptr;
+    size_t width = duk_get_uint(ctx, 0);
+    size_t height = duk_get_uint(ctx, 1);
+    int format = (nargs > 2) ? duk_get_int(ctx, 2) : IMG_RGBA32;
+    void* pixelData = (nargs > 3) ? duk_get_buffer_data(ctx, 3, &pixelDataSize) : nullptr;
+    void* paletteData = (nargs > 4) ? duk_get_buffer_data(ctx, 4, &paletteDataSize) : nullptr;
+
+    // TODO do not make copies of pixelData and paletteData
 
     CN64Image* image = new CN64Image();
-    int result = image->Init(format, width, height, data, dataSize, palette, paletteSize);
+    int result = image->Init(format, width, height, pixelData, pixelDataSize, paletteData, paletteDataSize);
 
     if (result != N64IMG_OK)
     {
         duk_push_error_object(ctx, DUK_ERR_ERROR, "failed to initialize image (%s)",
             CN64Image::ResultCodeName(result));
-        return duk_throw(ctx, -1);
+        return duk_throw(ctx);
     }
 
     duk_push_this(ctx);
@@ -178,7 +180,7 @@ duk_ret_t ScriptAPI::js_N64Image_static_fromPNG(duk_context* ctx)
     {
         duk_push_error_object(ctx, DUK_ERR_ERROR, "failed to initialize image (%s) %d",
             CN64Image::ResultCodeName(result), result);
-        return duk_throw(ctx, -1);
+        return duk_throw(ctx);
     }
     
     duk_push_object(ctx);

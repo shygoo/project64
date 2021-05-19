@@ -45,6 +45,7 @@ namespace ScriptAPI
     duk_ret_t js_events_ondraw(duk_context* ctx);
     duk_ret_t js_events_onpifread(duk_context* ctx);
     duk_ret_t js_events_onsptask(duk_context* ctx);
+    duk_ret_t js_events_onpidma(duk_context* ctx);
     duk_ret_t js_events_onmouseup(duk_context* ctx);
     duk_ret_t js_events_onmousedown(duk_context* ctx);
     duk_ret_t js_events_onmousemove(duk_context* ctx);

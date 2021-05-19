@@ -95,6 +95,8 @@ protected:
     void FrameDrawn(void);
     void PIFReadStarted(void);
     void RSPReceivedTask(void);
+    void PIDMAReadStarted(void);
+    void PIDMAWriteStarted(void);
 
 private:
     CDebuggerUI(const CDebuggerUI&);

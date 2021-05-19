@@ -10,7 +10,7 @@ static bool CbCond_WriteAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_PcBetween_OpcodeEquals(JSCallback* cb, void* env);
 static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* env);
 
-static duk_idx_t CbArgs_EmuEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_GenericEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* env);
@@ -19,6 +19,7 @@ static duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* env);
 static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* env);
+static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* env);
 
 static void CbFinish_KillDrawingContext(duk_context* ctx, void* env);
 
@@ -38,6 +39,7 @@ void ScriptAPI::Define_events(duk_context* ctx)
         { "ondraw",       js_events_ondraw, 1 },
         { "onpifread",    js_events_onpifread, 1 },
         { "onsptask",     js_events_onsptask, 1 },
+        { "onpidma",      js_events_onpidma, 1 },
         { "onmouseup",    js_events_onmouseup, 1 },
         { "onmousedown",  js_events_onmousedown, 1 },
         { "onmousemove",  js_events_onmousemove, 1 },
@@ -210,7 +212,7 @@ duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
         return ThrowInvalidArgsError(ctx);
     }
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIFREAD, nullptr, CbArgs_EmuEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIFREAD, nullptr, CbArgs_GenericEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
@@ -223,6 +225,18 @@ duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
     }
 
     jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, nullptr, CbArgs_SPTaskEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onpidma(duk_context* ctx)
+{
+    if (!duk_is_function(ctx, 0))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIDMA, nullptr, CbArgs_PIEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
@@ -353,7 +367,7 @@ static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* _env)
     return false;
 }
 
-duk_idx_t CbArgs_EmuEventObject(duk_context* ctx, void* /*_env*/)
+duk_idx_t CbArgs_GenericEventObject(duk_context* ctx, void* /*_env*/)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     duk_push_object(ctx);
@@ -753,6 +767,35 @@ static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* _env)
         { "dataSize",          env->dataSize },
         { "yieldDataAddress",  env->yieldDataAddress | 0x80000000 },
         { "yieldDataSize",     env->yieldDataSize },
+        { nullptr, 0 }
+    };
+
+    for (size_t i = 0;; i++)
+    {
+        if (props[i].first == nullptr)
+        {
+            break;
+        }
+        duk_push_uint(ctx, props[i].second);
+        duk_put_prop_string(ctx, -2, props[i].first);
+    }
+
+    duk_freeze(ctx, -1);
+    return 1;
+}
+
+static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* _env)
+{
+    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    jshook_env_pidma_t* env = (jshook_env_pidma_t*)_env;
+    duk_push_object(ctx);
+
+    std::pair<const char*, uint32_t> props[] = {
+        { "callbackId",  inst->CallbackId() },
+        { "direction",   env->direction },
+        { "dramAddress", env->dramAddress | 0x80000000 },
+        { "cartAddress", env->cartAddress | 0xA0000000 },
+        { "length",      env->length + 1 },
         { nullptr, 0 }
     };
 

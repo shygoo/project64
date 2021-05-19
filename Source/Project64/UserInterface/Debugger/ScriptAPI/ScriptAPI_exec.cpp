@@ -37,11 +37,11 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
     if (duk_is_object(ctx, 1))
     {
         duk_get_prop_string(ctx, 1, "hidden");
-        options.bShowWindow = (bool)duk_get_boolean_default(ctx, -1, false);
+        options.bShowWindow = duk_get_boolean_default(ctx, -1, false) != 0;
         duk_pop(ctx);
 
         duk_get_prop_string(ctx, 1, "verbose");
-        options.bVerbose = (bool)duk_get_boolean_default(ctx, -1, false);
+        options.bVerbose = duk_get_boolean_default(ctx, -1, false) != 0;
         duk_pop(ctx);
 
         duk_get_prop_string(ctx, 1, "cwd");

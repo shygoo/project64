@@ -572,11 +572,6 @@ void CDebuggerUI::CPUStepStarted()
     
     m_ScriptSystem->Invoke(JS_HOOK_CPUSTEP, (void*)&hookEnv);
 
-    if (bStoreOp && storeAddress == 0xA460000C) // PI_WR_LEN_REG
-    {
-        HandleCartToRamDMA();
-    }
-
     if (CDebugSettings::ExceptionBreakpoints() != 0)
     {
         if (pc == 0x80000000 || pc == 0x80000080 ||
@@ -717,6 +712,32 @@ void CDebuggerUI::RSPReceivedTask(void)
     DebugLoad_VAddr(0xA4000FFC, env.yieldDataSize);
 
     m_ScriptSystem->Invoke(JS_HOOK_RSPTASK, &env);
+}
+
+void CDebuggerUI::PIDMAReadStarted(void)
+{
+    jshook_env_pidma_t env;
+
+    env.direction = 1;
+    DebugLoad_VAddr(0xA4600000, env.dramAddress);
+    DebugLoad_VAddr(0xA4600004, env.cartAddress);
+    DebugLoad_VAddr(0xA4600008, env.length);
+
+    m_ScriptSystem->Invoke(JS_HOOK_PIDMA, &env);
+}
+
+void CDebuggerUI::PIDMAWriteStarted(void)
+{
+    jshook_env_pidma_t env;
+
+    env.direction = 0;
+    DebugLoad_VAddr(0xA4600000, env.dramAddress);
+    DebugLoad_VAddr(0xA4600004, env.cartAddress);
+    DebugLoad_VAddr(0xA460000C, env.length);
+
+    m_ScriptSystem->Invoke(JS_HOOK_PIDMA, &env);
+
+    HandleCartToRamDMA();
 }
 
 void CDebuggerUI::WaitForStep(void)

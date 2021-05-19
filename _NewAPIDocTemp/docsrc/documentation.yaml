@@ -2,7 +2,7 @@
 - name:    console
   tagline: Console interface
   props:
-  - name: console.log
+  - name: console_log
     js:   console.log(message[, ...])
     ts:   "console.log(message: any, ...optionalParams): void"
     desc: |
@@ -11,7 +11,7 @@
           console.log("Hello", "world!");
           ```
   
-  - name: console.print
+  - name: console_print
     js:   console.print(message[, ...])
     ts:   "console.print(message: any, ...optionalParams): void"
     desc: |
@@ -21,12 +21,12 @@
           console.print("world!\n");
           ```
 
-  - name: console.clear
+  - name: console_clear
     js:   console.clear()
     ts:   "console.clear(): void"
     desc: Clears the console.
 
-  - name: console.listen
+  - name: console_listen
     js:   console.listen(inputListener)
     ts:   "console.listen(inputListener: (input: string) => void): void"
     desc: |
@@ -55,14 +55,14 @@
 - name: pj64
   tagline: Project64 interface
   props:
-  - name: pj64.open
+  - name: pj64_open
     js:   pj64.open(romPath)
     ts:   "pj64.open(romPath: string): boolean"
     desc: Opens and runs a ROM. Does not return until the ROM starts or the operation fails.
           <div class="vtab"></div>
           Returns `true` if the operation is successful.
 
-  - name: pj64.close
+  - name: pj64_close
     js:   pj64.close()
     ts:   "pj64.close(): void"
     desc: Closes the current ROM.
@@ -71,7 +71,7 @@
 - name:    mem
   tagline: N64 memory interface
   props:
-  - name: mem._
+  - name: mem__
     js:   mem.u8|u16|u32|s8|s16|s32|f32|f64
     desc: |
           Arrays for reading and writing memory. Virtual addresses are used as indices.
@@ -91,7 +91,7 @@
           mem.f32[pPlayerZ] = 0;
           ```
 
-  - name: mem.bindvar
+  - name: mem_bindvar
     js:   mem.bindvar(object, address, name, typeId)
     ts:   "mem.bindvar(object: Object, address: number, name: string, typeId: number): void"
     desc: |
@@ -106,7 +106,7 @@
           console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
           ```
 
-  - name: mem.bindvars
+  - name: mem_bindvars
     js:   mem.bindvars(object, vars)
     ts:  "mem.bindvars(object: Object, vars: any[]): Object"
     desc: |
@@ -124,7 +124,7 @@
           console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
           ```
 
-  - name: mem.bindstruct
+  - name: mem_bindstruct
     js:   mem.bindstruct(object, address, properties)
     ts:   "mem.bindstruct(object: Object, address: number, properties: Object): Object"
     desc: |
@@ -139,7 +139,7 @@
           console.log("Player's coordinates are ", playerPos.x, playerPos.y, playerPos.z);
           ```
 
-  - name: mem.typedef
+  - name: mem_typedef
     js:   mem.typedef(properties)
     ts:   "mem.typedef(properties: Object): MemTypeConstructor"
     desc: |
@@ -150,7 +150,7 @@
           var playerPos = new vec3f(0x8033B1AC);
           ```
 
-  - name: mem.getblock
+  - name: mem_getblock
     js:   mem.getblock(address, length)
     ts:   "mem.getblock(address: number, length: number): Buffer"
     desc: |
@@ -159,7 +159,7 @@
           fs.writefile("ram_dump.bin", mem.getblock(K0BASE, mem.ramSize));
           ```
 
-  - name: mem.setblock
+  - name: mem_setblock
     js:   mem.setblock(address, data[, length])
     ts:   "mem.setblock(address: number, data: string | Buffer | TypedArray, length: number): Buffer"
     desc: |
@@ -172,7 +172,7 @@
           mem.setblock(0x80400000, fs.readfile("textures.bin"));
           ```
 
-  - name: mem.getstring
+  - name: mem_getstring
     js:   mem.getstring(address[, length])
     ts:   "mem.getblock(address: number, length?: number): string"
     desc: | 
@@ -181,18 +181,18 @@
           const romName = mem.getstring(0xB0000020, 0x14);
           ```
 
-  - name: mem.setstring
+  - name: mem_setstring
     js:   mem.setstring(address, data[, length])
     ts:   "mem.setstring(address: number, data: string | Buffer | TypedArray, length?: number): Buffer"
     desc: |
           Writes a string into memory (alias of [mem.setblock](#mem_setblock)).
 
-  - name: mem.ramSize
+  - name: mem_ramSize
     js:   mem.ramSize
     ts:   "mem.ramSize: number"
     desc: The size of RDRAM in bytes. `0` if RDRAM is not initialized.
 
-  - name: mem.romSize
+  - name: mem_romSize
     js:   mem.romSize
     ts:   "mem.romSize: number"
     desc: The size of cartridge ROM in bytes. `0` if ROM is not initialized.
@@ -201,7 +201,7 @@
 - name:    events
   tagline: Event hooking interface
   props:
-  - name: events.onexec
+  - name: events_onexec
     js:   events.onexec(address, callback)
     ts:   "events.onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
@@ -223,7 +223,15 @@
           });
           ```
 
-  - name: events.onread
+  - name: CPUExecEvent
+    js:   CPUExecEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          </table>
+
+  - name: events_onread
     js:   events.onread(address, callback)
     ts:   "events.onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
@@ -234,7 +242,7 @@
           <div class="vtab"></div>
           Returns a callback ID.
 
-  - name: events.onwrite
+  - name: events_onwrite
     js:   events.onwrite(address, callback)
     ts:   "events.onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
@@ -253,7 +261,34 @@
           });
           ```
 
-  - name: events.onopcode
+  - name: CPUReadWriteEvent
+    js:   CPUReadWriteEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
+          <tr><td>`e.valueType`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
+          <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
+          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.valueType` is `u64`; otherwise `undefined`.</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <thead><tr><td><b>e.type</b></td><td><b>Opcode(s)</b></td></tr></thead>
+          <tr><td>`s8`</td><td>LB, SB</td></tr>
+          <tr><td>`u8`</td><td>LBU</td></tr>
+          <tr><td>`s16`</td><td>LH, SH</td></tr>
+          <tr><td>`u16`</td><td>LHU</td></tr>
+          <tr><td>`s32`</td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
+          <tr><td>`u32`</td><td>LWU</td></tr>
+          <tr><td>`u64`</td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
+          <tr><td>`f32`</td><td>LWC1, SWC1</td></tr>
+          <tr><td>`f64`</td><td>LDC1, SDC1</td></tr>
+          </table>
+
+  - name: events_onopcode
     js:   events.onopcode(address, opcode, mask, callback)
     ts:   "events.onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
@@ -272,7 +307,16 @@
           });
           ```
 
-  - name: events.ongprvalue
+  - name: CPUOpcodeEvent
+    js:   CPUOpcodeEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.opcode`</td><td>The opcode.</td></tr>
+          </table>
+
+  - name: events_ongprvalue
     js:   events.ongprvalue(address, regFlags, value, callback)
     ts:   "events.ongprvalue(address: number | AddressRange, regFlags: number, value: number, callback: (e: CPURegValueEvent) => void): number"
     tags: [["Requires interpreter core", "blue"]]
@@ -291,13 +335,38 @@
               debug.breakhere();
           });
           ```
+          
+  - name: GPR_flags
+    js:   General purpose register flags
+    desc: |
+          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
+          <div class="vtab"></div>
+          `GPR_ANY`
+          <div class="vtab"></div>
+          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
+          <div class="vtab"></div>
+          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
+          <div class="vtab"></div>
+          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
+          <div class="vtab"></div>
+          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
 
-  - name: events.onpifread
+  - name: CPURegValueEvent
+    js:   CPURegValueEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
+          <tr><td>`e.value`</td><td>The value.</td></tr>
+          <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
+          </table>
+
+  - name: events_onpifread
     js:   events.onpifread(callback)
-    ts:   "events.onpifread(callback: (e: EmuEvent) => void): number"
+    ts:   "events.onpifread(callback: (e: GenericEvent) => void): number"
     desc: |
           Registers a callback that is invoked when PIF RAM data is going to be read into RDRAM.
-          `callback` receives an [EmuEvent](#EmuEvent) object.
+          `callback` receives an [GenericEvent](#GenericEvent) object.
           <div class="vtab"></div>
           Returns a callback ID.
           <div class="vtab"></div>
@@ -328,7 +397,14 @@
           });
           ```
 
-  - name: events.onsptask
+  - name: GenericEvent
+    js:   GenericEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
+          </table>
+
+  - name: events_onsptask
     js:   events.onsptask(callback)
     ts:   "events.onsptask(callback: (e: SPTaskEvent) => void): number"
     desc: |
@@ -349,133 +425,12 @@
           });
           ```
 
-  - name: events.ondraw
-    js:   events.ondraw(callback)
-    ts:   "events.ondraw(callback: (e: DrawEvent) => void): number"
-    desc: |
-          Registers a callback that is invoked when Project64 receives a screen update from the graphics plugin.
-          `callback` receives a [DrawEvent](#DrawEvent) object.
-          <div class="vtab"></div>
-          Returns a callback ID.
-          <div class="vtab"></div>
-          [DrawEvent](#DrawEvent)'s `drawingContext` property is a [DrawingContext](#DrawingContext) object
-          whose methods can be used to draw over or sample the current frame.
-          ```
-          events.ondraw(function(e) {
-              var ctx = e.drawingContext;
-              ctx.drawtext(20, 20, "Hello world!");
-          });
-          ```
-          <div class="vtab"></div>
-          The event's [DrawingContext](#DrawingContext) object expires when `callback` returns.
-
-  - name: events.onmousedown
-    js:   events.onmousedown(callback)
-    ts:   "events.onmousedown(callback: (e: MouseEvent) => void): number"
-    desc: |
-          Registers a callback that is invoked when a mouse button is pressed over the main screen.
-          `callback` receives a [MouseEvent](#MouseEvent) object.
-          <div class="vtab"></div>
-          Returns a callback ID.
-
-  - name: events.onmouseup
-    js:   events.onmouseup(callback)
-    ts:   "events.onmouseup(callback: (e: MouseEvent) => void): number"
-    desc: |
-          Registers a callback that is invoked when a mouse button is released over the main screen.
-          `callback` receives a [MouseEvent](#MouseEvent) object.
-          <div class="vtab"></div>
-          Returns a callback ID.
-
-  - name: events.onmousemove
-    js:   events.onmousemove(callback)
-    ts:   "events.onmousemove(callback: (e: MouseEvent) => void): number"
-    desc: |
-          Registers a callback that is invoked when the mouse is moved over the main screen.
-          `callback` receives a [MouseEvent](#MouseEvent) object.
-          <div class="vtab"></div>
-          Returns a callback ID.
-
-  - name: events.remove
-    js:   events.remove(callbackId)
-    ts:   "events.remove(callbackId: number): void"
-    desc: |
-          Unregisters the callback specified by `callbackId`.
-          ```
-          // This callback will only be invoked once
-          events.onexec(0x802CB1C0, function(e) {
-              console.log("func_802CB1C0 was called");
-              events.remove(e.callbackId);
-          });
-          ```
-
-  - name: EmuEvent
-    js:   EmuEvent
-    desc: |
-          <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          </table>
-
-  - name: CPUExecEvent
-    js:   CPUExecEvent
-    desc: |
-          <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
-          </table>
-
-  - name: CPUReadWriteEvent
-    js:   CPUReadWriteEvent
-    desc: |
-          <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
-          <tr><td>`e.address`</td><td>Address that the CPU is going to read/write.</td></tr>
-          <tr><td>`e.fpu`</td><td>`true` if the source/destination register is on the floating point unit.</td></tr>
-          <tr><td>`e.reg`</td><td>Index of the source/destination register.</td></tr>
-          <tr><td>`e.valueType`</td><td>The value's [type ID](#type_ids). Varies depending on the opcode; refer to the table below.</td></tr>
-          <tr><td>`e.value`</td><td>Value that the CPU is going to read/write.</td></tr>
-          <tr><td>`e.valueHi`</td><td>Upper 32 bits of the value if `e.valueType` is `u64`; otherwise `undefined`.</td></tr>
-          </table>
-          <div class="vtab"></div>
-          <table>
-          <thead><tr><td><b>e.type</b></td><td><b>Opcode(s)</b></td></tr></thead>
-          <tr><td>`s8`</td><td>LB, SB</td></tr>
-          <tr><td>`u8`</td><td>LBU</td></tr>
-          <tr><td>`s16`</td><td>LH, SH</td></tr>
-          <tr><td>`u16`</td><td>LHU</td></tr>
-          <tr><td>`s32`</td><td>LL, LW, LWL, LWR, SW, SWL, SWR</td></tr>
-          <tr><td>`u32`</td><td>LWU</td></tr>
-          <tr><td>`u64`</td><td>LD, LDL, LDR, SD, SDL, SDR</td></tr>
-          <tr><td>`f32`</td><td>LWC1, SWC1</td></tr>
-          <tr><td>`f64`</td><td>LDC1, SDC1</td></tr>
-          </table>
-
-  - name: CPUOpcodeEvent
-    js:   CPUOpcodeEvent
-    desc: |
-          <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
-          <tr><td>`e.opcode`</td><td>The opcode.</td></tr>
-          </table>
-
-  - name: CPURegValueEvent
-    js:   CPURegValueEvent
-    desc: |
-          <table>
-          <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.pc`</td><td>Program counter address.</td></tr>
-          <tr><td>`e.value`</td><td>The value.</td></tr>
-          <tr><td>`e.reg`</td><td>Index of the register containing the value.</td></tr>
-          </table>
-
   - name: SPTaskEvent
     js:   SPTaskEvent
     desc: |
           <table>
           <tr><td>`e.callbackId`       </td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.taskType`         </td><td>The task type. 1 (M_GFXTASK) for graphics tasks, or 2 (M_AUDTASK) for audio tasks.</td></tr>
+          <tr><td>`e.taskType`         </td><td>The task type. `M_GFXTASK` (1) for graphics tasks, or `M_AUDTASK` (2) for audio tasks.</td></tr>
           <tr><td>`e.taskFlags`        </td><td>Task flags.</td></tr>
           <tr><td>`e.ucodeBootAddress` </td><td>Address of the boot microcode.</td></tr>
           <tr><td>`e.ucodeBootSize`    </td><td>Size of the boot microcode.</td></tr>
@@ -496,6 +451,53 @@
           Note: The properties of this object differ slightly from those in the OSTask structure;
           all physical addresses are converted to KSEG0 addresses.
 
+  - name: events_onpidma
+    js:   events.onpidma(callback)
+    ts:   "events.onpidma(callback: (e: PIEvent) => void)"
+    desc: |
+          Registers a callback that will be invoked when a PI DMA transfer is going to occur.
+          `callback` receives a [PIEvent](#PIEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
+          ```
+          // Log all cartridge <-> RDRAM data transfers
+          events.onpidma(function(e) {
+              var dir = e.direction == OS_READ ? 'READ' : 'WRITE';
+              console.log('[PI]', dir, e.dramAddress.hex(), e.cartAddress.hex(), e.length.hex());
+          });
+          ```
+
+  - name: PIEvent
+    js:   PIEvent
+    desc: |
+          <table>
+          <tr><td>`e.callbackId`  </td><td>The ID of the callback associated with the event.</td></tr>
+          <tr><td>`e.direction`   </td><td>The direction of the DMA transfer. May be `OS_READ` (0), or `OS_WRITE` (1).</td></tr>
+          <tr><td>`e.dramAddress` </td><td>The address in PI_DRAM_ADDR_REG (+`K0BASE`).</td></tr>
+          <tr><td>`e.cartAddress` </td><td>The address in PI_CART_ADDR_REG (+`K1BASE`).</td></tr>
+          <tr><td>`e.length`      </td><td>The value of PI_RD_LEN_REG or PI_WR_LEN_REG (+1), depending on the transfer direction.</td></tr>
+          </table>
+
+  - name: events_ondraw
+    js:   events.ondraw(callback)
+    ts:   "events.ondraw(callback: (e: DrawEvent) => void): number"
+    desc: |
+          Registers a callback that is invoked when Project64 receives a screen update from the graphics plugin.
+          `callback` receives a [DrawEvent](#DrawEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
+          <div class="vtab"></div>
+          [DrawEvent](#DrawEvent)'s `drawingContext` property is a [DrawingContext](#DrawingContext) object
+          whose methods can be used to draw over or sample the current frame.
+          ```
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.drawtext(20, 20, "Hello world!");
+          });
+          ```
+          <div class="vtab"></div>
+          The event's [DrawingContext](#DrawingContext) object expires when `callback` returns.
+
   - name: DrawEvent
     js:   DrawEvent
     desc: |
@@ -503,6 +505,33 @@
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
           <tr><td>`e.drawingContext`</td><td>[DrawingContext](#DrawingContext) object.</td></tr>
           </table>
+
+  - name: events_onmousedown
+    js:   events.onmousedown(callback)
+    ts:   "events.onmousedown(callback: (e: MouseEvent) => void): number"
+    desc: |
+          Registers a callback that is invoked when a mouse button is pressed over the main screen.
+          `callback` receives a [MouseEvent](#MouseEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
+
+  - name: events_onmouseup
+    js:   events.onmouseup(callback)
+    ts:   "events.onmouseup(callback: (e: MouseEvent) => void): number"
+    desc: |
+          Registers a callback that is invoked when a mouse button is released over the main screen.
+          `callback` receives a [MouseEvent](#MouseEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
+
+  - name: events_onmousemove
+    js:   events.onmousemove(callback)
+    ts:   "events.onmousemove(callback: (e: MouseEvent) => void): number"
+    desc: |
+          Registers a callback that is invoked when the mouse is moved over the main screen.
+          `callback` receives a [MouseEvent](#MouseEvent) object.
+          <div class="vtab"></div>
+          Returns a callback ID.
 
   - name: MouseEvent
     js:   MouseEvent
@@ -514,18 +543,18 @@
           <tr><td>`e.y`</td><td>Cursor Y position.</td></tr>
           </table>
 
-  - name: GPR_flags
-    js:   General purpose register flags
+  - name: events_remove
+    js:   events.remove(callbackId)
+    ts:   "events.remove(callbackId: number): void"
     desc: |
-          Global flags for [events.ongprvalue](#events_ongprvalue)'s `regFlags` parameter.
-          <pre>
-          `GPR_ANY`
-
-          `GPR_R0` `GPR_AT` `GPR_V0` `GPR_V1` `GPR_A0` `GPR_A1` `GPR_A2` `GPR_A3`
-          `GPR_T0` `GPR_T1` `GPR_T2` `GPR_T3` `GPR_T4` `GPR_T5` `GPR_T6` `GPR_T7`
-          `GPR_S0` `GPR_S1` `GPR_S2` `GPR_S3` `GPR_S4` `GPR_S5` `GPR_S6` `GPR_S7`
-          `GPR_T8` `GPR_T9` `GPR_K0` `GPR_K1` `GPR_GP` `GPR_SP` `GPR_FP` `GPR_RA`
-          </pre>
+          Unregisters the callback specified by `callbackId`.
+          ```
+          // This callback will only be invoked once
+          events.onexec(0x802CB1C0, function(e) {
+              console.log("func_802CB1C0 was called");
+              events.remove(e.callbackId);
+          });
+          ```
 
   - name: AddressRange
     js:   new AddressRange(start, end)
@@ -562,7 +591,7 @@
         ```
         Note: Not compatible with Windows XP. A Direct3D graphics plugin may be required on Windows 7.
   props:
-  - name: ctx.drawtext
+  - name: ctx_drawtext
     js:   ctx.drawtext(x, y, text)
     ts:   "ctx.drawtext(x: number, y: number, text: string): void"
     desc: |
@@ -574,52 +603,52 @@
           });
           ```
 
-  - name: ctx.fillrect
+  - name: ctx_fillrect
     js:   ctx.fillrect(x, y, width, height)
     ts:   "ctx.fillrect(x: number, y: number, width: number, height: number): void"
     desc: Fills the specified rectangle area with the current fill color.
 
-  - name: ctx.strokerect
+  - name: ctx_strokerect
     js:   ctx.strokerect(x, y, width, height)
     ts:   "ctx.strokerect(x: number, y: number, width: number, height: number): void"
     desc: Outlines the specified rectangle area with the current stroke color/width.
 
-  - name: ctx.beginpath
+  - name: ctx_beginpath
     js:   ctx.beginpath()
     ts:   ctx.beginpath()
     desc: Clears all stored sub-paths.
 
-  - name: ctx.moveto
+  - name: ctx_moveto
     js:   ctx.moveto(x, y)
     ts:   "ctx.moveto(x: number, y: number): void"
     desc: Starts a new sub-path at the provided coordinates.
 
-  - name: ctx.lineto
+  - name: ctx_lineto
     js:   ctx.lineto(x, y)
     ts:   "ctx.lineto(x: number, y: number): void"
     desc: Adds a point to the current sub-path.
 
-  - name: ctx.stroke
+  - name: ctx_stroke
     js:   ctx.stroke()
     ts:   "ctx.stroke()"
     desc: Strokes all sub-paths.
 
-  - name: ctx.fill
+  - name: ctx_fill
     js:   ctx.fill()
     ts:   "ctx.fill()"
     desc: Fills all sub-paths.
 
-  - name: ctx.width
+  - name: ctx_width
     js:   ctx.width
     ts:   "ctx.width: number"
     desc: Width of the screen. Read-only.
 
-  - name: ctx.height
+  - name: ctx_height
     js:   ctx.height
     ts:   "ctx.height: number"
     desc: Height of the screen. Read-only.
 
-  - name: ctx.fillColor
+  - name: ctx_fillColor
     js:   ctx.fillColor
     ts:   "ctx.fillColor: number"
     desc: |
@@ -629,31 +658,31 @@
           ```
           See also: [Predefined colors](#Predefined_colors).
 
-  - name: ctx.strokeColor
+  - name: ctx_strokeColor
     js:   ctx.strokeColor
     ts:   "ctx.strokeColor: number"
     desc: |
           The current stroke color. `COLOR_BLACK` (`0x000000FF`) by default.
 
-  - name: ctx.strokeWidth
+  - name: ctx_strokeWidth
     js:   ctx.strokeWidth
     ts:   "ctx.strokeWidth: number"
     desc: |
           The current stroke width. `0.0` by default.
 
-  - name: ctx.fontFamily
+  - name: ctx_fontFamily
     js:   ctx.fontFamily
     ts:   "ctx.fontFamily: string"
     desc: |
           The current font family. `"Courier New"` by default.
 
-  - name: ctx.fontWeight
+  - name: ctx_fontWeight
     js:   ctx.fontWeight
     ts:   "ctx.fontWeight: string"
     desc: |
           The current font weight. Valid weights include `"normal"`, `"bold"`, and `"light"`. `"normal"` by default.
 
-  - name: ctx.fontSize
+  - name: ctx_fontSize
     js:   ctx.fontSize
     ts:   "ctx.fontSize: number"
     desc: |
@@ -679,21 +708,21 @@
   tagline: N64 image class
   props:
   - name: new_N64Image
-    js:   new N64Image(format, width, height[, data[, palette]])
-    ts:   "new N64Image(format: number, width: number, height: number, data?: Buffer, palette?: Buffer)"
+    js:   new N64Image(width, height[, format [, pixels[, palette]]])
+    ts:   "new N64Image(width: number, height: number, format: number = IMG_RGBA32, pixels?: Buffer, palette?: Buffer)"
     desc: |
           Creates an [N64Image](#N64Image) object.
           <div class="vtab"></div>
-          `format`&#58; The desired image format. Refer to the table below.<br>
           `width`&#58; Width of the image.<br>
           `height`&#58; Height of the image.<br>
-          `data`&#58; Optional [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object containing pixel data.
-          The byte length must be equal to `(width * height * N64Image.bpp(format)) / 8`. Copied to [image.data](#image_data).<br>
+          `format`&#58; Optional image format. `IMG_RGBA32` by default. See the table below for supported formats.<br>
+          `pixels`&#58; Optional [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object containing pixel data.
+          The byte length must be equal to `(width * height * N64Image.bpp(format)) / 8`. Copied to [image.pixels](#image_pixels).<br>
           `palette`&#58; Optional [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object containing palette data. Copied to [image.palette](#image_palette).
           <div class="vtab"></div>
           <table>
           <thead>
-          <tr><td>Format</td><td>Data</td><td>Palette</td></tr>
+          <tr><td>Format</td><td>Pixels</td><td>Palette</td></tr>
           </thead>
           <tr><td>`IMG_RGBA16`    </td><td>16-bit colors (r5g5b5a1)            </td><td>(not used)</td></tr>
           <tr><td>`IMG_RGBA32`    </td><td>32-bit colors (r8g8b8a8)            </td><td>(not used)</td></tr>
@@ -766,26 +795,26 @@
   - name: image_update
     js:   image.update()
     ts:   "image.update(): void"
-    desc: Updates the internal bitmap. Should be called after alterations are made to `image.data` or `image.palette`.
+    desc: Updates the internal bitmap. Should be called after alterations are made to `image.pixels` or `image.palette`.
 
   - name: image_format
     js:   image.format
     ts:   "image.format: number"
-    desc: The format ID.
+    desc: The format ID. Read-only.
 
   - name: image_width
     js:   image.width
     ts:   "image.width: number"
-    desc: Width of the image.
+    desc: Width of the image. Read-only.
 
   - name: image_height
     js:   image.height
     ts:   "image.height: number"
-    desc: Height of the image.
+    desc: Height of the image. Read-only.
 
-  - name: image_data
-    js:   image.data
-    ts:   "image.data: Buffer"
+  - name: image_pixels
+    js:   image.pixels
+    ts:   "image.pixels: Buffer"
     desc: The pixel data of the image.
 
   - name: image_palette
@@ -797,100 +826,100 @@
 - name:    cpu
   tagline: CPU register interface
   props:
-  - name: cpu.pc
+  - name: cpu_pc
     js:   cpu.pc
     desc: Variable representing the CPU's program counter.
 
-  - name: cpu.hi
+  - name: cpu_hi
     js:   cpu.hi
     desc: Variable representing the lower 32 bits of the CPU's HI register.
 
-  - name: cpu.lo
+  - name: cpu_lo
     js:   cpu.lo
     desc: Variable representing the lower 32 bits of the CPU's LO register.
 
-  - name: cpu.uhi
+  - name: cpu_uhi
     js:   cpu.uhi
     desc: Variable representing the upper 32 bits of the CPU's HI register.
 
-  - name: cpu.ulo
+  - name: cpu_ulo
     js:   cpu.ulo
     desc: Variable representing the upper 32 bits of the CPU's LO register.
 
-  - name: cpu.gpr._
+  - name: cpu_gpr__
     js:   cpu.gpr.r0|at|v0|v1..ra
     js2:  cpu.gpr[0..31]
     ts:   cpu.gpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
     desc: Variables representing the lower 32 bits of the CPU's general purpose registers.
 
-  - name: cpu.ugpr._
+  - name: cpu_ugpr__
     js:   cpu.ugpr.r0|at|v0|v1..ra
     js2:  cpu.ugpr[0..31]
     ts:   cpu.ugpr.r0|at|v0|v1|a0|a1|a2|a3|t0|t1|t2|t3|t4|t5|t6|t7|s0|s1|s2|s3|s4|s5|s6|s7|t8|t9|k0|k1|gp|sp|fp|ra
     desc: Variables representing the upper 32 bits of the CPU's general purpose registers.
 
-  - name: cpu.fpr._
+  - name: cpu_fpr__
     js:   cpu.fpr.f0..f31
     js2:  cpu.fpr[0..31]
     desc: Variables representing the CPU's 32-bit floating-point registers.
 
-  - name: cpu.dfpr._
+  - name: cpu_dfpr__
     js:   cpu.dfpr.f0..f30
     js2:  cpu.dfpr[0..30]
     desc: Variables representing the CPU's 64-bit floating-point registers.
 
-  - name: cpu.cop0.index
+  - name: cpu_cop0_index
     js:   cpu.cop0.index
     desc: Variable representing the Index register.
-  - name: cpu.cop0.random
+  - name: cpu_cop0_random
     js:   cpu.cop0.random
     desc: Variable representing the Random register.
-  - name: cpu.cop0.entrylo0
+  - name: cpu_cop0_entrylo0
     js:   cpu.cop0.entrylo0
     desc: Variable representing the EntryLo0 register.
-  - name: cpu.cop0.entrylo1
+  - name: cpu_cop0_entrylo1
     js:   cpu.cop0.entrylo1
     desc: Variable representing the EntryLo1 register.
-  - name: cpu.cop0.context
+  - name: cpu_cop0_context
     js:   cpu.cop0.context
     desc: Variable representing the Context register.
-  - name: cpu.cop0.pagemask
+  - name: cpu_cop0_pagemask
     js:   cpu.cop0.pagemask
     desc: Variable representing the PageMask register.
-  - name: cpu.cop0.wired
+  - name: cpu_cop0_wired
     js:   cpu.cop0.wired
     desc: Variable representing the Wired register.
-  - name: cpu.cop0.badvaddr
+  - name: cpu_cop0_badvaddr
     js:   cpu.cop0.badvaddr
     desc: Variable representing the BadVAddr register.
-  - name: cpu.cop0.count
+  - name: cpu_cop0_count
     js:   cpu.cop0.count
     desc: Variable representing the Count register.
-  - name: cpu.cop0.entryhi
+  - name: cpu_cop0_entryhi
     js:   cpu.cop0.entryhi
     desc: Variable representing the EntryHi register.
-  - name: cpu.cop0.compare
+  - name: cpu_cop0_compare
     js:   cpu.cop0.compare
     desc: Variable representing the Compare register.
-  - name: cpu.cop0.status
+  - name: cpu_cop0_status
     js:   cpu.cop0.status
     desc: Variable representing the Status register.
-  - name: cpu.cop0.cause
+  - name: cpu_cop0_cause
     js:   cpu.cop0.cause
     desc: Variable representing the Cause register. Updates interrupts when written.
-  - name: cpu.cop0.epc
+  - name: cpu_cop0_epc
     js:   cpu.cop0.epc
     desc: Variable representing the EPC register.
-  - name: cpu.cop0.config
+  - name: cpu_cop0_config
     js:   cpu.cop0.config
     desc: Variable representing the Config register.
-  - name: cpu.cop0.taglo
+  - name: cpu_cop0_taglo
     js:   cpu.cop0.taglo
     desc: Variable representing the TagLo register.
-  - name: cpu.cop0.taghi
+  - name: cpu_cop0_taghi
     js:   cpu.cop0.taghi
     desc: Variable representing the TagHi register.
-  - name: cpu.cop0.errorepc
+  - name: cpu_cop0_errorepc
     js:   cpu.cop0.errorepc
     desc: Variable representing the ErrorEPC register.
 
@@ -898,7 +927,7 @@
 - name: debug
   tagline: Debugger interface
   props:
-  - name: debug.breakhere
+  - name: debug_breakhere
     js:   debug.breakhere()
     ts:   "debug.breakhere(): void"
     desc: |
@@ -912,13 +941,13 @@
           });
           ```
   
-  - name: debug.resume
+  - name: debug_resume
     js:   debug.resume()
     ts:   "debug.resume(): void"
     desc: |
           Resumes emulation after a debug break. 
 
-  - name: debug.skip
+  - name: debug_skip
     js:   debug.skip()
     ts:   "debug.skip(): void"
     desc: |
@@ -930,12 +959,12 @@
           });
           ```
 
-  - name: debug.showmemory
+  - name: debug_showmemory
     js:   debug.showmemory(address)
     ts:   "debug.showmemory(address: number): void"
     desc: Shows the memory window at `address`.
 
-  - name: debug.showcommands
+  - name: debug_showcommands
     js:   debug.showcommands(address)
     ts:   "debug.showcommands(address: number): void"
     desc: Shows the CPU commands window at `address`.
@@ -946,7 +975,7 @@
   tagline: ASM utilities
   props:
 
-  - name: asm.encode
+  - name: asm_encode
     js:   "asm.encode(command[, address])"
     ts:   "asm.encode(command: string, address?: number): number"
     desc: |
@@ -960,7 +989,7 @@
           asm.encode("b 0x80400000", 0x80400100); // 0x1000FFBF
           ```
 
-  - name: asm.decode
+  - name: asm_decode
     js:   asm.decode(opcode[, address])
     ts:   "asm.decode(opcode: number, address?: number)"
     desc: |
@@ -974,7 +1003,7 @@
           asm.decode(0x1000FFBF, 0x80400100); // "B 0x80400000"
           ```
 
-  - name: asm.gprname
+  - name: asm_gprname
     js:   asm.gprname(regIndex)
     ts:   "asm.gprname(regIndex: number): string"
     desc: |
@@ -987,7 +1016,7 @@
 - name: fs
   tagline: File system interface
   props:
-  - name: fs.open
+  - name: fs_open
     js:   fs.open(path, mode)
     ts:   "fs.open(path: string, mode: string): number"
     desc: |
@@ -996,12 +1025,12 @@
           <div class="vtab"></div>
           Returns a file descriptor.
 
-  - name: fs.close
+  - name: fs_close
     js:   fs.close(fd)
     ts:   "fs.close(fd): void"
     desc: Closes the file referenced by `fd`.
 
-  - name: fs.write
+  - name: fs_write
     js:   fs.write(fd, buffer[, offset[, length[, position]]])
     ts:   "fs.write(fd: number, buffer: string | Buffer | ArrayBuffer, offset?: number, length?: number, position?: number): number"
     desc: |
@@ -1023,7 +1052,7 @@
           fs.close();
           ```
 
-  - name: fs.writefile
+  - name: fs_writefile
     js:   fs.writefile(path, buffer)
     ts:   "fs.writefile(path: string, buffer: string | Buffer | ArrayBuffer): void"
     desc: |
@@ -1032,7 +1061,7 @@
           fs.writefile("ram_dump.bin", mem.getblock(K0BASE, mem.ramSize));
           ```
 
-  - name: fs.read
+  - name: fs_read
     js:   fs.read(fd, buffer, offset, length, position)
     ts:   "fs.read(fd: number, buffer: Buffer | ArrayBuffer, offset: number, length: number, position: number) : number"
     desc: |
@@ -1047,50 +1076,50 @@
           <div class="vtab"></div>
           Returns the number of bytes read.
 
-  - name: fs.readfile
+  - name: fs_readfile
     js:   fs.readfile(path)
     ts:   "fs.readfile(path: string): Buffer"
     desc: |
           Returns a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object representing the data of the file specified by `path`.
           Uses mode "rb" internally.
 
-  - name: fs.fstat
+  - name: fs_fstat
     js:   fs.fstat(fd)
     ts:   "fs.fstat(fd: number): fs.Stats"
     desc: |
           Returns an [fs.Stats](#fs_Stats) object containing information about the file referenced by `fd`.
 
-  - name: fs.stat
+  - name: fs_stat
     js:   fs.stat(path)
     ts:   "fs.stat(path: string): fs.Stats"
     desc: |
           Returns an [fs.Stats](#fs_Stats) object containing information about the file specified by `path`.
 
-  - name: fs.unlink
+  - name: fs_unlink
     js:   fs.unlink(path)
     ts:   "fs.unlink(path: string): boolean"
     desc: |
           Deletes the file specified by `path`. Returns `true` if the operation is successful.
 
-  - name: fs.mkdir
+  - name: fs_mkdir
     js:   fs.mkdir(path)
     ts:   "fs.mkdir(path: string): boolean"
     desc: |
           Creates a directory. Returns `true` if the operation is successful.
 
-  - name: fs.rmdir
+  - name: fs_rmdir
     js:   fs.rmdir(path)
     ts:   "fs.rmdir(path: string): boolean"
     desc: |
           Deletes a directory. The directory must be empty. Returns `true` if the operation is successful.
 
-  - name: fs.readdir
+  - name: fs_readdir
     js:   "fs.readdir(path)"
     ts:   "fs.readdir(path: string): string[]"
     desc: |
           Returns an array of file names from a directory.
 
-  - name: fs.Stats
+  - name: fs_Stats
     js:   fs.Stats
     desc: |
           Object containing information about a file or directory. Generated by [fs.fstat/fs.stat](#fs_fstat).
@@ -1126,14 +1155,14 @@
 - name: script
   tagline: Script instance configuration interface
   props:
-  - name: script.keepalive
+  - name: script_keepalive
     js:   script.keepalive(keepAlive)
     ts:   "script.keepalive(keepAlive: boolean): void"
     desc: |
           Prevents the script instance from being destroyed when it has nothing left to do.
           Useful when the default console input behavior is desired.
 
-  - name: script.timeout
+  - name: script_timeout
     js:   script.timeout(milliseconds)
     ts:   "script.timeout(milliseconds: number): void"
     desc: |
@@ -1231,31 +1260,23 @@
     ts:   "RGBA(r: number, g: number, b: number, alpha?: number)"
     desc: |
           Returns an RGBA32 number representation of a color.
-          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0` and is `1.0` by default.
+          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`. If `alpha` is not provided, `1.0` is used by default.
           ```
           const clrYellow = RGBA(255, 255, 0); // 0xFFFF00FF
           const clrTranslucentRed = RGBA(255, 0, 0, 0.5); // 0xFF000080
           ```
 
-  - name: RGBA
+  - name: RGBA_2
     js:   RGBA(existingColor[, newAlpha])
     ts:   "RGBA(existingColor: number, newAlpha: number)"
     desc: |
           Returns `existingColor` with a replaced alpha value.
           ```
-          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); // 0xFF000080
+          // 0xFF0000FF -> 0xFF000080
+          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); 
           ```
 
-#  - name: RGBA_2
-#    js:   RGBA(color, alpha)
-#    ts:   "RGBA(color: number, alpha: number)"
-#    desc: |
-#          Replaces the alpha channel of an existing RGBA32 color and returns the result.
-#          ```
-#          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); // 0xFF000080
-#          ```
-
-  - name: number.hex
+  - name: number_hex
     js:   number.hex([numChars])
     ts:   "number.hex(numChars?: number): string"
     desc: |
@@ -1416,6 +1437,11 @@
           <table>
           <tr><td>`M_GFXTASK`</td><td>1</td></tr>
           <tr><td>`M_AUDTASK`</td><td>2</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`OS_READ`</td><td>0</td></tr>
+          <tr><td>`OS_WRITE`</td><td>1</td></tr>
           </table>
           <div class="vtab"></div>
           <table>

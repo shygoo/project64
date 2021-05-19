@@ -98,6 +98,13 @@ typedef struct {
     uint32_t yieldDataSize;
 } jshook_env_sptask_t;
 
+typedef struct {
+    int      direction;
+    uint32_t dramAddress;
+    uint32_t cartAddress;
+    uint32_t length;
+} jshook_env_pidma_t;
+
 enum {
     JS_EXEC_TIMEOUT = 500
 };
@@ -105,6 +112,7 @@ enum {
 typedef enum {
     JS_HOOK_CPUSTEP,
     JS_HOOK_PIFREAD,
+    JS_HOOK_PIDMA,
     JS_HOOK_GFXUPDATE,
     JS_HOOK_RSPTASK,
     JS_HOOK_MOUSEUP,

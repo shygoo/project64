@@ -1,30 +1,22 @@
-events.onpidma(callback)
-events.onpidma(callback: (e: PIDmaEvent) => void)
-
-Registers a callback that will be invoked when a PI DMA transfer is going to occur.
-`callback` receives a PIDmaEvent object.
-
+  - name: events_onpidma
+    js:   events.onpidma(callback)
+    ts:   "events.onpidma(callback: (e: PIEvent) => void)"
+    desc: |
+          Registers a callback that will be invoked when a PI DMA transfer is going to occur.
+          `callback` receives a PIEvent object.
+          <div class="vtab"></div>
 Returns a callback ID.
 
-    var piDmaLog = [];
-    
+    // Log all PI DMA transfers
     events.onpidma(function(e) {
-        var logItem = {
-            direction: e.direction,
-            dramAddr: e.dramAddr,
-            cartAddr: e.cartAddr,
-            length: e.length
-        };
-        piDmaLog.push(logItem);
+        var dir = e.direction == OS_READ ? 'READ' : 'WRITE';
+        console.log('[PI]', dir, e.dramAddress.hex(), e.cartAddress.hex(), e.length.hex());
     });
 
-PIDmaEvent
+PIEvent
 
   e.callbackId  The ID of the callback associated with the event.
-  e.direction   The direction of the transfer. May be 0 (OS_READ), or 1 (OS_WRITE).
-  e.dramAddr    The address in PI_DRAM_ADDR_REG.
-  e.cartAddr    The address in PI_CART_ADDR_REG.
+  e.direction   The direction of the DMA transfer. May be 0 (OS_READ), or 1 (OS_WRITE).
+  e.dramAddress The address in PI_DRAM_ADDR_REG (+K0BASE).
+  e.cartAddress The address in PI_CART_ADDR_REG (+K1BASE).
   e.length      The value of PI_WR_LEN_REG or PI_WR_LEN_REG (+1).
-
- ? e.cancel()
- ? e.override(dramAddr, cartAddr, length)

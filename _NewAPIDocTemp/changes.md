@@ -64,7 +64,6 @@ TODO:
    make sure ctx.fill() implementation is correct
    disable text wrapping for ctx.drawtext
 
-- image.update() update internal bitmap after manual alterations are made to image.data or image.palette.
 - make sure toPNG returns actual Buffer object
 
 - onpidma

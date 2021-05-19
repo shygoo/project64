@@ -392,37 +392,36 @@ unsigned int CN64Image::ColorFromRgba32(int dstFormat, uint32_t rgba32)
         return rgba32;
     }
 
-    float r = ((rgba32 >> 24) & 0xFF) / 255.0f;
-    float g = ((rgba32 >> 16) & 0xFF) / 255.0f;
-    float b = ((rgba32 >>  8) & 0xFF) / 255.0f;
-    float a = ((rgba32 >>  0) & 0xFF) / 255.0f;
+    uint8_t r = ((rgba32 >> 24) & 0xFF);
+    uint8_t g = ((rgba32 >> 16) & 0xFF);
+    uint8_t b = ((rgba32 >>  8) & 0xFF);
+    uint8_t a = ((rgba32 >>  0) & 0xFF);
 
-    float i = (r + g + b) / 3;
+    uint8_t i;
 
     switch (dstFormat)
     {
     case IMG_RGBA16:
     case IMG_CI8_RGBA16:
     case IMG_CI4_RGBA16:
-        return ((uint8_t)roundf(r * 31) << 11) |
-               ((uint8_t)roundf(g * 31) << 6) |
-               ((uint8_t)roundf(b * 31) << 1) |
-               ((a >= 0.5f) ? 1 : 0);
+        return ((r / 8) << 11) | ((g / 8) <<  6) | ((b / 8) <<  1) | (a / 128);
     case IMG_IA16:
     case IMG_CI8_IA16:
     case IMG_CI4_IA16:
-        return ((uint8_t)roundf(i * 255) << 8) |
-               (uint8_t)roundf(a * 255);
+        i = (r + g + b) / 3;
+        return (i << 8) | a;
     case IMG_I4:
-        return (uint8_t)roundf(i * 15);
+        i = (r + g + b) / 3;
+        return (i / 16);
     case IMG_IA4:
-        return ((uint8_t)roundf(i * 7) << 1) |
-               (uint8_t)roundf(a * 1);
+        i = (r + g + b) / 3;
+        return ((i / 32) << 1) | (a / 128);
     case IMG_I8:
-        return (uint8_t)roundf(i * 255);
+        i = (r + g + b) / 3;
+        return i;
     case IMG_IA8:
-        return ((uint8_t)roundf(i * 15) << 4) |
-               (uint8_t)roundf(a * 15);
+        i = (r + g + b) / 3;
+        return ((i / 16) << 4) | (a / 16);
     }
 
     return 0;
@@ -430,7 +429,7 @@ unsigned int CN64Image::ColorFromRgba32(int dstFormat, uint32_t rgba32)
 
 uint32_t CN64Image::ColorToRgba32(int srcFormat, unsigned int color)
 {
-    float r = 0, g = 0, b = 0, a = 0;
+    uint8_t r = 0, g = 0, b = 0, a = 0;
 
     switch (srcFormat)
     {
@@ -439,39 +438,36 @@ uint32_t CN64Image::ColorToRgba32(int srcFormat, unsigned int color)
     case IMG_RGBA16:
     case IMG_CI8_RGBA16:
     case IMG_CI4_RGBA16:
-        r = (float)((color >> 11) & 0x1F) / 31.0f;
-        g = (float)((color >>  6) & 0x1F) / 31.0f;
-        b = (float)((color >>  1) & 0x1F) / 31.0f;
-        a = color & 1;
+        r = (((color >> 11) & 0x1F) * 255) / 31;
+        g = (((color >>  6) & 0x1F) * 255) / 31;
+        b = (((color >>  1) & 0x1F) * 255) / 31;
+        a = (color & 1) * 255;
         break;
     case IMG_IA16:
     case IMG_CI8_IA16:
     case IMG_CI4_IA16:
-        r = g = b = (color >> 8) / 255.0f;
-        a = (color & 0xFF) / 255.0f;
+        r = g = b = (color >> 8);
+        a = (color & 0xFF);
         break;
     case IMG_I4:
-        r = g = b = color / 15.0f;
-        a = 1;
+        r = g = b = color * 17;
+        a = 255;
         break;
     case IMG_IA4:
-        r = g = b = (float)(color >> 1) / 7.0f;
-        a = (color & 1);
+        r = g = b = ((color >> 1) * 255) / 7;
+        a = (color & 1) * 255;
         break;
     case IMG_I8:
-        r = g = b = (float)color / 255.0f;
-        a = 1;
+        r = g = b = color;
+        a = 255;
         break;
     case IMG_IA8:
-        r = g = b = (color >> 4) / 15.0f;
-        a = (color & 0x0F) / 15.0f;
+        r = g = b = (color >> 4) * 17;
+        a = (color & 0x0F) * 17;
         break;
     }
 
-    return ((uint8_t)(255 * r) << 24) |
-           ((uint8_t)(255 * g) << 16) |
-           ((uint8_t)(255 * b) <<  8) |
-           (uint8_t)(255 * a);
+    return (r << 24) | (g << 16) | (b <<  8) | a;
 }
 
 int CN64Image::BitsPerPixel(int format)

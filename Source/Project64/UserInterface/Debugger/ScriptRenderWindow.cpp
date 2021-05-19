@@ -288,7 +288,7 @@ void CScriptRenderWindow::SetVisible(bool bVisible)
 
 bool CScriptRenderWindow::IsVisible()
 {
-    return m_hWnd ? (bool)IsWindowVisible(m_hWnd) : false;
+    return m_hWnd ? (IsWindowVisible(m_hWnd) == TRUE) : false;
 }
 
 bool CScriptRenderWindow::CaptureWindowRGBA32(HWND hWnd, int width, int height, uint8_t* outRGBA32)
