@@ -2,7 +2,7 @@
 #include "../ScriptAPI.h"
 #include <sys/stat.h>
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 enum fsop { FS_READ, FS_WRITE };
 static duk_ret_t ReadWriteImpl(duk_context *ctx, fsop op); // (fd, buffer, offset, length, position)

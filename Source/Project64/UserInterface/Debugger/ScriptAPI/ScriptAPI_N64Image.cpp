@@ -2,7 +2,7 @@
 #include "../ScriptAPI.h"
 #include "N64Image.h"
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 static CN64Image* GetThisImage(duk_context* ctx)
 {
@@ -178,7 +178,7 @@ duk_ret_t ScriptAPI::js_N64Image_static_fromPNG(duk_context* ctx)
     int result = image->Init(format, pngData, pngSize);
     if (result != N64IMG_OK)
     {
-        duk_push_error_object(ctx, DUK_ERR_ERROR, "failed to initialize image (%s) %d",
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "failed to initialize image (%s)",
             CN64Image::ResultCodeName(result), result);
         return duk_throw(ctx);
     }

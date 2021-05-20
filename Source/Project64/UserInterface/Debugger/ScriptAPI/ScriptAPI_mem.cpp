@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string>
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 void ScriptAPI::Define_mem(duk_context *ctx)
 {

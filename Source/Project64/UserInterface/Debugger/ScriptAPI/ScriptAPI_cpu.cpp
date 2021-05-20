@@ -2,7 +2,7 @@
 #include "../ScriptAPI.h"
 #include <Project64-core/N64System/Mips/Register.h>
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper);
 static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper);

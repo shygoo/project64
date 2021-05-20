@@ -2,7 +2,7 @@
 #include "../ScriptAPI.h"
 #include "../OpInfo.h"
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 static bool CbCond_PcBetween(JSCallback* cb, void* env);
 static bool CbCond_ReadAddrBetween(JSCallback* cb, void* env);

@@ -2,7 +2,7 @@
 #include "../ScriptAPI.h"
 #include "../ScriptRenderWindow.h"
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 static CScriptRenderWindow* GetThisRW(duk_context* ctx)
 {

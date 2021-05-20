@@ -3,7 +3,7 @@
 #include "../ScriptAPI.h"
 #include "N64Image.h"
 
-#pragma warning(disable: 4702)
+#pragma warning(disable: 4702) // disable unreachable code warning
 
 #define MODULES_DIR "Scripts/modules"
 
