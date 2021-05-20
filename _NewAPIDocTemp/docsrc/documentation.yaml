@@ -35,11 +35,11 @@
           The listener may be unset by calling `console.listen(undefined)`.
           ```
           console.listen(function(input) {
-              var args = input.split(' ');
+              var args = input.split(" ");
               var command = args.shift();
               switch(command) {
               case "ping":
-                  console.log("pong (args were:", args.join(', '), ")");
+                  console.log("pong (args were:", args.join(", "), ")");
                   return;
               case "end":
                   console.log("done");

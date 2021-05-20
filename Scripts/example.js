@@ -9,7 +9,8 @@ console.listen(function(command) {
         exec("start " + DOCPATH);
     }
     else {
-        console.log(eval(command));
+        const global = new Function('return this;')();
+        console.log(eval.call(global, command));
     }
 });
 

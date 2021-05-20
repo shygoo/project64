@@ -197,7 +197,7 @@ void CScriptInstance::RawInput(const char* code)
     m_ExecStartTime = Timestamp();
     
     duk_push_string(m_Ctx, stdstr_f("<input:%s>", m_Name.c_str()).c_str());
-    if (duk_pcompile_string_filename(m_Ctx, DUK_COMPILE_STRICT, code) != 0 ||
+    if (duk_pcompile_string_filename(m_Ctx, 0, code) != 0 ||
         duk_pcall(m_Ctx, 0) == DUK_EXEC_ERROR)
     {
         duk_get_prop_string(m_Ctx, -1, "stack");

@@ -5,37 +5,16 @@ Changes:
 - use javascript "strict mode"
 - add default execution timeout of 500ms for instance startups/callback invocations
 - replace socket overlapped IO with worker threads (fix Windows XP incompatibility)
-- add global constants for addresses of exception vectors and memory mapped registers
 - remove API.js, make all API functions native
 - add better error throwing for all API functions
-- rewrite API documentation file
 - improve console.log's performance
-- add remaining registers to `cop0` interface
-- add events.onpifread(callback)
-- add events.onsptask(callback)
-- add console.listen(inputListener)
-- add script.keepalive(keepAlive)
-- add script.timeout(milliseconds)
-- add debug.skip()
-- add debug.showmemory(address)
-- add debug.showcommands(address)
-- add debug.resume()
-- add asm.encode(command)
-- add asm.decode(opcode)
-- add mem.setblock(address, data[, length))
-- add mem.setstring(address, data[, length))
-- add mem.ramSize
-- add mem.romSize
-- add pj64.open(romPath)
-- add pj64.close()
-- add exec(command)
-- add require(id)
 - reads from `cpu.cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
 - writes to `cpu.cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
+- add a ton of new functions ()
 
 Changes that will break compatibility with old scripts:
 
-- change all `events.on*` callbacks to receive more informative event objects
+- change parameters of `events.on*` callbacks to event objects
 - rename `fs.writeFile` to `fs.writefile`
 - rename `fs.readFile` to `fs.readfile`
 - rename `mem.float`, `mem.double` to `mem.f32`, `mem.f64`
@@ -62,8 +41,6 @@ TODO:
    make sure ctx.fill() implementation is correct
    disable text wrapping for ctx.drawtext
 
-- why is console input var keyword not going to global object 
-- make constructors for event objects
 - private constructor flag
 - formatting/cleanup printfs, todo comments etc
 - full test suite

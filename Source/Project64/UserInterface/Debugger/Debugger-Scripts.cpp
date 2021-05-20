@@ -472,7 +472,7 @@ void CDebugScripts::RunSelected()
         return;
     }
 
-    stdstr path = stdstr("scripts/") + m_SelectedScriptName;
+    stdstr path = stdstr("Scripts/") + m_SelectedScriptName;
 
     m_Debugger->ScriptSystem()->StartScript(m_SelectedScriptName.c_str(), path.c_str());
 }
