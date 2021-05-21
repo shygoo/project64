@@ -1,6 +1,7 @@
 #include <stdafx.h>
 #include "../ScriptAPI.h"
 #include "../ScriptRenderWindow.h"
+#include "N64Image.h"
 
 #pragma warning(disable: 4702) // disable unreachable code warning
 
@@ -25,6 +26,8 @@ void ScriptAPI::Define_DrawingContext(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
         { "drawtext", js_DrawingContext_drawtext, 3 },
+        { "measuretext", js_DrawingContext_measuretext, 1},
+        { "drawimage", js_DrawingContext_drawimage, DUK_VARARGS },
         { "fillrect", js_DrawingContext_fillrect, 4 },
         { "strokerect", js_DrawingContext_strokerect, 4 },
         { "beginpath", js_DrawingContext_beginpath, 0 },
@@ -48,11 +51,10 @@ void ScriptAPI::Define_DrawingContext(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
 {
-    // TODO: set private constructor flag
-
-    if (!duk_is_constructor_call(ctx))
+    if (!duk_is_constructor_call(ctx) ||
+        !PrivateCallAllowed(ctx))
     {
-        return DUK_RET_ERROR;
+        return ThrowNotCallableError(ctx);
     }
 
     duk_push_this(ctx);
@@ -126,7 +128,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fillColor(duk_context* ctx)
 
     if (!duk_is_number(ctx, 0))
     {
-        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+        return ThrowInvalidAssignmentError(ctx);
     }
 
     duk_double_t color = duk_get_number(ctx, 0);
@@ -153,7 +155,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_strokeColor(duk_context* ctx)
 
     if (!duk_is_number(ctx, 0))
     {
-        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+        return ThrowInvalidAssignmentError(ctx);
     }
 
     duk_double_t color = duk_get_number(ctx, 0);
@@ -180,7 +182,7 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_strokeWidth(duk_context* ctx)
 
     if (!duk_is_number(ctx, 0))
     {
-        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+        return ThrowInvalidAssignmentError(ctx);
     }
 
     rw->GfxSetStrokeWidth((float)duk_get_number(ctx, 0));
@@ -233,20 +235,22 @@ duk_ret_t ScriptAPI::js_DrawingContext__get_fontWeight(duk_context* ctx)
 {
     CScriptRenderWindow* rw = GetThisRW(ctx);
 
-    DWRITE_FONT_WEIGHT weight = rw->GfxGetFontWeight();
+    CScriptRenderWindow::FontWeight weight = rw->GfxGetFontWeight();
     const char* weightName = "";
 
     switch (weight)
     {
-    case DWRITE_FONT_WEIGHT_LIGHT:
+    case CScriptRenderWindow::GFW_LIGHT:
         weightName = "light";
         break;
-    case DWRITE_FONT_WEIGHT_NORMAL:
+    case CScriptRenderWindow::GFW_NORMAL:
         weightName = "normal";
         break;
-    case DWRITE_FONT_WEIGHT_BOLD:
+    case CScriptRenderWindow::GFW_BOLD:
         weightName = "bold";
         break;
+    default:
+        weightName = "";
     }
 
     duk_push_string(ctx, weightName);
@@ -258,20 +262,21 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
     CScriptRenderWindow* rw = GetThisRW(ctx);
     if (!duk_is_string(ctx, 0))
     {
-        return ThrowInvalidArgsError(ctx); // todo invalid assignment error
+        return ThrowInvalidAssignmentError(ctx);
     }
 
     const char* weightName = duk_get_string(ctx, 0);
 
-    static const std::map<std::string, DWRITE_FONT_WEIGHT> weights = {
-        { "light", DWRITE_FONT_WEIGHT_LIGHT },
-        { "normal", DWRITE_FONT_WEIGHT_NORMAL },
-        { "bold", DWRITE_FONT_WEIGHT_BOLD }
+    static const std::map<std::string, CScriptRenderWindow::FontWeight> weights = {
+        { "light",  CScriptRenderWindow::GFW_LIGHT },
+        { "normal", CScriptRenderWindow::GFW_NORMAL },
+        { "bold",   CScriptRenderWindow::GFW_BOLD }
     };
 
     if (weights.count(weightName) == 0)
     {
-        return DUK_RET_ERROR; // todo invalid font weight error
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "invalid font weight");
+        return duk_throw(ctx);
     }
 
     rw->GfxSetFontWeight(weights.at(weightName));
@@ -287,6 +292,63 @@ duk_ret_t ScriptAPI::js_DrawingContext_drawtext(duk_context* ctx)
     const char* text = duk_safe_to_string(ctx, 2);
 
     rw->GfxDrawText(x, y, stdstr(text).ToUTF16().c_str());
+
+    return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_measuretext(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    const char* text = duk_safe_to_string(ctx, 0);
+
+    CScriptRenderWindow::TextMetrics textMetrics;
+    rw->GfxMeasureText(stdstr(text).ToUTF16().c_str(), &textMetrics);
+
+    duk_push_object(ctx);
+    
+    const duk_number_list_entry props[] = {
+        { "left",   (duk_double_t)textMetrics.left },
+        { "top",    (duk_double_t)textMetrics.top },
+        { "width",  (duk_double_t)textMetrics.width },
+        { "height", (duk_double_t)textMetrics.height },
+        { nullptr, 0 }
+    };
+
+    duk_put_number_list(ctx, -1, props);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext_drawimage(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+
+    if (!duk_is_number(ctx, 0) ||
+        !duk_is_number(ctx, 1) ||
+        !duk_is_object(ctx, 2))
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    float dx = (float)duk_get_number(ctx, 0);
+    float dy = (float)duk_get_number(ctx, 1);
+    duk_get_prop_string(ctx, 2, DUK_HIDDEN_SYMBOL("N64IMAGE"));
+    CN64Image* image = (CN64Image*)duk_get_pointer(ctx, -1);
+
+    if (image == nullptr)
+    {
+        return ThrowInvalidArgsError(ctx);
+    }
+
+    float dw = (float)duk_get_number_default(ctx, 3, image->Width());
+    float dh = (float)duk_get_number_default(ctx, 4, image->Height());
+    float sx = (float)duk_get_number_default(ctx, 5, 0);
+    float sy = (float)duk_get_number_default(ctx, 6, 0);
+    float sw = (float)duk_get_number_default(ctx, 7, dw);
+    float sh = (float)duk_get_number_default(ctx, 8, dh);
+
+    std::vector<uint8_t>& bitmap = image->Bitmap();
+    rw->GfxDrawImage(&bitmap[0], bitmap.size(), image->Width(), image->Height(), sw, sh, sx, sy, dw, dh, dx, dy);
 
     return 0;
 }

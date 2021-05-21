@@ -198,7 +198,7 @@ div.tag.red {
 }
 
 div.sidebar {
-    width: 430px;
+    width: 440px;
     position: fixed;
     top: 0px;
     left: 0px;
@@ -214,7 +214,7 @@ div.sidebar-content {
 }
 
 div.content {
-    margin-left: 430px;
+    margin-left: 440px;
     padding: 10px;
 }
 

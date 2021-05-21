@@ -495,8 +495,7 @@ duk_ret_t ScriptAPI::js_mem_bindstruct(duk_context *ctx)
 
     while(duk_next(ctx, -1, 1))
     {
-        //const char *name = duk_get_string(ctx, -2);
-        mem_type_t type = (mem_type_t)duk_get_int(ctx, -1);
+        MemType type = (MemType)duk_get_int(ctx, -1);
 
         duk_push_c_function(ctx, js_mem_bindvar, 4);
         duk_dup(ctx, 0);
@@ -566,7 +565,7 @@ duk_ret_t ScriptAPI::js_mem__get_romsize(duk_context* ctx)
     return 1;
 }
 
-size_t ScriptAPI::MemTypeSize(mem_type_t t)
+size_t ScriptAPI::MemTypeSize(MemType t)
 {
     switch(t)
     {

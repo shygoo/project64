@@ -14,6 +14,18 @@ class COutlinedTextRenderer;
 
 class CScriptRenderWindow
 {
+public:
+    struct TextMetrics {
+        float left, top, width, height;
+    };
+
+    enum FontWeight {
+        GFW_UNKNOWN = -1,
+        GFW_LIGHT,
+        GFW_NORMAL,
+        GFW_BOLD
+    };
+
 private:
     HWND m_hWnd;
     bool Create();
@@ -82,12 +94,16 @@ public:
     stdstr GfxGetFontFamily();
     void GfxSetFontSize(float fontSize);
     float GfxGetFontSize();
-    void GfxSetFontWeight(DWRITE_FONT_WEIGHT fontWeight);
-    DWRITE_FONT_WEIGHT GfxGetFontWeight();
+    void GfxSetFontWeight(FontWeight fontWeight);
+    FontWeight GfxGetFontWeight();
     void GfxDrawText(float x, float y, const wchar_t* text);
+    void GfxMeasureText(const wchar_t* text, TextMetrics* metrics);
     void GfxFillRect(float left, float top, float right, float bottom);
     void GfxStrokeRect(float left, float top, float right, float bottom);
     void GfxCopyWindow(HWND hSrcWnd);
+    void GfxDrawImage(uint8_t* bitmap, size_t bitmapSize, size_t imageWidth, size_t imageHeight,
+        size_t srcW, size_t srcH, float srcX, float srcY,
+        size_t dstW, size_t dstH, float dstX, float dstY);
 
     void GfxBeginPath();
     void GfxMoveTo(float x, float y);
@@ -108,7 +124,6 @@ public:
     static D2D1::ColorF D2D1ColorFromRGBA32(uint32_t color);
 };
 
-
 class COutlinedTextRenderer :
     public IDWriteTextRenderer
 {
@@ -126,8 +141,7 @@ public:
         ID2D1Factory* d2dFactory,
         ID2D1HwndRenderTarget* gfx,
         ID2D1SolidColorBrush** fillBrush,
-        ID2D1SolidColorBrush** strokeBrush)
-        :
+        ID2D1SolidColorBrush** strokeBrush) :
         m_D2DFactory(d2dFactory),
         m_Gfx(gfx),
         m_FillBrush(fillBrush),

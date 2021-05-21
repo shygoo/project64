@@ -409,7 +409,7 @@ bool CScriptRenderWindow::GfxInitTarget()
 
         hr = m_D2DFactory->CreateHwndRenderTarget(
             D2D1::RenderTargetProperties(),
-            D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(m_Width, m_Height), D2D1_PRESENT_OPTIONS_IMMEDIATELY),
+            D2D1::HwndRenderTargetProperties(m_hWnd, D2D1::SizeU(m_Width, m_Height), D2D1_PRESENT_OPTIONS_NONE),
             &m_Gfx);
 
         if (SUCCEEDED(hr) && m_Gfx)
@@ -443,25 +443,40 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
         bLoggedError = true;
     }
 
-    ID2D1Bitmap* bitmap;
+    GfxDrawImage(&frameRGBA32[0], frameRGBA32.size(), width, height,
+        width, height, 0, 0,
+        width, height, 0, 0);
+}
+
+void CScriptRenderWindow::GfxDrawImage(uint8_t* bitmap, size_t bitmapSize,
+    size_t imageWidth, size_t imageHeight,
+    size_t srcW, size_t srcH, float srcX, float srcY,
+    size_t dstW, size_t dstH, float dstX, float dstY)
+{
+    if (bitmapSize != imageWidth * imageHeight * 4)
+    {
+        return;
+    }
+
+    ID2D1Bitmap* d2dbitmap;
 
     HRESULT hr = m_Gfx->CreateBitmap(
-        D2D1::SizeU((uint32_t)width, (uint32_t)height),
-        &frameRGBA32[0],
-        width * 4,
+        D2D1::SizeU((uint32_t)imageWidth, (uint32_t)imageHeight),
+        bitmap,
+        imageWidth * 4,
         D2D1::BitmapProperties(D2D1::PixelFormat(DXGI_FORMAT_R8G8B8A8_UNORM, D2D1_ALPHA_MODE_IGNORE)),
-        &bitmap);
+        &d2dbitmap);
 
-    if (SUCCEEDED(hr) && bitmap != nullptr)
+    if (SUCCEEDED(hr))
     {
         m_Gfx->DrawBitmap(
-            bitmap,
-            D2D1::RectF(0, 0, width, height),
+            d2dbitmap,
+            D2D1::RectF(dstX, dstY, dstX + (float)dstW, dstY + (float)dstH),
             1.0f,
             D2D1_BITMAP_INTERPOLATION_MODE_NEAREST_NEIGHBOR,
-            D2D1::RectF(0, 0, width, height));
+            D2D1::RectF(srcX, srcY, srcX + (float)srcW, srcY + (float)srcH));
 
-        bitmap->Release();
+        d2dbitmap->Release();
     }
 }
 
@@ -603,15 +618,38 @@ float CScriptRenderWindow::GfxGetFontSize()
     return m_FontSize;
 }
 
-void CScriptRenderWindow::GfxSetFontWeight(DWRITE_FONT_WEIGHT fontWeight)
+void CScriptRenderWindow::GfxSetFontWeight(FontWeight fontWeight)
 {
-    m_FontWeight = fontWeight;
+    switch (fontWeight)
+    {
+    case GFW_LIGHT:
+        m_FontWeight = DWRITE_FONT_WEIGHT_LIGHT;
+        break;
+    case GFW_BOLD:
+        m_FontWeight = DWRITE_FONT_WEIGHT_BOLD;
+        break;
+    default:
+    case GFW_NORMAL:
+        m_FontWeight = DWRITE_FONT_WEIGHT_NORMAL;
+        break;
+    }
+
     GfxRefreshTextFormat();
 }
 
-DWRITE_FONT_WEIGHT CScriptRenderWindow::GfxGetFontWeight()
+CScriptRenderWindow::FontWeight CScriptRenderWindow::GfxGetFontWeight()
 {
-    return m_FontWeight;
+    switch (m_FontWeight)
+    {
+    case DWRITE_FONT_WEIGHT_LIGHT:
+        return GFW_LIGHT;
+    case DWRITE_FONT_WEIGHT_BOLD:
+        return GFW_BOLD;
+    case DWRITE_FONT_WEIGHT_NORMAL:
+        return GFW_NORMAL;
+    }
+
+    return GFW_UNKNOWN;
 }
 
 void CScriptRenderWindow::GfxDrawText(float x, float y, const wchar_t* text)
@@ -621,19 +659,51 @@ void CScriptRenderWindow::GfxDrawText(float x, float y, const wchar_t* text)
         return;
     }
 
-    if (m_StrokeWidth > 0.0f)
+    IDWriteTextLayout* textLayout = nullptr;
+
+    HRESULT hr = m_DWriteFactory->CreateTextLayout(text, wcslen(text), m_GfxTextFormat, (float)m_Width, (float)m_Height, &textLayout);
+    if (SUCCEEDED(hr))
     {
-        IDWriteTextLayout* textLayout = nullptr;
-        HRESULT hr = m_DWriteFactory->CreateTextLayout(text, wcslen(text), m_GfxTextFormat, (float)m_Width, (float)m_Height, &textLayout);
+        DWRITE_TRIMMING trimmingOptions = { DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0 };
+        IDWriteInlineObject* trimmingSign;
+
+        hr = m_DWriteFactory->CreateEllipsisTrimmingSign(m_GfxTextFormat, &trimmingSign);
         if (SUCCEEDED(hr))
         {
+            textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            textLayout->SetTrimming(&trimmingOptions, trimmingSign);
             textLayout->Draw(nullptr, m_TextRenderer, x, y);
-            textLayout->Release();
+            trimmingSign->Release();
+            
         }
+
+        textLayout->Release();
     }
-    else
+}
+
+void CScriptRenderWindow::GfxMeasureText(const wchar_t* text, TextMetrics* metrics)
+{
+    if (!m_Gfx)
     {
-        m_Gfx->DrawText(text, wcslen(text), m_GfxTextFormat, D2D1::RectF(x, y, (float)m_Width, (float)m_Height), m_GfxFillBrush);
+        return;
+    }
+
+    IDWriteTextLayout* textLayout = nullptr;
+    HRESULT hr = m_DWriteFactory->CreateTextLayout(text, wcslen(text), m_GfxTextFormat, (float)m_Width, (float)m_Height, &textLayout);
+
+    if (SUCCEEDED(hr))
+    {
+        DWRITE_TEXT_METRICS textMetrics;
+
+            textLayout->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+            textLayout->GetMetrics(&textMetrics);
+
+            metrics->left = textMetrics.left;
+            metrics->top = textMetrics.top;
+            metrics->width = textMetrics.width;
+            metrics->height = textMetrics.height;
+
+        textLayout->Release();
     }
 }
 

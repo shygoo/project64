@@ -33,7 +33,6 @@ void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
     Define_mem(ctx);
     Define_pj64(ctx);
     Define_script(ctx);
-    Define_3d(ctx);
     
     Define_alert(ctx);
     Define_exec(ctx);
@@ -385,4 +384,78 @@ duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)
 {
     duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid argument(s)");
     return duk_throw(ctx);  
+}
+
+duk_ret_t ScriptAPI::ThrowInvalidAssignmentError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid assignment");
+    return duk_throw(ctx);
+}
+
+duk_ret_t ScriptAPI::ThrowNotCallableError(duk_context* ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "not callable");
+    return duk_throw(ctx);
+}
+
+void ScriptAPI::AllowPrivateCall(duk_context* ctx, bool bAllow)
+{
+    duk_push_boolean(ctx, (duk_bool_t)bAllow);
+    duk_put_global_string(ctx, HSYM_PRIVATECALL);
+}
+
+bool ScriptAPI::PrivateCallAllowed(duk_context* ctx)
+{
+    if (!duk_get_global_string(ctx, HSYM_PRIVATECALL))
+    {
+        return false;
+    }
+
+    bool bAllowed = duk_get_boolean(ctx, -1);
+    duk_pop(ctx);
+    return bAllowed;
+}
+
+duk_ret_t ScriptAPI::js_DummyConstructor(duk_context* ctx)
+{
+    return ThrowNotCallableError(ctx);
+}
+
+void ScriptAPI::PushNewDummyConstructor(duk_context* ctx, bool bFrozen)
+{
+    duk_push_c_function(ctx, js_DummyConstructor, 0);
+    duk_push_object(ctx);
+    duk_put_prop_string(ctx, -2, "prototype");
+
+    if (bFrozen)
+    {
+        duk_freeze(ctx, -1);
+    }
+}
+
+void ScriptAPI::DefineGlobalDummyConstructors(duk_context* ctx, const char* constructorNames[], bool bFreeze)
+{
+    duk_push_global_object(ctx);
+
+    for (size_t i = 0;; i++)
+    {
+        if (constructorNames[i] == nullptr)
+        {
+            break;
+        }
+        duk_push_string(ctx, constructorNames[i]);
+        PushNewDummyConstructor(ctx, bFreeze);
+        duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
+    }
+
+    duk_pop(ctx);
+}
+
+void ScriptAPI::SetDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const char* globalConstructorName)
+{
+    obj_idx = duk_normalize_index(ctx, obj_idx);
+    duk_get_global_string(ctx, globalConstructorName);
+    duk_get_prop_string(ctx, -1, "prototype");
+    duk_set_prototype(ctx, obj_idx);
+    duk_pop(ctx);
 }

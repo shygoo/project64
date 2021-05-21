@@ -2,6 +2,8 @@
 #include <3rdParty/png/png.h>
 #include "N64Image.h"
 
+#pragma warning (disable:4611) // disable setjmp/c++ deconstruction warning
+
 struct PNGReadState {
     uint8_t*   pngData;
     size_t     pngSize;
@@ -37,6 +39,8 @@ int CN64Image::ReadPNG(uint8_t* pngData, size_t pngSize, size_t* outWidth, size_
 
     if (setjmp(png_jmpbuf(png_ptr)))
     {
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+
         png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
         return N64IMG_PNG_EXCEPTION;
     }

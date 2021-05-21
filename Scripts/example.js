@@ -24,6 +24,7 @@ events.ondraw(function(e) {
     ctx.strokeColor = COLOR_BLACK;
     ctx.fillColor = COLOR_WHITE;
     
-    ctx.drawtext(10, 100, "Hello world!");
-    ctx.drawtext(10, 120, "Type \".doc\" in the script console to view API documentation");
+    ctx.drawtext(10, 100, "Hello world!\n\n" +
+        "Type \".doc\" in the script console\n" +
+        "to view API documentation");
 });

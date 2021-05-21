@@ -10,7 +10,7 @@ Changes:
 - improve console.log's performance
 - reads from `cpu.cop0.cause` now return `(g_Reg->FAKE_CAUSE_REGISTER | g_Reg->CAUSE_REGISTER)`
 - writes to `cpu.cop0.cause` set both `g_Reg->FAKE_CAUSE_REGISTER` and `g_Reg->CAUSE_REGISTER`
-- add a ton of new functions ()
+- add a ton of new functions
 
 Changes that will break compatibility with old scripts:
 
@@ -33,21 +33,11 @@ TODO:
 - script auto-run feature?
 - finish implementing new server/socket
 - native module loader
-- move 3d math interface to a native module
-
-- DrawingContext:
-   ctx.measuretext(text)
-   ctx.drawimage()
-   make sure ctx.fill() implementation is correct
-   disable text wrapping for ctx.drawtext
-
-- private constructor flag
-- formatting/cleanup printfs, todo comments etc
+- stable pj64 open/close
+- make sure ctx.fill() implementation is correct
+- ctx.getimage(x, y, width, height)
+- formatting/cleanup printfs/todo comments/warnings etc
 - full test suite
-
-MouseEvent.LEFT
-MouseEvent.MIDDLE
-MouseEvent.RIGHT
 
 ---------------------------
 

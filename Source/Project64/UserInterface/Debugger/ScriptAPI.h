@@ -4,16 +4,17 @@
 
 #pragma once
 
-#define HSYM_APPCALLBACKS  DUK_HIDDEN_SYMBOL("APPCALLBACKS")
-#define HSYM_INSTANCE      DUK_HIDDEN_SYMBOL("INSTANCE")
-#define HSYM_INPUTLISTENER DUK_HIDDEN_SYMBOL("INPUTLISTENER")
-#define HSYM_CURDRAWINGCTX DUK_HIDDEN_SYMBOL("CURDRAWINGCTX")
-#define HSYM_OPENFILES     DUK_HIDDEN_SYMBOL("OPENFILES")
-#define HSYM_KEEPALIVE     DUK_HIDDEN_SYMBOL("KEEPALIVE")
+#define HSYM_APPCALLBACKS   DUK_HIDDEN_SYMBOL("APPCALLBACKS")
+#define HSYM_INSTANCE       DUK_HIDDEN_SYMBOL("INSTANCE")
+#define HSYM_INPUTLISTENER  DUK_HIDDEN_SYMBOL("INPUTLISTENER")
+#define HSYM_CURDRAWINGCTX  DUK_HIDDEN_SYMBOL("CURDRAWINGCTX")
+#define HSYM_OPENFILES      DUK_HIDDEN_SYMBOL("OPENFILES")
+#define HSYM_KEEPALIVE      DUK_HIDDEN_SYMBOL("KEEPALIVE")
+#define HSYM_PRIVATECALL    DUK_HIDDEN_SYMBOL("PRIVATECALL")
 
 namespace ScriptAPI
 {
-    enum mem_type_t {
+    enum MemType {
         U8, U16, U32, S8, S16, S32, F32, F64,
         U64, S64
     };
@@ -34,6 +35,16 @@ namespace ScriptAPI
     duk_ret_t js_Duktape_modSearch(duk_context* ctx);
 
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
+    duk_ret_t ThrowInvalidAssignmentError(duk_context* ctx);
+    duk_ret_t ThrowNotCallableError(duk_context* ctx);
+
+    void AllowPrivateCall(duk_context* ctx, bool bAllow);
+    bool PrivateCallAllowed(duk_context* ctx);
+
+    void PushNewDummyConstructor(duk_context* ctx, bool bFrozen = true);
+    void DefineGlobalDummyConstructors(duk_context* ctx, const char* constructorNames[], bool bFreeze = true);
+    void SetDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const char* globalConstructorName);
+    duk_ret_t js_DummyConstructor(duk_context* ctx);
 
     // ScriptAPI_events
     void Define_events(duk_context* ctx);
@@ -74,7 +85,7 @@ namespace ScriptAPI
     duk_ret_t js_mem__type_constructor(duk_context* ctx);
     duk_ret_t js_mem__get_ramsize(duk_context* ctx);
     duk_ret_t js_mem__get_romsize(duk_context* ctx);
-    size_t MemTypeSize(mem_type_t t);
+    size_t MemTypeSize(MemType t);
     duk_ret_t ThrowMemoryError(duk_context* ctx, uint32_t address);
 
     // ScriptAPI_Server
@@ -164,6 +175,8 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__get_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext_drawtext(duk_context* ctx);
+    duk_ret_t js_DrawingContext_measuretext(duk_context* ctx);
+    duk_ret_t js_DrawingContext_drawimage(duk_context* ctx);
     duk_ret_t js_DrawingContext_fillrect(duk_context* ctx);
     duk_ret_t js_DrawingContext_strokerect(duk_context* ctx);
     //duk_ret_t js_DrawingContext_drawimage(duk_context* ctx);
@@ -173,13 +186,6 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext_lineto(duk_context* ctx);
     duk_ret_t js_DrawingContext_stroke(duk_context* ctx);
     duk_ret_t js_DrawingContext_fill(duk_context* ctx);
-
-    // ScriptAPI_3d
-    void Define_3d(duk_context* ctx);
-    duk_ret_t vec3_create(duk_context* ctx);
-    duk_ret_t vec3_transformMat4(duk_context* ctx);
-    duk_ret_t mat4_create(duk_context* ctx);
-    duk_ret_t mat4_mul(duk_context* ctx);
 
     // ScriptAPI_AddressRange
     void Define_AddressRange(duk_context* ctx);

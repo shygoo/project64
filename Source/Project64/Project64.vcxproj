@@ -80,7 +80,6 @@
     <ClCompile Include="UserInterface\Debugger\DebugMMU.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\N64Image_PNG.cpp" />
-    <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_3d.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_N64Image.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptAPI\ScriptAPI_RGBA.cpp" />
     <ClCompile Include="UserInterface\Debugger\ScriptRenderWindow.cpp" />

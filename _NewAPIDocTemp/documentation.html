@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 20 2021 -->
+<!-- Generated May 21 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.05.20</title>
+<title>Project64 JavaScript API prerelease 2021.05.21</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -205,7 +205,7 @@ div.tag.red {
 }
 
 div.sidebar {
-    width: 430px;
+    width: 440px;
     position: fixed;
     top: 0px;
     left: 0px;
@@ -221,7 +221,7 @@ div.sidebar-content {
 }
 
 div.content {
-    margin-left: 430px;
+    margin-left: 440px;
     padding: 10px;
 }
 
@@ -271,7 +271,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.05.20
+prerelease 2021.05.21
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -325,6 +325,9 @@ prerelease 2021.05.20
 </ul><div class="vtab"></div></li>
 <li><a href="#DrawingContext">DrawingContext</a>: Screen drawing context<ul>
 <li><a href="#ctx_drawtext">ctx.drawtext(x, y, text)</a></li>
+<li><a href="#ctx_measuretext">ctx.measuretext(text)</a></li>
+<li><a href="#TextMetrics">TextMetrics</a></li>
+<li><a href="#ctx_drawimage">ctx.drawimage(dx, dy, image[, dw[, dh[, sx[, sy[, sw[, sh]]]]]])</a></li>
 <li><a href="#ctx_fillrect">ctx.fillrect(x, y, width, height)</a></li>
 <li><a href="#ctx_strokerect">ctx.strokerect(x, y, width, height)</a></li>
 <li><a href="#ctx_beginpath">ctx.beginpath()</a></li>
@@ -947,9 +950,16 @@ Returns a callback ID.
 <div class="vtab"></div>
 <table>
 <tr><td><span class="snip">e.callbackId</span></td><td>ID of the callback associated with the event.</td></tr>
-<tr><td><span class="snip">e.button</span></td><td>The mouse button. <span class="snip">0</span> = left, <span class="snip">1</span> = middle, <span class="snip">2</span> = right. <span class="snip">-1</span> if not applicable.</td></tr>
+<tr><td><span class="snip">e.button</span></td><td>The mouse button number. See table below.</td></tr>
 <tr><td><span class="snip">e.x</span></td><td>Cursor X position.</td></tr>
 <tr><td><span class="snip">e.y</span></td><td>Cursor Y position.</td></tr>
+</table>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">MouseEvent.LEFT</span></td><td>0</td></tr>
+<tr><td><span class="snip">MouseEvent.MIDDLE</span></td><td>1</td></tr>
+<tr><td><span class="snip">MouseEvent.RIGHT</span></td><td>2</td></tr>
+<tr><td><span class="snip">MouseEvent.NONE</span></td><td>-1</td></tr>
 </table>
 <!-- events_remove -->
 <div class="prop"><span class="title" id="events_remove">events.remove(callbackId)</span></div>
@@ -1007,6 +1017,60 @@ Prints text to the screen at the provided <span class="snip">x</span> and <span 
 <span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
     <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
     <span class="js-word">ctx</span>.<span class="js-word">drawtext</span>(<span class="js-number">20</span>, <span class="js-number">20</span>, <span class="js-string">"Power: "</span> + <span class="js-word">mem</span>.<span class="js-word">u8</span>[<span class="js-number">0x8033B21E</span>]);
+});
+</pre>
+<!-- ctx_measuretext -->
+<div class="prop"><span class="title" id="ctx_measuretext">ctx.measuretext(text)</span></div>
+<div class="tsproto">ctx.measuretext(text: string): TextMetrics</div>
+<div class="vtab"></div>
+Returns a <a href="#TextMetrics">TextMetrics</a> object describing the would-be dimensions of a <a href="#ctx_drawtext">ctx.drawtext</a> call.
+<pre class="ex">
+<span class="js-comment">// Draw some text with a black background rectangle</span>
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+
+    <span class="js-keyword">const</span> <span class="js-word">text</span> = <span class="js-string">"HELLO\nWORLD"</span>;
+    <span class="js-keyword">const</span> <span class="js-word">x</span> = <span class="js-number">100</span>, <span class="js-word">y</span> = <span class="js-number">100</span>;
+
+    <span class="js-keyword">var</span> <span class="js-word">textMetrics</span> = <span class="js-word">ctx</span>.<span class="js-word">measuretext</span>(<span class="js-word">text</span>);
+
+    <span class="js-word">ctx</span>.<span class="js-word">fillColor</span> = <span class="js-word">COLOR_BLACK</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">fillrect</span>(<span class="js-word">x</span>, <span class="js-word">y</span>, <span class="js-word">textMetrics</span>.<span class="js-word">width</span>, <span class="js-word">textMetrics</span>.<span class="js-word">height</span>);
+    <span class="js-word">ctx</span>.<span class="js-word">fillColor</span> = <span class="js-word">COLOR_WHITE</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">fontWeight</span> = <span class="js-string">'bold'</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">drawtext</span>(<span class="js-word">x</span>, <span class="js-word">y</span>, <span class="js-word">text</span>);
+});
+</pre>
+<!-- TextMetrics -->
+<div class="prop"><span class="title" id="TextMetrics">TextMetrics</span></div>
+<div class="vtab"></div>
+<table>
+<tr><td><span class="snip">textMetrics.left</span></td><td>Reserved; always <span class="snip">0</span></td></tr>
+<tr><td><span class="snip">textMetrics.top</span></td><td>Reserved; always <span class="snip">0</span></td></tr>
+<tr><td><span class="snip">textMetrics.width</span></td><td>Width of the bounding rectangle</td></tr>
+<tr><td><span class="snip">textMetrics.height</span></td><td>Height of the bounding rectangle</td></tr>
+</table>
+<!-- ctx_drawimage -->
+<div class="prop"><span class="title" id="ctx_drawimage">ctx.drawimage(dx, dy, image[, dw[, dh[, sx[, sy[, sw[, sh]]]]]])</span></div>
+<div class="tsproto">ctx.drawimage(dx: number, dy: number, image: N64Image, dw?: number, dh?: number, sx?: number, sy?: number, sw?: number, sh?: number): void</div>
+<div class="vtab"></div>
+Draws an <a href="#N64Image">N64Image</a> object to the screen.
+<div class="vtab"></div>
+<span class="snip">dx</span>&#58; Destination X position.<br>
+<span class="snip">dx</span>&#58; Destination Y position.<br>
+<span class="snip">image</span>&#58; The <a href="#N64Image">N64Image</a> object to draw.<br>
+<span class="snip">dw</span>&#58; Optional destination width.<br>
+<span class="snip">dh</span>&#58; Optional destination height.<br>
+<span class="snip">sx</span>&#58; Optional source X.<br>
+<span class="snip">sy</span>&#58; Optional source Y.<br>
+<span class="snip">sw</span>&#58; Optional source width.<br>
+<span class="snip">sh</span>&#58; Optional source height.
+<div class="vtab"></div>
+<pre class="ex">
+<span class="js-keyword">var</span> <span class="js-word">image</span> = <span class="js-word">N64Image</span>.<span class="js-word">fromPNG</span>(<span class="js-word">fs</span>.<span class="js-word">readfile</span>(<span class="js-string">'image.png'</span>));
+<span class="js-word">events</span>.<span class="js-word">ondraw</span>(<span class="js-keyword">function</span>(<span class="js-word">e</span>) {
+    <span class="js-keyword">var</span> <span class="js-word">ctx</span> = <span class="js-word">e</span>.<span class="js-word">drawingContext</span>;
+    <span class="js-word">ctx</span>.<span class="js-word">drawimage</span>(<span class="js-number">10</span>, <span class="js-number">10</span>, <span class="js-word">image</span>);
 });
 </pre>
 <!-- ctx_fillrect -->
@@ -1367,7 +1431,7 @@ Resumes emulation from a debugger pause.
 <div class="prop"><span class="title" id="debug_step">debug.step()</span></div>
 <div class="tsproto">debug.step(): void</div>
 <div class="vtab"></div>
-Executes a single CPU command. Does nothing if <a href="#debug_paused">debug.paused</a> is <span class="snip">false</span>.
+Executes a single CPU command. Does nothing if emulation is not paused by the debugger.
 <!-- debug_skip -->
 <div class="prop"><span class="title" id="debug_skip">debug.skip()</span></div>
 <div class="tsproto">debug.skip(): void</div>

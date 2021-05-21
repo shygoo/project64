@@ -4,19 +4,6 @@
 
 #pragma warning(disable: 4702) // disable unreachable code warning
 
-static const char* DummyConstructorNames[] = {
-    "GenericEvent",
-    "CPUExecEvent",
-    "CPUReadWriteEvent",
-    "CPUOpcodeEvent",
-    "CPURegValueEvent",
-    "SPTaskEvent",
-    "PIEvent",
-    "DrawEvent",
-    "MouseEvent",
-    nullptr
-};
-
 static bool CbCond_PcBetween(JSCallback* cb, void* env);
 static bool CbCond_ReadAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_WriteAddrBetween(JSCallback* cb, void* env);
@@ -40,10 +27,6 @@ static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* 
 
 static duk_ret_t ThrowNeedInterpreterError(duk_context* ctx);
 static bool HaveInterpreter();
-
-static duk_ret_t DummyConstructor(duk_context* ctx);
-static void DefineDummyConstructors(duk_context* ctx);
-static void ApplyDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const char* constructorName);
 
 void ScriptAPI::Define_events(duk_context* ctx)
 {
@@ -72,7 +55,34 @@ void ScriptAPI::Define_events(duk_context* ctx)
     duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
     duk_pop(ctx);
 
-    DefineDummyConstructors(ctx);
+    const char* dummyConstructorNames[] = {
+        "GenericEvent",
+        "CPUExecEvent",
+        "CPUReadWriteEvent",
+        "CPUOpcodeEvent",
+        "CPURegValueEvent",
+        "SPTaskEvent",
+        "PIEvent",
+        "DrawEvent",
+        nullptr
+    };
+
+    DefineGlobalDummyConstructors(ctx, dummyConstructorNames);
+
+    duk_number_list_entry mouseEventStaticProps[] = {
+        { "NONE", -1 },
+        { "LEFT", 0 },
+        { "MIDDLE", 1 },
+        { "RIGHT", 2 },
+        { nullptr, 0 }
+    };
+
+    duk_push_global_object(ctx);
+    duk_push_string(ctx, "MouseEvent");
+    PushNewDummyConstructor(ctx, false);
+    duk_put_number_list(ctx, -1, mouseEventStaticProps);
+    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
+    duk_pop(ctx);
 }
 
 duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
@@ -390,7 +400,7 @@ duk_idx_t CbArgs_GenericEventObject(duk_context* ctx, void* /*_env*/)
 {
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "GenericEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "GenericEvent");
     duk_push_uint(ctx, inst->CallbackId());
     duk_put_prop_string(ctx, -2, "callbackId");
     duk_freeze(ctx, -1);
@@ -402,7 +412,7 @@ duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "CPUExecEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUExecEvent");
     duk_push_uint(ctx, env->pc);
     duk_put_prop_string(ctx, -2, "pc");
     duk_push_uint(ctx, inst->CallbackId());
@@ -424,7 +434,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
     bool bFPU = (op == R4300i_LWC1 || op == R4300i_LDC1);
 
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "CPUReadWriteEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
 
     duk_number_list_entry numbers[] = {
         { "pc", (duk_double_t)env->pc },
@@ -576,7 +586,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     bool bFPU = (op == R4300i_SWC1 || op == R4300i_SDC1);
 
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "CPUReadWriteEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
 
     duk_number_list_entry numbers[] = {
         { "pc", (duk_double_t)env->pc },
@@ -686,7 +696,7 @@ duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "CPUOpcodeEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUOpcodeEvent");
     duk_push_uint(ctx, env->pc);
     duk_put_prop_string(ctx, -2, "pc");
     duk_push_uint(ctx, inst->CallbackId());
@@ -702,7 +712,7 @@ duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "CPURegValueEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "CPURegValueEvent");
     duk_push_uint(ctx, env->pc);
     duk_put_prop_string(ctx, -2, "pc");
     duk_push_uint(ctx, inst->CallbackId());
@@ -721,14 +731,16 @@ duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
     jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
 
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "DrawEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "DrawEvent");
 
     duk_push_uint(ctx, inst->CallbackId());
     duk_put_prop_string(ctx, -2, "callbackId");
 
     duk_get_global_string(ctx, "DrawingContext");
     duk_push_pointer(ctx, env->scriptRenderWindow);
+    ScriptAPI::AllowPrivateCall(ctx, true);
     duk_new(ctx, 1);
+    ScriptAPI::AllowPrivateCall(ctx, false);
 
     duk_dup(ctx, -1);
     duk_put_global_string(ctx, HSYM_CURDRAWINGCTX);
@@ -755,7 +767,7 @@ static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_mouse_t* env = (jshook_env_mouse_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "MouseEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "MouseEvent");
     duk_push_uint(ctx, inst->CallbackId());
     duk_put_prop_string(ctx, -2, "callbackId");
     duk_push_number(ctx, env->button);
@@ -773,7 +785,7 @@ static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_sptask_t* env = (jshook_env_sptask_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "SPTaskEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "SPTaskEvent");
 
     std::pair<const char*, uint32_t> props[] = {
         { "callbackId",        inst->CallbackId() },
@@ -815,7 +827,7 @@ static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* _env)
     CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
     jshook_env_pidma_t* env = (jshook_env_pidma_t*)_env;
     duk_push_object(ctx);
-    ApplyDummyConstructor(ctx, -1, "PIEvent");
+    ScriptAPI::SetDummyConstructor(ctx, -1, "PIEvent");
 
     std::pair<const char*, uint32_t> props[] = {
         { "callbackId",  inst->CallbackId() },
@@ -897,41 +909,4 @@ static bool HaveInterpreter()
     }
 
     return true;
-}
-
-static duk_ret_t DummyConstructor(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_ERROR, "not callable");
-    return duk_throw(ctx);
-}
-
-static void DefineDummyConstructors(duk_context* ctx)
-{
-    duk_push_global_object(ctx);
-
-    for (size_t i = 0;; i++)
-    {
-        if (DummyConstructorNames[i] == nullptr)
-        {
-            break;
-        }
-
-        duk_push_string(ctx, DummyConstructorNames[i]);
-        duk_push_c_function(ctx, DummyConstructor, 0);
-        duk_push_object(ctx);
-        duk_put_prop_string(ctx, -2, "prototype");
-        duk_freeze(ctx, -1);
-        duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
-    }
-
-    duk_pop(ctx);
-}
-
-void ApplyDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const char* constructorName)
-{
-    obj_idx = duk_normalize_index(ctx, obj_idx);
-    duk_get_global_string(ctx, constructorName);
-    duk_get_prop_string(ctx, -1, "prototype");
-    duk_set_prototype(ctx, obj_idx);
-    duk_pop(ctx);
 }

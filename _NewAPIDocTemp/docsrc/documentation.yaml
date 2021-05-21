@@ -538,9 +538,16 @@
     desc: |
           <table>
           <tr><td>`e.callbackId`</td><td>ID of the callback associated with the event.</td></tr>
-          <tr><td>`e.button`</td><td>The mouse button. `0` = left, `1` = middle, `2` = right. `-1` if not applicable.</td></tr>
+          <tr><td>`e.button`</td><td>The mouse button number. See table below.</td></tr>
           <tr><td>`e.x`</td><td>Cursor X position.</td></tr>
           <tr><td>`e.y`</td><td>Cursor Y position.</td></tr>
+          </table>
+          <div class="vtab"></div>
+          <table>
+          <tr><td>`MouseEvent.LEFT`</td><td>0</td></tr>
+          <tr><td>`MouseEvent.MIDDLE`</td><td>1</td></tr>
+          <tr><td>`MouseEvent.RIGHT`</td><td>2</td></tr>
+          <tr><td>`MouseEvent.NONE`</td><td>-1</td></tr>
           </table>
 
   - name: events_remove
@@ -602,6 +609,64 @@
               ctx.drawtext(20, 20, "Power: " + mem.u8[0x8033B21E]);
           });
           ```
+
+  - name: ctx_measuretext
+    js:   ctx.measuretext(text)
+    ts:   "ctx.measuretext(text: string): TextMetrics"
+    desc: |
+          Returns a [TextMetrics](#TextMetrics) object describing the would-be dimensions of a [ctx.drawtext](#ctx_drawtext) call.
+          ```
+          // Draw some text with a black background rectangle
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+
+              const text = "HELLO\nWORLD";
+              const x = 100, y = 100;
+
+              var textMetrics = ctx.measuretext(text);
+
+              ctx.fillColor = COLOR_BLACK;
+              ctx.fillrect(x, y, textMetrics.width, textMetrics.height);
+              ctx.fillColor = COLOR_WHITE;
+              ctx.fontWeight = 'bold';
+              ctx.drawtext(x, y, text);
+          });
+          ```
+
+  - name: TextMetrics
+    js:   TextMetrics
+    desc: |
+          <table>
+          <tr><td>`textMetrics.left`</td><td>Reserved; always `0`</td></tr>
+          <tr><td>`textMetrics.top`</td><td>Reserved; always `0`</td></tr>
+          <tr><td>`textMetrics.width`</td><td>Width of the bounding rectangle</td></tr>
+          <tr><td>`textMetrics.height`</td><td>Height of the bounding rectangle</td></tr>
+          </table>
+
+  - name: ctx_drawimage
+    js:   ctx.drawimage(dx, dy, image[, dw[, dh[, sx[, sy[, sw[, sh]]]]]])
+    ts:   "ctx.drawimage(dx: number, dy: number, image: N64Image, dw?: number, dh?: number, sx?: number, sy?: number, sw?: number, sh?: number): void"
+    desc: |
+          Draws an [N64Image](#N64Image) object to the screen.
+          <div class="vtab"></div>
+          `dx`&#58; Destination X position.<br>
+          `dx`&#58; Destination Y position.<br>
+          `image`&#58; The [N64Image](#N64Image) object to draw.<br>
+          `dw`&#58; Optional destination width.<br>
+          `dh`&#58; Optional destination height.<br>
+          `sx`&#58; Optional source X.<br>
+          `sy`&#58; Optional source Y.<br>
+          `sw`&#58; Optional source width.<br>
+          `sh`&#58; Optional source height.
+          <div class="vtab"></div>
+          ```
+          var image = N64Image.fromPNG(fs.readfile('image.png'));
+          events.ondraw(function(e) {
+              var ctx = e.drawingContext;
+              ctx.drawimage(10, 10, image);
+          });
+          ```
+
 
   - name: ctx_fillrect
     js:   ctx.fillrect(x, y, width, height)
@@ -951,7 +1016,7 @@
   - name: debug_step
     js:   debug.step()
     ts:  "debug.step(): void"
-    desc: Executes a single CPU command. Does nothing if [debug.paused](#debug_paused) is `false`.
+    desc: Executes a single CPU command. Does nothing if emulation is not paused by the debugger.
 
   - name: debug_skip
     js:   debug.skip()
