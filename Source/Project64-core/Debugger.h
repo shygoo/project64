@@ -34,4 +34,5 @@ __interface CDebugger
     virtual void RSPReceivedTask(void) = 0;
     virtual void PIDMAReadStarted(void) = 0;
     virtual void PIDMAWriteStarted(void) = 0;
+    virtual void EmulationStarting(void) = 0;
 };

@@ -408,6 +408,7 @@ bool ScriptAPI::PrivateCallAllowed(duk_context* ctx)
 {
     if (!duk_get_global_string(ctx, HSYM_PRIVATECALL))
     {
+        duk_pop(ctx);
         return false;
     }
 

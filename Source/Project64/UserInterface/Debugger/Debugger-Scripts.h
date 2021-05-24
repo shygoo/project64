@@ -3,6 +3,7 @@
 #include "ScriptSystem.h"
 #include <Project64/UserInterface/WTLControls/EditConInput.h>
 #include <Project64/UserInterface/WTLControls/TooltipDialog.h>
+#include "Debugger-ScriptsAutorun.h"
 #include <string>
 #include <vector>
 
@@ -23,6 +24,8 @@ private:
         CONFLUSH_TIMER_ID = 0,
         CONFLUSH_TIMER_INTERVAL = 50
     };
+
+    CScriptsAutorunDlg m_AutorunDlg;
 
     CEditConInput m_ConInputEdit;
     CEditConOutput m_ConOutputEdit;
@@ -106,7 +109,6 @@ public:
         DLGRESIZE_CONTROL(IDC_EVAL_LBL, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_EVAL_EDIT, DLSZ_SIZE_X | DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_RUN_BTN, DLSZ_MOVE_Y)
-        DLGRESIZE_CONTROL(IDC_STOP_BTN, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_SCRIPTDIR_BTN, DLSZ_MOVE_Y)
         DLGRESIZE_CONTROL(IDC_STATUSBAR, DLSZ_SIZE_X | DLSZ_MOVE_Y)
     END_DLGRESIZE_MAP()
@@ -114,8 +116,7 @@ public:
     BEGIN_TOOLTIP_MAP()
         TOOLTIP(IDC_CLEAR_BTN, "Clear console output")
         TOOLTIP(IDC_COPY_BTN, "Copy console output to the clipboard")
-        TOOLTIP(IDC_RUN_BTN, "Run selected script")
-        TOOLTIP(IDC_STOP_BTN, "Stop selected script")
+        TOOLTIP(IDC_RUN_BTN, "Toggle selected script")
         TOOLTIP(IDC_SCRIPTDIR_BTN, "Open scripts directory in file explorer")
     END_TOOLTIP_MAP()
 };

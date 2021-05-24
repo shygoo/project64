@@ -70,6 +70,7 @@
     <ClCompile Include="UserInterface\Debugger\Debugger-MemoryDump.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-MemorySearch.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-RegisterTabs.cpp" />
+    <ClCompile Include="UserInterface\Debugger\Debugger-ScriptsAutorun.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-Scripts.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-StackTrace.cpp" />
     <ClCompile Include="UserInterface\Debugger\Debugger-StackView.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="UserInterface\Debugger\Debugger-MemoryDump.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-MemorySearch.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-RegisterTabs.h" />
+    <ClInclude Include="UserInterface\Debugger\Debugger-ScriptsAutorun.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-Scripts.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-StackTrace.h" />
     <ClInclude Include="UserInterface\Debugger\Debugger-StackView.h" />

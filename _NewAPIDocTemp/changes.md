@@ -30,12 +30,21 @@ Changes that will break compatibility with old scripts:
 ---------------------
 TODO:
 
-- script auto-run feature?
+- fix open rom dialog appearing behind script render overlay
 - finish implementing new server/socket
 - native module loader
 - stable pj64 open/close
 - make sure ctx.fill() implementation is correct
 - ctx.getimage(x, y, width, height)
+- 2px black stroke by default
+- bold by default
+- events.onemustart(e: GenericEvent)
+- events.onemustop(e: GenericEvent)
+- show quotes around string retvals from console input
+
+- ctx.pointer  Native pointer to the internal Direct2D render target. May be used by native modules for faster drawing.
+- mem.pointer  Native pointer to Project64's N64 memory. May be used by native modules for faster memory access.
+
 - formatting/cleanup printfs/todo comments/warnings etc
 - full test suite
 
@@ -56,3 +65,4 @@ backburner:
 - pj64.pause()
 - pj64.resume()
 - image.fixpalette() // remove duplicate values from the image.palette buffer and resize to fit. update ci data in image.data and update internal bitmap.
+- autorun execution order

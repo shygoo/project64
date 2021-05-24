@@ -1422,6 +1422,20 @@ BEGIN
     EDITTEXT        IDC_ADD_EDIT,7,7,109,12,ES_AUTOHSCROLL
 END
 
+IDD_Debugger_ScriptsAutorun DIALOGEX 0, 0, 323, 216
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Autorun scripts"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,266,195,50,14
+    GROUPBOX        "Scripts",IDC_STATIC,7,6,152,185
+    PUSHBUTTON      "Remove",IDC_REMOVE_BTN,266,173,46,14,BS_NOTIFY | WS_DISABLED
+    PUSHBUTTON      "Add",IDC_ADD_BTN,107,173,46,14,BS_NOTIFY | WS_DISABLED
+    GROUPBOX        "Run when Project64 starts",IDC_STATIC,164,6,152,185
+    CONTROL         "",IDC_SCRIPT_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,12,17,141,151
+    CONTROL         "",IDC_AUTORUN_LIST,"SysListView32",LVS_REPORT | LVS_ALIGNLEFT | LVS_NOCOLUMNHEADER | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,170,17,141,151
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1896,6 +1910,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 179
     END
+
+    IDD_Debugger_ScriptsAutorun, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 316
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 209
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -2007,6 +2029,8 @@ BEGIN
         MENUITEM "Run",                         ID_POPUP_RUN
         MENUITEM "Stop",                        ID_POPUP_STOP
         MENUITEM "Edit",                        ID_POPUP_SCRIPT_EDIT
+        MENUITEM SEPARATOR
+        MENUITEM "Autorun...",                  ID_POPUP_AUTORUN
     END
 END
 

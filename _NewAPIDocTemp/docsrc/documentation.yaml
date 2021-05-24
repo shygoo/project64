@@ -67,6 +67,70 @@
     ts:   "pj64.close(): void"
     desc: Closes the current ROM.
 
+  - name: pj64.rominfo.loaded
+    js:   pj64.rominfo.loaded
+    ts:   "pj64.rominfo.loaded: boolean"
+    desc: |
+          `true` if a ROM is loaded.
+
+  - name: pj64.rominfo.goodName
+    js:   pj64.rominfo.goodName
+    ts:   "pj64.rominfo.goodName: string"
+    desc: |
+          "Good name" from the RDB file.
+
+  - name: pj64.rominfo.fileName
+    js:   pj64.rominfo.fileName
+    ts:   "pj64.rominfo.fileName: string"
+    desc: Name of the ROM file including the file extension.
+
+  - name: pj64.rominfo.filePath
+    js:   pj64.rominfo.filePath
+    ts:   "pj64.rominfo.filePath: string"
+    desc: Path to the ROM file.
+
+  - name: pj64.rominfo.headerCrc1
+    js:   pj64.rominfo.headerCrc1
+    ts:   "pj64.rominfo.headerCrc1: number"
+    desc: |
+          Internal ROM CRC 1.
+
+  - name: pj64.rominfo.headerCrc2
+    js:   pj64.rominfo.headerCrc2
+    ts:   "pj64.rominfo.headerCrc2: number"
+    desc: |
+          Internal ROM CRC 2.
+
+  - name: pj64.rominfo.headerName
+    js:   pj64.rominfo.headerName
+    ts:   "pj64.rominfo.headerName: number"
+    desc: |
+          Internal ROM name.
+
+  - name: pj64.rominfo.headerMediaFormat
+    js:   pj64.rominfo.headerMediaFormat
+    ts:   "pj64.rominfo.headerMediaFormat: number"
+    desc: |
+          Internal ROM media format number.
+
+  - name: pj64.rominfo.headerId
+    js:   pj64.rominfo.headerId
+    ts:   "pj64.rominfo.headerId: string"
+    desc: |
+          Internal ROM ID character pair.
+
+  - name: pj64.rominfo.headerCountryCode
+    js:   pj64.rominfo.headerCountryCode
+    ts:   "pj64.rominfo.headerCountryCode: string"
+    desc: |
+          Internal ROM country code character.
+
+  - name: pj64.rominfo.headerVersion
+    js:   pj64.rominfo.headerVersion
+    ts:   "pj64.rominfo.headerVersion: number"
+    desc: |
+          Internal ROM version number.
+
 # mem
 - name:    mem
   tagline: N64 memory interface
@@ -366,7 +430,7 @@
     ts:   "events.onpifread(callback: (e: GenericEvent) => void): number"
     desc: |
           Registers a callback that is invoked when PIF RAM data is going to be read into RDRAM.
-          `callback` receives an [GenericEvent](#GenericEvent) object.
+          `callback` receives a [GenericEvent](#GenericEvent) object.
           <div class="vtab"></div>
           Returns a callback ID.
           <div class="vtab"></div>
@@ -597,6 +661,7 @@
         });
         ```
         Note: Not compatible with Windows XP. A Direct3D graphics plugin may be required on Windows 7.
+
   props:
   - name: ctx_drawtext
     js:   ctx.drawtext(x, y, text)
@@ -666,7 +731,6 @@
               ctx.drawimage(10, 10, image);
           });
           ```
-
 
   - name: ctx_fillrect
     js:   ctx.fillrect(x, y, width, height)
@@ -815,8 +879,8 @@
           number of colors supported by the CI4 and CI8 formats are 16 and 256, respectively.
 
   - name: N64Image_format
-    js: N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])
-    ts: "N64Image.format(gbiFmt: number, gbiSiz: number, gbiTlutFmt?: number): number"
+    js:   N64Image.format(gbiFmt, gbiSiz[, gbiTlutFmt])
+    ts:   "N64Image.format(gbiFmt: number, gbiSiz: number, gbiTlutFmt?: number): number"
     desc: |
           Static function. Returns a simplified image format number from a given GBI pixel size and format configuration.
           Returns `-1` if the configuration is invalid or unsupported. See the table below for supported configurations.
@@ -1031,9 +1095,9 @@
           ```
 
   - name: debug_showmemory
-    js:   debug.showmemory(address)
-    ts:   "debug.showmemory(address: number): void"
-    desc: Shows the memory window at `address`.
+    js:   debug.showmemory(address[, physical])
+    ts:   "debug.showmemory(address: number, physical?: boolean = false): void"
+    desc: Shows the memory window at `address`. Physical address space is used if `physical` is `true`.
 
   - name: debug_showcommands
     js:   debug.showcommands(address)
@@ -1044,7 +1108,7 @@
     js:   debug.paused
     ts:   "debug.paused: boolean"
     desc: |
-          `true` if emulation is currrently paused by the debugger.
+          `true` if emulation is currently paused by the debugger.
 
 # asm
 - name: asm
@@ -1157,7 +1221,6 @@
     ts:   "fs.readfile(path: string): Buffer"
     desc: |
           Returns a [Buffer](https://nodejs.org/docs/v6.9.1/api/buffer.html) object representing the data of the file specified by `path`.
-          Uses mode "rb" internally.
 
   - name: fs_fstat
     js:   fs.fstat(fd)
@@ -1258,34 +1321,19 @@
           <li>If `id` begins with `./` or `../`, the path of a JavaScript file relative to the calling module's location.</i>
           </ul>
           <div class="vtab"></div>
-          The example below demonstrates one way module and submodule loading can be implemented.
           ```
-          /* Scripts/example.js */
+          /* Scripts/module_example.js */
 
           const mymodule = require('mymodule/lib.js'); // Loads Scripts/modules/mymodule/lib.js
-          mymodule.init(); // Prints "Loaded mymodule", "Loaded mymodule's submodule"
+          mymodule.init(); // Prints "Loaded mymodule"
           ```
           ```
           /* Scripts/modules/mymodule/lib.js */
 
-          const submodule = require('./submodule.js'); // Loads Scripts/modules/mymodule/submodule.js
-
           function init() {
               console.log("Loaded mymodule");
-              submodule.init(); // Prints "Loaded mymodule's submodule"
           }
         
-          module.exports = {
-              init: init
-          };
-          ```
-          ```
-          /* Scripts/modules/mymodule/submodule.js */
-
-          function init() {
-              console.log("Loaded mymodule's submodule");
-          }
-
           module.exports = {
               init: init
           };
@@ -1343,7 +1391,7 @@
           ```
 
   - name: RGBA_2
-    js:   RGBA(existingColor[, newAlpha])
+    js:   RGBA(existingColor, newAlpha)
     ts:   "RGBA(existingColor: number, newAlpha: number)"
     desc: |
           Returns `existingColor` with a replaced alpha value.

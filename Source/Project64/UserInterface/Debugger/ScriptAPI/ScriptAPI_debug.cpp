@@ -9,7 +9,7 @@ void ScriptAPI::Define_debug(duk_context* ctx)
         { "step", js_debug_step, 0 },
         { "skip", js_debug_skip, 0 },
         { "resume", js_debug_resume, 0 },
-        { "showmemory", js_debug_showmemory, 1 },
+        { "showmemory", js_debug_showmemory, DUK_VARARGS },
         { "showcommands", js_debug_showcommands, 1 },
         { nullptr, nullptr, 0 }
     };
@@ -63,12 +63,16 @@ duk_ret_t ScriptAPI::js_debug_skip(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_showmemory(duk_context* ctx)
 {
-    if (!duk_is_number(ctx, 0))
+    duk_idx_t nargs = duk_get_top(ctx);
+    if (!duk_is_number(ctx, 0) || (nargs > 1 && !duk_is_boolean(ctx, 1)))
     {
         return ThrowInvalidArgsError(ctx);
     }
 
-    GetInstance(ctx)->Debugger()->Debug_ShowMemoryLocation(duk_get_uint(ctx, 0), true);
+    uint32_t address = duk_get_uint(ctx, 0);
+    bool bPhysical = (bool)duk_get_boolean_default(ctx, 1, 0);
+
+    GetInstance(ctx)->Debugger()->Debug_ShowMemoryLocation(duk_get_uint(ctx, 0), !bPhysical);
     return 0;
 }
 

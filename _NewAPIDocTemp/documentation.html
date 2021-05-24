@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 21 2021 -->
+<!-- Generated May 24 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API prerelease 2021.05.21</title>
+<title>Project64 JavaScript API alpha 2021.05.24</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -271,7 +271,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-prerelease 2021.05.21
+alpha 2021.05.24
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -283,6 +283,17 @@ prerelease 2021.05.21
 <li><a href="#pj64">pj64</a>: Project64 interface<ul>
 <li><a href="#pj64_open">pj64.open(romPath)</a></li>
 <li><a href="#pj64_close">pj64.close()</a></li>
+<li><a href="#pj64_rominfo_loaded">pj64.rominfo.loaded</a></li>
+<li><a href="#pj64_rominfo_goodName">pj64.rominfo.goodName</a></li>
+<li><a href="#pj64_rominfo_fileName">pj64.rominfo.fileName</a></li>
+<li><a href="#pj64_rominfo_filePath">pj64.rominfo.filePath</a></li>
+<li><a href="#pj64_rominfo_headerCrc1">pj64.rominfo.headerCrc1</a></li>
+<li><a href="#pj64_rominfo_headerCrc2">pj64.rominfo.headerCrc2</a></li>
+<li><a href="#pj64_rominfo_headerName">pj64.rominfo.headerName</a></li>
+<li><a href="#pj64_rominfo_headerMediaFormat">pj64.rominfo.headerMediaFormat</a></li>
+<li><a href="#pj64_rominfo_headerId">pj64.rominfo.headerId</a></li>
+<li><a href="#pj64_rominfo_headerCountryCode">pj64.rominfo.headerCountryCode</a></li>
+<li><a href="#pj64_rominfo_headerVersion">pj64.rominfo.headerVersion</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#mem">mem</a>: N64 memory interface<ul>
 <li><a href="#mem__">mem.u8|u16|u32|s8|s16|s32|f32|f64</a></li>
@@ -392,7 +403,7 @@ prerelease 2021.05.21
 <li><a href="#debug_resume">debug.resume()</a></li>
 <li><a href="#debug_step">debug.step()</a></li>
 <li><a href="#debug_skip">debug.skip()</a></li>
-<li><a href="#debug_showmemory">debug.showmemory(address)</a></li>
+<li><a href="#debug_showmemory">debug.showmemory(address[, physical])</a></li>
 <li><a href="#debug_showcommands">debug.showcommands(address)</a></li>
 <li><a href="#debug_paused">debug.paused</a></li>
 </ul><div class="vtab"></div></li>
@@ -425,7 +436,7 @@ prerelease 2021.05.21
 <li><a href="#exec">exec(command[, options])</a></li>
 <li><a href="#alert">alert(message[, caption])</a></li>
 <li><a href="#RGBA">RGBA(r, g, b[, alpha])</a></li>
-<li><a href="#RGBA_2">RGBA(existingColor[, newAlpha])</a></li>
+<li><a href="#RGBA_2">RGBA(existingColor, newAlpha)</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#Global constants">Global constants</a><ul>
@@ -508,6 +519,61 @@ Opens and runs a ROM. Does not return until the ROM starts or the operation fail
 <div class="tsproto">pj64.close(): void</div>
 <div class="vtab"></div>
 Closes the current ROM.
+<!-- pj64.rominfo.loaded -->
+<div class="prop"><span class="title" id="pj64_rominfo_loaded">pj64.rominfo.loaded</span></div>
+<div class="tsproto">pj64.rominfo.loaded: boolean</div>
+<div class="vtab"></div>
+<span class="snip">true</span> if a ROM is loaded.
+<!-- pj64.rominfo.goodName -->
+<div class="prop"><span class="title" id="pj64_rominfo_goodName">pj64.rominfo.goodName</span></div>
+<div class="tsproto">pj64.rominfo.goodName: string</div>
+<div class="vtab"></div>
+"Good name" from the RDB file.
+<!-- pj64.rominfo.fileName -->
+<div class="prop"><span class="title" id="pj64_rominfo_fileName">pj64.rominfo.fileName</span></div>
+<div class="tsproto">pj64.rominfo.fileName: string</div>
+<div class="vtab"></div>
+Name of the ROM file including the file extension.
+<!-- pj64.rominfo.filePath -->
+<div class="prop"><span class="title" id="pj64_rominfo_filePath">pj64.rominfo.filePath</span></div>
+<div class="tsproto">pj64.rominfo.filePath: string</div>
+<div class="vtab"></div>
+Path to the ROM file.
+<!-- pj64.rominfo.headerCrc1 -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerCrc1">pj64.rominfo.headerCrc1</span></div>
+<div class="tsproto">pj64.rominfo.headerCrc1: number</div>
+<div class="vtab"></div>
+Internal ROM CRC 1.
+<!-- pj64.rominfo.headerCrc2 -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerCrc2">pj64.rominfo.headerCrc2</span></div>
+<div class="tsproto">pj64.rominfo.headerCrc2: number</div>
+<div class="vtab"></div>
+Internal ROM CRC 2.
+<!-- pj64.rominfo.headerName -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerName">pj64.rominfo.headerName</span></div>
+<div class="tsproto">pj64.rominfo.headerName: number</div>
+<div class="vtab"></div>
+Internal ROM name.
+<!-- pj64.rominfo.headerMediaFormat -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerMediaFormat">pj64.rominfo.headerMediaFormat</span></div>
+<div class="tsproto">pj64.rominfo.headerMediaFormat: number</div>
+<div class="vtab"></div>
+Internal ROM media format number.
+<!-- pj64.rominfo.headerId -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerId">pj64.rominfo.headerId</span></div>
+<div class="tsproto">pj64.rominfo.headerId: string</div>
+<div class="vtab"></div>
+Internal ROM ID character pair.
+<!-- pj64.rominfo.headerCountryCode -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerCountryCode">pj64.rominfo.headerCountryCode</span></div>
+<div class="tsproto">pj64.rominfo.headerCountryCode: string</div>
+<div class="vtab"></div>
+Internal ROM country code character.
+<!-- pj64.rominfo.headerVersion -->
+<div class="prop"><span class="title" id="pj64_rominfo_headerVersion">pj64.rominfo.headerVersion</span></div>
+<div class="tsproto">pj64.rominfo.headerVersion: number</div>
+<div class="vtab"></div>
+Internal ROM version number.
 
 </div>
 <!-- mem -->
@@ -789,7 +855,7 @@ Global flags for <a href="#events_ongprvalue">events.ongprvalue</a>'s <span clas
 <div class="tsproto">events.onpifread(callback: (e: GenericEvent) => void): number</div>
 <div class="vtab"></div>
 Registers a callback that is invoked when PIF RAM data is going to be read into RDRAM.
-<span class="snip">callback</span> receives an <a href="#GenericEvent">GenericEvent</a> object.
+<span class="snip">callback</span> receives a <a href="#GenericEvent">GenericEvent</a> object.
 <div class="vtab"></div>
 Returns a callback ID.
 <div class="vtab"></div>
@@ -1444,10 +1510,10 @@ Skips the current CPU command. Useful for preventing or overriding an operation.
 });
 </pre>
 <!-- debug_showmemory -->
-<div class="prop"><span class="title" id="debug_showmemory">debug.showmemory(address)</span></div>
-<div class="tsproto">debug.showmemory(address: number): void</div>
+<div class="prop"><span class="title" id="debug_showmemory">debug.showmemory(address[, physical])</span></div>
+<div class="tsproto">debug.showmemory(address: number, physical?: boolean = false): void</div>
 <div class="vtab"></div>
-Shows the memory window at <span class="snip">address</span>.
+Shows the memory window at <span class="snip">address</span>. Physical address space is used if <span class="snip">physical</span> is <span class="snip">true</span>.
 <!-- debug_showcommands -->
 <div class="prop"><span class="title" id="debug_showcommands">debug.showcommands(address)</span></div>
 <div class="tsproto">debug.showcommands(address: number): void</div>
@@ -1457,7 +1523,7 @@ Shows the CPU commands window at <span class="snip">address</span>.
 <div class="prop"><span class="title" id="debug_paused">debug.paused</span></div>
 <div class="tsproto">debug.paused: boolean</div>
 <div class="vtab"></div>
-<span class="snip">true</span> if emulation is currrently paused by the debugger.
+<span class="snip">true</span> if emulation is currently paused by the debugger.
 
 </div>
 <!-- asm -->
@@ -1567,7 +1633,6 @@ Returns the number of bytes read.
 <div class="tsproto">fs.readfile(path: string): Buffer</div>
 <div class="vtab"></div>
 Returns a <a target="blank" href="https://nodejs.org/docs/v6.9.1/api/buffer.html">Buffer</a> object representing the data of the file specified by <span class="snip">path</span>.
-Uses mode "rb" internally.
 <!-- fs_fstat -->
 <div class="prop"><span class="title" id="fs_fstat">fs.fstat(fd)</span></div>
 <div class="tsproto">fs.fstat(fd: number): fs.Stats</div>
@@ -1664,32 +1729,17 @@ Loads a module script and returns its <span class="snip">module.exports</span> o
 <li>If <span class="snip">id</span> begins with <span class="snip">./</span> or <span class="snip">../</span>, the path of a JavaScript file relative to the calling module's location.</i>
 </ul>
 <div class="vtab"></div>
-The example below demonstrates one way module and submodule loading can be implemented.
 <pre class="ex">
-<span class="js-comment">/* Scripts/example.js */</span>
+<span class="js-comment">/* Scripts/module_example.js */</span>
 
 <span class="js-keyword">const</span> <span class="js-word">mymodule</span> = <span class="js-word">require</span>(<span class="js-string">'mymodule/lib.js'</span>); <span class="js-comment">// Loads Scripts/modules/mymodule/lib.js</span>
-<span class="js-word">mymodule</span>.<span class="js-word">init</span>(); <span class="js-comment">// Prints "Loaded mymodule", "Loaded mymodule's submodule"</span>
+<span class="js-word">mymodule</span>.<span class="js-word">init</span>(); <span class="js-comment">// Prints "Loaded mymodule"</span>
 </pre>
 <pre class="ex">
 <span class="js-comment">/* Scripts/modules/mymodule/lib.js */</span>
 
-<span class="js-keyword">const</span> <span class="js-word">submodule</span> = <span class="js-word">require</span>(<span class="js-string">'./submodule.js'</span>); <span class="js-comment">// Loads Scripts/modules/mymodule/submodule.js</span>
-
 <span class="js-keyword">function</span> <span class="js-word">init</span>() {
     <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Loaded mymodule"</span>);
-    <span class="js-word">submodule</span>.<span class="js-word">init</span>(); <span class="js-comment">// Prints "Loaded mymodule's submodule"</span>
-}
-
-<span class="js-word">module</span>.<span class="js-word">exports</span> = {
-    <span class="js-word">init</span>: <span class="js-word">init</span>
-};
-</pre>
-<pre class="ex">
-<span class="js-comment">/* Scripts/modules/mymodule/submodule.js */</span>
-
-<span class="js-keyword">function</span> <span class="js-word">init</span>() {
-    <span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Loaded mymodule's submodule"</span>);
 }
 
 <span class="js-word">module</span>.<span class="js-word">exports</span> = {
@@ -1745,7 +1795,7 @@ The <span class="snip">r</span>, <span class="snip">g</span>, and <span class="s
 <span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">RGBA</span>(<span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">0</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); <span class="js-comment">// 0xFF000080</span>
 </pre>
 <!-- RGBA_2 -->
-<div class="prop"><span class="title" id="RGBA_2">RGBA(existingColor[, newAlpha])</span></div>
+<div class="prop"><span class="title" id="RGBA_2">RGBA(existingColor, newAlpha)</span></div>
 <div class="tsproto">RGBA(existingColor: number, newAlpha: number)</div>
 <div class="vtab"></div>
 Returns <span class="snip">existingColor</span> with a replaced alpha value.

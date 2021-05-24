@@ -72,7 +72,7 @@ function idfmt(text)
 
 var date = new Date();
 var vnums = { y: date.getFullYear(), m: date.getMonth()+1, d: date.getDate() };
-var docVersion = "prerelease " + vnums.y + '.' + (vnums.m < 10 ? '0':'') + vnums.m  + '.' + (vnums.d < 10 ? '0':'') + vnums.d;
+var docVersion = "alpha " + vnums.y + '.' + (vnums.m < 10 ? '0':'') + vnums.m  + '.' + (vnums.d < 10 ? '0':'') + vnums.d;
 
 var cssSource = fs.readFileSync('docsrc/style.css').toString();
 var yamlSource = fs.readFileSync('docsrc/documentation.yaml').toString();

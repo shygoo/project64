@@ -243,6 +243,9 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
     case ID_POPUP_SCRIPT_EDIT:
         EditSelected();
         break;
+    case ID_POPUP_AUTORUN:
+        m_AutorunDlg.DoModal(m_SelectedScriptName);
+        break;
     case IDC_CLEAR_BTN:
         ConsoleClear();
         break;

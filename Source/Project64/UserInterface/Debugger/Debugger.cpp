@@ -5,6 +5,7 @@
 #include "DMALog.h"
 #include "Symbols.h"
 #include "ScriptRenderWindow.h"
+#include <sstream>
 
 CPj64Module _Module;
 
@@ -744,11 +745,33 @@ void CDebuggerUI::PIDMAWriteStarted(void)
     HandleCartToRamDMA();
 }
 
+void CDebuggerUI::EmulationStarting(void)
+{
+    // TODO invoke JS_HOOK_EMUSTART
+}
+
 void CDebuggerUI::WaitForStep(void)
 {
     g_Settings->SaveBool(Debugger_WaitingForStep, true);
     m_StepEvent.IsTriggered(SyncEvent::INFINITE_TIMEOUT);
     g_Settings->SaveBool(Debugger_WaitingForStep, false);
+}
+
+void CDebuggerUI::StartAutorunScripts(void)
+{
+    // TODO move this into CScriptSystem?
+    if (m_ScriptSystem == nullptr)
+    {
+        return;
+    }
+    
+    std::istringstream joinedNames(g_Settings->LoadStringVal(Debugger_AutorunScripts));
+    std::string scriptName;
+    while (std::getline(joinedNames, scriptName, '|'))
+    {
+        m_ScriptSystem->Log("[SCRIPTSYS]: autorun '%s'", scriptName.c_str());
+        m_ScriptSystem->StartScript(scriptName.c_str(), stdstr_f("Scripts/%s", scriptName.c_str()).c_str());
+    }
 }
 
 bool CDebuggerUI::ExecutionBP(uint32_t address)

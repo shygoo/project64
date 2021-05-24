@@ -60,6 +60,8 @@ public:
     void Debug_RefreshCPULogWindow(void);
     void OpenExcBreakpointsWindow(void);
 
+    void StartAutorunScripts();
+
     bool ExecutionBP(uint32_t address);
     bool ReadBP8(uint32_t address);
     bool ReadBP16(uint32_t address);
@@ -75,12 +77,11 @@ public:
     CDebugSymbols* Symbols();
     CScriptSystem* ScriptSystem();
     CDebugScripts* ScriptConsole();
+    CScriptRenderWindow* ScriptRenderWindow();
     CDMALog* DMALog();
     CCPULog* CPULog();
     CSymbolTable* SymbolTable();
     SyncEvent& StepEvent();
-
-    CScriptRenderWindow* ScriptRenderWindow();
 
     static void GameReset(CDebuggerUI * _this);
     static void GameCpuRunningChanged(CDebuggerUI * _this);
@@ -97,6 +98,7 @@ protected:
     void RSPReceivedTask(void);
     void PIDMAReadStarted(void);
     void PIDMAWriteStarted(void);
+    void EmulationStarting(void);
 
 private:
     CDebuggerUI(const CDebuggerUI&);

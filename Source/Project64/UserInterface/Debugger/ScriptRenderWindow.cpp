@@ -177,19 +177,19 @@ void CScriptRenderWindow::ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD /*wP
             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), WinMouseMessageButton(uMsg));
         break;
     case WM_MOUSEMOVE:
-    {
-        static int lastX = 0;
-        static int lastY = 0;
-        int x = GET_X_LPARAM(lParam);
-        int y = GET_Y_LPARAM(lParam);
-        if (lastX != x || lastY != y)
         {
-            m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEMOVE, x, y);
-            lastX = x;
-            lastY = y;
+            static int lastX = 0;
+            static int lastY = 0;
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            if (lastX != x || lastY != y)
+            {
+                m_Debugger->ScriptSystem()->DoMouseEvent(JS_HOOK_MOUSEMOVE, x, y);
+                lastX = x;
+                lastY = y;
+            }
         }
-    }
-    break;
+        break;
     }
 }
 
@@ -257,8 +257,6 @@ void CScriptRenderWindow::FixPosition(HWND hMainWnd, HWND hStatusWnd)
 {
     if (m_hWnd != nullptr && hMainWnd != nullptr)
     {
-        //if(IsWindowEnabled(m_hWnd))
-
         CRect mainRc, statusRc;
         GetClientRect(hMainWnd, &mainRc);
         ClientToScreen(hMainWnd, &mainRc.TopLeft());
@@ -414,7 +412,6 @@ bool CScriptRenderWindow::GfxInitTarget()
 
         if (SUCCEEDED(hr) && m_Gfx)
         {
-            //m_Gfx->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
             m_TextRenderer = new COutlinedTextRenderer(m_D2DFactory, m_Gfx, &m_GfxFillBrush, &m_GfxStrokeBrush);
             return true;
         }
@@ -443,9 +440,10 @@ void CScriptRenderWindow::GfxCopyWindow(HWND hSrcWnd)
         bLoggedError = true;
     }
 
-    GfxDrawImage(&frameRGBA32[0], frameRGBA32.size(), width, height,
-        width, height, 0, 0,
-        width, height, 0, 0);
+    GfxDrawImage(&frameRGBA32[0], frameRGBA32.size(),
+        (size_t)width, (size_t)height,
+        (size_t)width, (size_t)height, 0, 0,
+        (size_t)width, (size_t)height, 0, 0);
 }
 
 void CScriptRenderWindow::GfxDrawImage(uint8_t* bitmap, size_t bitmapSize,

@@ -156,6 +156,17 @@ namespace ScriptAPI
     duk_ret_t js_pj64_close(duk_context* ctx);
     //duk_ret_t js_pj64_savestate(duk_context* ctx);
     //duk_ret_t js_pj64_loadstate(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_loaded(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_goodName(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_fileName(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_filePath(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerCrc1(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerCrc2(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerName(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerMediaFormat(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerId(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerCountryCode(duk_context* ctx);
+    duk_ret_t js_pj64_romInfo_headerVersion(duk_context* ctx);
 
     // ScriptAPI_DrawingContext
     void Define_DrawingContext(duk_context* ctx);

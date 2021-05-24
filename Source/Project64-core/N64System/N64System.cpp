@@ -505,7 +505,6 @@ bool CN64System::RunFileImage(const char * FileLoc)
         else if (g_Rom->CicChipID() == CIC_NUS_DDTL)
             g_Settings->SaveString(File_DiskIPLTOOLPath, FileLoc);
     }
-
     RunLoadedImage();
     return true;
 }
@@ -659,6 +658,11 @@ bool CN64System::EmulationStarting(CThread * thread)
     WriteTrace(TraceN64System, TraceDebug, "Setting N64 system as active");
     if (g_BaseSystem->SetActiveSystem(true))
     {
+        if (g_Debugger != nullptr && HaveDebugger())
+        {
+            g_Debugger->EmulationStarting();
+        }
+
         g_BaseSystem->m_thread = thread;
         WriteTrace(TraceN64System, TraceDebug, "Setting up N64 system is done");
         g_Settings->SaveBool(GameRunning_LoadingInProgress, false);

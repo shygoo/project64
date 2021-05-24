@@ -265,6 +265,7 @@ enum SettingID
     Debugger_FpExceptionBreakpoints,
     Debugger_IntrBreakpoints,
     Debugger_RcpIntrBreakpoints,
+    Debugger_AutorunScripts,
 
     // Trace
     Debugger_TraceMD5,
