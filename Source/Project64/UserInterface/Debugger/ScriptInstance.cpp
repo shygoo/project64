@@ -206,7 +206,14 @@ void CScriptInstance::RawInput(const char* code)
     }
     else
     {
-        m_System->Log("%s", duk_safe_to_string(m_Ctx, -1));
+        if (duk_is_string(m_Ctx, -1))
+        {
+            m_System->Log("\"%s\"", duk_get_string(m_Ctx, -1));
+        }
+        else
+        {
+            m_System->Log("%s", duk_safe_to_string(m_Ctx, -1));
+        }
     }
     duk_pop(m_Ctx);
 }

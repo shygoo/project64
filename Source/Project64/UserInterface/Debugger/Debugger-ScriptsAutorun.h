@@ -10,7 +10,7 @@ public:
     CScriptsAutorunDlg();
     virtual ~CScriptsAutorunDlg();
 
-    INT_PTR DoModal(stdstr selectedScriptName);
+    INT_PTR DoModal(CDebuggerUI* debugger, stdstr selectedScriptName);
 
     LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
     LRESULT OnDestroy(void);
@@ -44,14 +44,17 @@ private:
         WM_REFRESH_AUTORUN_LIST = WM_USER + 2
     };
     
+    CDebuggerUI* m_Debugger;
+    CScriptSystem* m_ScriptSystem;
+
     stdstr m_InitSelectedScriptName;
-    std::set<std::string> m_AutorunSet;
+    //std::set<std::string> m_AutorunSet;
 
     bool m_bScriptListNeedsRefocus;
     bool m_bAutorunListNeedsRefocus;
 
-    CListViewCtrl m_ScriptList;
-    CListViewCtrl m_AutorunList;
+    CListViewCtrl m_ScriptListView;
+    CListViewCtrl m_AutorunListView;
 
     HANDLE m_hQuitScriptDirWatchEvent;
     HANDLE m_hScriptDirWatchThread;
@@ -61,6 +64,6 @@ private:
     void RemoveSelected();
     void RefreshScriptList();
     void RefreshAutorunList();
-    void LoadAutorunSet();
-    void SaveAutorunSet();
+    //void LoadAutorunSet();
+    //void SaveAutorunSet();
 };

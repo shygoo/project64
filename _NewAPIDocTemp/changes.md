@@ -40,7 +40,6 @@ TODO:
 - bold by default
 - events.onemustart(e: GenericEvent)
 - events.onemustop(e: GenericEvent)
-- show quotes around string retvals from console input
 
 - ctx.pointer  Native pointer to the internal Direct2D render target. May be used by native modules for faster drawing.
 - mem.pointer  Native pointer to Project64's N64 memory. May be used by native modules for faster memory access.

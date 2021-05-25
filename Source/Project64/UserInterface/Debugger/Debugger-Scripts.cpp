@@ -59,6 +59,8 @@ LRESULT CDebugScripts::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*l
     m_StatusBar.Attach(GetDlgItem(IDC_STATUSBAR));
     m_StatusBar.SetParts(1, statusPaneWidths);
 
+    m_Debugger->ScriptSystem()->LoadAutorunSet();
+
     RefreshList();
 
     LoadWindowPos();
@@ -244,7 +246,8 @@ LRESULT CDebugScripts::OnClicked(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
         EditSelected();
         break;
     case ID_POPUP_AUTORUN:
-        m_AutorunDlg.DoModal(m_SelectedScriptName);
+        m_AutorunDlg.DoModal(m_Debugger, m_SelectedScriptName);
+        m_ScriptList.RedrawWindow();
         break;
     case IDC_CLEAR_BTN:
         ConsoleClear();
@@ -352,6 +355,11 @@ LRESULT CDebugScripts::OnScriptListCustomDraw(NMHDR* pNMHDR)
 
     wchar_t scriptName[MAX_PATH];
     m_ScriptList.GetItemText(nItem, 1, scriptName, MAX_PATH);
+
+    if (m_Debugger->ScriptSystem()->AutorunSet().count(stdstr().FromUTF16(scriptName)) > 0 && pLVCD->iSubItem == 1)
+    {
+        pLVCD->clrText = RGB(0x00, 0x80, 0x00);
+    }
 
     jsstatus_t status = m_Debugger->ScriptSystem()->GetStatus(stdstr("").FromUTF16(scriptName).c_str());
 

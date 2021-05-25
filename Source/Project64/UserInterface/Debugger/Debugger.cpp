@@ -759,19 +759,12 @@ void CDebuggerUI::WaitForStep(void)
 
 void CDebuggerUI::StartAutorunScripts(void)
 {
-    // TODO move this into CScriptSystem?
     if (m_ScriptSystem == nullptr)
     {
         return;
     }
-    
-    std::istringstream joinedNames(g_Settings->LoadStringVal(Debugger_AutorunScripts));
-    std::string scriptName;
-    while (std::getline(joinedNames, scriptName, '|'))
-    {
-        m_ScriptSystem->Log("[SCRIPTSYS]: autorun '%s'", scriptName.c_str());
-        m_ScriptSystem->StartScript(scriptName.c_str(), stdstr_f("Scripts/%s", scriptName.c_str()).c_str());
-    }
+
+    m_ScriptSystem->ExecAutorunSet();
 }
 
 bool CDebuggerUI::ExecutionBP(uint32_t address)

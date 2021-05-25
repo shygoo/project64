@@ -7,7 +7,9 @@ CScriptsAutorunDlg::CScriptsAutorunDlg() :
     m_hQuitScriptDirWatchEvent(nullptr),
     m_hScriptDirWatchThread(nullptr),
     m_bScriptListNeedsRefocus(false),
-    m_bAutorunListNeedsRefocus(false)
+    m_bAutorunListNeedsRefocus(false),
+    m_Debugger(nullptr),
+    m_ScriptSystem(nullptr)
 {
 }
 
@@ -15,8 +17,10 @@ CScriptsAutorunDlg::~CScriptsAutorunDlg()
 {
 }
 
-INT_PTR CScriptsAutorunDlg::DoModal(stdstr selectedScriptName)
+INT_PTR CScriptsAutorunDlg::DoModal(CDebuggerUI* debugger, stdstr selectedScriptName)
 {
+    m_Debugger = debugger;
+    m_ScriptSystem = debugger->ScriptSystem();
     m_InitSelectedScriptName = selectedScriptName;
     return CDialogImpl<CScriptsAutorunDlg>::DoModal();
 }
@@ -25,21 +29,22 @@ LRESULT CScriptsAutorunDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARA
 {
     CenterWindow();
 
-    m_ScriptList.Attach(GetDlgItem(IDC_SCRIPT_LIST));
-    m_AutorunList.Attach(GetDlgItem(IDC_AUTORUN_LIST));
+    m_ScriptListView.Attach(GetDlgItem(IDC_SCRIPT_LIST));
+    m_AutorunListView.Attach(GetDlgItem(IDC_AUTORUN_LIST));
 
-    m_ScriptList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-    m_ScriptList.AddColumn(L"Script", 0);
-    m_ScriptList.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
+    m_ScriptListView.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+    m_ScriptListView.AddColumn(L"Script", 0);
+    m_ScriptListView.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
     
-    m_AutorunList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-    m_AutorunList.AddColumn(L"Script", 0);
-    m_AutorunList.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
+    m_AutorunListView.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+    m_AutorunListView.AddColumn(L"Script", 0);
+    m_AutorunListView.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
 
     m_hQuitScriptDirWatchEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
     m_hScriptDirWatchThread = CreateThread(nullptr, 0, ScriptDirWatchProc, (void*)this, 0, nullptr);
 
-    LoadAutorunSet();
+    m_ScriptSystem->LoadAutorunSet();
+
     RefreshAutorunList();
     RefreshScriptList();
     return 0;
@@ -52,8 +57,8 @@ LRESULT CScriptsAutorunDlg::OnDestroy(void)
     CloseHandle(m_hQuitScriptDirWatchEvent);
     CloseHandle(m_hScriptDirWatchThread);
 
-    m_ScriptList.Detach();
-    m_AutorunList.Detach();
+    m_ScriptListView.Detach();
+    m_AutorunListView.Detach();
 
     return 0;
 }
@@ -118,7 +123,7 @@ LRESULT CScriptsAutorunDlg::OnAutorunListDblClicked(NMHDR* /*pNMHDR*/)
 
 LRESULT CScriptsAutorunDlg::OnRefreshScriptList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    int nSelectedItem = m_ScriptList.GetSelectedIndex();
+    int nSelectedItem = m_ScriptListView.GetSelectedIndex();
 
     CPath searchPath("Scripts", "*");
 
@@ -127,17 +132,18 @@ LRESULT CScriptsAutorunDlg::OnRefreshScriptList(UINT /*uMsg*/, WPARAM /*wParam*/
         return 0;
     }
 
-    m_ScriptList.SetRedraw(false);
-    m_ScriptList.DeleteAllItems();
+    m_ScriptListView.SetRedraw(false);
+    m_ScriptListView.DeleteAllItems();
 
     size_t nItem = 0;
 
     do
     {
         stdstr scriptFileName = searchPath.GetNameExtension();
-        if (searchPath.GetExtension() == "js" && m_AutorunSet.count(scriptFileName) == 0)
+        if (searchPath.GetExtension() == "js" &&
+            m_ScriptSystem->AutorunSet().count(scriptFileName) == 0)
         {
-            m_ScriptList.AddItem(nItem, 0, scriptFileName.ToUTF16().c_str());
+            m_ScriptListView.AddItem(nItem, 0, scriptFileName.ToUTF16().c_str());
             if (scriptFileName == m_InitSelectedScriptName)
             {
                 nSelectedItem = nItem;
@@ -149,37 +155,38 @@ LRESULT CScriptsAutorunDlg::OnRefreshScriptList(UINT /*uMsg*/, WPARAM /*wParam*/
         }
     } while (searchPath.FindNext());
 
-    m_ScriptList.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
+    m_ScriptListView.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
 
-    int itemCount = m_ScriptList.GetItemCount();
+    int itemCount = m_ScriptListView.GetItemCount();
     if (itemCount != 0 && nSelectedItem != -1)
     {
-        m_ScriptList.SelectItem(nSelectedItem >= itemCount ? itemCount - 1 : nSelectedItem);
+        m_ScriptListView.SelectItem(nSelectedItem >= itemCount ? itemCount - 1 : nSelectedItem);
     }
 
     if (m_bScriptListNeedsRefocus)
     {
-        m_ScriptList.SetFocus();
+        m_ScriptListView.SetFocus();
         m_bScriptListNeedsRefocus = false;
     }
 
-    m_ScriptList.SetRedraw(true);
+    m_ScriptListView.SetRedraw(true);
 
     return 0;
 }
 
 LRESULT CScriptsAutorunDlg::OnRefreshAutorunList(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 {
-    int nSelectedItem = m_AutorunList.GetSelectedIndex();
+    int nSelectedItem = m_AutorunListView.GetSelectedIndex();
 
-    m_AutorunList.SetRedraw(FALSE);
-    m_AutorunList.DeleteAllItems();
+    m_AutorunListView.SetRedraw(FALSE);
+    m_AutorunListView.DeleteAllItems();
 
     int nItem = 0;
+    std::set<std::string>& scripts = m_ScriptSystem->AutorunSet();
     std::set<std::string>::iterator it;
-    for (it = m_AutorunSet.begin(); it != m_AutorunSet.end(); it++)
+    for (it = scripts.begin(); it != scripts.end(); it++)
     {
-        m_AutorunList.AddItem(nItem, 0, stdstr(*it).ToUTF16().c_str());
+        m_AutorunListView.AddItem(nItem, 0, stdstr(*it).ToUTF16().c_str());
         if (*it == m_InitSelectedScriptName)
         {
             nSelectedItem = nItem;
@@ -189,19 +196,19 @@ LRESULT CScriptsAutorunDlg::OnRefreshAutorunList(UINT /*uMsg*/, WPARAM /*wParam*
         nItem++;
     }
 
-    int itemCount = m_AutorunList.GetItemCount();
+    int itemCount = m_AutorunListView.GetItemCount();
     if (itemCount != 0 && nSelectedItem != -1)
     {
-        m_AutorunList.SelectItem(nSelectedItem >= itemCount ? itemCount - 1 : nSelectedItem);
+        m_AutorunListView.SelectItem(nSelectedItem >= itemCount ? itemCount - 1 : nSelectedItem);
     }
 
     if (m_bAutorunListNeedsRefocus)
     {
-        m_AutorunList.SetFocus();
+        m_AutorunListView.SetFocus();
         m_bAutorunListNeedsRefocus = false;
     }
 
-    m_AutorunList.SetRedraw(TRUE);
+    m_AutorunListView.SetRedraw(TRUE);
 
     return 0;
 }
@@ -244,34 +251,34 @@ DWORD WINAPI CScriptsAutorunDlg::ScriptDirWatchProc(void* ctx)
 
 void CScriptsAutorunDlg::AddSelected()
 {
-    int nItem = m_ScriptList.GetSelectedIndex();
+    int nItem = m_ScriptListView.GetSelectedIndex();
     if (nItem == -1)
     {
         return;
     }
 
     wchar_t scriptName[MAX_PATH];
-    m_ScriptList.GetItemText(nItem, 0, scriptName, MAX_PATH);
-    m_AutorunSet.insert(stdstr().FromUTF16(scriptName));
+    m_ScriptListView.GetItemText(nItem, 0, scriptName, MAX_PATH);
+    m_ScriptSystem->AutorunSet().insert(stdstr().FromUTF16(scriptName));
+    m_ScriptSystem->SaveAutorunSet();
 
-    SaveAutorunSet();
     RefreshAutorunList();
     RefreshScriptList();
 }
 
 void CScriptsAutorunDlg::RemoveSelected()
 {
-    int nItem = m_AutorunList.GetSelectedIndex();
+    int nItem = m_AutorunListView.GetSelectedIndex();
     if (nItem == -1)
     {
         return;
     }
 
     wchar_t scriptName[MAX_PATH];
-    m_AutorunList.GetItemText(nItem, 0, scriptName, MAX_PATH);
-    m_AutorunSet.erase(stdstr().FromUTF16(scriptName));
+    m_AutorunListView.GetItemText(nItem, 0, scriptName, MAX_PATH);
+    m_ScriptSystem->AutorunSet().erase(stdstr().FromUTF16(scriptName));
+    m_ScriptSystem->SaveAutorunSet();
 
-    SaveAutorunSet();
     RefreshAutorunList();
     RefreshScriptList();
 }
@@ -290,34 +297,4 @@ void CScriptsAutorunDlg::RefreshAutorunList()
     {
         PostMessage(WM_REFRESH_AUTORUN_LIST);
     }
-}
-
-void CScriptsAutorunDlg::LoadAutorunSet()
-{
-    m_AutorunSet.clear();
-
-    std::istringstream joinedNames(g_Settings->LoadStringVal(Debugger_AutorunScripts));
-    std::string scriptName;
-
-    while (std::getline(joinedNames, scriptName, '|'))
-    {
-        m_AutorunSet.insert(scriptName);
-    }
-}
-
-void CScriptsAutorunDlg::SaveAutorunSet()
-{
-    std::string joinedNames = "";
-
-    std::set<std::string>::iterator it;
-    for (it = m_AutorunSet.begin(); it != m_AutorunSet.end(); it++)
-    {
-        if (it != m_AutorunSet.begin())
-        {
-            joinedNames += "|";
-        }
-        joinedNames += *it;
-    }
-
-    g_Settings->SaveString(Debugger_AutorunScripts, joinedNames.c_str());
 }

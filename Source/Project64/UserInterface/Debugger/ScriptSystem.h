@@ -33,6 +33,8 @@ class CScriptSystem
 
     CDebuggerUI*        m_Debugger;
 
+    std::set<std::string> m_AutorunSet;
+
 public:
     CScriptSystem(CDebuggerUI* debugger);
     ~CScriptSystem();
@@ -57,6 +59,11 @@ public:
     void DoMouseEvent(jshook_id_t hookId, int x, int y, int button = -1);
     jscb_id_t RawAddCallback(jshook_id_t hookId, JSCallback& callback);
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);
+
+    void ExecAutorunSet();
+    std::set<std::string>& AutorunSet();
+    void LoadAutorunSet();
+    void SaveAutorunSet();
     
 private:
     void PostCommand(jssyscmd_id_t id, stdstr paramA = "", stdstr paramB = "");

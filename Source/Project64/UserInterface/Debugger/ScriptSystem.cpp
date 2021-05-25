@@ -1,6 +1,6 @@
-#include <sys/stat.h>
-
 #include <stdafx.h>
+#include <sys/stat.h>
+#include <sstream>
 #include "ScriptTypes.h"
 #include "ScriptSystem.h"
 #include "ScriptInstance.h"
@@ -371,6 +371,54 @@ bool CScriptSystem::RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId)
     m_AppCallbackHooks[hookId].erase(callbackId);
     m_AppCallbackCount--;
     return true;
+}
+
+void CScriptSystem::ExecAutorunSet()
+{
+    LoadAutorunSet();
+
+    std::istringstream joinedNames(g_Settings->LoadStringVal(Debugger_AutorunScripts));
+    std::string scriptName;
+    while (std::getline(joinedNames, scriptName, '|'))
+    {
+        Log("[SCRIPTSYS]: autorun '%s'", scriptName.c_str());
+        StartScript(scriptName.c_str(), stdstr_f("Scripts/%s", scriptName.c_str()).c_str());
+    }
+}
+
+std::set<std::string>& CScriptSystem::AutorunSet()
+{
+    return m_AutorunSet;
+}
+
+void CScriptSystem::LoadAutorunSet()
+{
+    m_AutorunSet.clear();
+
+    std::istringstream joinedNames(g_Settings->LoadStringVal(Debugger_AutorunScripts));
+    std::string scriptName;
+
+    while (std::getline(joinedNames, scriptName, '|'))
+    {
+        m_AutorunSet.insert(scriptName);
+    }
+}
+
+void CScriptSystem::SaveAutorunSet()
+{
+    std::string joinedNames = "";
+
+    std::set<std::string>::iterator it;
+    for (it = m_AutorunSet.begin(); it != m_AutorunSet.end(); it++)
+    {
+        if (it != m_AutorunSet.begin())
+        {
+            joinedNames += "|";
+        }
+        joinedNames += *it;
+    }
+
+    g_Settings->SaveString(Debugger_AutorunScripts, joinedNames.c_str());
 }
 
 CDebuggerUI* CScriptSystem::Debugger()
