@@ -2,23 +2,66 @@
 declare interface Buffer {} 
 declare interface MemTypeConstructor {}
 
+declare class DrawingContext {
+    drawtext(x: number, y: number, text: string): void;
+    measuretext(text: string): TextMetrics;
+    drawimage(dx: number, dy: number, image: N64Image, dw?: number, dh?: number, sx?: number, sy?: number, sw?: number, sh?: number): void;
+    fillrect(x: number, y: number, width: number, height: number): void;
+    strokerect(x: number, y: number, width: number, height: number): void;
+    beginpath(): void;
+    moveto(x: number, y: number): void;
+    lineto(x: number, y: number): void;
+    stroke(): void;
+    fill(): void;
+    width: number;
+    height: number;
+    fillColor: number;
+    strokeColor: number;
+    strokeWidth: number;
+    fontFamily: string;
+    fontWeight: string;
+    fontSize: number;
+}
+
+declare class N64Image {
+    constructor(width: number, height: number, format?: number = IMG_RGBA32, pixels?: Buffer, palette?: Buffer);
+    static fromPNG(pngData: Buffer, format?: number = IMG_RGBA32): N64Image;
+    static format(gbiFmt: number, gbiSiz: number, gbiTlutFmt?: number): number;
+    static bpp(format: number): number;
+    toPNG(): Buffer;
+    update(): void;
+    format: number;
+    width: number;
+    height: number;
+    pixels: Buffer;
+    palette: Buffer;
+}
+
+declare class TextMetrics {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}
+
 declare class AddressRange {
     constructor(start: number, end: number);
     start: number;
     end: number;
 }
 
-declare class EmuEvent {
+declare class GenericEvent {
     callbackId: number;
 }
 
-declare class CPUEvent extends EmuEvent {
+declare class CPUExecEvent {
+    callbackId: number;
     pc: number;
 }
 
-declare class CPUExecEvent extends CPUEvent {}
-
-class CPUReadWriteEvent extends CPUEvent {
+class CPUReadWriteEvent {
+    callbackId: number;
+    pc: number;
     address: number;
     fpu: boolean;
     reg: number;
@@ -27,13 +70,61 @@ class CPUReadWriteEvent extends CPUEvent {
     valueHi: number;
 }
 
-declare class CPUOpcodeEvent extends CPUEvent {
+declare class CPUOpcodeEvent {
+    callbackId: number;
+    pc: number;
     opcode: number;
 }
 
-declare class CPURegValueEvent extends CPUEvent {
+declare class CPURegValueEvent {
+    callbackId: number;
+    pc: number;
     value: number;
     reg: number;
+}
+
+declare class SPTaskEvent {
+    callbackId: number;
+    taskType: number;
+    taskFlags: number;
+    ucodeBootAddress: number;
+    ucodeBootSize: number;
+    ucodeAddress: number;
+    ucodeSize: number;
+    ucodeDataAddress: number;
+    ucodeDataSize: number;
+    dramStackAddress: number;
+    dramStackSize: number;
+    outputBuffAddress: number;
+    outputBuffSize: number;
+    dataAddress: number;
+    dataSize: number;
+    yieldDataAddress: number;
+    yieldDataSize: number;
+}
+
+declare class PIEvent {
+    callbackId: number;
+    direction: number;
+    dramAddress: number;
+    cartAddress: number;
+    length: number;
+}
+
+declare class DrawEvent {
+    callbackId: number;
+    drawingContext: DrawingContext;
+}
+
+declare class MouseEvent {
+    callbackId: number;
+    button: number;
+    x: number;
+    y: number;
+    static LEFT: number;
+    static MIDDLE: 1;
+    static RIGHT: 2;
+    static NONE: -1;
 }
 
 declare class ConsoleModule {
@@ -198,11 +289,15 @@ declare class EventsModule {
     onexec(address: number | AddressRange, callback: (e: CPUExecEvent) => void): number;
     onread(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
     onwrite(address: number | AddressRange, callback: (e: CPUReadWriteEvent) => void): number;
-    onopcode(address: number | AddressRange, opcode: number, callback: (e: CPUOpcodeEvent) => void): number;
     onopcode(address: number | AddressRange, opcode: number, mask: number, callback: (e: CPUOpcodeEvent) => void): number;
     ongprvalue(address: number | AddressRange, registers: number, value: number, callback: (e: CPURegValueEvent) => void): number;
-    onpifread(callback: () => void): number;
-    ondraw(callback: () => void): number;
+    onpifread(callback: (e: GenericEvent) => void): number;
+    onsptask(callback: (e: SPTaskEvent) => void): number;
+    onpidma(callback: (e: PIEvent) => void): number;
+    ondraw(callback: (e: DrawEvent) => void): number;
+    onmousedown(callback: (e: MouseEvent) => void): number;
+    onmouseup(callback: (e: MouseEvent) => void): number;
+    onmousemove(callback: (e: MouseEvent) => void): number;
     remove(callbackId: number): boolean;
 }
 
@@ -269,6 +364,11 @@ declare class MemModule {
     bindvars(object: Object, vars: any[]) : Object
     bindstruct(object: Object, address: number, properties: Object): Object;
     typedef(properties: Object): MemTypeConstructor;
+}
+
+declare class ScriptModule {
+    keepalive(keepAlive: boolean): void
+    timeout(milliseconds: number): void
 }
 
 declare class CPUModule {
@@ -439,6 +539,77 @@ declare const SI_PIF_ADDR_RD64B_REG  : 0xA4800004;
 declare const SI_PIF_ADDR_WR64B_REG  : 0xA4800010;
 declare const SI_STATUS_REG          : 0xA4800018;
 
+
+declare const PIF_ROM_START : 0xBFC00000;
+declare const PIF_RAM_START : 0xBFC007C0;
+declare const SP_DMEM_START : 0xA4000000;
+declare const SP_IMEM_START : 0xA4001000;
+
+declare const KUBASE : 0x00000000;
+declare const K0BASE : 0x80000000;
+declare const K1BASE : 0xA0000000;
+declare const K2BASE : 0xC0000000;
+
+declare const UT_VEC  : 0x80000000;
+declare const R_VEC   : 0xBFC00000;
+declare const XUT_VEC : 0x80000080;
+declare const ECC_VEC : 0x80000100;
+declare const E_VEC   : 0x80000180;
+
+declare const M_GFXTASK : 1;
+declare const M_AUDTASK : 2;
+
+declare const OS_READ  : 0;
+declare const OS_WRITE : 1;
+
+declare const G_IM_FMT_RGBA : 0;
+declare const G_IM_FMT_YUV  : 1;
+declare const G_IM_FMT_CI   : 2;
+declare const G_IM_FMT_IA   : 3;
+declare const G_IM_FMT_I    : 4;
+declare const G_IM_SIZ_4b   : 0;
+declare const G_IM_SIZ_8b   : 1;
+declare const G_IM_SIZ_16b  : 2;
+declare const G_IM_SIZ_32b  : 3;
+
+declare const G_TT_NONE   : 0x0000;
+declare const G_TT_RGBA16 : 0x8000;
+declare const G_TT_IA16   : 0xC000;
+
+declare const COLOR_BLACK   : 0x000000FF;
+declare const COLOR_WHITE   : 0xFFFFFFFF;
+declare const COLOR_GRAY    : 0x808080FF;
+declare const COLOR_RED     : 0xFF0000FF;
+declare const COLOR_GREEN   : 0x00FF00FF;
+declare const COLOR_BLUE    : 0x0000FFFF;
+declare const COLOR_YELLOW  : 0xFFFF00FF;
+declare const COLOR_CYAN    : 0x00FFFFFF;
+declare const COLOR_MAGENTA : 0xFF00FFFF;
+
+declare const IMG_RGBA16: number;
+declare const IMG_RGBA32: number;
+declare const IMG_CI4_RGBA16: number;
+declare const IMG_CI4_IA16: number;
+declare const IMG_CI8_RGBA16: number;
+declare const IMG_CI8_IA16: number;
+declare const IMG_IA4: number;
+declare const IMG_IA8: number;
+declare const IMG_IA16: number;
+declare const IMG_I4: number;
+declare const IMG_I8: number;
+
+interface Number {
+    hex(length?: number): string;
+}
+
+declare function require(id: string): any;
+declare function alert(message: string, caption?: string): number;
+declare function exec(command: string, options?: Object): string;
+declare function RGBA(r: number, g: number, b: number, alpha?: number): number;
+declare function RGBA(existingColor: number, newAlpha: number): number;
+
+declare const global: Object;
+
 declare const mem: MemModule;
 declare const events: EventsModule;
 declare const debug: DebugModule;
@@ -446,11 +617,4 @@ declare const asm: ASMModule;
 declare const console: ConsoleModule;
 declare const fs: FSModule;
 declare const cpu: CPUModule;
-
-declare function alert(message: string, caption?: string): number;
-
-interface Number {
-    hex(length?: number): string;
-}
-
-
+declare const script: ScriptModule;
