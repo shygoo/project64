@@ -30,6 +30,9 @@ void ScriptAPI::InitEnvironment(duk_context* ctx, CScriptInstance* inst)
     duk_push_object(ctx); // fd => { fp }
     duk_put_global_string(ctx, HSYM_OPENFILES);
 
+    duk_push_array(ctx); // [{modPtr: hModule}, ...]
+    duk_put_global_string(ctx, HSYM_NATIVEMODULES);
+
     Define_asm(ctx);
     Define_console(ctx);
     Define_cpu(ctx);
@@ -363,7 +366,46 @@ duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
 
     const char* id = duk_get_string(ctx, 0);
 
-    CFile file(stdstr_f(MODULES_DIR "/%s", id).c_str(), CFile::modeRead);
+    stdstr strPath = stdstr_f(MODULES_DIR "/%s", id);
+    CPath path(strPath);
+
+    if (path.GetExtension() == "dll")
+    {
+        HMODULE hModule = LoadLibraryA(strPath.c_str());
+
+        if (hModule == nullptr)
+        {
+            duk_push_error_object(ctx, DUK_ERR_ERROR,
+                "failed to load native module (\"%s\")", strPath.c_str());
+            return duk_throw(ctx);
+        }
+
+        stdstr strProcName = stdstr_f("dukopen_%s", path.GetName().c_str());
+        duk_c_function fnEntryPoint = (duk_c_function)GetProcAddress(hModule, strProcName.c_str());
+
+        if (fnEntryPoint == nullptr)
+        {
+            FreeLibrary(hModule);
+            duk_push_error_object(ctx, DUK_ERR_ERROR,
+                "failed to locate module entry-point (\"%s\")", strProcName.c_str());
+            return duk_throw(ctx);
+        }
+
+        duk_push_c_function(ctx, fnEntryPoint, 0);
+
+        if (duk_pcall(ctx, 0) != 0)
+        {
+            FreeLibrary(hModule);
+            return duk_throw(ctx);
+        }
+
+        RegisterNativeModule(ctx, hModule);
+
+        duk_put_prop_string(ctx, 3, "exports");
+        return 0;
+    }
+
+    CFile file(strPath.c_str(), CFile::modeRead);
 
     if (!file.IsOpen())
     {
@@ -384,6 +426,27 @@ duk_ret_t ScriptAPI::js_Duktape_modSearch(duk_context* ctx)
     duk_push_string(ctx, sourceCode);
     delete[] sourceCode;
     return 1;
+}
+
+void ScriptAPI::RegisterNativeModule(duk_context* ctx, HMODULE hModule)
+{
+    duk_get_global_string(ctx, HSYM_NATIVEMODULES);
+    duk_size_t index = duk_get_length(ctx, -1);
+    duk_push_object(ctx);
+    duk_push_pointer(ctx, hModule);
+    duk_put_prop_string(ctx, -2, "modPtr");
+    duk_push_c_function(ctx, NativeModuleFinalizer, 1);
+    duk_set_finalizer(ctx, -2);
+    duk_put_prop_index(ctx, -2, index);
+    duk_pop(ctx);
+}
+
+duk_ret_t ScriptAPI::NativeModuleFinalizer(duk_context* ctx)
+{
+    duk_get_prop_string(ctx, 0, "modPtr");
+    HMODULE hModule = (HMODULE)duk_get_pointer(ctx, -1);
+    FreeLibrary(hModule);
+    return 0;
 }
 
 duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)

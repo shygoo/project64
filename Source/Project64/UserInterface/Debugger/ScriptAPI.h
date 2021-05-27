@@ -11,6 +11,7 @@
 #define HSYM_OPENFILES      DUK_HIDDEN_SYMBOL("OPENFILES")
 #define HSYM_KEEPALIVE      DUK_HIDDEN_SYMBOL("KEEPALIVE")
 #define HSYM_PRIVATECALL    DUK_HIDDEN_SYMBOL("PRIVATECALL")
+#define HSYM_NATIVEMODULES  DUK_HIDDEN_SYMBOL("NATIVEMODULES")
 
 namespace ScriptAPI
 {
@@ -33,6 +34,8 @@ namespace ScriptAPI
     duk_ret_t CallbackFinalizer(duk_context* ctx);
 
     duk_ret_t js_Duktape_modSearch(duk_context* ctx);
+    void RegisterNativeModule(duk_context* ctx, HMODULE hModule);
+    duk_ret_t NativeModuleFinalizer(duk_context* ctx);
 
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
     duk_ret_t ThrowInvalidAssignmentError(duk_context* ctx);

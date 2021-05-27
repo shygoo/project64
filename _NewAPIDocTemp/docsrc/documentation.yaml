@@ -1346,10 +1346,10 @@
     js:   require(id)
     ts:   "require(id: string): Object"
     desc: |
-          Loads a module script and returns its `module.exports` object. `id` may be one of the following:
+          Loads a module and returns its `module.exports` object. `id` may be one of the following:
           <ul>
-          <li>The name of a JavaScript file in the `Scripts/modules` directory.</i>
-          <li>If `id` begins with `./` or `../`, the path of a JavaScript file relative to the calling module's location.</i>
+          <li>The name of a JavaScript (*.js) or DLL (*.dll) file in the `Scripts/modules` directory.</i>
+          <li>If `id` begins with `./` or `../`, the path of a JavaScript  or DLL file relative to the calling module's location.</i>
           </ul>
           <div class="vtab"></div>
           ```
@@ -1369,6 +1369,8 @@
               init: init
           };
           ```
+          <div class="vtab"></div>
+          Native modules use the [Duktape C module convention](https://github.com/svaarala/duktape/blob/master/doc/c-module-convention.rst).
 
   - name: exec
     js:   exec(command[, options])
