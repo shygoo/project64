@@ -163,11 +163,11 @@
           Valid types are `u8`, `u16`, `u32`, `s8`, `s16`, `s32`, `f32`, `f64`.
           See [Type IDs](#type_ids) for more details.
           ```
-          mem.bindvar(this, 0x8033B1AC, 'playerX', f32);
-          mem.bindvar(this, 0x8033B1B0, 'playerY', f32);
-          mem.bindvar(this, 0x8033B1B4, 'playerZ', f32);
+          mem.bindvar(global, 0x8033B1AC, 'playerX', f32);
+          mem.bindvar(global, 0x8033B1B0, 'playerY', f32);
+          mem.bindvar(global, 0x8033B1B4, 'playerZ', f32);
 
-          console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+          console.log("Player's coordinates are ", playerX, playerY, playerZ);
           ```
 
   - name: mem_bindvars
@@ -179,13 +179,13 @@
           <div class="vtab"></div>
           Returns `object`.
           ```
-          mem.bindvars(this, [
+          mem.bindvars(global, [
               [ 0x8033B1AC, 'playerX', f32 ],
               [ 0x8033B1B0, 'playerY', f32 ],
               [ 0x8033B1B4, 'playerZ', f32 ]
           ]);
 
-          console.log("Player's coordinates are ", this.playerX, this.playerY, this.playerZ);
+          console.log("Player's coordinates are ", playerX, playerY, playerZ);
           ```
 
   - name: mem_bindstruct
@@ -744,7 +744,7 @@
 
   - name: ctx_beginpath
     js:   ctx.beginpath()
-    ts:   ctx.beginpath()
+    ts:   "ctx.beginpath(): void"
     desc: Clears all stored sub-paths.
 
   - name: ctx_moveto
@@ -759,12 +759,12 @@
 
   - name: ctx_stroke
     js:   ctx.stroke()
-    ts:   "ctx.stroke()"
+    ts:   "ctx.stroke(): void"
     desc: Strokes all sub-paths.
 
   - name: ctx_fill
     js:   ctx.fill()
-    ts:   "ctx.fill()"
+    ts:   "ctx.fill(): void"
     desc: Fills all sub-paths.
 
   - name: ctx_width
@@ -797,7 +797,7 @@
     js:   ctx.strokeWidth
     ts:   "ctx.strokeWidth: number"
     desc: |
-          The current stroke width. `0.0` by default.
+          The current stroke width. `3.0` by default.
 
   - name: ctx_fontFamily
     js:   ctx.fontFamily
@@ -809,13 +809,13 @@
     js:   ctx.fontWeight
     ts:   "ctx.fontWeight: string"
     desc: |
-          The current font weight. Valid weights include `"normal"`, `"bold"`, and `"light"`. `"normal"` by default.
+          The current font weight. Valid weights include `"normal"`, `"bold"`, and `"light"`. `"bold"` by default.
 
   - name: ctx_fontSize
     js:   ctx.fontSize
     ts:   "ctx.fontSize: number"
     desc: |
-          The current font size. `14.0` by default.
+          The current font size. `16.0` by default.
 
   - name: Predefined_colors
     js:   Predefined colors
@@ -831,6 +831,27 @@
           <tr><td>`COLOR_CYAN`</td><td>    0x00FFFFFF</td></tr>
           <tr><td>`COLOR_MAGENTA`</td><td> 0xFF00FFFF</td></tr>
           </table>
+
+  - name: RGBA
+    js:   RGBA(r, g, b[, alpha])
+    ts:   "RGBA(r: number, g: number, b: number, alpha?: number): number"
+    desc: |
+          Returns an RGBA32 number representation of a color.
+          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`. If `alpha` is not provided, `1.0` is used by default.
+          ```
+          const clrYellow = RGBA(255, 255, 0); // 0xFFFF00FF
+          const clrTranslucentRed = RGBA(255, 0, 0, 0.5); // 0xFF000080
+          ```
+
+  - name: RGBA_2
+    js:   RGBA(existingColor, newAlpha)
+    ts:   "RGBA(existingColor: number, newAlpha: number): number"
+    desc: |
+          Returns `existingColor` with a replaced alpha value.
+          ```
+          // 0xFF0000FF -> 0xFF000080
+          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); 
+          ```
 
 # N64Image
 - name: N64Image
@@ -1308,9 +1329,19 @@
           Sets the maximum amount of time tasks may run on the script instance before errors are thrown. By default this value is 500 milliseconds.
           Setting this value to zero will allow tasks to run indefinitely.
 
-# global functions
-- name: Global functions
+# globals
+- name: Globals
   props:
+  - name: global
+    js:   global
+    ts:   "global: Object"
+    desc: |
+          Reference to the global object.
+          ```
+          global.test = 1;
+          console.log(test); // "1"
+          ```
+
   - name: require
     js:   require(id)
     ts:   "require(id: string): Object"
@@ -1379,27 +1410,6 @@
     desc: |
           Shows a message box over the main window. Does not return until the message box is dismissed.
 
-  - name: RGBA
-    js:   RGBA(r, g, b[, alpha])
-    ts:   "RGBA(r: number, g: number, b: number, alpha?: number)"
-    desc: |
-          Returns an RGBA32 number representation of a color.
-          The `r`, `g`, and `b` parameters each have a range of `0` to `255`. The optional `alpha` parameter has a range of `0.0` to `1.0`. If `alpha` is not provided, `1.0` is used by default.
-          ```
-          const clrYellow = RGBA(255, 255, 0); // 0xFFFF00FF
-          const clrTranslucentRed = RGBA(255, 0, 0, 0.5); // 0xFF000080
-          ```
-
-  - name: RGBA_2
-    js:   RGBA(existingColor, newAlpha)
-    ts:   "RGBA(existingColor: number, newAlpha: number)"
-    desc: |
-          Returns `existingColor` with a replaced alpha value.
-          ```
-          // 0xFF0000FF -> 0xFF000080
-          const clrTranslucentRed = RGBA(COLOR_RED, 0.5); 
-          ```
-
   - name: number_hex
     js:   number.hex([numChars])
     ts:   "number.hex(numChars?: number): string"
@@ -1412,9 +1422,6 @@
           n.hex(4); // 007B
           ```
 
-# global constants
-- name: Global constants
-  props:
   - name: type_ids
     js:   Type IDs
     desc: |

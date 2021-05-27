@@ -30,14 +30,13 @@ Changes that will break compatibility with old scripts:
 ---------------------
 TODO:
 
+- fcr31
 - fix open rom dialog appearing behind script render overlay
 - finish implementing new server/socket
 - native module loader
 - stable pj64 open/close
 - make sure ctx.fill() implementation is correct
 - ctx.getimage(x, y, width, height)
-- 2px black stroke by default
-- bold by default
 - events.onemustart(e: GenericEvent)
 - events.onemustop(e: GenericEvent)
 

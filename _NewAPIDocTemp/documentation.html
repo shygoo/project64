@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- Generated May 24 2021 -->
+<!-- Generated May 26 2021 -->
 <!-- YAML source: https://github.com/shygoo/pj64d-docs -->
 <head>
-<title>Project64 JavaScript API alpha 2021.05.24</title>
+<title>Project64 JavaScript API alpha 2021.05.26</title>
 <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic' rel='stylesheet' type='text/css'>
 <style>
 :root {
@@ -271,7 +271,7 @@ window.addEventListener('load', function() {
 <div class="sidebar">
 <div class="sidebar-content">
 <div class="pagetitle">Project64 JavaScript API</div>
-alpha 2021.05.24
+alpha 2021.05.26
 <hr>
 <ul>
 <li><a href="#console">console</a>: Console interface<ul>
@@ -355,6 +355,8 @@ alpha 2021.05.24
 <li><a href="#ctx_fontWeight">ctx.fontWeight</a></li>
 <li><a href="#ctx_fontSize">ctx.fontSize</a></li>
 <li><a href="#Predefined_colors">Predefined colors</a></li>
+<li><a href="#RGBA">RGBA(r, g, b[, alpha])</a></li>
+<li><a href="#RGBA_2">RGBA(existingColor, newAlpha)</a></li>
 </ul><div class="vtab"></div></li>
 <li><a href="#N64Image">N64Image</a>: N64 image class<ul>
 <li><a href="#new_N64Image">new N64Image(width, height[, format [, pixels[, palette]]])</a></li>
@@ -431,15 +433,12 @@ alpha 2021.05.24
 <li><a href="#script_keepalive">script.keepalive(keepAlive)</a></li>
 <li><a href="#script_timeout">script.timeout(milliseconds)</a></li>
 </ul><div class="vtab"></div></li>
-<li><a href="#Global functions">Global functions</a><ul>
+<li><a href="#Globals">Globals</a><ul>
+<li><a href="#global">global</a></li>
 <li><a href="#require">require(id)</a></li>
 <li><a href="#exec">exec(command[, options])</a></li>
 <li><a href="#alert">alert(message[, caption])</a></li>
-<li><a href="#RGBA">RGBA(r, g, b[, alpha])</a></li>
-<li><a href="#RGBA_2">RGBA(existingColor, newAlpha)</a></li>
 <li><a href="#number_hex">number.hex([numChars])</a></li>
-</ul><div class="vtab"></div></li>
-<li><a href="#Global constants">Global constants</a><ul>
 <li><a href="#type_ids">Type IDs</a></li>
 <li><a href="#N64_memory_addresses">N64 memory addresses</a></li>
 <li><a href="#Miscellaneous">Miscellaneous</a></li>
@@ -608,11 +607,11 @@ Adds a memory-bound property to <span class="snip">object</span>.
 Valid types are <span class="snip">u8</span>, <span class="snip">u16</span>, <span class="snip">u32</span>, <span class="snip">s8</span>, <span class="snip">s16</span>, <span class="snip">s32</span>, <span class="snip">f32</span>, <span class="snip">f64</span>.
 See <a href="#type_ids">Type IDs</a> for more details.
 <pre class="ex">
-<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1AC</span>, <span class="js-string">'playerX'</span>, <span class="js-word">f32</span>);
-<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1B0</span>, <span class="js-string">'playerY'</span>, <span class="js-word">f32</span>);
-<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-keyword">this</span>, <span class="js-number">0x8033B1B4</span>, <span class="js-string">'playerZ'</span>, <span class="js-word">f32</span>);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-word">global</span>, <span class="js-number">0x8033B1AC</span>, <span class="js-string">'playerX'</span>, <span class="js-word">f32</span>);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-word">global</span>, <span class="js-number">0x8033B1B0</span>, <span class="js-string">'playerY'</span>, <span class="js-word">f32</span>);
+<span class="js-word">mem</span>.<span class="js-word">bindvar</span>(<span class="js-word">global</span>, <span class="js-number">0x8033B1B4</span>, <span class="js-string">'playerZ'</span>, <span class="js-word">f32</span>);
 
-<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-keyword">this</span>.<span class="js-word">playerX</span>, <span class="js-keyword">this</span>.<span class="js-word">playerY</span>, <span class="js-keyword">this</span>.<span class="js-word">playerZ</span>);
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-word">playerX</span>, <span class="js-word">playerY</span>, <span class="js-word">playerZ</span>);
 </pre>
 <!-- mem_bindvars -->
 <div class="prop"><span class="title" id="mem_bindvars">mem.bindvars(object, vars)</span></div>
@@ -623,13 +622,13 @@ Adds multiple memory-bound properties to <span class="snip">object</span>.
 <div class="vtab"></div>
 Returns <span class="snip">object</span>.
 <pre class="ex">
-<span class="js-word">mem</span>.<span class="js-word">bindvars</span>(<span class="js-keyword">this</span>, [
+<span class="js-word">mem</span>.<span class="js-word">bindvars</span>(<span class="js-word">global</span>, [
     [ <span class="js-number">0x8033B1AC</span>, <span class="js-string">'playerX'</span>, <span class="js-word">f32</span> ],
     [ <span class="js-number">0x8033B1B0</span>, <span class="js-string">'playerY'</span>, <span class="js-word">f32</span> ],
     [ <span class="js-number">0x8033B1B4</span>, <span class="js-string">'playerZ'</span>, <span class="js-word">f32</span> ]
 ]);
 
-<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-keyword">this</span>.<span class="js-word">playerX</span>, <span class="js-keyword">this</span>.<span class="js-word">playerY</span>, <span class="js-keyword">this</span>.<span class="js-word">playerZ</span>);
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-string">"Player's coordinates are "</span>, <span class="js-word">playerX</span>, <span class="js-word">playerY</span>, <span class="js-word">playerZ</span>);
 </pre>
 <!-- mem_bindstruct -->
 <div class="prop"><span class="title" id="mem_bindstruct">mem.bindstruct(object, address, properties)</span></div>
@@ -1151,7 +1150,7 @@ Fills the specified rectangle area with the current fill color.
 Outlines the specified rectangle area with the current stroke color/width.
 <!-- ctx_beginpath -->
 <div class="prop"><span class="title" id="ctx_beginpath">ctx.beginpath()</span></div>
-<div class="tsproto">ctx.beginpath()</div>
+<div class="tsproto">ctx.beginpath(): void</div>
 <div class="vtab"></div>
 Clears all stored sub-paths.
 <!-- ctx_moveto -->
@@ -1166,12 +1165,12 @@ Starts a new sub-path at the provided coordinates.
 Adds a point to the current sub-path.
 <!-- ctx_stroke -->
 <div class="prop"><span class="title" id="ctx_stroke">ctx.stroke()</span></div>
-<div class="tsproto">ctx.stroke()</div>
+<div class="tsproto">ctx.stroke(): void</div>
 <div class="vtab"></div>
 Strokes all sub-paths.
 <!-- ctx_fill -->
 <div class="prop"><span class="title" id="ctx_fill">ctx.fill()</span></div>
-<div class="tsproto">ctx.fill()</div>
+<div class="tsproto">ctx.fill(): void</div>
 <div class="vtab"></div>
 Fills all sub-paths.
 <!-- ctx_width -->
@@ -1202,7 +1201,7 @@ The current stroke color. <span class="snip">COLOR_BLACK</span> (<span class="sn
 <div class="prop"><span class="title" id="ctx_strokeWidth">ctx.strokeWidth</span></div>
 <div class="tsproto">ctx.strokeWidth: number</div>
 <div class="vtab"></div>
-The current stroke width. <span class="snip">0.0</span> by default.
+The current stroke width. <span class="snip">3.0</span> by default.
 <!-- ctx_fontFamily -->
 <div class="prop"><span class="title" id="ctx_fontFamily">ctx.fontFamily</span></div>
 <div class="tsproto">ctx.fontFamily: string</div>
@@ -1212,12 +1211,12 @@ The current font family. <span class="snip">"Courier New"</span> by default.
 <div class="prop"><span class="title" id="ctx_fontWeight">ctx.fontWeight</span></div>
 <div class="tsproto">ctx.fontWeight: string</div>
 <div class="vtab"></div>
-The current font weight. Valid weights include <span class="snip">"normal"</span>, <span class="snip">"bold"</span>, and <span class="snip">"light"</span>. <span class="snip">"normal"</span> by default.
+The current font weight. Valid weights include <span class="snip">"normal"</span>, <span class="snip">"bold"</span>, and <span class="snip">"light"</span>. <span class="snip">"bold"</span> by default.
 <!-- ctx_fontSize -->
 <div class="prop"><span class="title" id="ctx_fontSize">ctx.fontSize</span></div>
 <div class="tsproto">ctx.fontSize: number</div>
 <div class="vtab"></div>
-The current font size. <span class="snip">14.0</span> by default.
+The current font size. <span class="snip">16.0</span> by default.
 <!-- Predefined_colors -->
 <div class="prop"><span class="title" id="Predefined_colors">Predefined colors</span></div>
 <div class="vtab"></div>
@@ -1232,6 +1231,25 @@ The current font size. <span class="snip">14.0</span> by default.
 <tr><td><span class="snip">COLOR_CYAN</span></td><td>    0x00FFFFFF</td></tr>
 <tr><td><span class="snip">COLOR_MAGENTA</span></td><td> 0xFF00FFFF</td></tr>
 </table>
+<!-- RGBA -->
+<div class="prop"><span class="title" id="RGBA">RGBA(r, g, b[, alpha])</span></div>
+<div class="tsproto">RGBA(r: number, g: number, b: number, alpha?: number): number</div>
+<div class="vtab"></div>
+Returns an RGBA32 number representation of a color.
+The <span class="snip">r</span>, <span class="snip">g</span>, and <span class="snip">b</span> parameters each have a range of <span class="snip">0</span> to <span class="snip">255</span>. The optional <span class="snip">alpha</span> parameter has a range of <span class="snip">0.0</span> to <span class="snip">1.0</span>. If <span class="snip">alpha</span> is not provided, <span class="snip">1.0</span> is used by default.
+<pre class="ex">
+<span class="js-keyword">const</span> <span class="js-word">clrYellow</span> = <span class="js-word">RGBA</span>(<span class="js-number">255</span>, <span class="js-number">255</span>, <span class="js-number">0</span>); <span class="js-comment">// 0xFFFF00FF</span>
+<span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">RGBA</span>(<span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">0</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); <span class="js-comment">// 0xFF000080</span>
+</pre>
+<!-- RGBA_2 -->
+<div class="prop"><span class="title" id="RGBA_2">RGBA(existingColor, newAlpha)</span></div>
+<div class="tsproto">RGBA(existingColor: number, newAlpha: number): number</div>
+<div class="vtab"></div>
+Returns <span class="snip">existingColor</span> with a replaced alpha value.
+<pre class="ex">
+<span class="js-comment">// 0xFF0000FF -> 0xFF000080</span>
+<span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">RGBA</span>(<span class="js-word">COLOR_RED</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); 
+</pre>
 
 </div>
 <!-- N64Image -->
@@ -1715,10 +1733,19 @@ Sets the maximum amount of time tasks may run on the script instance before erro
 Setting this value to zero will allow tasks to run indefinitely.
 
 </div>
-<!-- Global functions -->
+<!-- Globals -->
 <div class="module">
-<div class="modtitle"><span class="title" id="Global functions">Global functions</span></div>
+<div class="modtitle"><span class="title" id="Globals">Globals</span></div>
 <div class="vtab"></div>
+<!-- global -->
+<div class="prop"><span class="title" id="global">global</span></div>
+<div class="tsproto">global: Object</div>
+<div class="vtab"></div>
+Reference to the global object.
+<pre class="ex">
+<span class="js-word">global</span>.<span class="js-word">test</span> = <span class="js-number">1</span>;
+<span class="js-word">console</span>.<span class="js-word">log</span>(<span class="js-word">test</span>); <span class="js-comment">// "1"</span>
+</pre>
 <!-- require -->
 <div class="prop"><span class="title" id="require">require(id)</span></div>
 <div class="tsproto">require(id: string): Object</div>
@@ -1784,25 +1811,6 @@ The thrown error object contains the following properties:
 <div class="tsproto">alert(message: string, caption?: string): void</div>
 <div class="vtab"></div>
 Shows a message box over the main window. Does not return until the message box is dismissed.
-<!-- RGBA -->
-<div class="prop"><span class="title" id="RGBA">RGBA(r, g, b[, alpha])</span></div>
-<div class="tsproto">RGBA(r: number, g: number, b: number, alpha?: number)</div>
-<div class="vtab"></div>
-Returns an RGBA32 number representation of a color.
-The <span class="snip">r</span>, <span class="snip">g</span>, and <span class="snip">b</span> parameters each have a range of <span class="snip">0</span> to <span class="snip">255</span>. The optional <span class="snip">alpha</span> parameter has a range of <span class="snip">0.0</span> to <span class="snip">1.0</span>. If <span class="snip">alpha</span> is not provided, <span class="snip">1.0</span> is used by default.
-<pre class="ex">
-<span class="js-keyword">const</span> <span class="js-word">clrYellow</span> = <span class="js-word">RGBA</span>(<span class="js-number">255</span>, <span class="js-number">255</span>, <span class="js-number">0</span>); <span class="js-comment">// 0xFFFF00FF</span>
-<span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">RGBA</span>(<span class="js-number">255</span>, <span class="js-number">0</span>, <span class="js-number">0</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); <span class="js-comment">// 0xFF000080</span>
-</pre>
-<!-- RGBA_2 -->
-<div class="prop"><span class="title" id="RGBA_2">RGBA(existingColor, newAlpha)</span></div>
-<div class="tsproto">RGBA(existingColor: number, newAlpha: number)</div>
-<div class="vtab"></div>
-Returns <span class="snip">existingColor</span> with a replaced alpha value.
-<pre class="ex">
-<span class="js-comment">// 0xFF0000FF -> 0xFF000080</span>
-<span class="js-keyword">const</span> <span class="js-word">clrTranslucentRed</span> = <span class="js-word">RGBA</span>(<span class="js-word">COLOR_RED</span>, <span class="js-number">0</span>.<span class="js-number">5</span>); 
-</pre>
 <!-- number_hex -->
 <div class="prop"><span class="title" id="number_hex">number.hex([numChars])</span></div>
 <div class="tsproto">number.hex(numChars?: number): string</div>
@@ -1814,12 +1822,6 @@ The returned string is prepended with zeroes so that its character length is <sp
 <span class="js-word">n</span>.<span class="js-word">hex</span>();  <span class="js-comment">// 0000007B</span>
 <span class="js-word">n</span>.<span class="js-word">hex</span>(<span class="js-number">4</span>); <span class="js-comment">// 007B</span>
 </pre>
-
-</div>
-<!-- Global constants -->
-<div class="module">
-<div class="modtitle"><span class="title" id="Global constants">Global constants</span></div>
-<div class="vtab"></div>
 <!-- type_ids -->
 <div class="prop"><span class="title" id="type_ids">Type IDs</span></div>
 <div class="vtab"></div>

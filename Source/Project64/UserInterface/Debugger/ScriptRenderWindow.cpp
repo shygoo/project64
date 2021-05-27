@@ -3,11 +3,11 @@
 #include "DebuggerUI.h"
 
 #define DEFAULT_FILLCOLOR   0xFFFFFFFF
-#define DEFAULT_FONTFAMILY  "Courier New"
-#define DEFAULT_FONTSIZE    14.0f
-#define DEFAULT_STROKEWIDTH 0.0f
 #define DEFAULT_STROKECOLOR 0x000000FF
-#define DEFAULT_FONTWEIGHT  DWRITE_FONT_WEIGHT_NORMAL
+#define DEFAULT_STROKEWIDTH 3.0f
+#define DEFAULT_FONTFAMILY  "Courier New"
+#define DEFAULT_FONTWEIGHT  DWRITE_FONT_WEIGHT_BOLD
+#define DEFAULT_FONTSIZE    16.0f
 
 CScriptRenderWindow::CScriptRenderWindow(CDebuggerUI* debugger) :
     m_Debugger(debugger),
