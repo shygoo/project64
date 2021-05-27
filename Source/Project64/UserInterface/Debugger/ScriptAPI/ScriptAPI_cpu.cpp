@@ -292,7 +292,6 @@ static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
     }
     else if (duk_is_string(ctx, 1))
     {
-        // todo status reg
         regIndex = FPRIndex(duk_get_string(ctx, 1));
     }
 
@@ -333,7 +332,6 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
     }
     else if (duk_is_string(ctx, 1))
     {
-        // todo status reg
         regIndex = FPRIndex(duk_get_string(ctx, 1));
     }
 
@@ -465,6 +463,10 @@ static uint32_t* CPURegPtr(const char* key)
     else if (strcmp(key, "ulo") == 0)
     {
         return &g_Reg->m_LO.UW[1];
+    }
+    else if (strcmp(key, "fcr31") == 0)
+    {
+        return &g_Reg->m_FPCR[31];
     }
 
     return nullptr;
