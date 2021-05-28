@@ -57,45 +57,51 @@ duk_ret_t ScriptAPI::js_DrawingContext__constructor(duk_context* ctx)
         return ThrowNotCallableError(ctx);
     }
 
+    //const DukPropListEntry props[] = {
+    //    DUKPROP_GET("width", js_DrawingContext__get_width),
+    //    DUKPROP_END()
+    //};
+
+    struct { const char* key; duk_c_function getter; duk_c_function setter; } props[] = {
+        { "width",       js_DrawingContext__get_width,       nullptr },
+        { "height",      js_DrawingContext__get_height,      nullptr },
+        { "fillColor",   js_DrawingContext__get_fillColor,   js_DrawingContext__set_fillColor },
+        { "strokeColor", js_DrawingContext__get_strokeColor, js_DrawingContext__set_strokeColor },
+        { "strokeWidth", js_DrawingContext__get_strokeWidth, js_DrawingContext__set_strokeWidth },
+        { "fontFamily",  js_DrawingContext__get_fontFamily,  js_DrawingContext__set_fontFamily },
+        { "fontSize",    js_DrawingContext__get_fontSize,    js_DrawingContext__set_fontSize },
+        { "fontWeight",  js_DrawingContext__get_fontWeight,  js_DrawingContext__set_fontWeight },
+        { "pointer",     js_DrawingContext__get_pointer,     nullptr },
+        { nullptr, nullptr, nullptr }
+    };
+
     duk_push_this(ctx);
+    duk_idx_t this_idx = duk_normalize_index(ctx, -1);
 
-    duk_push_string(ctx, "width");
-    duk_push_c_function(ctx, js_DrawingContext__get_width, 0);
-    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
+    for (size_t i = 0;; i++)
+    {
+        if (props[i].key == nullptr)
+        {
+            break;
+        }
 
-    duk_push_string(ctx, "height");
-    duk_push_c_function(ctx, js_DrawingContext__get_height, 0);
-    duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER);
+        duk_uint_t flags = DUK_DEFPROP_ENUMERABLE;
+        duk_push_string(ctx, props[i].key);
 
-    duk_push_string(ctx, "fillColor");
-    duk_push_c_function(ctx, js_DrawingContext__get_fillColor, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_fillColor, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+        if (props[i].getter != nullptr)
+        {
+            flags |= DUK_DEFPROP_HAVE_GETTER;
+            duk_push_c_function(ctx, props[i].getter, 0);
+        }
 
-    duk_push_string(ctx, "strokeColor");
-    duk_push_c_function(ctx, js_DrawingContext__get_strokeColor, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_strokeColor, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+        if (props[i].setter != nullptr)
+        {
+            flags |= DUK_DEFPROP_HAVE_SETTER;
+            duk_push_c_function(ctx, props[i].setter, 1);
+        }
 
-    duk_push_string(ctx, "strokeWidth");
-    duk_push_c_function(ctx, js_DrawingContext__get_strokeWidth, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_strokeWidth, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
-
-    duk_push_string(ctx, "fontFamily");
-    duk_push_c_function(ctx, js_DrawingContext__get_fontFamily, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_fontFamily, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
-
-    duk_push_string(ctx, "fontSize");
-    duk_push_c_function(ctx, js_DrawingContext__get_fontSize, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_fontSize, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
-
-    duk_push_string(ctx, "fontWeight");
-    duk_push_c_function(ctx, js_DrawingContext__get_fontWeight, 0);
-    duk_push_c_function(ctx, js_DrawingContext__set_fontWeight, 1);
-    duk_def_prop(ctx, -4, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER);
+        duk_def_prop(ctx, this_idx, flags);
+    }
 
     duk_dup(ctx, 0); // CScriptRenderWindow*
     duk_put_prop_string(ctx, -2, DUK_HIDDEN_SYMBOL("srw"));
@@ -281,6 +287,13 @@ duk_ret_t ScriptAPI::js_DrawingContext__set_fontWeight(duk_context* ctx)
 
     rw->GfxSetFontWeight(weights.at(weightName));
     return 0;
+}
+
+duk_ret_t ScriptAPI::js_DrawingContext__get_pointer(duk_context* ctx)
+{
+    CScriptRenderWindow* rw = GetThisRW(ctx);
+    duk_push_pointer(ctx, rw->GetRenderTarget());
+    return 1;
 }
 
 duk_ret_t ScriptAPI::js_DrawingContext_drawtext(duk_context* ctx)

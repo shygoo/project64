@@ -84,6 +84,11 @@ HWND CScriptRenderWindow::GetWindowHandle(void)
     return m_hWnd;
 }
 
+ID2D1HwndRenderTarget* CScriptRenderWindow::GetRenderTarget()
+{
+    return m_Gfx;
+}
+
 bool CScriptRenderWindow::Create()
 {
     m_hWnd = CreateWindowEx(WS_EX_TOOLWINDOW,

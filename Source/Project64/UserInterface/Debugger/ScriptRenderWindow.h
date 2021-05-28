@@ -71,8 +71,6 @@ private:
     static int WinMouseMessageButton(DWORD uMsg);
     void ScreenMouseEventProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
 
-    //void ToggleVisible();
-
 public:
     CScriptRenderWindow(CDebuggerUI* debugger);
     ~CScriptRenderWindow();
@@ -80,6 +78,7 @@ public:
     void MainWndHookProc(HWND hWnd, DWORD uMsg, DWORD wParam, DWORD lParam);
 
     HWND GetWindowHandle(void);
+    ID2D1HwndRenderTarget* GetRenderTarget();
     
     void GfxBeginDraw();
     void GfxEndDraw();

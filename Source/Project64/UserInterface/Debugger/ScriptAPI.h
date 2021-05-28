@@ -188,6 +188,7 @@ namespace ScriptAPI
     duk_ret_t js_DrawingContext__set_fontSize(duk_context* ctx);
     duk_ret_t js_DrawingContext__get_fontWeight(duk_context* ctx);
     duk_ret_t js_DrawingContext__set_fontWeight(duk_context* ctx);
+    duk_ret_t js_DrawingContext__get_pointer(duk_context* ctx);
     duk_ret_t js_DrawingContext_drawtext(duk_context* ctx);
     duk_ret_t js_DrawingContext_measuretext(duk_context* ctx);
     duk_ret_t js_DrawingContext_drawimage(duk_context* ctx);
@@ -275,4 +276,109 @@ namespace ScriptAPI
         //GPR_S8 = GPR_FP,
         GPR_ANY = 0xFFFFFFFF
     };
+
+    struct DukPropListEntry
+    {
+        const char*    key;
+        int valueType;
+        bool valueWritable;
+        union {
+            duk_double_t   numberValue;
+            const char*    stringValue;
+            duk_idx_t      objectValueIdx;
+            duk_bool_t     booleanValue;
+        } value;
+        duk_c_function getter;
+        duk_c_function setter;
+    };
+
+#define DUKPROPLIST_VAL_NONE    0
+#define DUKPROPLIST_VAL_NUMBER  1
+#define DUKPROPLIST_VAL_STRING  2
+#define DUKPROPLIST_VAL_OBJECT  3
+#define DUKPROPLIST_VAL_BOOLEAN 4
+
+#define DUKPROP_VAL_NUMBER(key, number_val, writable) \
+    { (key), DUKPROPLIST_VAL_NUMBER, (writable), (duk_double_t)(number_val), nullptr, nullptr }
+
+#define DUKPROP_VAL_STRING(key, string_val, writable) \
+    { (key), DUKPROPLIST_VAL_STRING, (writable), (const char*)(string_val), nullptr, nullptr }
+
+#define DUKPROP_VAL_OBJECT(key, object_val_idx, writable) \
+    { (key), DUKPROPLIST_VAL_OBJECT, (writable), (duk_idx_t)(object_val_idx), nullptr, nullptr }
+
+#define DUKPROP_VAL_BOOLEAN(key, boolean_val, writable) \
+    { (key), DUKPROPLIST_VAL_OBJECT, (writable), (duk_bool_t)(boolean_val), nullptr, nullptr }
+
+#define DUKPROP_GET(key, getter) \
+    { (key), DUKPROPLIST_VAL_NONE, false, (duk_idx_t)0, (getter), nullptr }
+
+#define DUKPROP_GETSET(key, getter, setter) \
+    { (key), DUKPROPLIST_VAL_NONE, false, (duk_idx_t)0, (getter), (setter) }
+
+#define DUKPROP_END() \
+    { nullptr, 0, false, (duk_idx_t)0, nullptr, nullptr }
+
+    void DukPutProps(duk_context* ctx, duk_idx_t obj_idx, const DukPropListEntry* props)
+    {
+        obj_idx = duk_normalize_index(ctx, obj_idx);
+
+        for (size_t i = 0;; i++)
+        {
+            const DukPropListEntry* prop = &props[i];
+
+            if (prop->key == nullptr)
+            {
+                break;
+            }
+
+            duk_uint_t propFlags = DUK_DEFPROP_ENUMERABLE;
+            duk_push_string(ctx, prop->key);
+
+            if (prop->valueType != DUKPROPLIST_VAL_NONE)
+            {
+                propFlags |= prop->valueWritable ? DUK_DEFPROP_SET_WRITABLE : 0;
+
+                switch (props[i].valueType)
+                {
+                case DUKPROPLIST_VAL_NUMBER:
+                    duk_push_number(ctx, prop->value.numberValue);
+                    break;
+                case DUKPROPLIST_VAL_STRING:
+                    duk_push_string(ctx, prop->value.stringValue);
+                    break;
+                case DUKPROPLIST_VAL_OBJECT:
+                    {
+                        duk_idx_t fixedObjectValueIdx = prop->value.objectValueIdx;
+                        if (fixedObjectValueIdx < 0)
+                        {
+                            // -1 to account for prop->key push above
+                            fixedObjectValueIdx = duk_normalize_index(ctx, fixedObjectValueIdx - 1);
+                        }
+                        duk_dup(ctx, fixedObjectValueIdx);
+                    }
+                    break;
+                case DUKPROPLIST_VAL_BOOLEAN:
+                    duk_push_boolean(ctx, prop->value.booleanValue);
+                    break;
+                }
+            }
+            else
+            {
+                if (props[i].getter != nullptr)
+                {
+                    propFlags |= DUK_DEFPROP_HAVE_GETTER;
+                    duk_push_c_function(ctx, props[i].getter, 0);
+                }
+
+                if (props[i].setter != nullptr)
+                {
+                    propFlags |= DUK_DEFPROP_HAVE_SETTER;
+                    duk_push_c_function(ctx, props[i].setter, 1);
+                }
+            }
+
+            duk_def_prop(ctx, obj_idx, flags);
+        }
+    }
 };
