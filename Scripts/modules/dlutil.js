@@ -1,3 +1,5 @@
+const math3d = require('math3d.dll');
+
 module.exports = {
     DLParser: DLParser
 };
@@ -29,16 +31,16 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
     var spJumpStackIndex = 0;
     var spMatrices = new Array(16);
     var spMatrixIndex = 0;
-    var spProjectionMatrix = mat4.create();
-    var spFinalMatrix = mat4.create();
+    var spProjectionMatrix = math3d.mat4.create();
+    var spFinalMatrix = math3d.mat4.create();
 
-    var screenMtx = mat4.create();
+    var screenMtx = math3d.mat4.create();
     screenMtx[0] = screenWidth/2;
     screenMtx[5] = -screenHeight/2;
     screenMtx[12] = screenWidth/2;
     screenMtx[13] = screenHeight/2;
 
-    var scratchMtx = mat4.create();
+    var scratchMtx = math3d.mat4.create();
 
     for(var i = 0; i < 16; i++) {
         spSegments[i] = 0;
@@ -46,11 +48,11 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
 
     for(var i = 0; i < 64; i++) {
         // (only loading xyz)
-        spVertices[i] = vec3.create();
+        spVertices[i] = math3d.vec4.create();
     }
 
     for(var i = 0; i < spMatrices.length; i++) {
-        spMatrices[i] = mat4.create();
+        spMatrices[i] = math3d.mat4.create();
     }
 
     // G_VTX
@@ -67,8 +69,8 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
     const getu32 = ram.readUInt32BE.bind(ram);
     const setu32 = ram.writeUInt32BE.bind(ram);
     const gets16 = ram.readInt16BE.bind(ram);
-    const vec3_transformMat4 = vec3.transformMat4;
-    const mat4_mul = mat4.mul;
+    const vec4_transformMat4 = math3d.vec4.transformMat4;
+    const mat4_mul = math3d.mat4.mul;
 
     // result
     var numCommands = 0;
@@ -99,7 +101,12 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
                     curv[0] = gets16(vaddr);
                     curv[1] = gets16(vaddr + 2);
                     curv[2] = gets16(vaddr+ 4);
-                    vec3_transformMat4(curv, curv, spFinalMatrix);
+                    curv[3] = 1;
+                    vec4_transformMat4(curv, curv, spFinalMatrix);
+                    curv[0] /= curv[3];
+                    curv[1] /= curv[3];
+                    curv[2] /= curv[3];
+                    //console.log(curv[3])
                     curv.debugAddr = K0BASE + vaddr;
                     vaddr += 16;
                     nv++;
@@ -111,9 +118,9 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
                 v1 = spVertices[((w1 >>>  8) & 0xFF) / 0x0A];
                 v2 = spVertices[((w1 >>>  0) & 0xFF) / 0x0A];
 
-                var x0 = v0[0], y0 = v0[1], z0 = v0[2];
-                var x1 = v1[0], y1 = v1[1], z1 = v1[2];
-                var x2 = v2[0], y2 = v2[1], z2 = v2[2];
+                var x0 = v0[0], y0 = v0[1], z0 = v0[2], w0 = v0[3];
+                var x1 = v1[0], y1 = v1[1], z1 = v1[2], w1 = v1[3];
+                var x2 = v2[0], y2 = v2[1], z2 = v2[2], w2 = v2[3];
 
                 // todo test w
                 if(z0 > 1 || z1 > 1 || z2 > 1)
@@ -124,9 +131,9 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
                 if(y0 < 0 && y1 < 0 && y2 < 0) continue;
                 if(y0 >= 480 && y1 >= 480 && y2 >= 480) continue;
 
-                vertexHeap[vhidx] = [ x0, y0, z0, v0.debugAddr ];
-                vertexHeap[vhidx+1] = [ x1, y1, z1, v1.debugAddr ];
-                vertexHeap[vhidx+2] = [ x2, y2, z2, v2.debugAddr ];
+                vertexHeap[vhidx] = [ x0, y0, z0, w0, v0.debugAddr ];
+                vertexHeap[vhidx+1] = [ x1, y1, z1, w1, v1.debugAddr ];
+                vertexHeap[vhidx+2] = [ x2, y2, z2, w2, v2.debugAddr ];
                 faceHeap[faceIdx] = [vhidx, vhidx + 1, vhidx + 2];
                 faceHeap[faceIdx].debugAddr = K0BASE + dlAddress - 8;
                 vhidx += 3;

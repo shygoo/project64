@@ -277,108 +277,90 @@ namespace ScriptAPI
         GPR_ANY = 0xFFFFFFFF
     };
 
-    struct DukPropListEntry
+#define DUK_TYPE_ID(id) \
+static const DukPropTypeID _TYPE = DukPropTypeID::Type_ ## id;
+
+#define DUK_DECLVAL_MEMBER(structName, memberName) \
+structName memberName; Value(structName v) : memberName(v) {}
+
+#define DUK_SCALARTYPE_IMPL(structName, primitiveType) \
+DUK_TYPE_ID(structName) primitiveType value; structName(primitiveType value) : value(value){}
+
+    enum DukPropTypeID
     {
-        const char*    key;
-        int valueType;
-        bool valueWritable;
-        union {
-            duk_double_t   numberValue;
-            const char*    stringValue;
-            duk_idx_t      objectValueIdx;
-            duk_bool_t     booleanValue;
-        } value;
-        duk_c_function getter;
-        duk_c_function setter;
+        Type_DukInt,
+        Type_DukUInt,
+        Type_DukNumber,
+        Type_DukString,
+        Type_DukBoolean,
+        Type_DukPointer,
+        Type_DukCFunction,
+        Type_DukDupIndex,
+        Type_DukGetter,
+        Type_DukGetterSetter,
     };
 
-#define DUKPROPLIST_VAL_NONE    0
-#define DUKPROPLIST_VAL_NUMBER  1
-#define DUKPROPLIST_VAL_STRING  2
-#define DUKPROPLIST_VAL_OBJECT  3
-#define DUKPROPLIST_VAL_BOOLEAN 4
+    struct DukInt { DUK_SCALARTYPE_IMPL(DukInt, duk_int_t) };
+    struct DukUInt { DUK_SCALARTYPE_IMPL(DukUInt, duk_uint_t) };
+    struct DukNumber { DUK_SCALARTYPE_IMPL(DukNumber, duk_double_t) };
+    struct DukBoolean { DUK_SCALARTYPE_IMPL(DukBoolean, duk_bool_t) };
+    struct DukString { DUK_SCALARTYPE_IMPL(DukString, const char*) };
+    struct DukPointer { DUK_SCALARTYPE_IMPL(DukPointer, void*) };
+    struct DukDupIndex { DUK_SCALARTYPE_IMPL(DukDupIndex, duk_idx_t) };
 
-#define DUKPROP_VAL_NUMBER(key, number_val, writable) \
-    { (key), DUKPROPLIST_VAL_NUMBER, (writable), (duk_double_t)(number_val), nullptr, nullptr }
+    struct DukCFunction {
+        DUK_TYPE_ID(DukCFunction)
+        duk_c_function func;
+        duk_int_t nargs;
+        DukCFunction(duk_c_function func, duk_int_t nargs) :
+            func(func), nargs(nargs) {}
+    };
 
-#define DUKPROP_VAL_STRING(key, string_val, writable) \
-    { (key), DUKPROPLIST_VAL_STRING, (writable), (const char*)(string_val), nullptr, nullptr }
+    struct DukGetter {
+        DUK_SCALARTYPE_IMPL(DukGetter, duk_c_function)
+    };
 
-#define DUKPROP_VAL_OBJECT(key, object_val_idx, writable) \
-    { (key), DUKPROPLIST_VAL_OBJECT, (writable), (duk_idx_t)(object_val_idx), nullptr, nullptr }
+    struct DukGetterSetter {
+        DUK_TYPE_ID(DukGetterSetter)
+        duk_c_function getter, setter;
+        DukGetterSetter(duk_c_function getter, duk_c_function setter) :
+            getter(getter), setter(setter) {}
+    };
 
-#define DUKPROP_VAL_BOOLEAN(key, boolean_val, writable) \
-    { (key), DUKPROPLIST_VAL_OBJECT, (writable), (duk_bool_t)(boolean_val), nullptr, nullptr }
-
-#define DUKPROP_GET(key, getter) \
-    { (key), DUKPROPLIST_VAL_NONE, false, (duk_idx_t)0, (getter), nullptr }
-
-#define DUKPROP_GETSET(key, getter, setter) \
-    { (key), DUKPROPLIST_VAL_NONE, false, (duk_idx_t)0, (getter), (setter) }
-
-#define DUKPROP_END() \
-    { nullptr, 0, false, (duk_idx_t)0, nullptr, nullptr }
-
-    void DukPutProps(duk_context* ctx, duk_idx_t obj_idx, const DukPropListEntry* props)
+    struct DukPropListEntry
     {
-        obj_idx = duk_normalize_index(ctx, obj_idx);
+        const char* key;
+        DukPropTypeID typeId;
+        bool writable, enumerable;
 
-        for (size_t i = 0;; i++)
-        {
-            const DukPropListEntry* prop = &props[i];
+        union Value {
+            DUK_DECLVAL_MEMBER(DukInt, dukInt)
+            DUK_DECLVAL_MEMBER(DukUInt, dukUInt)
+            DUK_DECLVAL_MEMBER(DukNumber, dukNumber)
+            DUK_DECLVAL_MEMBER(DukBoolean, dukBoolean)
+            DUK_DECLVAL_MEMBER(DukString, dukString)
+            DUK_DECLVAL_MEMBER(DukPointer, dukPointer)
+            DUK_DECLVAL_MEMBER(DukCFunction, dukCFunction)
+            DUK_DECLVAL_MEMBER(DukGetter, dukGetter)
+            DUK_DECLVAL_MEMBER(DukGetterSetter, dukGetterSetter)
+            DUK_DECLVAL_MEMBER(DukDupIndex, dukDupIndex)
+        } value;
 
-            if (prop->key == nullptr)
-            {
-                break;
-            }
+        template<class T>
+        DukPropListEntry(const char* key, T value, bool writable = false, bool enumerable = true) :
+            key(key), typeId(T::_TYPE), writable(writable), enumerable(enumerable), value(value) {}
 
-            duk_uint_t propFlags = DUK_DEFPROP_ENUMERABLE;
-            duk_push_string(ctx, prop->key);
+        DukPropListEntry(nullptr_t) :
+            key(nullptr), value(DukInt(0)) {}
 
-            if (prop->valueType != DUKPROPLIST_VAL_NONE)
-            {
-                propFlags |= prop->valueWritable ? DUK_DEFPROP_SET_WRITABLE : 0;
+        DukPropListEntry(const char* key) :
+            key(key), typeId(Type_DukInt), writable(false), enumerable(false), value(DukInt(0)) {}
+    };
 
-                switch (props[i].valueType)
-                {
-                case DUKPROPLIST_VAL_NUMBER:
-                    duk_push_number(ctx, prop->value.numberValue);
-                    break;
-                case DUKPROPLIST_VAL_STRING:
-                    duk_push_string(ctx, prop->value.stringValue);
-                    break;
-                case DUKPROPLIST_VAL_OBJECT:
-                    {
-                        duk_idx_t fixedObjectValueIdx = prop->value.objectValueIdx;
-                        if (fixedObjectValueIdx < 0)
-                        {
-                            // -1 to account for prop->key push above
-                            fixedObjectValueIdx = duk_normalize_index(ctx, fixedObjectValueIdx - 1);
-                        }
-                        duk_dup(ctx, fixedObjectValueIdx);
-                    }
-                    break;
-                case DUKPROPLIST_VAL_BOOLEAN:
-                    duk_push_boolean(ctx, prop->value.booleanValue);
-                    break;
-                }
-            }
-            else
-            {
-                if (props[i].getter != nullptr)
-                {
-                    propFlags |= DUK_DEFPROP_HAVE_GETTER;
-                    duk_push_c_function(ctx, props[i].getter, 0);
-                }
+    // todo proxy object
+    // todo DukObjectConfig_DummyConstructor
+    // todo DukObjectConfig_Finalizer
+    // todo DukObjectConfig_Freeze
 
-                if (props[i].setter != nullptr)
-                {
-                    propFlags |= DUK_DEFPROP_HAVE_SETTER;
-                    duk_push_c_function(ctx, props[i].setter, 1);
-                }
-            }
-
-            duk_def_prop(ctx, obj_idx, flags);
-        }
-    }
+    void DukPutPropList(duk_context* ctx, duk_idx_t obj_idx, const DukPropListEntry* props);
 };

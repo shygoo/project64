@@ -136,15 +136,14 @@ duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
     if (!bSuccess || resultExitCode != 0)
     {
         duk_push_error_object(ctx, resultExitCode, "command failed");
-        duk_push_number(ctx, resultExitCode);
-        duk_put_prop_string(ctx, -2, "status");
-        duk_push_string(ctx, resultStdOut.c_str());
-        duk_put_prop_string(ctx, -2, "stdout");
-        duk_push_string(ctx, resultStdErr.c_str());
-        duk_put_prop_string(ctx, -2, "stderr");
-        duk_push_number(ctx, processInfo.dwProcessId);
-        duk_put_prop_string(ctx, -2, "pid");
-
+        const DukPropListEntry props[] = {
+            { "status", DukInt(resultExitCode) },
+            { "stdout", DukString(resultStdOut.c_str()) },
+            { "stderr", DukString(resultStdErr.c_str()) },
+            { "pid",    DukUInt(processInfo.dwProcessId) },
+            { nullptr }
+        };
+        DukPutPropList(ctx, -1, props);
         return duk_throw(ctx);
     }
     else

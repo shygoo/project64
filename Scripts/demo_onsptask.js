@@ -1,5 +1,10 @@
 const ui = require('ui.js');
 const dlutil = require('dlutil.js')
+const math3d = require('math3d.dll');
+const vec2 = math3d.vec2;
+const vec3 = math3d.vec3;
+const vec4 = math3d.vec4;
+const mat4 = math3d.mat4;
 
 const MODEL_SCALE = 100;
 
@@ -96,23 +101,6 @@ function drawWireframe(ctx)
     ctx.stroke();
 }
 
-function pointInTriangle(p, a, b, c)
-{
-    var ax = a[0];
-    var ay = a[1];
-    var x0 = b[0] - ax
-    var y0 = b[1] - ay;
-    var x1 = c[0] - ax
-    var y1 = c[1] - ay;
-    var x2 = p[0] - ax;
-    var y2 = p[1] - ay;
-    var den = x0 * y1 - x1 * y0;
-    var v = (x2 * y1 - x1 * y2) / den;
-    var w = (x0 * y2 - x2 * y0) / den;
-    var u = 1.0 - v - w;
-    return (u >= 0) && (v >= 0) && (u + v < 1);
-}
-
 function drawHotVertex(ctx)
 {
     var nearestVertDist = 0;
@@ -152,32 +140,40 @@ var gHotFaceAddr = 0;
 
 function drawHotFace(ctx)
 {
-    ctx.fillColor = COLOR_GREEN;
-    var hotFaceIdx = -1;
-    var hotFaceXYZ = [0,0,0];
+    var highlightFaceIdx = -1;
+    var bestPointDepth = 0;
+
+    var mousePoint2 = vec2.fromValues(gMouseX, gMouseY);
+
     for(var i = dlResult1.faceHeap.length - 1; i >= 0; i--)
     {
         var face = dlResult1.faceHeap[i];
         var v0 = dlResult1.vertexHeap[face[0]];
         var v1 = dlResult1.vertexHeap[face[1]];
         var v2 = dlResult1.vertexHeap[face[2]];
-        var x = (v0[0] + v1[0] + v2[0]) / 3;
-        var y = (v0[1] + v1[1] + v2[1]) / 3;
-        var z = (v0[2] + v1[2] + v2[2]) / 3;
 
-        if(pointInTriangle([gMouseX, gMouseY], v0, v1, v2))
+        var bcCoords3 = vec3.create();
+        math3d.barycentric(bcCoords3, mousePoint2, v0, v1, v2);
+
+        //var weights = triBarycentricCoords([gMouseX, gMouseY], v0, v1, v2);
+        if(math3d.bcInside(bcCoords3))
         {
-            if(hotFaceIdx == -1 && hotFaceXYZ[2] < z)
+            var w3 = vec3.fromValues(v0[3], v1[3], v2[3]);
+            var pointDepth = vec3.dot(w3, bcCoords3);
+            //var pointDepth = interpolate(v0[3], v1[3], v2[3], weights);
+            if(highlightFaceIdx == -1 || (pointDepth > 1 && pointDepth < bestPointDepth))
             {
-                hotFaceIdx = i;
-                hotFaceXYZ = [x, y, z];
+                highlightFaceIdx = i;
+                bestPointDepth = pointDepth;
             }
         }
     }
 
-    if(hotFaceIdx >= 0)
+    ctx.fillColor = COLOR_GREEN;
+
+    if(highlightFaceIdx >= 0)
     {
-        var face = dlResult1.faceHeap[hotFaceIdx];
+        var face = dlResult1.faceHeap[highlightFaceIdx];
         
         var v0 = dlResult1.vertexHeap[face[0]];
         var v1 = dlResult1.vertexHeap[face[1]];
@@ -205,8 +201,8 @@ function drawHotFace(ctx)
         ctx.strokeColor = COLOR_BLACK;
         ctx.strokeWidth = 3;
 
-        ctx.fillrect(hotFaceXYZ[0] - 1, hotFaceXYZ[1] - 1, 3, 3);
-        ctx.drawtext(hotFaceXYZ[0] + 5, hotFaceXYZ[1] - 10, face.debugAddr.hex());
+        //ctx.fillrect(hotFaceXYZ[0] - 1, hotFaceXYZ[1] - 1, 3, 3);
+        //ctx.drawtext(hotFaceXYZ[0] + 5, hotFaceXYZ[1] - 10, face.debugAddr.hex());
 
         gHotFaceAddr = face.debugAddr;
     }

@@ -4,6 +4,8 @@
 
 #pragma warning(disable: 4702) // disable unreachable code warning
 
+using namespace ScriptAPI;
+
 static bool CbCond_PcBetween(JSCallback* cb, void* env);
 static bool CbCond_ReadAddrBetween(JSCallback* cb, void* env);
 static bool CbCond_WriteAddrBetween(JSCallback* cb, void* env);
@@ -398,32 +400,41 @@ static bool CbCond_PcBetween_GprValueEquals(JSCallback* cb, void* _env)
 
 duk_idx_t CbArgs_GenericEventObject(duk_context* ctx, void* /*_env*/)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "GenericEvent");
-    duk_push_uint(ctx, inst->CallbackId());
-    duk_put_prop_string(ctx, -2, "callbackId");
+    SetDummyConstructor(ctx, -1, "GenericEvent");
+    
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { nullptr }
+    };
+
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 duk_idx_t CbArgs_ExecEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUExecEvent");
-    duk_push_uint(ctx, env->pc);
-    duk_put_prop_string(ctx, -2, "pc");
-    duk_push_uint(ctx, inst->CallbackId());
-    duk_put_prop_string(ctx, -2, "callbackId");
+    SetDummyConstructor(ctx, -1, "CPUExecEvent");
+    
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "pc", DukUInt(env->pc) },
+        { nullptr }
+    };
+
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     CDebuggerUI* debugger = inst->Debugger();
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     
@@ -434,20 +445,18 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
     bool bFPU = (op == R4300i_LWC1 || op == R4300i_LDC1);
 
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
+    SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
 
-    duk_number_list_entry numbers[] = {
-        { "pc", (duk_double_t)env->pc },
-        { "callbackId", (duk_double_t)inst->CallbackId() },
-        { "address", (duk_double_t)address },
-        { "reg", (duk_double_t)rt },
-        { nullptr, 0 }
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "pc", DukUInt(env->pc) },
+        { "address", DukUInt(address) },
+        { "reg", DukUInt(rt) },
+        { "fpu", DukBoolean(bFPU) },
+        { nullptr }
     };
 
-    duk_put_number_list(ctx, -1, numbers);
-
-    duk_push_boolean(ctx, bFPU);
-    duk_put_prop_string(ctx, -2, "fpu");
+    DukPutPropList(ctx, -1, props);
 
     union {
         uint8_t u8;
@@ -468,48 +477,48 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
     case R4300i_LB:
         debugger->DebugLoad_VAddr(address, value.s8);
         duk_push_int(ctx, value.s8);
-        duk_push_int(ctx, ScriptAPI::S8);
+        duk_push_int(ctx, S8);
         break;
     case R4300i_LBU:
         debugger->DebugLoad_VAddr(address, value.u8);
         duk_push_uint(ctx, value.u8);
-        duk_push_int(ctx, ScriptAPI::U8);
+        duk_push_int(ctx, U8);
         break;
     case R4300i_LH:
         debugger->DebugLoad_VAddr(address, value.s16);
         duk_push_int(ctx, value.s16);
-        duk_push_int(ctx, ScriptAPI::S16);
+        duk_push_int(ctx, S16);
         break;
     case R4300i_LHU:
         debugger->DebugLoad_VAddr(address, value.u16);
         duk_push_uint(ctx, value.u16);
-        duk_push_int(ctx, ScriptAPI::U16);
+        duk_push_int(ctx, U16);
         break;
     case R4300i_LL:
     case R4300i_LW:
         debugger->DebugLoad_VAddr(address, value.s32);
         duk_push_int(ctx, value.s32);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         break;
     case R4300i_LWU:
         debugger->DebugLoad_VAddr(address, value.u32);
         duk_push_uint(ctx, value.u32);
-        duk_push_int(ctx, ScriptAPI::U32);
+        duk_push_int(ctx, U32);
         break;
     case R4300i_LWC1:
         debugger->DebugLoad_VAddr(address, value.f32);
         duk_push_number(ctx, value.f32);
-        duk_push_int(ctx, ScriptAPI::F32);
+        duk_push_int(ctx, F32);
         break;
     case R4300i_LDC1:
         debugger->DebugLoad_VAddr(address, value.f64);
         duk_push_number(ctx, value.f64);
-        duk_push_int(ctx, ScriptAPI::F64);
+        duk_push_int(ctx, F64);
         break;
     case R4300i_LD:
         debugger->DebugLoad_VAddr(address, value.u64);
         duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
         bNeedUpper32 = true;
         break;
     case R4300i_LDL:
@@ -519,7 +528,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~7, value.u64);
         value.u64 = (g_Reg->m_GPR[rt].DW & mask) + (value.u64 << shift);
         duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
         bNeedUpper32 = true;
         }
         break;
@@ -530,7 +539,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~7, value.u64);
         value.u64 = (g_Reg->m_GPR[rt].DW & mask) + (value.u64 >> shift);
         duk_push_number(ctx, (duk_double_t)(value.u64 & 0xFFFFFFFF));
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
         bNeedUpper32 = true;
         }
         break;
@@ -541,7 +550,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~3, value.s32);
         value.s32 = (g_Reg->m_GPR[rt].W[0] & mask) + (value.s32 << shift);
         duk_push_number(ctx, value.s32);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         }
         break;
     case R4300i_LWR:
@@ -551,7 +560,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~3, value.s32);
         value.s32 = (g_Reg->m_GPR[rt].W[0] & mask) + (value.s32 >> shift);
         duk_push_number(ctx, value.s32);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         }
         break;
     default:
@@ -575,7 +584,7 @@ duk_idx_t CbArgs_ReadEventObject(duk_context* ctx, void* _env)
 
 duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     CDebuggerUI* debugger = inst->Debugger();
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
 
@@ -586,20 +595,18 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     bool bFPU = (op == R4300i_SWC1 || op == R4300i_SDC1);
 
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
+    SetDummyConstructor(ctx, -1, "CPUReadWriteEvent");
 
-    duk_number_list_entry numbers[] = {
-        { "pc", (duk_double_t)env->pc },
-        { "callbackId", (duk_double_t)inst->CallbackId() },
-        { "address", (duk_double_t)address },
-        { "reg", (duk_double_t)rt },
-        { nullptr, 0 }
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "pc", DukUInt(env->pc) },
+        { "address", DukUInt(address) },
+        { "reg", DukUInt(rt) },
+        { "fpu", DukBoolean(bFPU) },
+        { nullptr }
     };
 
-    duk_put_number_list(ctx, -1, numbers);
-
-    duk_push_boolean(ctx, bFPU);
-    duk_put_prop_string(ctx, -2, "fpu");
+    DukPutPropList(ctx, -1, props);
 
     bool bNeedUpper32 = false;
     uint64_t value64 = 0;
@@ -608,27 +615,27 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
     {
     case R4300i_SB:
         duk_push_int(ctx, g_Reg->m_GPR[rt].B[0]);
-        duk_push_int(ctx, ScriptAPI::S8);
+        duk_push_int(ctx, S8);
         break;
     case R4300i_SH:
         duk_push_int(ctx, g_Reg->m_GPR[rt].HW[0]);
-        duk_push_int(ctx, ScriptAPI::S16);
+        duk_push_int(ctx, S16);
         break;
     case R4300i_SW:
         duk_push_int(ctx, g_Reg->m_GPR[rt].W[0]);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         break;
     case R4300i_SWC1:
         duk_push_number(ctx, *g_Reg->m_FPR_S[rt]);
-        duk_push_int(ctx, ScriptAPI::F32);
+        duk_push_int(ctx, F32);
         break;
     case R4300i_SDC1:
         duk_push_number(ctx, *g_Reg->m_FPR_D[rt]);
-        duk_push_int(ctx, ScriptAPI::F64);
+        duk_push_int(ctx, F64);
         break;
     case R4300i_SD:
         duk_push_number(ctx, g_Reg->m_GPR[rt].UW[0]);
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
         bNeedUpper32 = true;
         break;
     case R4300i_SWL:
@@ -639,7 +646,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~3, value);
         value = (value & mask) + (g_Reg->m_GPR[rt].UW[0] >> shift);
         duk_push_number(ctx, value);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         }
         break;
     case R4300i_SWR:
@@ -650,7 +657,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~3, value);
         value = (value & mask) + (g_Reg->m_GPR[rt].UW[0] >> shift);
         duk_push_number(ctx, value);
-        duk_push_int(ctx, ScriptAPI::S32);
+        duk_push_int(ctx, S32);
         }
         break;
     case R4300i_SDL:
@@ -660,7 +667,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~7, value64);
         value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
         duk_push_number(ctx, (duk_double_t)(value64 & 0xFFFFFFFF));
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
         }
     case R4300i_SDR:
     {
@@ -669,7 +676,7 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
         debugger->DebugLoad_VAddr(address & ~7, value64);
         value64 = (value64 & mask) + (g_Reg->m_GPR[rt].UDW >> shift);
         duk_push_number(ctx, (duk_double_t)(value64 & 0xFFFFFFFF));
-        duk_push_int(ctx, ScriptAPI::U64);
+        duk_push_int(ctx, U64);
     }
     default:
         duk_push_number(ctx, 0);
@@ -693,54 +700,59 @@ duk_idx_t CbArgs_WriteEventObject(duk_context* ctx, void* _env)
 
 duk_idx_t CbArgs_OpcodeEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "CPUOpcodeEvent");
-    duk_push_uint(ctx, env->pc);
-    duk_put_prop_string(ctx, -2, "pc");
-    duk_push_uint(ctx, inst->CallbackId());
-    duk_put_prop_string(ctx, -2, "callbackId");
-    duk_push_uint(ctx, env->opInfo.m_OpCode.Hex);
-    duk_put_prop_string(ctx, -2, "opcode");
+    SetDummyConstructor(ctx, -1, "CPUOpcodeEvent");
+
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "pc", DukUInt(env->pc) },
+        { "opcode", DukUInt(env->opInfo.m_OpCode.Hex) },
+        { nullptr }
+    };
+
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 duk_idx_t CbArgs_RegValueEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_cpustep_t* env = (jshook_env_cpustep_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "CPURegValueEvent");
-    duk_push_uint(ctx, env->pc);
-    duk_put_prop_string(ctx, -2, "pc");
-    duk_push_uint(ctx, inst->CallbackId());
-    duk_put_prop_string(ctx, -2, "callbackId");
-    duk_push_uint(ctx, g_Reg->m_GPR[env->outAffectedRegIndex].UW[0]);
-    duk_put_prop_string(ctx, -2, "value");
-    duk_push_uint(ctx, env->outAffectedRegIndex);
-    duk_put_prop_string(ctx, -2, "reg");
+    SetDummyConstructor(ctx, -1, "CPURegValueEvent");
+
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "pc", DukUInt(env->pc) },
+        { "value", DukUInt(g_Reg->m_GPR[env->outAffectedRegIndex].UW[0]) },
+        { "reg", DukUInt(env->outAffectedRegIndex) },
+        { nullptr }
+    };
+
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 duk_idx_t CbArgs_DrawEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_gfxupdate_t* env = (jshook_env_gfxupdate_t*)_env;
 
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "DrawEvent");
+    SetDummyConstructor(ctx, -1, "DrawEvent");
 
     duk_push_uint(ctx, inst->CallbackId());
     duk_put_prop_string(ctx, -2, "callbackId");
 
     duk_get_global_string(ctx, "DrawingContext");
     duk_push_pointer(ctx, env->scriptRenderWindow);
-    ScriptAPI::AllowPrivateCall(ctx, true);
+    AllowPrivateCall(ctx, true);
     duk_new(ctx, 1);
-    ScriptAPI::AllowPrivateCall(ctx, false);
+    AllowPrivateCall(ctx, false);
 
     duk_dup(ctx, -1);
     duk_put_global_string(ctx, HSYM_CURDRAWINGCTX);
@@ -764,90 +776,74 @@ void CbFinish_KillDrawingContext(duk_context* ctx, void* _env)
 
 static duk_idx_t CbArgs_MouseEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_mouse_t* env = (jshook_env_mouse_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "MouseEvent");
-    duk_push_uint(ctx, inst->CallbackId());
-    duk_put_prop_string(ctx, -2, "callbackId");
-    duk_push_number(ctx, env->button);
-    duk_put_prop_string(ctx, -2, "button");
-    duk_push_number(ctx, env->x);
-    duk_put_prop_string(ctx, -2, "x");
-    duk_push_number(ctx, env->y);
-    duk_put_prop_string(ctx, -2, "y");
+    SetDummyConstructor(ctx, -1, "MouseEvent");
+
+    const DukPropListEntry props[] = {
+        { "callbackId", DukUInt(inst->CallbackId()) },
+        { "button", DukInt(env->button) },
+        { "x", DukInt(env->x) },
+        { "y", DukInt(env->y) },
+        { nullptr }
+    };
+    
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 static duk_idx_t CbArgs_SPTaskEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_sptask_t* env = (jshook_env_sptask_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "SPTaskEvent");
+    SetDummyConstructor(ctx, -1, "SPTaskEvent");
 
-    std::pair<const char*, uint32_t> props[] = {
-        { "callbackId",        inst->CallbackId() },
-        { "taskType",          env->taskType },
-        { "taskFlags",         env->taskFlags },
-        { "ucodeBootAddress",  env->ucodeBootAddress | 0x80000000 },
-        { "ucodeBootSize",     env->ucodeBootSize },
-        { "ucodeAddress",      env->ucodeAddress | 0x80000000 },
-        { "ucodeSize",         env->ucodeSize },
-        { "ucodeDataAddress",  env->ucodeDataAddress | 0x80000000 },
-        { "ucodeDataSize",     env->ucodeDataSize },
-        { "dramStackAddress",  env->dramStackAddress | 0x80000000 },
-        { "dramStackSize",     env->dramStackSize },
-        { "outputBuffAddress", env->outputBuffAddress | 0x80000000 },
-        { "outputBuffSize",    env->outputBuffSize },
-        { "dataAddress",       env->dataAddress | 0x80000000 },
-        { "dataSize",          env->dataSize },
-        { "yieldDataAddress",  env->yieldDataAddress | 0x80000000 },
-        { "yieldDataSize",     env->yieldDataSize },
-        { nullptr, 0 }
+    const DukPropListEntry props[] = {
+        { "callbackId",        DukUInt(inst->CallbackId()) },
+        { "taskType",          DukUInt(env->taskType) },
+        { "taskFlags",         DukUInt(env->taskFlags) },
+        { "ucodeBootAddress",  DukUInt(env->ucodeBootAddress | 0x80000000) },
+        { "ucodeBootSize",     DukUInt(env->ucodeBootSize) },
+        { "ucodeAddress",      DukUInt(env->ucodeAddress | 0x80000000) },
+        { "ucodeSize",         DukUInt(env->ucodeSize) },
+        { "ucodeDataAddress",  DukUInt(env->ucodeDataAddress | 0x80000000) },
+        { "ucodeDataSize",     DukUInt(env->ucodeDataSize) },
+        { "dramStackAddress",  DukUInt(env->dramStackAddress | 0x80000000) },
+        { "dramStackSize",     DukUInt(env->dramStackSize) },
+        { "outputBuffAddress", DukUInt(env->outputBuffAddress | 0x80000000) },
+        { "outputBuffSize",    DukUInt(env->outputBuffSize) },
+        { "dataAddress",       DukUInt(env->dataAddress | 0x80000000) },
+        { "dataSize",          DukUInt(env->dataSize) },
+        { "yieldDataAddress",  DukUInt(env->yieldDataAddress | 0x80000000) },
+        { "yieldDataSize",     DukUInt(env->yieldDataSize) },
+        { nullptr }
     };
 
-    for (size_t i = 0;; i++)
-    {
-        if (props[i].first == nullptr)
-        {
-            break;
-        }
-        duk_push_uint(ctx, props[i].second);
-        duk_put_prop_string(ctx, -2, props[i].first);
-    }
-
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }
 
 static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* _env)
 {
-    CScriptInstance* inst = ScriptAPI::GetInstance(ctx);
+    CScriptInstance* inst = GetInstance(ctx);
     jshook_env_pidma_t* env = (jshook_env_pidma_t*)_env;
     duk_push_object(ctx);
-    ScriptAPI::SetDummyConstructor(ctx, -1, "PIEvent");
+    SetDummyConstructor(ctx, -1, "PIEvent");
 
-    std::pair<const char*, uint32_t> props[] = {
-        { "callbackId",  inst->CallbackId() },
-        { "direction",   env->direction },
-        { "dramAddress", env->dramAddress | 0x80000000 },
-        { "cartAddress", env->cartAddress | 0xA0000000 },
-        { "length",      env->length + 1 },
-        { nullptr, 0 }
+    const DukPropListEntry props[] = {
+        { "callbackId",  DukUInt(inst->CallbackId()) },
+        { "direction",   DukUInt(env->direction) },
+        { "dramAddress", DukUInt(env->dramAddress | 0x80000000) },
+        { "cartAddress", DukUInt(env->cartAddress | 0xA0000000) },
+        { "length",      DukUInt(env->length + 1) },
+        { nullptr }
     };
 
-    for (size_t i = 0;; i++)
-    {
-        if (props[i].first == nullptr)
-        {
-            break;
-        }
-        duk_push_uint(ctx, props[i].second);
-        duk_put_prop_string(ctx, -2, props[i].first);
-    }
-
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     return 1;
 }

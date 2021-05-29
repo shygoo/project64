@@ -98,7 +98,8 @@ duk_ret_t ScriptAPI::js_cpu_set(duk_context* ctx)
     }
 
     *pReg = duk_get_uint(ctx, 2);
-    return 0;
+    duk_push_true(ctx);
+    return 1;
 }
 
 duk_ret_t ScriptAPI::js_cpu_gpr_get(duk_context* ctx)
@@ -197,7 +198,9 @@ duk_ret_t ScriptAPI::js_cpu_cop0_set(duk_context* ctx)
         g_Reg->FAKE_CAUSE_REGISTER = value;
         g_Reg->CAUSE_REGISTER = value;
         g_Reg->CheckInterrupts();
-        return 0;
+
+        duk_push_true(ctx);
+        return 1;
     }
 
     uint32_t* reg = COP0RegPtr(name);
@@ -208,7 +211,8 @@ duk_ret_t ScriptAPI::js_cpu_cop0_set(duk_context* ctx)
     }
 
     *reg = duk_get_uint(ctx, 2);
-    return 0;
+    duk_push_true(ctx);
+    return 1;
 }
 
 static duk_ret_t GPRGetImpl(duk_context* ctx, bool bUpper)
@@ -265,7 +269,8 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
 
     if (regIndex == 0)
     {
-        return 0;
+        duk_push_true(ctx);
+        return 1;
     }
 
     if (regIndex < 0 || regIndex > 31)
@@ -274,7 +279,8 @@ static duk_ret_t GPRSetImpl(duk_context* ctx, bool bUpper)
     }
 
     g_Reg->m_GPR[regIndex].UW[bUpper ? 1 : 0] = value;
-    return 0;
+    duk_push_true(ctx);
+    return 1;
 }
 
 static duk_ret_t FPRGetImpl(duk_context* ctx, bool bDouble)
@@ -351,7 +357,8 @@ static duk_ret_t FPRSetImpl(duk_context* ctx, bool bDouble)
         *g_Reg->m_FPR_S[regIndex] = (float)value;
     }
 
-    return 0;
+    duk_push_true(ctx);
+    return 1;
 }
 
 static int GPRIndex(const char* regName)

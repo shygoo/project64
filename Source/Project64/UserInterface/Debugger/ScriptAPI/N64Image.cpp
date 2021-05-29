@@ -446,23 +446,23 @@ uint32_t CN64Image::ColorToRgba32(int srcFormat, unsigned int color)
     case IMG_IA16:
     case IMG_CI8_IA16:
     case IMG_CI4_IA16:
-        r = g = b = (color >> 8);
+        r = g = b = (uint8_t)(color >> 8);
         a = (color & 0xFF);
         break;
     case IMG_I4:
-        r = g = b = color * 17;
+        r = g = b = (uint8_t)(color * 17);
         a = 255;
         break;
     case IMG_IA4:
-        r = g = b = ((color >> 1) * 255) / 7;
+        r = g = b = (uint8_t)(((color >> 1) * 255) / 7);
         a = (color & 1) * 255;
         break;
     case IMG_I8:
-        r = g = b = color;
+        r = g = b = (uint8_t)color;
         a = 255;
         break;
     case IMG_IA8:
-        r = g = b = (color >> 4) * 17;
+        r = g = b = (uint8_t)((color >> 4) * 17);
         a = (color & 0x0F) * 17;
         break;
     }

@@ -50,44 +50,43 @@ void ScriptAPI::Define_N64Image(duk_context* ctx)
 
 static void InitImageObjectProps(duk_context* ctx, duk_idx_t idx, CN64Image* image)
 {
+    using namespace ScriptAPI;
+
     idx = duk_normalize_index(ctx, idx);
-    duk_push_pointer(ctx, image);
-    duk_put_prop_string(ctx, idx, DUK_HIDDEN_SYMBOL("N64IMAGE"));
 
     duk_push_external_buffer(ctx);
     duk_config_buffer(ctx, -1, image->PixelData().data(), image->PixelData().size());
-    duk_push_string(ctx, "pixels");
     duk_push_buffer_object(ctx, -2, 0, image->PixelData().size(), DUK_BUFOBJ_NODEJS_BUFFER);
-    duk_remove(ctx, -3);
-    duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
+    duk_remove(ctx, -2);
+
+    duk_idx_t pixels_idx = duk_normalize_index(ctx, -1);
 
     if (image->UsesPalette())
     {
         duk_push_external_buffer(ctx);
         duk_config_buffer(ctx, -1, image->PaletteData().data(), image->PaletteData().size());
-        duk_push_string(ctx, "palette");
         duk_push_buffer_object(ctx, -2, 0, image->PaletteData().size(), DUK_BUFOBJ_NODEJS_BUFFER);
-        duk_remove(ctx, -3);
-        duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
+        duk_remove(ctx, -2);
     }
     else
     {
-        duk_push_string(ctx, "palette");
         duk_push_null(ctx);
-        duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
     }
 
-    duk_push_string(ctx, "format");
-    duk_push_number(ctx, image->Format());
-    duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
-    
-    duk_push_string(ctx, "width");
-    duk_push_uint(ctx, image->Width());
-    duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
+    duk_idx_t palette_idx = duk_normalize_index(ctx, -1);
 
-    duk_push_string(ctx, "height");
-    duk_push_uint(ctx, image->Height());
-    duk_def_prop(ctx, idx, DUK_DEFPROP_HAVE_VALUE);
+    const DukPropListEntry props[] = {
+        { DUK_HIDDEN_SYMBOL("N64IMAGE"), DukPointer(image) },
+        { "pixels", DukDupIndex(pixels_idx) },
+        { "palette", DukDupIndex(palette_idx) },
+        { "width", DukUInt(image->Width()) },
+        { "height", DukUInt(image->Height()) },
+        { nullptr }
+    };
+
+    DukPutPropList(ctx, idx, props);
+
+    duk_pop_n(ctx, 2);
 
     duk_push_c_function(ctx, ScriptAPI::js_N64Image__finalizer, 1);
     duk_set_finalizer(ctx, idx);

@@ -529,3 +529,103 @@ void ScriptAPI::SetDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const c
     duk_set_prototype(ctx, obj_idx);
     duk_pop(ctx);
 }
+
+void ScriptAPI::DukPutPropList(duk_context* ctx, duk_idx_t obj_idx, const DukPropListEntry* props)
+{
+    obj_idx = duk_normalize_index(ctx, obj_idx);
+
+    for (size_t i = 0;; i++)
+    {
+        const DukPropListEntry& prop = props[i];
+
+        if (prop.key == nullptr)
+        {
+            break;
+        }
+
+        duk_uint_t propFlags = 0;
+        bool bHiddenSymbol = (prop.key[0] == '\xFF');
+        
+        if (!bHiddenSymbol)
+        {
+            propFlags |= prop.writable ? DUK_DEFPROP_SET_WRITABLE : 0;
+            propFlags |= prop.enumerable ? DUK_DEFPROP_SET_ENUMERABLE : 0;
+        }
+        else
+        {
+            if (prop.typeId == Type_DukGetter ||
+                prop.typeId == Type_DukGetterSetter)
+            {
+                // not compatible
+                g_Notify->BreakPoint(__FILE__, __LINE__);
+            }
+        }
+
+        duk_push_string(ctx, prop.key);
+
+        switch (prop.typeId)
+        {
+        case Type_DukNumber:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_number(ctx, prop.value.dukNumber.value);
+            break;
+        case Type_DukInt:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_int(ctx, prop.value.dukInt.value);
+            break;
+        case Type_DukUInt:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_uint(ctx, prop.value.dukUInt.value);
+            break;
+        case Type_DukBoolean:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_boolean(ctx, prop.value.dukBoolean.value);
+            break;
+        case Type_DukString:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_string(ctx, prop.value.dukString.value);
+            break;
+        case Type_DukPointer:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_pointer(ctx, prop.value.dukPointer.value);
+            break;
+        case Type_DukCFunction:
+            propFlags |= DUK_DEFPROP_HAVE_VALUE;
+            duk_push_c_function(ctx, prop.value.dukCFunction.func, prop.value.dukCFunction.nargs);
+            break;
+        case Type_DukDupIndex:
+            {
+                propFlags |= DUK_DEFPROP_HAVE_VALUE;
+                duk_idx_t fixedDupIndex = prop.value.dukDupIndex.value;
+                if (fixedDupIndex < 0)
+                {
+                    // -1 to account for prop.key push above
+                    fixedDupIndex = duk_normalize_index(ctx, fixedDupIndex - 1);
+                }
+                duk_dup(ctx, fixedDupIndex);
+            }
+            break;
+        case Type_DukGetter:
+            propFlags |= DUK_DEFPROP_HAVE_GETTER;
+            duk_push_c_function(ctx, prop.value.dukGetter.value, 0);
+            break;
+        case Type_DukGetterSetter:
+            propFlags |= DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_HAVE_SETTER;
+            duk_push_c_function(ctx, prop.value.dukGetterSetter.getter, 0);
+            duk_push_c_function(ctx, prop.value.dukGetterSetter.setter, 1);
+            break;
+        default:
+            g_Notify->BreakPoint(__FILE__, __LINE__);
+            break;
+        }
+
+        if (bHiddenSymbol)
+        {
+            duk_put_prop(ctx, obj_idx);
+        }
+        else
+        {
+            duk_def_prop(ctx, obj_idx, propFlags);
+        }
+    }
+}
