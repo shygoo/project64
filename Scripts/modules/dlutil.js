@@ -122,19 +122,29 @@ DLParser.prototype.parseF3D = function(dlistAddr, screenWidth, screenHeight) {
                 var x1 = v1[0], y1 = v1[1], z1 = v1[2], w1 = v1[3];
                 var x2 = v2[0], y2 = v2[1], z2 = v2[2], w2 = v2[3];
 
+                //console.log(w0, w1, w2);
+
                 // todo test w
-                if(z0 > 1 || z1 > 1 || z2 > 1)
+                if(w0 < 1 || w1 < 1 || w2 < 1)
                     break;
 
-                if(x0 < 0 && x1 < 0 && x2 < 0) continue;
-                if(x0 >= 640 && x1 >= 640 && x2 >= 640) continue;
-                if(y0 < 0 && y1 < 0 && y2 < 0) continue;
-                if(y0 >= 480 && y1 >= 480 && y2 >= 480) continue;
+                //if(x0 < 0 && x1 < 0 && x2 < 0) continue;
+                //if(x0 >= 640 && x1 >= 640 && x2 >= 640) continue;
+                //if(y0 < 0 && y1 < 0 && y2 < 0) continue;
+                //if(y0 >= 480 && y1 >= 480 && y2 >= 480) continue;
 
-                vertexHeap[vhidx] = [ x0, y0, z0, w0, v0.debugAddr ];
-                vertexHeap[vhidx+1] = [ x1, y1, z1, w1, v1.debugAddr ];
-                vertexHeap[vhidx+2] = [ x2, y2, z2, w2, v2.debugAddr ];
-                faceHeap[faceIdx] = [vhidx, vhidx + 1, vhidx + 2];
+                var v0_copy = vec4.fromValues(x0, y0, z0, w0);
+                var v1_copy = vec4.fromValues(x1, y1, z1, w1);
+                var v2_copy = vec4.fromValues(x2, y2, z2, w2);
+
+                v0_copy.debugAddr = v0.debugAddr;
+                v1_copy.debugAddr = v1.debugAddr;
+                v2_copy.debugAddr = v2.debugAddr;
+
+                vertexHeap[vhidx] = v0_copy;
+                vertexHeap[vhidx+1] = v1_copy;
+                vertexHeap[vhidx+2] = v2_copy;
+                faceHeap[faceIdx] = [ vhidx, vhidx + 1, vhidx + 2 ];
                 faceHeap[faceIdx].debugAddr = K0BASE + dlAddress - 8;
                 vhidx += 3;
                 faceIdx++;

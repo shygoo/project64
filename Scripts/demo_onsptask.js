@@ -143,7 +143,8 @@ function drawHotFace(ctx)
     var highlightFaceIdx = -1;
     var bestPointDepth = 0;
 
-    var mousePoint2 = vec2.fromValues(gMouseX, gMouseY);
+    var mousePoint = vec2.fromValues(gMouseX, gMouseY);
+    var bcCoords = vec3.create();
 
     for(var i = dlResult1.faceHeap.length - 1; i >= 0; i--)
     {
@@ -152,15 +153,13 @@ function drawHotFace(ctx)
         var v1 = dlResult1.vertexHeap[face[1]];
         var v2 = dlResult1.vertexHeap[face[2]];
 
-        var bcCoords3 = vec3.create();
-        math3d.barycentric(bcCoords3, mousePoint2, v0, v1, v2);
+        
+        math3d.barycentric(bcCoords, mousePoint, v0, v1, v2);
 
-        //var weights = triBarycentricCoords([gMouseX, gMouseY], v0, v1, v2);
-        if(math3d.bcInside(bcCoords3))
+        if(math3d.bcInside(bcCoords))
         {
             var w3 = vec3.fromValues(v0[3], v1[3], v2[3]);
-            var pointDepth = vec3.dot(w3, bcCoords3);
-            //var pointDepth = interpolate(v0[3], v1[3], v2[3], weights);
+            var pointDepth = vec3.dot(w3, bcCoords);
             if(highlightFaceIdx == -1 || (pointDepth > 1 && pointDepth < bestPointDepth))
             {
                 highlightFaceIdx = i;
@@ -186,8 +185,8 @@ function drawHotFace(ctx)
         var x2 = v2[0];
         var y2 = v2[1];
 
-        ctx.fillColor = RGBA(COLOR_GREEN, 0.20);
-        ctx.strokeColor = COLOR_GREEN;
+        ctx.fillColor = RGBA(COLOR_GREEN, 0.30);
+        ctx.strokeColor = COLOR_WHITE;
         ctx.strokeWidth = 1;
         ctx.beginpath();
         ctx.moveto(x0, y0);
@@ -197,12 +196,15 @@ function drawHotFace(ctx)
         ctx.stroke();
         ctx.fill();
 
-        ctx.fillColor = COLOR_GREEN;
+        ctx.fillColor = COLOR_WHITE;
         ctx.strokeColor = COLOR_BLACK;
         ctx.strokeWidth = 3;
 
-        //ctx.fillrect(hotFaceXYZ[0] - 1, hotFaceXYZ[1] - 1, 3, 3);
-        //ctx.drawtext(hotFaceXYZ[0] + 5, hotFaceXYZ[1] - 10, face.debugAddr.hex());
+        var centerX = (x0 + x1 + x2) / 3
+        var centerY = (y0 + y1 + y2) / 3
+    
+        ctx.fillrect(centerX - 1, centerY - 1, 3, 3);
+        ctx.drawtext(gMouseX + 5, gMouseY - 10, face.debugAddr.hex());
 
         gHotFaceAddr = face.debugAddr;
     }
@@ -221,7 +223,7 @@ events.onmouseup(function(e) {
     if(controls.click(e.x, e.y)) {
         return;
     }
-    if(triInfoCheckbox.checked) {
+    if(e.button == 2 && triInfoCheckbox.checked) {
         debug.showmemory(gHotFaceAddr);
     }
 });
