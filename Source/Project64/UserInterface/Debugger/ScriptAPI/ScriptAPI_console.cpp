@@ -7,8 +7,8 @@ void ScriptAPI::Define_console(duk_context* ctx)
     const duk_function_list_entry funcs[] = {
         { "print", js_console_print, DUK_VARARGS },
         { "log", js_console_log, DUK_VARARGS },
-        { "clear", js_console_clear, 0 },
-        { "listen", js_console_listen, 1 },
+        { "clear", js_console_clear, DUK_VARARGS },
+        { "listen", js_console_listen, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 

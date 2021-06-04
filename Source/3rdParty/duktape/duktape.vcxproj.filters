@@ -22,10 +22,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="duktape.c">
+    <ClCompile Include="duktape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="duk_module_duktape.c">
+    <ClCompile Include="duk_module_duktape.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

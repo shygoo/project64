@@ -6,11 +6,11 @@ void ScriptAPI::Define_debug(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
         { "breakhere", js_debug_breakhere, DUK_VARARGS },
-        { "step", js_debug_step, 0 },
-        { "skip", js_debug_skip, 0 },
-        { "resume", js_debug_resume, 0 },
+        { "step", js_debug_step, DUK_VARARGS },
+        { "skip", js_debug_skip, DUK_VARARGS },
+        { "resume", js_debug_resume, DUK_VARARGS },
         { "showmemory", js_debug_showmemory, DUK_VARARGS },
-        { "showcommands", js_debug_showcommands, 1 },
+        { "showcommands", js_debug_showcommands, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
@@ -30,6 +30,8 @@ void ScriptAPI::Define_debug(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_breakhere(duk_context* ctx)
 {
+    CheckArgs(ctx, { Arg_Boolean });
+
     if (duk_get_top(ctx) > 0 && duk_get_boolean(ctx, 0) == 1)
     {
         g_Settings->SaveBool(Debugger_SilentBreak, true);
@@ -40,6 +42,8 @@ duk_ret_t ScriptAPI::js_debug_breakhere(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_step(duk_context* ctx)
 {
+    CheckArgs(ctx, {});
+
     if (g_Settings->LoadBool(Debugger_SteppingOps) && 
         CDebugSettings::WaitingForStep())
     {
@@ -51,6 +55,8 @@ duk_ret_t ScriptAPI::js_debug_step(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_skip(duk_context* ctx)
 {
+    CheckArgs(ctx, {});
+
     g_Settings->SaveBool(Debugger_SkipOp, true);
 
     if (g_Settings->LoadBool(Debugger_SteppingOps) &&
@@ -63,14 +69,10 @@ duk_ret_t ScriptAPI::js_debug_skip(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_showmemory(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
-    if (!duk_is_number(ctx, 0) || (nargs > 1 && !duk_is_boolean(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number, Arg_OptBoolean });
 
     uint32_t address = duk_get_uint(ctx, 0);
-    bool bPhysical = (bool)duk_get_boolean_default(ctx, 1, 0);
+    bool bPhysical = duk_get_boolean_default(ctx, 1, 0) ? true : false;
 
     GetInstance(ctx)->Debugger()->Debug_ShowMemoryLocation(duk_get_uint(ctx, 0), !bPhysical);
     return 0;
@@ -78,17 +80,15 @@ duk_ret_t ScriptAPI::js_debug_showmemory(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_debug_showcommands(duk_context* ctx)
 {
-    if (!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
+    CheckArgs(ctx, { Arg_Number });
     GetInstance(ctx)->Debugger()->Debug_ShowCommandsLocation(duk_get_uint(ctx, 0), true);
     return 0;
 }
 
 duk_ret_t ScriptAPI::js_debug_resume(duk_context* ctx)
 {
+    CheckArgs(ctx, {});
+
     g_Settings->SaveBool(Debugger_SteppingOps, false);
 
     if (CDebugSettings::WaitingForStep())

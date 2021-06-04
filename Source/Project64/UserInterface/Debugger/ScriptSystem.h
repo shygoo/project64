@@ -55,7 +55,7 @@ public:
     void SyncCall(CScriptInstance *inst, void *heapptr, jsargs_fn_t fnPushArgs = nullptr, void *param = nullptr);
 
     bool HaveCallbacks(jshook_id_t hookId);
-    void Invoke(jshook_id_t hookId, void* env);
+    void Invoke(jshook_id_t hookId, void* env = nullptr);
     void DoMouseEvent(jshook_id_t hookId, int x, int y, int button = -1);
     jscb_id_t RawAddCallback(jshook_id_t hookId, JSCallback& callback);
     bool RawRemoveCallback(jshook_id_t hookId, jscb_id_t callbackId);

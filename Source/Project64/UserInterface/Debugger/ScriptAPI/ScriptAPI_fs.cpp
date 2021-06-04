@@ -11,25 +11,25 @@ static duk_ret_t FileFinalizer(duk_context *ctx);
 void ScriptAPI::Define_fs(duk_context *ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "open",      js_fs_open,      2 },
-        { "close",     js_fs_close,     1 },
+        { "open",      js_fs_open,      DUK_VARARGS },
+        { "close",     js_fs_close,     DUK_VARARGS },
         { "write",     js_fs_write,     DUK_VARARGS },
-        { "writefile", js_fs_writefile, 2 },
+        { "writefile", js_fs_writefile, DUK_VARARGS },
         { "read",      js_fs_read,      DUK_VARARGS },
-        { "readfile",  js_fs_readfile,  1 },
-        { "fstat",     js_fs_fstat,     1 },
-        { "stat",      js_fs_stat,      1 },
-        { "unlink",    js_fs_unlink,    1 },
-        { "mkdir",     js_fs_mkdir,     1 },
-        { "rmdir",     js_fs_rmdir,     1 },
-        { "readdir",   js_fs_readdir,   1 },
-        { "Stats", js_fs_Stats__constructor, 1 },
+        { "readfile",  js_fs_readfile,  DUK_VARARGS },
+        { "fstat",     js_fs_fstat,     DUK_VARARGS },
+        { "stat",      js_fs_stat,      DUK_VARARGS },
+        { "unlink",    js_fs_unlink,    DUK_VARARGS },
+        { "mkdir",     js_fs_mkdir,     DUK_VARARGS },
+        { "rmdir",     js_fs_rmdir,     DUK_VARARGS },
+        { "readdir",   js_fs_readdir,   DUK_VARARGS },
+        { "Stats", js_fs_Stats__constructor, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
     const duk_function_list_entry Stats_funcs[] = {
-        { "isFile",      js_fs_Stats_isFile,      0 },
-        { "isDirectory", js_fs_Stats_isDirectory, 0 },
+        { "isFile",      js_fs_Stats_isFile,      DUK_VARARGS },
+        { "isDirectory", js_fs_Stats_isDirectory, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
@@ -51,12 +51,7 @@ void ScriptAPI::Define_fs(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 {
-    if(duk_get_top(ctx) != 2 ||
-       !duk_is_string(ctx, 0) ||
-       !duk_is_string(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String, Arg_String });
 
     const char* path = duk_get_string(ctx, 0);
     const char* mode = duk_get_string(ctx, 1);
@@ -117,10 +112,7 @@ duk_ret_t ScriptAPI::js_fs_open(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
 {
-    if(!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number });
 
     int fd = duk_get_int(ctx, 0);
     int rc = -1;
@@ -155,15 +147,13 @@ duk_ret_t ScriptAPI::js_fs_close(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_write(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Number, Arg_Any, Arg_OptNumber, Arg_OptNumber, Arg_OptNumber });
     return ReadWriteImpl(ctx, FS_WRITE);
 }
 
 duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String, Arg_Any });
 
     const char* path = duk_get_string(ctx, 0);
 
@@ -203,15 +193,13 @@ duk_ret_t ScriptAPI::js_fs_writefile(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_read(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Number, Arg_Any, Arg_Number, Arg_Number, Arg_Number });
     return ReadWriteImpl(ctx, FS_READ);
 }
 
 duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char* path = duk_get_string(ctx, 0);
 
@@ -246,10 +234,7 @@ duk_ret_t ScriptAPI::js_fs_readfile(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
 {
-    if(!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number });
 
     int fd = duk_get_int(ctx, 0);
 
@@ -263,10 +248,7 @@ duk_ret_t ScriptAPI::js_fs_fstat(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_stat(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char *path = duk_get_string(ctx, 0);
 
@@ -280,10 +262,7 @@ duk_ret_t ScriptAPI::js_fs_stat(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char *path = duk_get_string(ctx, 0);
     duk_push_boolean(ctx, DeleteFileA(path) != 0);
@@ -292,10 +271,7 @@ duk_ret_t ScriptAPI::js_fs_unlink(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char *path = duk_get_string(ctx, 0);
     duk_push_boolean(ctx, CreateDirectoryA(path, nullptr) != 0);
@@ -304,10 +280,7 @@ duk_ret_t ScriptAPI::js_fs_mkdir(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_rmdir(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char *path = duk_get_string(ctx, 0);
     duk_push_boolean(ctx, RemoveDirectoryA(path) != 0);
@@ -317,10 +290,7 @@ duk_ret_t ScriptAPI::js_fs_rmdir(duk_context *ctx)
 // todo make sure failure behavior is similar to nodejs's fs.readdirSync
 duk_ret_t ScriptAPI::js_fs_readdir(duk_context *ctx)
 {
-    if(!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char* path = duk_get_string(ctx, 0);
 
@@ -431,6 +401,8 @@ duk_ret_t ScriptAPI::js_fs_Stats__constructor(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_Stats_isDirectory(duk_context *ctx)
 {
+    CheckArgs(ctx, {});
+
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, "mode");
     duk_uint_t mode = duk_get_uint(ctx, -1);
@@ -440,6 +412,8 @@ duk_ret_t ScriptAPI::js_fs_Stats_isDirectory(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_fs_Stats_isFile(duk_context *ctx)
 {
+    CheckArgs(ctx, {});
+
     duk_push_this(ctx);
     duk_get_prop_string(ctx, -1, "mode");
     duk_uint_t mode = duk_get_uint(ctx, -1);

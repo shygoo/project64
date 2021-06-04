@@ -2,16 +2,18 @@
 #include "../ScriptAPI.h"
 #include <Project64/UserInterface/DiscordRPC.h>
 
+using namespace ScriptAPI;
+
 static void CpuRunningChanged(void *data);
 static void Define_rominfo(duk_context* ctx, duk_idx_t obj_idx);
 
 void ScriptAPI::Define_pj64(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "open", js_pj64_open, 1 },
-        { "close", js_pj64_close, 0 },
-        //{ "savestate", js_pj64_savestate, 1 },
-        //{ "loadstate", js_pj64_loadstate, 1 }
+        { "open", js_pj64_open, DUK_VARARGS },
+        { "close", js_pj64_close, DUK_VARARGS },
+        //{ "savestate", js_pj64_savestate, DUK_VARARGS },
+        //{ "loadstate", js_pj64_loadstate, DUK_VARARGS }
         { nullptr, nullptr, 0 }
     };
 
@@ -29,47 +31,33 @@ void ScriptAPI::Define_pj64(duk_context* ctx)
 
 void Define_rominfo(duk_context* ctx, duk_idx_t obj_idx)
 {
-    using namespace ScriptAPI;
-
     obj_idx = duk_normalize_index(ctx, obj_idx);
 
-    const duk_function_list_entry romInfoGetters[] = {
-        { "loaded", js_pj64_romInfo_loaded, 0 },
-        { "goodName", js_pj64_romInfo_goodName, 0 },
-        { "fileName", js_pj64_romInfo_fileName, 0 },
-        { "filePath", js_pj64_romInfo_filePath, 0 },
-        { "headerCrc1", js_pj64_romInfo_headerCrc1, 0 },
-        { "headerCrc2", js_pj64_romInfo_headerCrc2, 0 },
-        { "headerName", js_pj64_romInfo_headerName, 0 },
-        { "headerMediaFormat", js_pj64_romInfo_headerMediaFormat, 0 },
-        { "headerId", js_pj64_romInfo_headerId, 0 },
-        { "headerCountryCode", js_pj64_romInfo_headerCountryCode, 0 },
-        { "headerVersion", js_pj64_romInfo_headerVersion, 0 },
-        { nullptr, nullptr }
+    static const DukPropListEntry props[] = {
+        { "loaded", DukGetter(js_pj64_romInfo_loaded) },
+        { "goodName", DukGetter(js_pj64_romInfo_goodName) },
+        { "fileName", DukGetter(js_pj64_romInfo_fileName) },
+        { "filePath", DukGetter(js_pj64_romInfo_filePath) },
+        { "headerCrc1", DukGetter(js_pj64_romInfo_headerCrc1) },
+        { "headerCrc2", DukGetter(js_pj64_romInfo_headerCrc2) },
+        { "headerName", DukGetter(js_pj64_romInfo_headerName) },
+        { "headerMediaFormat", DukGetter(js_pj64_romInfo_headerMediaFormat) },
+        { "headerId", DukGetter(js_pj64_romInfo_headerId) },
+        { "headerCountryCode", DukGetter(js_pj64_romInfo_headerCountryCode) },
+        { "headerVersion", DukGetter(js_pj64_romInfo_headerVersion) },
+        { nullptr }
     };
 
     duk_push_string(ctx, "rominfo");
     duk_push_object(ctx);
-    for (size_t i = 0;; i++)
-    {
-        if (romInfoGetters[i].key == nullptr)
-        {
-            break;
-        }
-        duk_push_string(ctx, romInfoGetters[i].key);
-        duk_push_c_function(ctx, romInfoGetters[i].value, romInfoGetters[i].nargs);
-        duk_def_prop(ctx, -3, DUK_DEFPROP_HAVE_GETTER | DUK_DEFPROP_SET_ENUMERABLE);
-    }
+    DukPutPropList(ctx, -1, props);
     duk_freeze(ctx, -1);
     duk_def_prop(ctx, obj_idx, DUK_DEFPROP_HAVE_VALUE | DUK_DEFPROP_SET_ENUMERABLE);
 }
 
 duk_ret_t ScriptAPI::js_pj64_open(duk_context* ctx)
 {
-    if (duk_get_top(ctx) != 1 || !duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char* romPath = duk_get_string(ctx, 0);
 
@@ -122,10 +110,7 @@ TODO: Can't implement these because CN64System::SaveState() doesn't allow arbitr
 
 duk_ret_t ScriptAPI::js_pj64_savestate(duk_context* ctx)
 {
-    if (!duk_is_string(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String });
 
     const char* path = duk_get_string(ctx, 0);
     g_Settings->SaveString(GameRunning_InstantSaveFile, path);

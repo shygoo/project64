@@ -3096,6 +3096,7 @@ typedef struct duk_hthread duk_context;
  */
 
 /* __OVERRIDE_DEFINES__ */
+#define DUK_USE_CPP_EXCEPTIONS
 #define DUK_USE_INTERRUPT_COUNTER
 #define DUK_USE_EXEC_TIMEOUT_CHECK(udata) DukTimeoutCheck(udata)
 #ifdef DUK_F_CPP

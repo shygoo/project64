@@ -20,6 +20,29 @@ namespace ScriptAPI
         U64, S64
     };
 
+    enum ArgType {
+        Arg_Any,
+        Arg_Number,
+        Arg_BufferData,
+        Arg_String,
+        Arg_Function,
+        Arg_Object,
+        Arg_Array,
+        Arg_Boolean,
+
+        ArgAttr_Optional = (1 << 31),
+        Arg_OptAny = Arg_Any | ArgAttr_Optional,
+        Arg_OptNumber = Arg_Number | ArgAttr_Optional,
+        Arg_OptBufferData = Arg_BufferData | ArgAttr_Optional,
+        Arg_OptString = Arg_String | ArgAttr_Optional,
+        Arg_OptFunction = Arg_Function | ArgAttr_Optional,
+        Arg_OptObject = Arg_Object | ArgAttr_Optional,
+        Arg_OptArray = Arg_Array | ArgAttr_Optional,
+        Arg_OptBoolean = Arg_Boolean | ArgAttr_Optional,
+
+        ArgAttrs = ArgAttr_Optional
+    };
+
     // ScriptAPI
     void InitEnvironment(duk_context* ctx, CScriptInstance* inst);
     void DefineGlobalConstants(duk_context* ctx);
@@ -27,7 +50,7 @@ namespace ScriptAPI
     CScriptInstance* GetInstance(duk_context* ctx);
 
     jscb_id_t AddCallback(duk_context* ctx, duk_idx_t callbackIdx, jshook_id_t hookId,
-        jscond_fn_t fnCondition = nullptr, jsargs_fn_t fnPushArgs = nullptr, jsfn_t fnFinish = nullptr);
+        jsargs_fn_t fnPushArgs = nullptr, jscond_fn_t fnCondition = nullptr, jsfn_t fnFinish = nullptr);
 
     jscb_id_t AddCallback(duk_context* ctx, jshook_id_t hookId, JSCallback& callback);
     bool RemoveCallback(duk_context* ctx, jscb_id_t callbackId);
@@ -38,7 +61,9 @@ namespace ScriptAPI
     duk_ret_t NativeModuleFinalizer(duk_context* ctx);
 
     duk_ret_t ThrowInvalidArgsError(duk_context* ctx);
-    duk_ret_t ThrowInvalidAssignmentError(duk_context* ctx);
+    duk_ret_t ThrowInvalidArgError(duk_context* ctx, duk_idx_t idx, ArgType wantType);
+    duk_ret_t ThrowTooManyArgsError(duk_context* ctx);
+    duk_ret_t ThrowInvalidAssignmentError(duk_context* ctx, ArgType wantType);
     duk_ret_t ThrowNotCallableError(duk_context* ctx);
 
     void AllowPrivateCall(duk_context* ctx, bool bAllow);
@@ -48,6 +73,11 @@ namespace ScriptAPI
     void DefineGlobalDummyConstructors(duk_context* ctx, const char* constructorNames[], bool bFreeze = true);
     void SetDummyConstructor(duk_context* ctx, duk_idx_t obj_idx, const char* globalConstructorName);
     duk_ret_t js_DummyConstructor(duk_context* ctx);
+
+    const char* ArgTypeName(ArgType argType);
+    duk_bool_t ArgTypeMatches(duk_context* ctx, duk_idx_t idx, ArgType wantType);
+    duk_ret_t CheckArgs(duk_context* ctx, const std::vector<ArgType>& argTypes);
+    duk_ret_t CheckSetterAssignment(duk_context* ctx, ArgType wantType);
 
     // ScriptAPI_events
     void Define_events(duk_context* ctx);
@@ -60,6 +90,7 @@ namespace ScriptAPI
     duk_ret_t js_events_onpifread(duk_context* ctx);
     duk_ret_t js_events_onsptask(duk_context* ctx);
     duk_ret_t js_events_onpidma(duk_context* ctx);
+    duk_ret_t js_events_onemustart(duk_context* ctx);
     duk_ret_t js_events_onmouseup(duk_context* ctx);
     duk_ret_t js_events_onmousedown(duk_context* ctx);
     duk_ret_t js_events_onmousemove(duk_context* ctx);

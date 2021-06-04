@@ -282,7 +282,7 @@ CScriptInstance* ScriptAPI::GetInstance(duk_context* ctx)
 }
 
 jscb_id_t ScriptAPI::AddCallback(duk_context* ctx, duk_idx_t callbackIdx, jshook_id_t hookId,
-    jscond_fn_t fnCondition, jsargs_fn_t fnPushArgs, jsfn_t fnFinish)
+    jsargs_fn_t fnPushArgs, jscond_fn_t fnCondition, jsfn_t fnFinish)
 {
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, callbackIdx), fnCondition, fnPushArgs, fnFinish);
     return AddCallback(ctx, hookId, cb);
@@ -455,9 +455,21 @@ duk_ret_t ScriptAPI::ThrowInvalidArgsError(duk_context* ctx)
     return duk_throw(ctx);  
 }
 
-duk_ret_t ScriptAPI::ThrowInvalidAssignmentError(duk_context* ctx)
+duk_ret_t ScriptAPI::ThrowInvalidArgError(duk_context * ctx, duk_idx_t idx, ArgType wantType)
 {
-    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid assignment");
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "argument %d invalid, expected %s", idx, ArgTypeName(wantType));
+    return duk_throw(ctx);
+}
+
+duk_ret_t ScriptAPI::ThrowTooManyArgsError(duk_context * ctx)
+{
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "too many arguments");
+    return duk_throw(ctx);
+}
+
+duk_ret_t ScriptAPI::ThrowInvalidAssignmentError(duk_context* ctx, ArgType wantType)
+{
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "invalid assignment, expected %s", ArgTypeName(wantType));
     return duk_throw(ctx);
 }
 
@@ -628,4 +640,101 @@ void ScriptAPI::DukPutPropList(duk_context* ctx, duk_idx_t obj_idx, const DukPro
             duk_def_prop(ctx, obj_idx, propFlags);
         }
     }
+}
+
+duk_bool_t ScriptAPI::ArgTypeMatches(duk_context* ctx, duk_idx_t idx, ArgType wantType)
+{
+    ArgType argType = (ArgType)(wantType & (~ArgAttrs));
+
+    switch (argType)
+    {
+    case Arg_Any:
+        return true;
+    case Arg_Number:
+        return duk_is_number(ctx, idx);
+    case Arg_BufferData:
+        return duk_is_buffer_data(ctx, idx);
+    case Arg_String:
+        return duk_is_string(ctx, idx);
+    case Arg_Function:
+        return duk_is_function(ctx, idx);
+    case Arg_Object:
+        return duk_is_object(ctx, idx);
+    case Arg_Array:
+        return duk_is_array(ctx, idx);
+    case Arg_Boolean:
+        return duk_is_boolean(ctx, idx);
+    default:
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+        return false;
+    }
+
+    return false;
+}
+
+const char* ScriptAPI::ArgTypeName(ArgType argType)
+{
+    static const std::map<ArgType, std::string> argTypeNames = {
+        { Arg_Any, "any" },
+        { Arg_Number, "number" },
+        { Arg_BufferData, "bufferdata" },
+        { Arg_String, "string" },
+        { Arg_Function, "function" },
+        { Arg_Object, "object" },
+        { Arg_Array, "array" },
+        { Arg_Boolean, "boolean" }
+    };
+
+    if (argTypeNames.count(argType) == 0)
+    {
+        g_Notify->BreakPoint(__FILE__, __LINE__);
+    }
+
+    return argTypeNames.at(argType).c_str();
+}
+
+duk_ret_t ScriptAPI::CheckSetterAssignment(duk_context* ctx, ArgType wantType)
+{
+    if (!ArgTypeMatches(ctx, 0, wantType))
+    {
+        return ThrowInvalidAssignmentError(ctx, wantType);
+    }
+    return 0;
+}
+
+duk_ret_t ScriptAPI::CheckArgs(duk_context* ctx, const std::vector<ArgType>& argTypes)
+{
+    duk_idx_t nargs = duk_get_top(ctx);
+
+    if (nargs > argTypes.size())
+    {
+        return ThrowTooManyArgsError(ctx);
+    }
+
+    duk_idx_t idx = 0;
+    for (auto& it = argTypes.begin(); it != argTypes.end(); it++)
+    {
+        bool bOptional = (*it & ArgAttr_Optional) != 0;
+        ArgType argType = (ArgType)(*it & (~ArgAttrs));
+
+        if (idx >= nargs)
+        {
+            if (bOptional)
+            {
+                return 0;
+            }
+
+            duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR, "argument(s) missing", idx);
+            return duk_throw(ctx);
+        }
+
+        if (!ArgTypeMatches(ctx, idx, argType))
+        {
+            return ThrowInvalidArgError(ctx, idx, argType);
+        }
+
+        idx++;
+    }
+
+    return 0;
 }

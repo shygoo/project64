@@ -14,16 +14,10 @@ void ScriptAPI::Define_exec(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_exec(duk_context* ctx)
 {
+    CheckArgs(ctx, { Arg_String, Arg_OptObject });
+
     CScriptInstance* inst = GetInstance(ctx);
     CScriptSystem* sys = inst->System();
-
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if (nargs > 2 || !duk_is_string(ctx, 0) ||
-        (nargs == 2 && !duk_is_object(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
 
     const char* command = duk_get_string(ctx, 0);
 

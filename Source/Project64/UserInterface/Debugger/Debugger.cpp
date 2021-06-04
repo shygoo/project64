@@ -747,7 +747,7 @@ void CDebuggerUI::PIDMAWriteStarted(void)
 
 void CDebuggerUI::EmulationStarting(void)
 {
-    // TODO invoke JS_HOOK_EMUSTART
+    m_ScriptSystem->Invoke(JS_HOOK_EMUSTART);
 }
 
 void CDebuggerUI::WaitForStep(void)

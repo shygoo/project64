@@ -4,6 +4,8 @@
 
 #pragma warning(disable: 4702) // disable unreachable code warning
 
+using namespace ScriptAPI;
+
 static CN64Image* GetThisImage(duk_context* ctx)
 {
     duk_push_this(ctx);
@@ -24,7 +26,7 @@ void ScriptAPI::Define_N64Image(duk_context* ctx)
 {
     const duk_function_list_entry methods[] = {
         { "toPNG", js_N64Image_toPNG, DUK_VARARGS },
-        { "update", js_N64Image_update, 0 },
+        { "update", js_N64Image_update, DUK_VARARGS },
         { nullptr, 0 }
     };
     
@@ -50,8 +52,6 @@ void ScriptAPI::Define_N64Image(duk_context* ctx)
 
 static void InitImageObjectProps(duk_context* ctx, duk_idx_t idx, CN64Image* image)
 {
-    using namespace ScriptAPI;
-
     idx = duk_normalize_index(ctx, idx);
 
     duk_push_external_buffer(ctx);
@@ -94,16 +94,7 @@ static void InitImageObjectProps(duk_context* ctx, duk_idx_t idx, CN64Image* ima
 
 duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if (!duk_is_number(ctx, 0) ||
-        !duk_is_number(ctx, 1) ||
-        (nargs > 2 && !duk_is_number(ctx, 2)) ||
-        (nargs > 3 && !duk_is_buffer_data(ctx, 3)) ||
-        (nargs > 4 && !duk_is_buffer_data(ctx, 4)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number, Arg_Number, Arg_OptNumber, Arg_OptBufferData, Arg_OptBufferData });
 
     if (!duk_is_constructor_call(ctx))
     {
@@ -114,9 +105,9 @@ duk_ret_t ScriptAPI::js_N64Image__constructor(duk_context* ctx)
 
     size_t width = duk_get_uint(ctx, 0);
     size_t height = duk_get_uint(ctx, 1);
-    int format = (nargs > 2) ? duk_get_int(ctx, 2) : IMG_RGBA32;
-    void* pixelData = (nargs > 3) ? duk_get_buffer_data(ctx, 3, &pixelDataSize) : nullptr;
-    void* paletteData = (nargs > 4) ? duk_get_buffer_data(ctx, 4, &paletteDataSize) : nullptr;
+    int format = duk_get_int_default(ctx, 2, IMG_RGBA32);
+    void* pixelData = duk_get_buffer_data_default(ctx, 3, &pixelDataSize, nullptr, 0);
+    void* paletteData = duk_get_buffer_data_default(ctx, 4, &paletteDataSize, nullptr, 0);
 
     // TODO do not make copies of pixelData and paletteData
 
@@ -149,25 +140,14 @@ duk_ret_t ScriptAPI::js_N64Image__finalizer(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_N64Image_static_fromPNG(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
+    CheckArgs(ctx, { Arg_BufferData, Arg_OptNumber });
 
-    if (!duk_is_buffer_data(ctx, 0) ||
-        (nargs > 1 && !duk_is_number(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
-    int format = IMG_RGBA32;
+    int format = duk_get_int_default(ctx, 1, IMG_RGBA32);
     
-    if (nargs > 1)
+    if (CN64Image::BitsPerPixel(format) == 0)
     {
-        format = duk_get_uint(ctx, 1);
-    
-        if (CN64Image::BitsPerPixel(format) == 0)
-        {
-            duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "invalid format");
-            return duk_throw(ctx);
-        }
+        duk_push_error_object(ctx, DUK_RET_TYPE_ERROR, "invalid format");
+        return duk_throw(ctx);
     }
 
     size_t pngSize;
@@ -177,6 +157,7 @@ duk_ret_t ScriptAPI::js_N64Image_static_fromPNG(duk_context* ctx)
     int result = image->Init(format, pngData, pngSize);
     if (result != N64IMG_OK)
     {
+        delete image;
         duk_push_error_object(ctx, DUK_ERR_ERROR, "failed to initialize image (%s)",
             CN64Image::ResultCodeName(result), result);
         return duk_throw(ctx);
@@ -194,18 +175,11 @@ duk_ret_t ScriptAPI::js_N64Image_static_fromPNG(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_N64Image_static_format(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if (!duk_is_number(ctx, 0) ||
-        !duk_is_number(ctx, 1) ||
-        (nargs > 2 && !duk_is_number(ctx, 2)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number, Arg_Number, Arg_OptNumber });
 
     duk_uint_t gbiFmt = duk_get_uint(ctx, 0);
     duk_uint_t gbiSiz = duk_get_uint(ctx, 1);
-    duk_uint_t gbiTlutFmt = (nargs > 2) ? duk_get_uint(ctx, 2) : G_TT_NONE;
+    duk_uint_t gbiTlutFmt = duk_get_uint_default(ctx, 2, G_TT_NONE);
 
     int format = (gbiFmt << 3) | gbiSiz | gbiTlutFmt;
 
@@ -233,10 +207,7 @@ duk_ret_t ScriptAPI::js_N64Image_static_format(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_N64Image_static_bpp(duk_context* ctx)
 {
-    if (!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number });
 
     duk_uint_t format = duk_get_uint(ctx, 0);
 

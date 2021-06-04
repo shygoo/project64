@@ -5,7 +5,7 @@ void ScriptAPI::Define_AddressRange(duk_context* ctx)
 {
     duk_push_global_object(ctx);
 
-    duk_push_c_function(ctx, js_AddressRange__constructor, 2);
+    duk_push_c_function(ctx, js_AddressRange__constructor, DUK_VARARGS);
     duk_push_object(ctx);
     duk_put_prop_string(ctx, -2, "prototype");
     duk_push_string(ctx, "name");
@@ -29,7 +29,7 @@ void ScriptAPI::Define_AddressRange(duk_context* ctx)
     };
 
     duk_push_global_object(ctx);
-    duk_push_c_function(ctx, js_AddressRange__constructor, 2);
+    duk_push_c_function(ctx, js_AddressRange__constructor, DUK_VARARGS);
     for(int i = 0; ranges[i].key != nullptr; i++)
     {
         duk_push_string(ctx, ranges[i].key);
@@ -45,10 +45,7 @@ void ScriptAPI::Define_AddressRange(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_AddressRange__constructor(duk_context* ctx)
 {
-    if(!duk_is_number(ctx, 0) || !duk_is_number(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number, Arg_Number });
 
     duk_to_uint32(ctx, 0);
     duk_to_uint32(ctx, 1);

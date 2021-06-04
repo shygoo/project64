@@ -25,27 +25,25 @@ static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* env);
 
 static void CbFinish_KillDrawingContext(duk_context* ctx, void* env);
 
-static bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd);
-
-static duk_ret_t ThrowNeedInterpreterError(duk_context* ctx);
-static bool HaveInterpreter();
+static duk_ret_t RequireAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t *addrEnd);
+static duk_ret_t RequireInterpreterCPU(duk_context* ctx);
 
 void ScriptAPI::Define_events(duk_context* ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "onexec",       js_events_onexec, 2 },
-        { "onread",       js_events_onread, 2 },
-        { "onwrite",      js_events_onwrite, 2 },
-        { "ongprvalue",   js_events_ongprvalue, 4 },
-        { "onopcode",     js_events_onopcode, 4 },
-        { "ondraw",       js_events_ondraw, 1 },
-        { "onpifread",    js_events_onpifread, 1 },
-        { "onsptask",     js_events_onsptask, 1 },
-        { "onpidma",      js_events_onpidma, 1 },
-        { "onmouseup",    js_events_onmouseup, 1 },
-        { "onmousedown",  js_events_onmousedown, 1 },
-        { "onmousemove",  js_events_onmousemove, 1 },
-        { "remove",       js_events_remove, 1 },
+        { "onexec",       js_events_onexec, DUK_VARARGS },
+        { "onread",       js_events_onread, DUK_VARARGS },
+        { "onwrite",      js_events_onwrite, DUK_VARARGS },
+        { "ongprvalue",   js_events_ongprvalue, DUK_VARARGS },
+        { "onopcode",     js_events_onopcode, DUK_VARARGS },
+        { "ondraw",       js_events_ondraw, DUK_VARARGS },
+        { "onpifread",    js_events_onpifread, DUK_VARARGS },
+        { "onsptask",     js_events_onsptask, DUK_VARARGS },
+        { "onpidma",      js_events_onpidma, DUK_VARARGS },
+        { "onmouseup",    js_events_onmouseup, DUK_VARARGS },
+        { "onmousedown",  js_events_onmousedown, DUK_VARARGS },
+        { "onmousemove",  js_events_onmousemove, DUK_VARARGS },
+        { "remove",       js_events_remove, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
@@ -89,17 +87,12 @@ void ScriptAPI::Define_events(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
 {
-    if (!HaveInterpreter())
-    {
-        return ThrowNeedInterpreterError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Any, Arg_Function });
 
     uint32_t addrStart, addrEnd;
-    if(!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
-       !duk_is_function(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    RequireAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd);
+
+    RequireInterpreterCPU(ctx);
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
         CbCond_PcBetween, CbArgs_ExecEventObject);
@@ -114,17 +107,12 @@ duk_ret_t ScriptAPI::js_events_onexec(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx)
 {
-    if (!HaveInterpreter())
-    {
-        return ThrowNeedInterpreterError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Any, Arg_Function });
 
     uint32_t addrStart, addrEnd;
-    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
-        !duk_is_function(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    RequireAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd);
+
+    RequireInterpreterCPU(ctx);
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
         CbCond_ReadAddrBetween, CbArgs_ReadEventObject);
@@ -139,17 +127,12 @@ duk_ret_t ScriptAPI::js_events_onread(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx)
 {
-    if (!HaveInterpreter())
-    {
-        return ThrowNeedInterpreterError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Any, Arg_Function });
 
     uint32_t addrStart, addrEnd;
-    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
-        !duk_is_function(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    RequireAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd);
+
+    RequireInterpreterCPU(ctx);
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 1),
         CbCond_WriteAddrBetween, CbArgs_WriteEventObject);
@@ -164,19 +147,12 @@ duk_ret_t ScriptAPI::js_events_onwrite(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
 {
-    if (!HaveInterpreter())
-    {
-        return ThrowNeedInterpreterError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Any, Arg_Number, Arg_Number, Arg_Function });
 
     uint32_t addrStart, addrEnd;
-    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
-        !duk_is_number(ctx, 1) ||
-        !duk_is_number(ctx, 2) ||
-        !duk_is_function(ctx, 3))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    RequireAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd);
+
+    RequireInterpreterCPU(ctx);
 
     uint32_t opcode = duk_get_uint(ctx, 1);
     uint32_t mask = duk_get_uint(ctx, 2);
@@ -196,19 +172,12 @@ duk_ret_t ScriptAPI::js_events_onopcode(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
 {
-    if (!HaveInterpreter())
-    {
-        return ThrowNeedInterpreterError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Any, Arg_Number, Arg_Number, Arg_Function });
 
     uint32_t addrStart, addrEnd;
-    if (!GetAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd) ||
-        !duk_is_number(ctx, 1) ||
-        !duk_is_number(ctx, 2) ||
-        !duk_is_function(ctx, 3))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    RequireAddressOrAddressRange(ctx, 0, &addrStart, &addrEnd);
+
+    RequireInterpreterCPU(ctx);
 
     JSCallback cb(GetInstance(ctx), duk_get_heapptr(ctx, 3),
         CbCond_PcBetween_GprValueEquals, CbArgs_RegValueEventObject);
@@ -225,95 +194,80 @@ duk_ret_t ScriptAPI::js_events_ongprvalue(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_events_ondraw(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_GFXUPDATE, nullptr,
-        CbArgs_DrawEventObject, CbFinish_KillDrawingContext);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_GFXUPDATE,
+        CbArgs_DrawEventObject, nullptr, CbFinish_KillDrawingContext);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onpifread(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIFREAD, nullptr, CbArgs_GenericEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIFREAD, CbArgs_GenericEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onsptask(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, nullptr, CbArgs_SPTaskEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_RSPTASK, CbArgs_SPTaskEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onpidma(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIDMA, nullptr, CbArgs_PIEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_PIDMA, CbArgs_PIEventObject);
+    duk_push_uint(ctx, callbackId);
+    return 1;
+}
+
+duk_ret_t ScriptAPI::js_events_onemustart(duk_context * ctx)
+{
+    CheckArgs(ctx, { Arg_Function });
+
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_EMUSTART, CbArgs_GenericEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onmouseup(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEUP, nullptr, CbArgs_MouseEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEUP, CbArgs_MouseEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onmousedown(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEDOWN, nullptr, CbArgs_MouseEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEDOWN, CbArgs_MouseEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_onmousemove(duk_context* ctx)
 {
-    if (!duk_is_function(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Function });
 
-    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEMOVE, nullptr, CbArgs_MouseEventObject);
+    jscb_id_t callbackId = AddCallback(ctx, 0, JS_HOOK_MOUSEMOVE, CbArgs_MouseEventObject);
     duk_push_uint(ctx, callbackId);
     return 1;
 }
 
 duk_ret_t ScriptAPI::js_events_remove(duk_context* ctx)
 {
-    if (!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number });
 
     jscb_id_t callbackId = (jscb_id_t)duk_get_uint(ctx, 0);
 
@@ -848,19 +802,20 @@ static duk_idx_t CbArgs_PIEventObject(duk_context* ctx, void* _env)
     return 1;
 }
 
-bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t* addrEnd)
+duk_ret_t RequireAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrStart, uint32_t* addrEnd)
 {
     if(duk_is_number(ctx, idx))
     {
         if (abs(duk_get_number(ctx, idx)) > 0xFFFFFFFF)
         {
-            return false;
+            duk_push_error_object(ctx, DUK_ERR_RANGE_ERROR, "address is out of range");
+            return duk_throw(ctx);
         }
 
         uint32_t addr = duk_get_uint(ctx, idx);
         *addrStart = addr;
         *addrEnd = addr;
-        return true;
+        return 0;
     }
 
     if(duk_is_object(ctx, idx))
@@ -868,7 +823,9 @@ bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrSta
         if(!duk_has_prop_string(ctx, idx, "start") ||
            !duk_has_prop_string(ctx, idx, "end"))
         {
-            return false;
+            duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR,
+                "object is missing 'start' or 'end' property");
+            return duk_throw(ctx);
         }
 
         duk_get_prop_string(ctx, idx, "start");
@@ -878,31 +835,38 @@ bool GetAddressOrAddressRange(duk_context* ctx, duk_idx_t idx, uint32_t* addrSta
            !duk_is_number(ctx, -1))
         {
             duk_pop_n(ctx, 2);
-            return false;
+            duk_push_error_object(ctx, DUK_ERR_REFERENCE_ERROR,
+                "'start' and 'end' properties must be numbers");
+            return duk_throw(ctx);
+        }
+
+        if (abs(duk_get_number(ctx, -2)) > 0xFFFFFFFF ||
+            abs(duk_get_number(ctx, -1)) > 0xFFFFFFFF)
+        {
+            duk_push_error_object(ctx, DUK_ERR_RANGE_ERROR,
+                "'start' or 'end' property out of range");
+            return duk_throw(ctx);
         }
 
         *addrStart = duk_get_uint(ctx, -2);
         *addrEnd = duk_get_uint(ctx, -1);
         duk_pop_n(ctx, 2);
-        return true;
+        return 0;
     }
 
-    return false;
-}
-
-static duk_ret_t ThrowNeedInterpreterError(duk_context* ctx)
-{
-    duk_push_error_object(ctx, DUK_ERR_ERROR, "this feature requires the interpreter core");
+    duk_push_error_object(ctx, DUK_ERR_TYPE_ERROR,
+        "argument %d invalid; expected number or object", idx);
     return duk_throw(ctx);
 }
 
-static bool HaveInterpreter()
+duk_ret_t RequireInterpreterCPU(duk_context* ctx)
 {
     if (!g_Settings->LoadBool(Setting_ForceInterpreterCPU) &&
         (CPU_TYPE)g_Settings->LoadDword(Game_CpuType) != CPU_Interpreter)
     {
-        return false;
+        duk_push_error_object(ctx, DUK_ERR_ERROR, "this feature requires the interpreter core");
+        return duk_throw(ctx);
     }
 
-    return true;
+    return 0;
 }

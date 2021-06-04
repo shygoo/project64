@@ -67,6 +67,7 @@ TODO:
 - mem.pointer  Native pointer to Project64's N64 memory. May be used by native modules for faster memory access.
 - formatting/cleanup printfs/todo comments/warnings etc
 - full test suite
+- expose synchronization object to native modules
 
 ---------------------------
 

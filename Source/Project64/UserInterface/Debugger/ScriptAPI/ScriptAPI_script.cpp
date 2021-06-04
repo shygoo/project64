@@ -4,8 +4,8 @@
 void ScriptAPI::Define_script(duk_context *ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "timeout",   js_script_timeout,   1 },
-        { "keepalive", js_script_keepalive, 1 },
+        { "timeout",   js_script_timeout,   DUK_VARARGS },
+        { "keepalive", js_script_keepalive, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
@@ -20,25 +20,16 @@ void ScriptAPI::Define_script(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_script_timeout(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Number });
     CScriptInstance* inst = GetInstance(ctx);
-    
-    if(duk_get_top(ctx) != 1 || !duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
     inst->SetExecTimeout((uint64_t)duk_get_number(ctx, 0));
     return 0;
 }
 
 duk_ret_t ScriptAPI::js_script_keepalive(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Boolean });
     CScriptInstance* inst = GetInstance(ctx);
-
-    if(duk_get_top(ctx) != 1 || !duk_is_boolean(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
 
     duk_bool_t bKeepAlive = duk_get_boolean(ctx, 0);
 

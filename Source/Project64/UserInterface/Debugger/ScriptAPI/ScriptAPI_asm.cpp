@@ -6,7 +6,7 @@
 void ScriptAPI::Define_asm(duk_context *ctx)
 {
     const duk_function_list_entry funcs[] = {
-        { "gprname", js_asm_gprname, 1 },
+        { "gprname", js_asm_gprname, DUK_VARARGS },
         { "encode", js_asm_encode, DUK_VARARGS },
         { "decode", js_asm_decode, DUK_VARARGS },
         { nullptr, nullptr, 0 }
@@ -30,10 +30,7 @@ duk_ret_t ScriptAPI::js_asm_gprname(duk_context* ctx)
         "t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
     };
 
-    if (!duk_is_number(ctx, 0))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number });
 
     duk_uint_t idx = duk_get_uint(ctx, 0);
 
@@ -51,19 +48,12 @@ duk_ret_t ScriptAPI::js_asm_gprname(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_asm_encode(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
-
-    if ((nargs == 0 || nargs > 2) ||
-        !duk_is_string(ctx, 0) ||
-        (nargs == 2 && !duk_is_number(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_String, Arg_OptNumber });
 
     const char *code = duk_get_string(ctx, 0);
     uint32_t address = duk_get_uint_default(ctx, 1, 0);
 
-    // TODO: Not a huge deal, but CAssembler's state is not thread safe.
+    // TODO: CAssembler's state is not thread safe.
     // CAssembler should be object-oriented
 
     uint32_t opcode;
@@ -79,14 +69,7 @@ duk_ret_t ScriptAPI::js_asm_encode(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_asm_decode(duk_context* ctx)
 {
-    duk_idx_t nargs = duk_get_top(ctx);
-    
-    if ((nargs == 0 || nargs > 2) ||
-        !duk_is_number(ctx, 0) ||
-        (nargs == 2 && !duk_is_number(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
+    CheckArgs(ctx, { Arg_Number, Arg_OptNumber });
 
     uint32_t opcode = duk_get_uint(ctx, 0);
     uint32_t address = duk_get_uint_default(ctx, 1, 0);

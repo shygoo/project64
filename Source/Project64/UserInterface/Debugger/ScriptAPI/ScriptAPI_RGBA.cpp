@@ -13,17 +13,12 @@ void ScriptAPI::Define_RGBA(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_RGBA(duk_context* ctx)
 {
+    CheckArgs(ctx, { Arg_Number, Arg_Number, Arg_OptNumber, Arg_OptNumber });
     duk_idx_t nargs = duk_get_top(ctx);
 
     // (existingColor, newAlpha)
     if (nargs == 2)
     {
-        if (!duk_is_number(ctx, 0) ||
-            !duk_is_number(ctx, 1))
-        {
-            return ThrowInvalidArgsError(ctx);
-        }
-
         duk_double_t color = duk_get_uint(ctx, 0);
         duk_double_t alpha = duk_get_number(ctx, 1);
 
@@ -33,24 +28,16 @@ duk_ret_t ScriptAPI::js_RGBA(duk_context* ctx)
             return DUK_RET_RANGE_ERROR;
         }
 
-        uint32_t newColor = (uint32_t)color & 0xFFFFFF00 | (uint8_t)roundf(255 * alpha);
+        uint32_t newColor = (uint32_t)color & 0xFFFFFF00 | (uint8_t)roundf(255 * (float)alpha);
         duk_push_uint(ctx, newColor);
         return 1;
     }
 
     // (r, g, b[, alpha])
-    if (!duk_is_number(ctx, 0) ||
-        !duk_is_number(ctx, 1) ||
-        !duk_is_number(ctx, 2) ||
-        (nargs == 4 && !duk_is_number(ctx, 3)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
     duk_double_t r = duk_get_number(ctx, 0);
     duk_double_t g = duk_get_number(ctx, 1);
     duk_double_t b = duk_get_number(ctx, 2);
-    duk_double_t a = (nargs == 4) ? duk_get_number(ctx, 3) : 1.0;
+    duk_double_t a = duk_get_number_default(ctx, 3, 1.0);
 
     if (r < 0 || r > 255 ||
         g < 0 || g > 255 ||

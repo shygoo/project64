@@ -31,14 +31,14 @@ void ScriptAPI::Define_mem(duk_context *ctx)
     };
 
     const duk_function_list_entry funcs[] = {
-        { "getblock",   js_mem_getblock, 2 },
+        { "getblock",   js_mem_getblock, DUK_VARARGS },
         { "setblock",   js_mem_setblock, DUK_VARARGS },
         { "getstring",  js_mem_getstring, DUK_VARARGS },
         { "setstring",  js_mem_setblock, DUK_VARARGS },
-        { "bindvar",    js_mem_bindvar, 4 },
-        { "bindvars",   js_mem_bindvars, 2 },
-        { "bindstruct", js_mem_bindstruct, 3 },
-        { "typedef",    js_mem_typedef, 1 },
+        { "bindvar",    js_mem_bindvar, DUK_VARARGS },
+        { "bindvars",   js_mem_bindvars, DUK_VARARGS },
+        { "bindstruct", js_mem_bindstruct, DUK_VARARGS },
+        { "typedef",    js_mem_typedef, DUK_VARARGS },
         { nullptr, nullptr, 0 }
     };
 
@@ -106,12 +106,8 @@ duk_ret_t ScriptAPI::js_mem__set(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem_getblock(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Number, Arg_Number });
     CScriptInstance *inst = GetInstance(ctx);
-
-    if(!duk_is_number(ctx, 0) || !duk_is_number(ctx, 1))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
 
     duk_uint_t addr = duk_to_uint(ctx, 0);
     duk_uint_t length = duk_to_uint(ctx, 1);
@@ -199,16 +195,10 @@ duk_ret_t ScriptAPI::js_mem_getblock(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem_getstring(duk_context *ctx)
 {
+    CheckArgs(ctx, { Arg_Number, Arg_OptNumber });
     CScriptInstance *inst = GetInstance(ctx);
 
     duk_idx_t nargs = duk_get_top(ctx);
-
-    if(nargs < 1 ||
-       !duk_is_number(ctx, 0) ||
-       (nargs > 1 && !duk_is_number(ctx, 1)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
 
     duk_uint_t addr = duk_to_uint(ctx, 0);
     duk_uint_t maxLength = nargs > 1 ? duk_to_uint(ctx, 1) : 0xFFFFFFFF;
@@ -249,18 +239,12 @@ duk_ret_t ScriptAPI::js_mem_getstring(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem_setblock(duk_context *ctx) // address, data, maxLength
 {
+    CheckArgs(ctx, { Arg_Number, Arg_OptNumber });
     CScriptInstance *inst = GetInstance(ctx);
     CDebuggerUI *debugger = inst->Debugger();
 
     duk_idx_t nargs = duk_get_top(ctx);
 
-    if(nargs < 2 || nargs > 3 ||
-       !duk_is_number(ctx, 0) ||
-       (nargs == 3 && !duk_is_number(ctx, 2)))
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-    
     char* data;
     duk_size_t dataSize, length;
 
@@ -407,13 +391,7 @@ memory_error:
 
 duk_ret_t ScriptAPI::js_mem_bindvar(duk_context *ctx)
 {
-    if(!duk_is_object(ctx, 0) ||
-       !duk_is_number(ctx, 1) ||
-       !duk_is_string(ctx, 2) ||
-       !duk_is_number(ctx, 3))
-    {
-        return DUK_RET_TYPE_ERROR;
-    }
+    CheckArgs(ctx, { Arg_Object, Arg_Number, Arg_String, Arg_Number });
 
     duk_uint_t addr = duk_get_uint(ctx, 1);
     const char* key = duk_get_string(ctx, 2);
@@ -445,11 +423,7 @@ duk_ret_t ScriptAPI::js_mem_bindvar(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem_bindvars(duk_context *ctx)
 {
-    if(!duk_is_object(ctx, 0) ||
-       !duk_is_array(ctx, 1))
-    {
-        return DUK_RET_TYPE_ERROR;
-    }
+    CheckArgs(ctx, { Arg_Object, Arg_Array });
 
     duk_size_t length = duk_get_length(ctx, 1);
 
@@ -482,12 +456,7 @@ duk_ret_t ScriptAPI::js_mem_bindvars(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem_bindstruct(duk_context *ctx)
 {
-    if(!duk_is_object(ctx, 0) ||
-       !duk_is_number(ctx, 1) ||
-       !duk_is_object(ctx, 2))
-    {
-        return DUK_RET_TYPE_ERROR;
-    }
+    CheckArgs(ctx, { Arg_Object, Arg_Number, Arg_Object });
 
     uint32_t curAddr = duk_get_uint(ctx, 1);
 
@@ -520,10 +489,7 @@ duk_ret_t ScriptAPI::js_mem_bindstruct(duk_context *ctx)
 
 duk_ret_t ScriptAPI::js_mem__type_constructor(duk_context* ctx)
 {
-    if(!duk_is_object(ctx, 0) || !duk_is_number(ctx, 1))
-    {
-        return DUK_RET_TYPE_ERROR;
-    }
+    CheckArgs(ctx, { Arg_Object, Arg_Number });
 
     duk_push_c_function(ctx, js_mem_bindstruct, 3);
     duk_push_this(ctx);
@@ -540,10 +506,7 @@ duk_ret_t ScriptAPI::js_mem__type_constructor(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_mem_typedef(duk_context* ctx)
 {
-    if(!duk_is_object(ctx, 0))
-    {
-        return DUK_RET_TYPE_ERROR;
-    }
+    CheckArgs(ctx, { Arg_Object });
 
     duk_push_c_function(ctx, js_mem__type_constructor, DUK_VARARGS);
     duk_push_string(ctx, "bind");

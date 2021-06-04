@@ -14,20 +14,11 @@ void ScriptAPI::Define_alert(duk_context* ctx)
 
 duk_ret_t ScriptAPI::js_alert(duk_context* ctx)
 {
+    CheckArgs(ctx, { Arg_Any, Arg_OptAny });
     duk_idx_t nargs = duk_get_top(ctx);
 
-    if (nargs > 2 || nargs == 0)
-    {
-        return ThrowInvalidArgsError(ctx);
-    }
-
     const char* message = duk_safe_to_string(ctx, 0);
-    const char* caption = "";
-
-    if (nargs == 2)
-    {
-        caption = duk_safe_to_string(ctx, 1);
-    }
+    const char* caption = (nargs == 2) ? duk_safe_to_string(ctx, 1) : "";
 
     HWND mainWindow = (HWND)g_Plugins->MainWindow()->GetWindowHandle();
     MessageBoxA(mainWindow, message, caption, MB_OK);
